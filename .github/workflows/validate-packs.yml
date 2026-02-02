@@ -16,10 +16,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install pyyaml jsonschema
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Validate pack structure
+      - name: Install dependencies and validate
         run: |
-          python scripts/validate_structure.py
+          source $HOME/.cargo/env
+          make install
+          make validate
