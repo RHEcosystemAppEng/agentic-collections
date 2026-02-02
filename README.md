@@ -18,6 +18,18 @@ The site provides:
 - **MCP Servers**: Explore MCP server configurations and integration details
 - **Search**: Find packs, skills, agents, and servers by keyword across all content
 
+### Prerequisites
+
+The documentation tools use [uv](https://github.com/astral-sh/uv) for fast, isolated Python environment management:
+
+```bash
+# Install uv (one-time setup)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or on macOS with Homebrew
+brew install uv
+```
+
 ### Local Development
 
 Generate and view documentation locally:

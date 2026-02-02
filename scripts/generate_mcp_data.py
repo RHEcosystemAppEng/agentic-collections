@@ -70,6 +70,7 @@ def parse_mcp_file(pack_dir: str) -> List[Dict[str, Any]]:
                 'command': server_config.get('command', ''),
                 'args': server_config.get('args', []),
                 'env': extract_env_vars(server_config.get('env', {})),
+                'description': server_config.get('description', ''),
                 'security': server_config.get('security', {})
             }
             servers.append(server)

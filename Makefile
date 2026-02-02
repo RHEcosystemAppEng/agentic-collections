@@ -1,10 +1,10 @@
-.PHONY: help install validate generate serve clean test test-full
+.PHONY: help install validate generate serve clean test test-full check-uv
 
 help:
 	@echo "ai5-marketplaces Documentation Generator"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  install     - Install Python dependencies"
+	@echo "  install     - Install Python dependencies (requires uv)"
 	@echo "  validate    - Validate pack structure"
 	@echo "  generate    - Generate docs/data.json"
 	@echo "  serve       - Start local server on http://localhost:8000"
@@ -12,26 +12,40 @@ help:
 	@echo "  test-full   - Full test suite (test + serve with browser open)"
 	@echo "  clean       - Remove generated files"
 	@echo "  update      - Full update (validate + generate)"
+	@echo ""
+	@echo "Requirements:"
+	@echo "  uv - Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
 
-install:
-	@echo "Installing Python dependencies..."
-	@pip install -q -r scripts/requirements.txt
-	@echo "Dependencies installed!"
+check-uv:
+	@command -v uv >/dev/null 2>&1 || { \
+		echo "Error: uv is not installed"; \
+		echo ""; \
+		echo "Install uv with:"; \
+		echo "  curl -LsSf https://astral.sh/uv/install.sh | sh"; \
+		echo ""; \
+		echo "Or visit: https://github.com/astral-sh/uv"; \
+		exit 1; \
+	}
 
-validate:
+install: check-uv
+	@echo "Installing Python dependencies with uv..."
+	@uv pip install -q -r scripts/requirements.txt
+	@echo "Dependencies installed in isolated environment!"
+
+validate: check-uv
 	@echo "Validating agentic pack structure..."
-	@python scripts/validate_structure.py
+	@uv run python scripts/validate_structure.py
 	@echo "✓ Validation passed!"
 
-generate:
+generate: check-uv
 	@echo "Generating documentation..."
-	@python scripts/build_website.py
+	@uv run python scripts/build_website.py
 	@echo "✓ Documentation generated in docs/"
 
-serve:
+serve: check-uv
 	@echo "Starting local server on http://localhost:8000"
 	@echo "Press Ctrl+C to stop the server"
-	@cd docs && python -m http.server 8000
+	@cd docs && uv run python -m http.server 8000
 
 clean:
 	@echo "Cleaning generated files..."

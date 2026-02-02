@@ -8,8 +8,34 @@
 </head>
 <body>
     <header>
-        <h1>ai5-marketplaces</h1>
-        <p class="subtitle">Red Hat Agentic Packs for Claude Code and AI Marketplaces</p>
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <h1>ai5-marketplaces</h1>
+                <p class="subtitle">Red Hat Agentic Packs for Claude Code and AI Marketplaces</p>
+            </div>
+            <div class="toolbar-center">
+                <div class="counter-badge" id="packs-badge">
+                    <span class="counter-number">0</span>
+                    <span class="counter-label">Packs</span>
+                </div>
+                <div class="counter-badge" id="skills-badge">
+                    <span class="counter-number">0</span>
+                    <span class="counter-label">Skills</span>
+                </div>
+                <div class="counter-badge" id="agents-badge">
+                    <span class="counter-number">0</span>
+                    <span class="counter-label">Agents</span>
+                </div>
+                <div class="counter-badge" id="mcp-badge">
+                    <span class="counter-number">0</span>
+                    <span class="counter-label">MCP Servers</span>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <button class="toolbar-button primary" id="install-button">How to Install</button>
+                <a href="https://github.com/dmartinol/ai5-marketplaces" target="_blank" class="toolbar-button">GitHub</a>
+            </div>
+        </div>
         <div class="search-container">
             <input type="search" id="searchInput" placeholder="Search packs, skills, agents, MCP servers...">
         </div>
@@ -39,18 +65,12 @@
 
     <!-- Modal for Pack Details -->
     <div id="pack-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="pack-details"></div>
-        </div>
+        <div class="modal-content" id="pack-details"></div>
     </div>
 
     <!-- Modal for MCP Server Details -->
     <div id="mcp-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="mcp-details"></div>
-        </div>
+        <div class="modal-content" id="mcp-details"></div>
     </div>
 
     <script src="app.js"></script>

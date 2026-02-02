@@ -10,6 +10,21 @@ let allPacks = [];
 let allMCPServers = [];
 
 /**
+ * Update toolbar counter badges
+ */
+function updateToolbarCounters(packs, mcpServers) {
+    // Count total skills and agents across all packs
+    const totalSkills = packs.reduce((sum, pack) => sum + pack.skills.length, 0);
+    const totalAgents = packs.reduce((sum, pack) => sum + pack.agents.length, 0);
+
+    // Update counter badges
+    document.querySelector('#packs-badge .counter-number').textContent = packs.length;
+    document.querySelector('#skills-badge .counter-number').textContent = totalSkills;
+    document.querySelector('#agents-badge .counter-number').textContent = totalAgents;
+    document.querySelector('#mcp-badge .counter-number').textContent = mcpServers.length;
+}
+
+/**
  * Initialize the application
  */
 async function init() {
@@ -21,6 +36,9 @@ async function init() {
         // Store original data for search
         allPacks = data.packs;
         allMCPServers = data.mcp_servers;
+
+        // Update toolbar counters
+        updateToolbarCounters(allPacks, allMCPServers);
 
         // Render sections
         renderPacks(allPacks);
@@ -197,6 +215,7 @@ function handleSearch(event) {
 
     if (!query) {
         // Reset to show all
+        updateToolbarCounters(allPacks, allMCPServers);
         renderPacks(allPacks);
         renderMCPServers(allMCPServers);
         return;
@@ -229,6 +248,8 @@ function handleSearch(event) {
         return searchText.includes(query);
     });
 
+    // Update counters to reflect filtered results
+    updateToolbarCounters(filteredPacks, filteredServers);
     renderPacks(filteredPacks);
     renderMCPServers(filteredServers);
 }
@@ -254,64 +275,186 @@ function showPackDetails(packName) {
     // Clear previous content
     details.textContent = '';
 
-    // Pack name
+    // Create modal header
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+
+    // Close button
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'close';
+    closeBtn.textContent = '×';
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore background scrolling
+    };
+    header.appendChild(closeBtn);
+
+    const headerTop = document.createElement('div');
+    headerTop.className = 'modal-header-top';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'modal-title-group';
+
     const h2 = document.createElement('h2');
     h2.textContent = pack.plugin.name || pack.name;
-    details.appendChild(h2);
+    titleGroup.appendChild(h2);
+
+    // Counts (skills + agents)
+    const counts = document.createElement('div');
+    counts.className = 'modal-counts';
+    const countParts = [];
+    if (pack.skills.length > 0) {
+        countParts.push(`${pack.skills.length} skill${pack.skills.length !== 1 ? 's' : ''}`);
+    }
+    if (pack.agents.length > 0) {
+        countParts.push(`${pack.agents.length} agent${pack.agents.length !== 1 ? 's' : ''}`);
+    }
+    counts.textContent = countParts.join(' ');
+    titleGroup.appendChild(counts);
+
+    headerTop.appendChild(titleGroup);
+
+    // Meta (version badge + readme button if available)
+    const meta = document.createElement('div');
+    meta.className = 'modal-meta';
+
+    const versionBadge = document.createElement('span');
+    versionBadge.className = 'version-badge';
+    versionBadge.textContent = `v${pack.plugin.version || '0.0.0'}`;
+    meta.appendChild(versionBadge);
+
+    if (pack.has_readme) {
+        const readmeButton = document.createElement('a');
+        readmeButton.className = 'readme-button';
+        readmeButton.textContent = 'README';
+        readmeButton.href = `https://github.com/dmartinol/ai5-marketplaces/tree/main/${pack.name}`;
+        readmeButton.target = '_blank';
+        meta.appendChild(readmeButton);
+    }
+
+    headerTop.appendChild(meta);
+    header.appendChild(headerTop);
 
     // Description
-    const p = document.createElement('p');
-    p.textContent = pack.plugin.description || 'No description available';
-    details.appendChild(p);
-
-    // Skills section
-    if (pack.skills.length > 0) {
-        const skillsH3 = document.createElement('h3');
-        skillsH3.textContent = `Skills (${pack.skills.length})`;
-        details.appendChild(skillsH3);
-
-        const skillsUl = document.createElement('ul');
-        pack.skills.forEach(s => {
-            const li = document.createElement('li');
-            const strong = document.createElement('strong');
-            strong.textContent = s.name;
-            li.appendChild(strong);
-            li.appendChild(document.createTextNode(': ' + (s.description.substring(0, 150) + (s.description.length > 150 ? '...' : ''))));
-            skillsUl.appendChild(li);
-        });
-        details.appendChild(skillsUl);
+    if (pack.plugin.description) {
+        const desc = document.createElement('div');
+        desc.className = 'modal-description';
+        desc.textContent = pack.plugin.description;
+        header.appendChild(desc);
     }
 
-    // Agents section
-    if (pack.agents.length > 0) {
-        const agentsH3 = document.createElement('h3');
-        agentsH3.textContent = `Agents (${pack.agents.length})`;
-        details.appendChild(agentsH3);
+    details.appendChild(header);
 
-        const agentsUl = document.createElement('ul');
-        pack.agents.forEach(a => {
-            const li = document.createElement('li');
-            const strong = document.createElement('strong');
-            strong.textContent = a.name;
-            li.appendChild(strong);
-            li.appendChild(document.createTextNode(': ' + (a.description.substring(0, 150) + (a.description.length > 150 ? '...' : ''))));
-            agentsUl.appendChild(li);
-        });
-        details.appendChild(agentsUl);
-    }
+    // Create modal body
+    const body = document.createElement('div');
+    body.className = 'modal-body';
 
     // Installation section
-    const installH3 = document.createElement('h3');
-    installH3.textContent = 'Installation';
-    details.appendChild(installH3);
+    const installSection = document.createElement('div');
+    installSection.className = 'modal-section';
+
+    const installLabel = document.createElement('div');
+    installLabel.className = 'modal-section-label';
+    installLabel.textContent = 'Install this plugin:';
+    installSection.appendChild(installLabel);
+
+    const codeWrapper = document.createElement('div');
+    codeWrapper.className = 'install-code-wrapper';
 
     const pre = document.createElement('pre');
     const code = document.createElement('code');
     code.textContent = `git clone https://github.com/dmartinol/ai5-marketplaces\ncd ai5-marketplaces/${pack.name}`;
     pre.appendChild(code);
-    details.appendChild(pre);
+    codeWrapper.appendChild(pre);
 
-    modal.style.display = 'block';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-button';
+    copyBtn.textContent = 'Copy';
+    copyBtn.onclick = () => copyToClipboard(code.textContent, copyBtn);
+    codeWrapper.appendChild(copyBtn);
+
+    installSection.appendChild(codeWrapper);
+    body.appendChild(installSection);
+
+    // Skills section
+    if (pack.skills.length > 0) {
+        const skillsSection = document.createElement('div');
+        skillsSection.className = 'modal-section';
+
+        const skillsHeader = document.createElement('div');
+        skillsHeader.className = 'modal-section-header';
+        skillsHeader.textContent = 'SKILLS';
+        skillsSection.appendChild(skillsHeader);
+
+        const skillsList = document.createElement('div');
+        skillsList.className = 'item-list';
+
+        pack.skills.forEach(skill => {
+            const skillDef = document.createElement('div');
+            skillDef.className = 'skill-definition';
+
+            // Skill syntax block
+            const syntaxBlock = document.createElement('div');
+            syntaxBlock.className = 'definition-syntax';
+            const syntaxCode = document.createElement('code');
+            syntaxCode.textContent = skill.name;
+            syntaxBlock.appendChild(syntaxCode);
+            skillDef.appendChild(syntaxBlock);
+
+            // Skill description (with expand/collapse for long text)
+            const desc = document.createElement('div');
+            desc.className = 'definition-description';
+            desc.appendChild(createExpandableText(skill.description, 200));
+            skillDef.appendChild(desc);
+
+            skillsList.appendChild(skillDef);
+        });
+
+        skillsSection.appendChild(skillsList);
+        body.appendChild(skillsSection);
+    }
+
+    // Agents section
+    if (pack.agents.length > 0) {
+        const agentsSection = document.createElement('div');
+        agentsSection.className = 'modal-section';
+
+        const agentsHeader = document.createElement('div');
+        agentsHeader.className = 'modal-section-header';
+        agentsHeader.textContent = 'AGENTS';
+        agentsSection.appendChild(agentsHeader);
+
+        const agentsList = document.createElement('div');
+        agentsList.className = 'item-list';
+
+        pack.agents.forEach(agent => {
+            const agentDef = document.createElement('div');
+            agentDef.className = 'agent-definition';
+
+            // Agent syntax block
+            const syntaxBlock = document.createElement('div');
+            syntaxBlock.className = 'definition-syntax';
+            const syntaxCode = document.createElement('code');
+            syntaxCode.textContent = agent.name;
+            syntaxBlock.appendChild(syntaxCode);
+            agentDef.appendChild(syntaxBlock);
+
+            // Agent description (with expand/collapse for long text)
+            const desc = document.createElement('div');
+            desc.className = 'definition-description';
+            desc.appendChild(createExpandableText(agent.description, 200));
+            agentDef.appendChild(desc);
+
+            agentsList.appendChild(agentDef);
+        });
+
+        agentsSection.appendChild(agentsList);
+        body.appendChild(agentsSection);
+    }
+
+    details.appendChild(body);
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
 }
 
 /**
@@ -327,64 +470,262 @@ function showMCPDetails(serverName, packName) {
     // Clear previous content
     details.textContent = '';
 
-    // Server name
+    // Create modal header
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+
+    // Close button
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'close';
+    closeBtn.textContent = '×';
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore background scrolling
+    };
+    header.appendChild(closeBtn);
+
+    const headerTop = document.createElement('div');
+    headerTop.className = 'modal-header-top';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'modal-title-group';
+
     const h2 = document.createElement('h2');
     h2.textContent = server.name;
-    details.appendChild(h2);
+    titleGroup.appendChild(h2);
 
-    // Pack
-    const packP = document.createElement('p');
-    packP.textContent = 'From pack: ';
-    const strong = document.createElement('strong');
-    strong.textContent = server.pack;
-    packP.appendChild(strong);
-    details.appendChild(packP);
+    headerTop.appendChild(titleGroup);
+    header.appendChild(headerTop);
+
+    // Description from .mcp.json or pack name
+    const desc = document.createElement('div');
+    desc.className = 'modal-description';
+    if (server.description) {
+        desc.appendChild(renderMarkdown(server.description));
+    } else {
+        desc.textContent = `MCP server from ${server.pack} pack`;
+    }
+    header.appendChild(desc);
+
+    details.appendChild(header);
+
+    // Create modal body
+    const body = document.createElement('div');
+    body.className = 'modal-body';
 
     // Command section
-    const cmdH3 = document.createElement('h3');
-    cmdH3.textContent = 'Command';
-    details.appendChild(cmdH3);
+    const cmdSection = document.createElement('div');
+    cmdSection.className = 'modal-section';
+
+    const cmdHeader = document.createElement('div');
+    cmdHeader.className = 'modal-section-header';
+    cmdHeader.textContent = 'COMMAND';
+    cmdSection.appendChild(cmdHeader);
+
+    const codeWrapper = document.createElement('div');
+    codeWrapper.className = 'install-code-wrapper';
 
     const cmdPre = document.createElement('pre');
     const cmdCode = document.createElement('code');
-    cmdCode.textContent = `${server.command} ${server.args.join(' ')}`;
+
+    // Format command with line breaks for readability
+    let formattedCmd = server.command;
+    if (server.args.length > 0) {
+        formattedCmd += ' ' + server.args[0]; // First arg on same line
+        for (let i = 1; i < server.args.length; i++) {
+            formattedCmd += ' \\\n  ' + server.args[i]; // Subsequent args indented
+        }
+    }
+    cmdCode.textContent = formattedCmd;
     cmdPre.appendChild(cmdCode);
-    details.appendChild(cmdPre);
+    codeWrapper.appendChild(cmdPre);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-button';
+    copyBtn.textContent = 'Copy';
+    copyBtn.onclick = () => copyToClipboard(cmdCode.textContent, copyBtn);
+    codeWrapper.appendChild(copyBtn);
+
+    cmdSection.appendChild(codeWrapper);
+    body.appendChild(cmdSection);
 
     // Environment variables section
-    const envH3 = document.createElement('h3');
-    envH3.textContent = 'Environment Variables';
-    details.appendChild(envH3);
-
     if (server.env.length > 0) {
-        const envUl = document.createElement('ul');
+        const envSection = document.createElement('div');
+        envSection.className = 'modal-section';
+
+        const envHeader = document.createElement('div');
+        envHeader.className = 'modal-section-header';
+        envHeader.textContent = 'ENVIRONMENT VARIABLES';
+        envSection.appendChild(envHeader);
+
+        const envList = document.createElement('ul');
+        envList.className = 'simple-list';
+
         server.env.forEach(v => {
             const li = document.createElement('li');
             li.textContent = v;
-            envUl.appendChild(li);
+            envList.appendChild(li);
         });
-        details.appendChild(envUl);
-    } else {
-        const noneP = document.createElement('p');
-        noneP.textContent = 'None';
-        details.appendChild(noneP);
+
+        envSection.appendChild(envList);
+        body.appendChild(envSection);
     }
 
     // Security section
-    const secH3 = document.createElement('h3');
-    secH3.textContent = 'Security';
-    details.appendChild(secH3);
+    const secSection = document.createElement('div');
+    secSection.className = 'modal-section';
 
-    const secUl = document.createElement('ul');
+    const secHeader = document.createElement('div');
+    secHeader.className = 'modal-section-header';
+    secHeader.textContent = 'SECURITY';
+    secSection.appendChild(secHeader);
+
+    const secList = document.createElement('ul');
+    secList.className = 'simple-list';
+
     ['isolation', 'network', 'credentials'].forEach(key => {
         const li = document.createElement('li');
+        const strong = document.createElement('strong');
         const keyLabel = key.charAt(0).toUpperCase() + key.slice(1);
-        li.textContent = `${keyLabel}: ${server.security[key] || 'N/A'}`;
-        secUl.appendChild(li);
+        strong.textContent = `${keyLabel}: `;
+        li.appendChild(strong);
+        li.appendChild(document.createTextNode(server.security[key] || 'N/A'));
+        secList.appendChild(li);
     });
-    details.appendChild(secUl);
 
-    modal.style.display = 'block';
+    secSection.appendChild(secList);
+    body.appendChild(secSection);
+
+    details.appendChild(body);
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+/**
+ * Render simple markdown safely (bold, italic, line breaks)
+ * No innerHTML - builds DOM elements for safety
+ */
+function renderMarkdown(text) {
+    const container = document.createElement('span');
+
+    // Split by lines first to preserve line breaks
+    const lines = text.split('\n');
+
+    lines.forEach((line, lineIndex) => {
+        // Split by double asterisks for bold
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+
+        parts.forEach(part => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                // Bold text
+                const strong = document.createElement('strong');
+                strong.textContent = part.slice(2, -2);
+                container.appendChild(strong);
+            } else {
+                // Regular text
+                container.appendChild(document.createTextNode(part));
+            }
+        });
+
+        // Add line break after each line except the last
+        if (lineIndex < lines.length - 1) {
+            container.appendChild(document.createElement('br'));
+        }
+    });
+
+    return container;
+}
+
+/**
+ * Create expandable text with "show more" link
+ */
+function createExpandableText(text, maxLength = 200) {
+    const container = document.createElement('div');
+    container.className = 'expandable-text';
+
+    if (text.length <= maxLength) {
+        // Short text - just render normally
+        container.appendChild(renderMarkdown(text));
+        return container;
+    }
+
+    // Find a good truncation point (end of word, before maxLength)
+    let truncateAt = maxLength;
+    while (truncateAt > 0 && text[truncateAt] !== ' ' && text[truncateAt] !== '\n') {
+        truncateAt--;
+    }
+    if (truncateAt === 0) truncateAt = maxLength; // Fallback if no space found
+
+    const truncatedText = text.substring(0, truncateAt).trim();
+    const remainingText = text.substring(truncateAt).trim();
+
+    // Create collapsed view
+    const collapsedSpan = document.createElement('span');
+    collapsedSpan.className = 'text-collapsed';
+    collapsedSpan.appendChild(renderMarkdown(truncatedText));
+
+    const ellipsis = document.createElement('span');
+    ellipsis.textContent = '... ';
+    collapsedSpan.appendChild(ellipsis);
+
+    const expandLink = document.createElement('a');
+    expandLink.href = '#';
+    expandLink.className = 'expand-link';
+    expandLink.textContent = 'show more';
+    collapsedSpan.appendChild(expandLink);
+
+    // Create expanded view (hidden initially)
+    const expandedSpan = document.createElement('span');
+    expandedSpan.className = 'text-expanded';
+    expandedSpan.style.display = 'none';
+    expandedSpan.appendChild(renderMarkdown(text));
+
+    const collapseLink = document.createElement('a');
+    collapseLink.href = '#';
+    collapseLink.className = 'collapse-link';
+    collapseLink.textContent = ' show less';
+    expandedSpan.appendChild(collapseLink);
+
+    // Toggle behavior
+    expandLink.onclick = (e) => {
+        e.preventDefault();
+        collapsedSpan.style.display = 'none';
+        expandedSpan.style.display = 'inline';
+    };
+
+    collapseLink.onclick = (e) => {
+        e.preventDefault();
+        collapsedSpan.style.display = 'inline';
+        expandedSpan.style.display = 'none';
+    };
+
+    container.appendChild(collapsedSpan);
+    container.appendChild(expandedSpan);
+
+    return container;
+}
+
+/**
+ * Copy text to clipboard
+ */
+function copyToClipboard(text, button) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('copied');
+
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        button.textContent = 'Failed';
+        setTimeout(() => {
+            button.textContent = 'Copy';
+        }, 2000);
+    });
 }
 
 /**
@@ -402,6 +743,7 @@ function setupModals() {
     window.addEventListener('click', function(event) {
         if (event.target.classList.contains('modal')) {
             event.target.style.display = 'none';
+            document.body.style.overflow = ''; // Restore background scrolling
         }
     });
 
@@ -411,6 +753,7 @@ function setupModals() {
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.style.display = 'none';
             });
+            document.body.style.overflow = ''; // Restore background scrolling
         }
     });
 }
