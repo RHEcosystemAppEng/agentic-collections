@@ -17,10 +17,18 @@ function updateToolbarCounters(packs, mcpServers) {
     const totalSkills = packs.reduce((sum, pack) => sum + pack.skills.length, 0);
     const totalAgents = packs.reduce((sum, pack) => sum + pack.agents.length, 0);
 
+    // Count total docs (sources) across all packs
+    const totalDocs = packs.reduce((sum, pack) => {
+        return sum + (pack.docs || []).reduce((docSum, doc) => {
+            return docSum + (doc.sources?.length || 0);
+        }, 0);
+    }, 0);
+
     // Update counter badges
     document.querySelector('#packs-badge .counter-number').textContent = packs.length;
     document.querySelector('#skills-badge .counter-number').textContent = totalSkills;
     document.querySelector('#agents-badge .counter-number').textContent = totalAgents;
+    document.querySelector('#docs-badge .counter-number').textContent = totalDocs;
     document.querySelector('#mcp-badge .counter-number').textContent = mcpServers.length;
 }
 
@@ -129,6 +137,16 @@ function createPackCard(pack) {
     const agentSpan = document.createElement('span');
     agentSpan.textContent = `${pack.agents.length} agent${pack.agents.length !== 1 ? 's' : ''}`;
     stats.appendChild(agentSpan);
+
+    // Add docs count (count sources, not doc files)
+    const docsCount = (pack.docs || []).reduce((sum, doc) => {
+        return sum + (doc.sources?.length || 0);
+    }, 0);
+    if (docsCount > 0) {
+        const docsSpan = document.createElement('span');
+        docsSpan.textContent = `${docsCount} doc${docsCount !== 1 ? 's' : ''}`;
+        stats.appendChild(docsSpan);
+    }
 
     div.appendChild(stats);
 
