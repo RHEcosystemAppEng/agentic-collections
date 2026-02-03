@@ -40,7 +40,6 @@ jobs:
       - name: Install dependencies and generate documentation
         run: |
           source $HOME/.cargo/env
-          uv venv  # Create the virtual environment
           make install
           make generate
 
