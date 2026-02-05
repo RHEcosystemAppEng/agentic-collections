@@ -8,7 +8,7 @@ Site Reliability Engineering tools and automation for managing Red Hat platforms
 ## Overview
 
 The rh-sre collection is a reference implementation demonstrating the full agentic architecture with:
-- **7 specialized skills** for discrete SRE tasks
+- **10 specialized skills** for discrete SRE tasks
 - **1 orchestration agent** for complex workflows
 - **AI-optimized documentation** with semantic indexing
 - **2 MCP server integrations** for Red Hat platform access
@@ -53,7 +53,7 @@ claude plugin list --json | jq '[.[] | select(.id | contains("redhat"))]'
 
 ## Skills
 
-The pack provides 7 specialized skills for common SRE operations:
+The pack provides 10 specialized skills for common SRE operations:
 
 ### 1. **fleet-inventory** - System Discovery and Fleet Management
 Query and display Red Hat Lightspeed managed system inventory.
@@ -148,11 +148,55 @@ Verify that CVE remediations were successfully applied.
 - Verifies package updates
 - Confirms remediation success
 
+### 8. **mcp-lightspeed-validator** - Lightspeed MCP Server Validation
+Validate Red Hat Lightspeed MCP server configuration and connectivity.
+
+**Use when:**
+- "Validate Lightspeed MCP"
+- "Check if Lightspeed is configured"
+- "Verify Lightspeed connection"
+- Other skills need to verify lightspeed-mcp availability
+
+**What it does:**
+- Checks MCP server configuration in .mcp.json
+- Verifies environment variables (CLIENT_ID, CLIENT_SECRET)
+- Tests server connectivity and tool availability
+- Reports validation status (PASSED/PARTIAL/FAILED)
+
+### 9. **mcp-ansible-validator** - Ansible MCP Server Validation
+Validate Ansible MCP server configuration (mock implementation).
+
+**Use when:**
+- "Validate Ansible MCP"
+- "Check ansible-mcp-server"
+- "Verify playbook execution setup"
+
+**What it does:**
+- Checks ansible-mcp-server configuration
+- Verifies volume mount setup (/tmp:/playbooks)
+- Tests mock server connectivity
+- Reports validation status
+
+### 10. **execution-summary** - Workflow Execution Report
+Generate concise execution reports for audit and learning purposes.
+
+**Use when:**
+- "Generate execution summary"
+- "Create execution report"
+- "Summarize what was used"
+- "Show execution summary"
+
+**What it does:**
+- Analyzes conversation history
+- Extracts agents, skills, tools, and docs used
+- Formats in machine-readable format
+- Provides audit trail for workflows
+
 ## Agent
 
 ### **remediator** - End-to-End CVE Remediation Orchestration
 
-The remediator agent orchestrates all 7 skills to provide complete CVE remediation workflows.
+The remediator agent orchestrates the CVE-related skills to provide complete CVE remediation workflows.
 
 **Use when:**
 - "Remediate CVE-2024-1234 on system abc-123"
@@ -180,11 +224,13 @@ The remediator agent orchestrates all 7 skills to provide complete CVE remediati
 | "Show the managed fleet" | **fleet-inventory skill** | Fleet discovery |
 | "What are the critical CVEs?" | **cve-impact skill** | CVE listing |
 | "Is CVE-X valid?" | **cve-validation skill** | Single validation |
+| "Validate Lightspeed MCP" | **mcp-lightspeed-validator skill** | MCP server validation |
+| "Generate execution summary" | **execution-summary skill** | Audit trail reporting |
 | "Remediate CVE-2024-1234" | **remediator agent** | Multi-step workflow |
 | "Create playbook for CVE-X" | **remediator agent** | Orchestration needed |
 | "Was CVE-Y patched?" | **remediation-verifier skill** | Standalone check |
 
-**General Rule**: Skills for information gathering, agent for remediation actions.
+**General Rule**: Skills for information gathering and validation, agent for remediation actions.
 
 ## Documentation
 
@@ -382,7 +428,10 @@ rh-sre/
 │   ├── system-context/SKILL.md
 │   ├── playbook-generator/SKILL.md
 │   ├── playbook-executor/SKILL.md
-│   └── remediation-verifier/SKILL.md
+│   ├── remediation-verifier/SKILL.md
+│   ├── mcp-lightspeed-validator/SKILL.md
+│   ├── mcp-ansible-validator/SKILL.md
+│   └── execution-summary/SKILL.md
 └── docs/                        # AI-optimized documentation
     ├── INDEX.md
     ├── SOURCES.md
