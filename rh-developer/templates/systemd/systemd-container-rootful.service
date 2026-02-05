@@ -1,0 +1,27 @@
+# Rootful Podman container managed by systemd (system service)
+# Location: /etc/systemd/system/${APP_NAME}.service
+#
+# Variables to replace:
+#   ${APP_NAME} - Application name
+#   ${PORT} - Container port mapping (host:container)
+#   ${IMAGE} - Container image reference
+
+[Unit]
+Description=${APP_NAME} Container
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStartPre=-/usr/bin/podman stop -t 10 ${APP_NAME}
+ExecStartPre=-/usr/bin/podman rm ${APP_NAME}
+ExecStart=/usr/bin/podman run --name ${APP_NAME} \
+    -p ${PORT}:${PORT} \
+    --rm \
+    ${IMAGE}
+ExecStop=/usr/bin/podman stop -t 10 ${APP_NAME}
+
+[Install]
+WantedBy=multi-user.target

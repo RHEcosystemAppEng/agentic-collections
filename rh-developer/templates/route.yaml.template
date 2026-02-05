@@ -1,0 +1,21 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ${APP_NAME}
+  namespace: ${NAMESPACE}
+  labels:
+    app: ${APP_NAME}
+    app.kubernetes.io/name: ${APP_NAME}
+    app.kubernetes.io/component: route
+    app.kubernetes.io/part-of: ${APP_NAME}
+spec:
+  to:
+    kind: Service
+    name: ${APP_NAME}
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

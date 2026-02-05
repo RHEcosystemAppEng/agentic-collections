@@ -1,0 +1,32 @@
+Congratulations! Your application {{ include "${APP_NAME}.fullname" . }} has been deployed.
+
+{{- if .Values.route.enabled }}
+
+Access your application at:
+{{- if .Values.route.host }}
+  https://{{ .Values.route.host }}
+{{- else }}
+  Run: oc get route {{ include "${APP_NAME}.fullname" . }} -o jsonpath='{.spec.host}'
+{{- end }}
+
+{{- else }}
+
+Your application is available internally at:
+  {{ include "${APP_NAME}.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+To expose it externally, create a Route or set route.enabled=true.
+
+{{- end }}
+
+Useful commands:
+  # View pods
+  oc get pods -l app.kubernetes.io/name={{ include "${APP_NAME}.name" . }}
+
+  # View logs
+  oc logs -l app.kubernetes.io/name={{ include "${APP_NAME}.name" . }} -f
+
+  # Upgrade release
+  helm upgrade {{ .Release.Name }} ./{{ .Chart.Name }} -f values.yaml
+
+  # Uninstall release
+  helm uninstall {{ .Release.Name }}

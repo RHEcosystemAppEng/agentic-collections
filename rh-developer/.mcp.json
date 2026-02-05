@@ -1,0 +1,45 @@
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": ["-y", "kubernetes-mcp-server@latest"],
+      "env": {
+        "KUBECONFIG": "${KUBECONFIG}"
+      },
+      "description": "Kubernetes/OpenShift MCP server for cluster management, resource operations, and Helm deployments",
+      "security": {
+        "isolation": "process",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    },
+    "podman": {
+      "command": "npx",
+      "args": ["-y", "podman-mcp-server@latest"],
+      "env": {},
+      "description": "Podman MCP server for container image management and local builds",
+      "security": {
+        "isolation": "process",
+        "network": "local",
+        "credentials": "none"
+      }
+    },
+    "github": {
+      "command": "podman",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "description": "GitHub MCP server for repository browsing and code analysis",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    }
+  }
+}

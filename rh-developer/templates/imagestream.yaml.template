@@ -1,0 +1,13 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: ${APP_NAME}
+  namespace: ${NAMESPACE}
+  labels:
+    app: ${APP_NAME}
+    app.kubernetes.io/name: ${APP_NAME}
+    app.kubernetes.io/component: image
+    app.kubernetes.io/part-of: ${APP_NAME}
+spec:
+  lookupPolicy:
+    local: false

@@ -20,6 +20,19 @@
       "category": "sre",
       "agents": "./agents/remediator.md",
       "skills": "./skills"
+    },
+    {
+      "name": "rh-developer",
+      "description": "Developer Agentic Collection",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "source": "./rh-developer",
+      "category": "developer",
+      "agents": ["./agents/error-handling.md", "./agents/s2i-builder-images.md"],
+      "skills": "./skills"
     }
   ]
 }

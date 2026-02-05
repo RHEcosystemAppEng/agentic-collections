@@ -1,0 +1,40 @@
+# Native application managed by systemd (system service)
+# Location: /etc/systemd/system/${APP_NAME}.service
+#
+# Variables to replace:
+#   ${APP_NAME} - Application name
+#   ${SERVICE_USER} - User to run the service as
+#   ${APP_PATH} - Application install path (e.g., /opt/app-name)
+#   ${PORT} - Application listen port
+#   ${START_COMMAND} - Application start command
+#
+# Start command examples by language:
+#   Node.js:  /usr/bin/node ${APP_PATH}/server.js
+#   Python:   /usr/bin/python3 ${APP_PATH}/app.py
+#   Java:     /usr/bin/java -jar ${APP_PATH}/app.jar
+#   Go:       ${APP_PATH}/binary-name
+
+[Unit]
+Description=${APP_NAME} Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${SERVICE_USER}
+WorkingDirectory=${APP_PATH}
+Environment=NODE_ENV=production
+Environment=PORT=${PORT}
+ExecStart=${START_COMMAND}
+Restart=always
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=${APP_PATH}
+
+[Install]
+WantedBy=multi-user.target

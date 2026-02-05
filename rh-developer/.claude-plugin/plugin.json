@@ -1,0 +1,13 @@
+{
+  "name": "rh-developer",
+  "version": "1.0.0",
+  "description": "Developer Agentic Collection",
+  "author": {
+    "name": "Red Hat Ecosystem Engineering",
+    "email": "eco-engineering@redhat.com"
+  },
+  "homepage": "https://github.com/dmartinol/ai5-marketplaces",
+  "repository": "https://github.com/dmartinol/ai5-marketplaces",
+  "license": "Apache-2.0",
+  "keywords": ["developer", "openshift", "rhel", "s2i", "containerization", "deployment", "helm", "podman"]
+}

@@ -1,0 +1,38 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: ${APP_NAME}
+  namespace: ${NAMESPACE}
+  labels:
+    app: ${APP_NAME}
+    app.kubernetes.io/name: ${APP_NAME}
+    app.kubernetes.io/component: build
+    app.kubernetes.io/part-of: ${APP_NAME}
+spec:
+  source:
+    type: Git
+    git:
+      uri: ${GIT_URL}
+      ref: ${GIT_BRANCH}
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: DockerImage
+        name: ${BUILDER_IMAGE}
+      env: []
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ${APP_NAME}:latest
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+  runPolicy: Serial
+  resources:
+    limits:
+      memory: "1Gi"
+      cpu: "1"
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
