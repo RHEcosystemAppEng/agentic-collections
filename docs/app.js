@@ -392,27 +392,54 @@ function showPackDetails(packName) {
     const installSection = document.createElement('div');
     installSection.className = 'modal-section';
 
-    const installLabel = document.createElement('div');
-    installLabel.className = 'modal-section-label';
-    installLabel.textContent = 'Install this plugin:';
-    installSection.appendChild(installLabel);
+    const installHeader = document.createElement('div');
+    installHeader.className = 'modal-section-header';
+    installHeader.textContent = 'INSTALLATION';
+    installSection.appendChild(installHeader);
 
-    const codeWrapper = document.createElement('div');
-    codeWrapper.className = 'install-code-wrapper';
+    // Claude installation
+    const claudeLabel = document.createElement('div');
+    claudeLabel.className = 'modal-section-label';
+    claudeLabel.textContent = 'Claude Code:';
+    claudeLabel.style.marginTop = '1rem';
+    installSection.appendChild(claudeLabel);
 
-    const pre = document.createElement('pre');
-    const code = document.createElement('code');
-    code.textContent = `git clone https://github.com/RHEcosystemAppEng/agentic-collections\ncd agentic-collections/${pack.name}`;
-    pre.appendChild(code);
-    codeWrapper.appendChild(pre);
+    const claudeCodeWrapper = document.createElement('div');
+    claudeCodeWrapper.className = 'install-code-wrapper';
 
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-button';
-    copyBtn.textContent = 'Copy';
-    copyBtn.onclick = () => copyToClipboard(code.textContent, copyBtn);
-    codeWrapper.appendChild(copyBtn);
+    const claudePre = document.createElement('pre');
+    const claudeCode = document.createElement('code');
+    // Get plugin name from plugin.json or use pack name as fallback
+    const pluginName = pack.plugin.name || pack.name;
+    claudeCode.textContent = `claude plugin marketplace remove redhat-agentic-collections
+claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
+claude plugin install ${pluginName}`;
+    claudePre.appendChild(claudeCode);
+    claudeCodeWrapper.appendChild(claudePre);
 
-    installSection.appendChild(codeWrapper);
+    const claudeCopyBtn = document.createElement('button');
+    claudeCopyBtn.className = 'copy-button';
+    claudeCopyBtn.textContent = 'Copy';
+    claudeCopyBtn.onclick = () => copyToClipboard(claudeCode.textContent, claudeCopyBtn);
+    claudeCodeWrapper.appendChild(claudeCopyBtn);
+
+    installSection.appendChild(claudeCodeWrapper);
+
+    // Cursor installation
+    const cursorLabel = document.createElement('div');
+    cursorLabel.className = 'modal-section-label';
+    cursorLabel.textContent = 'Cursor:';
+    cursorLabel.style.marginTop = '1.5rem';
+    installSection.appendChild(cursorLabel);
+
+    const cursorNote = document.createElement('div');
+    cursorNote.style.color = 'var(--text-muted)';
+    cursorNote.style.fontSize = '0.9rem';
+    cursorNote.style.fontStyle = 'italic';
+    cursorNote.style.marginTop = '0.5rem';
+    cursorNote.textContent = 'Coming soon - Cursor support is planned for future releases';
+    installSection.appendChild(cursorNote);
+
     body.appendChild(installSection);
 
     // Agents section (shown first)

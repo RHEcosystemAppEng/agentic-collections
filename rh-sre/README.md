@@ -35,7 +35,7 @@ export LIGHTSPEED_CLIENT_SECRET="your-service-account-client-secret"
 Install the pack as a Claude Code plugin:
 
 ```bash
-claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections/tree/main
+claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
 claude plugin install sre-agents
 ```
 
