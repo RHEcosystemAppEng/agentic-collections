@@ -610,7 +610,7 @@ last_updated: YYYY-MM-DD
 ## Reference Implementation
 
 The `rh-sre` pack is the most complete implementation, demonstrating:
-- Full skill orchestration (7 skills)
+- Full skill orchestration (10 skills)
 - Agent-based workflows (remediator agent)
 - AI-optimized documentation system
 - MCP server integration
