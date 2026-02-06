@@ -1,0 +1,13 @@
+{
+  "name": "openshift-virtualization",
+  "version": "1.0.0",
+  "description": "OpenShift Virtualization Agentic Collection",
+  "author": {
+    "name": "Red Hat Ecosystem Engineering",
+    "email": "eco-engineering@redhat.com"
+  },
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "license": "Apache-2.0",
+  "keywords": ["red-hat", "kubevirt", "openshift", "virtualization"]
+}

@@ -555,5 +555,18 @@
         "description": "Get the current status of an Ansible playbook execution job. Returns job status, timestamps, and completion information."
       }
     ]
+  },
+  "openshift-virtualization": {
+    "repository": "https://github.com/openshift/openshift-mcp-server",
+    "tools": [
+      {
+        "name": "vm_create",
+        "description": "Create new VirtualMachine resources in OpenShift Virtualization. Accepts namespace (required), name (required), workload/OS (default: fedora), size (small/medium/large), storage (default: 30Gi), autostart flag (default: false), optional networks (Multus NetworkAttachmentDefinitions), performance family hint (u1/o1/c1/m1), instance type, and preference. Automatically resolves instance types, preferences, and container disk images for common OS distributions (fedora, ubuntu, centos, centos-stream, debian, rhel, opensuse). Returns created VirtualMachine resource or error details."
+      },
+      {
+        "name": "vm_lifecycle",
+        "description": "Manage VirtualMachine power state and lifecycle operations in OpenShift Virtualization. Accepts namespace (required), name (required), and action (required: start/stop/restart). Start sets runStrategy to Always (VM runs and auto-restarts on crash), stop sets runStrategy to Halted (VM stops and stays off), restart performs stop then start sequence. Returns updated VirtualMachine state or error if VM not found, permission denied, or already in desired state."
+      }
+    ]
   }
 }

@@ -33,6 +33,18 @@
       "category": "developer",
       "agents": [],
       "skills": "./skills"
+    },
+    {
+      "name": "openshift-virtualization",
+      "description": "OpenShift Virtualization Agentic Collection",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "source": "./rh-virt",
+      "category": "virtualization",
+      "skills": "./skills"
     }
   ]
 }

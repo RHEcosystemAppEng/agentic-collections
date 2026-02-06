@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "openshift-virtualization": {
+      "command": "npx",
+      "args": ["-y", "@openshift/openshift-mcp-server", "--toolset", "kubevirt"],
+      "env": {
+        "KUBECONFIG": "${KUBECONFIG}"
+      }
+    }
+  }
+}
