@@ -31,7 +31,7 @@
       },
       "source": "./rh-developer",
       "category": "developer",
-      "agents": ["./agents/error-handling.md", "./agents/s2i-builder-images.md"],
+      "agents": [],
       "skills": "./skills"
     }
   ]
