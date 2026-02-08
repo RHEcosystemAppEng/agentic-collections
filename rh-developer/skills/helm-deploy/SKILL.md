@@ -44,8 +44,6 @@ Is this the correct cluster and namespace? (yes/no)
 
 If user says "no", wait for them to switch context and tell you to continue.
 
-If connection fails, refer to error-handling-agent for authentication error patterns.
-
 ### Step 2: Detect Helm Chart
 
 Search for Helm charts in this order:

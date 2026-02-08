@@ -306,8 +306,6 @@ Here's what I'll create on OpenShift:
 Continue to deployment? (yes/no)
 ```
 
-If build fails, follow error handling from error-handling-agent.
-
 ### Phase 6: Pre-Deploy Summary
 
 ```markdown
@@ -362,8 +360,6 @@ If build fails, follow error handling from error-handling-agent.
 
 Rollout complete!
 ```
-
-If deployment fails, follow error handling from error-handling-agent.
 
 ---
 

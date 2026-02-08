@@ -47,8 +47,6 @@ Is this the correct cluster and namespace for the build?
 
 If user says "no", wait for them to switch context and tell you to continue.
 
-If connection fails, show error from error-handling-agent.
-
 ### Step 2: Gather Build Information
 
 Collect required information (from /detect-project or ask user):
