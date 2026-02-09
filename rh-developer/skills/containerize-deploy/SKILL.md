@@ -306,8 +306,6 @@ Here's what I'll create on OpenShift:
 Continue to deployment? (yes/no)
 ```
 
-If build fails, follow error handling from error-handling-agent.
-
 ### Phase 6: Pre-Deploy Summary
 
 ```markdown
@@ -362,8 +360,6 @@ If build fails, follow error handling from error-handling-agent.
 
 Rollout complete!
 ```
-
-If deployment fails, follow error handling from error-handling-agent.
 
 ---
 
@@ -483,5 +479,5 @@ All tools from child skills:
 | Connect | `resources_list` (namespaces) |
 | Build | `resources_create_or_update`, `pod_logs`, `events_list` |
 | Deploy | `resources_create_or_update`, `pod_list`, `pod_logs` |
-| Helm | `helm_install`, `helm_upgrade`, `helm_status`, `helm_list`, `pod_list` |
+| Helm | `helm_install`, `helm_upgrade`, `helm_status`, `helm_list`, `pods_list` |
 | Rollback | `resources_delete`, `helm_uninstall`, `helm_rollback` |

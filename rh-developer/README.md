@@ -1,6 +1,35 @@
 # Red Hat Developer Agentic Pack
 
-Development tools and skills for building applications on Red Hat platforms. This pack provides automation capabilities for development workflows including application deployment, CI/CD integration, containerization, and developer productivity.
+A Claude Code plugin for building and deploying applications on Red Hat platforms.
 
-**Persona**: Developer
-**Marketplaces**: Claude Code, Cursor
+## Skills
+
+| Command                  | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `/detect-project`      | Analyze project to detect language, framework, and version                                 |
+| `/recommend-image`     | Recommend optimal S2I builder or base image                                                |
+| `/s2i-build`           | Build container images using Source-to-Image on OpenShift                                  |
+| `/deploy`              | Deploy container images to OpenShift with Service and Route                                |
+| `/helm-deploy`         | Deploy applications using Helm charts                                                      |
+| `/rhel-deploy`         | Deploy to standalone RHEL/Fedora systems via SSH                                           |
+| `/containerize-deploy` | End-to-end workflow from source to running app (use if not sure which strategy to choose)) |
+
+## Prerequisites
+
+- OpenShift cluster access (for S2I and OpenShift deployments)
+- Podman installed locally
+- GitHub personal access token (for GitHub integration)
+
+## MCP Servers
+
+- **openshift** - OpenShift cluster management and Helm deployments
+- **podman** - Container image management and local builds
+- **github** - Repository browsing and code analysis
+
+## Supported Languages
+
+Node.js, Python, Java, Go, Ruby, .NET, PHP, Perl
+
+## Installation
+
+Add this plugin to your Claude Code configuration.

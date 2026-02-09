@@ -1,3 +1,17 @@
+---
+title: Dynamic Image Validation Reference
+category: containers
+sources:
+  - title: Skopeo Documentation
+    url: https://github.com/containers/skopeo
+    sections: Inspecting images, Copying images
+    date_accessed: 2026-02-08
+  - title: Red Hat Security Data API
+    url: https://access.redhat.com/documentation/en-us/red_hat_security_data_api/1.0
+    sections: CVE queries, Product filtering
+    date_accessed: 2026-02-08
+---
+
 # Dynamic Image Validation Reference
 
 This document provides detailed patterns for validating container images using Skopeo and the Red Hat Security Data API.

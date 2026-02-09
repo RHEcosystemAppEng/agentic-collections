@@ -1,3 +1,17 @@
+---
+title: Python S2I Entry Point Requirements
+category: containers
+sources:
+  - title: UBI Python S2I Builder
+    url: https://github.com/sclorg/s2i-python-container
+    sections: Run script logic, APP_MODULE configuration
+    date_accessed: 2026-02-08
+  - title: Red Hat Python S2I Documentation
+    url: https://catalog.redhat.com/software/containers/ubi9/python-311
+    sections: Environment variables, Startup behavior
+    date_accessed: 2026-02-08
+---
+
 # Python S2I Entry Point Requirements
 
 The UBI Python S2I builder has specific startup logic that must be understood to avoid deployment failures.

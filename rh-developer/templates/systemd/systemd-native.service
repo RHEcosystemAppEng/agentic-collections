@@ -23,7 +23,6 @@ Wants=network-online.target
 Type=simple
 User=${SERVICE_USER}
 WorkingDirectory=${APP_PATH}
-Environment=NODE_ENV=production
 Environment=PORT=${PORT}
 ExecStart=${START_COMMAND}
 Restart=always

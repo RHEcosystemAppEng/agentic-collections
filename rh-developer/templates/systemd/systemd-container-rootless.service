@@ -3,7 +3,7 @@
 #
 # Variables to replace:
 #   ${APP_NAME} - Application name
-#   ${PORT} - Container port mapping (host:container)
+#   ${PORT} - Port number (used for both host and container binding)
 #   ${IMAGE} - Container image reference
 
 [Unit]

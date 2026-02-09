@@ -1,4 +1,387 @@
 {
+  "openshift-mcp-server": {
+    "repository": "https://github.com/openshift/openshift-mcp-server",
+    "tools": [
+      {
+        "name": "events_list",
+        "description": "List Kubernetes events from all or specific namespaces"
+      },
+      {
+        "name": "namespaces_list",
+        "description": "List all Kubernetes namespaces in the cluster"
+      },
+      {
+        "name": "projects_list",
+        "description": "List all OpenShift projects in the cluster"
+      },
+      {
+        "name": "nodes_log",
+        "description": "Get logs from Kubernetes nodes (kubelet, kube-proxy, system logs)"
+      },
+      {
+        "name": "nodes_stats_summary",
+        "description": "Get detailed resource usage statistics from nodes"
+      },
+      {
+        "name": "nodes_top",
+        "description": "List CPU and memory consumption for nodes"
+      },
+      {
+        "name": "pods_list",
+        "description": "List all pods in the cluster from all namespaces"
+      },
+      {
+        "name": "pods_list_in_namespace",
+        "description": "List pods in a specific namespace"
+      },
+      {
+        "name": "pods_get",
+        "description": "Get a specific pod by name and namespace"
+      },
+      {
+        "name": "pods_delete",
+        "description": "Delete a pod by name and namespace"
+      },
+      {
+        "name": "pods_top",
+        "description": "List resource consumption for pods"
+      },
+      {
+        "name": "pods_exec",
+        "description": "Execute commands in pod containers"
+      },
+      {
+        "name": "pods_log",
+        "description": "Get logs from pod containers"
+      },
+      {
+        "name": "pods_run",
+        "description": "Run a new pod with specified container image"
+      },
+      {
+        "name": "resources_list",
+        "description": "List Kubernetes resources by apiVersion and kind"
+      },
+      {
+        "name": "resources_get",
+        "description": "Get specific Kubernetes resources"
+      },
+      {
+        "name": "resources_create_or_update",
+        "description": "Create or update resources from YAML/JSON"
+      },
+      {
+        "name": "resources_delete",
+        "description": "Delete Kubernetes resources"
+      },
+      {
+        "name": "resources_scale",
+        "description": "Get or update resource scale (replicas)"
+      },
+      {
+        "name": "configuration_contexts_list",
+        "description": "List available kubeconfig contexts and server URLs"
+      },
+      {
+        "name": "targets_list",
+        "description": "List all available targets"
+      },
+      {
+        "name": "configuration_view",
+        "description": "Get current Kubernetes configuration as YAML"
+      },
+      {
+        "name": "helm_install",
+        "description": "Install Helm charts with optional values"
+      },
+      {
+        "name": "helm_list",
+        "description": "List Helm releases in namespaces"
+      },
+      {
+        "name": "helm_uninstall",
+        "description": "Uninstall Helm releases"
+      },
+      {
+        "name": "prometheus_query",
+        "description": "Execute instant PromQL queries for current metrics"
+      },
+      {
+        "name": "prometheus_query_range",
+        "description": "Execute range PromQL queries for time-series data"
+      },
+      {
+        "name": "alertmanager_alerts",
+        "description": "Query active and pending alerts from Alertmanager"
+      },
+      {
+        "name": "vm_create",
+        "description": "Create virtual machines with instance types and preferences (KubeVirt)"
+      },
+      {
+        "name": "vm_lifecycle",
+        "description": "Manage VM lifecycle - start, stop, restart (KubeVirt)"
+      },
+      {
+        "name": "kcp_workspaces_list",
+        "description": "List available kcp workspaces"
+      },
+      {
+        "name": "kcp_workspace_describe",
+        "description": "Get detailed workspace information"
+      },
+      {
+        "name": "ossm_mesh_graph",
+        "description": "Get mesh topology and health overview (OpenShift Service Mesh)"
+      },
+      {
+        "name": "ossm_manage_istio_config_read",
+        "description": "List or get Istio configuration objects"
+      },
+      {
+        "name": "ossm_manage_istio_config",
+        "description": "Create, patch, or delete Istio configurations"
+      },
+      {
+        "name": "ossm_get_resource_details",
+        "description": "Get details for mesh services and workloads"
+      },
+      {
+        "name": "ossm_get_metrics",
+        "description": "Get traffic metrics for mesh resources"
+      },
+      {
+        "name": "ossm_workload_logs",
+        "description": "Get logs for workload pods"
+      },
+      {
+        "name": "ossm_get_traces",
+        "description": "Get distributed traces for mesh resources"
+      }
+    ]
+  },
+  "podman-mcp-server": {
+    "repository": "https://github.com/containers/podman-mcp-server",
+    "tools": [
+      {
+        "name": "container_inspect",
+        "description": "Displays the low-level information and configuration of a Docker or Podman container with the specified container ID or name"
+      },
+      {
+        "name": "container_list",
+        "description": "Prints out information about the running Docker or Podman containers"
+      },
+      {
+        "name": "container_logs",
+        "description": "Displays the logs of a Docker or Podman container with the specified container ID or name"
+      },
+      {
+        "name": "container_remove",
+        "description": "Removes a Docker or Podman container with the specified container ID or name"
+      },
+      {
+        "name": "container_run",
+        "description": "Runs a Docker or Podman container with the specified image name"
+      },
+      {
+        "name": "container_stop",
+        "description": "Stops a Docker or Podman running container with the specified container ID or name"
+      },
+      {
+        "name": "image_build",
+        "description": "Build a Docker or Podman image from a Dockerfile, Podmanfile, or Containerfile"
+      },
+      {
+        "name": "image_list",
+        "description": "List the Docker or Podman images on the local machine"
+      },
+      {
+        "name": "image_pull",
+        "description": "Copies (pulls) a Docker or Podman container image from a registry onto the local machine storage"
+      },
+      {
+        "name": "image_push",
+        "description": "Pushes a Docker or Podman container image from local machine storage to a registry"
+      },
+      {
+        "name": "image_remove",
+        "description": "Removes a Docker or Podman image from the local machine storage"
+      },
+      {
+        "name": "network_list",
+        "description": "List all the available Docker or Podman networks"
+      },
+      {
+        "name": "volume_list",
+        "description": "List all the available Docker or Podman volumes"
+      }
+    ]
+  },
+  "github-mcp-server": {
+    "repository": "https://github.com/github/github-mcp-server",
+    "tools": [
+      {
+        "name": "add_comment_to_pending_review",
+        "description": "Add review comment to the requester's latest pending pull request review"
+      },
+      {
+        "name": "add_issue_comment",
+        "description": "Add a comment to a specific issue in a GitHub repository"
+      },
+      {
+        "name": "assign_copilot_to_issue",
+        "description": "Assign Copilot to a specific issue in a GitHub repository"
+      },
+      {
+        "name": "create_branch",
+        "description": "Create a new branch in a GitHub repository"
+      },
+      {
+        "name": "create_or_update_file",
+        "description": "Create or update a single file in a GitHub repository"
+      },
+      {
+        "name": "create_pull_request",
+        "description": "Create a new pull request in a GitHub repository"
+      },
+      {
+        "name": "create_repository",
+        "description": "Create a new GitHub repository in your account or specified organization"
+      },
+      {
+        "name": "delete_file",
+        "description": "Delete a file from a GitHub repository"
+      },
+      {
+        "name": "fork_repository",
+        "description": "Fork a GitHub repository to your account or specified organization"
+      },
+      {
+        "name": "get_commit",
+        "description": "Get details for a commit from a GitHub repository"
+      },
+      {
+        "name": "get_file_contents",
+        "description": "Get the contents of a file or directory from a GitHub repository"
+      },
+      {
+        "name": "get_label",
+        "description": "Get a specific label from a repository"
+      },
+      {
+        "name": "get_latest_release",
+        "description": "Get the latest release in a GitHub repository"
+      },
+      {
+        "name": "get_me",
+        "description": "Get details of the authenticated GitHub user"
+      },
+      {
+        "name": "get_release_by_tag",
+        "description": "Get a specific release by its tag name in a GitHub repository"
+      },
+      {
+        "name": "get_tag",
+        "description": "Get details about a specific git tag in a GitHub repository"
+      },
+      {
+        "name": "get_team_members",
+        "description": "Get member usernames of a specific team in an organization"
+      },
+      {
+        "name": "get_teams",
+        "description": "Get details of the teams the user is a member of"
+      },
+      {
+        "name": "issue_read",
+        "description": "Get information about a specific issue in a GitHub repository"
+      },
+      {
+        "name": "issue_write",
+        "description": "Create a new or update an existing issue in a GitHub repository"
+      },
+      {
+        "name": "list_branches",
+        "description": "List branches in a GitHub repository"
+      },
+      {
+        "name": "list_commits",
+        "description": "Get list of commits of a branch in a GitHub repository"
+      },
+      {
+        "name": "list_issue_types",
+        "description": "List supported issue types for repository owner (organization)"
+      },
+      {
+        "name": "list_issues",
+        "description": "List issues in a GitHub repository"
+      },
+      {
+        "name": "list_pull_requests",
+        "description": "List pull requests in a GitHub repository"
+      },
+      {
+        "name": "list_releases",
+        "description": "List releases in a GitHub repository"
+      },
+      {
+        "name": "list_tags",
+        "description": "List git tags in a GitHub repository"
+      },
+      {
+        "name": "merge_pull_request",
+        "description": "Merge a pull request in a GitHub repository"
+      },
+      {
+        "name": "pull_request_read",
+        "description": "Get information on a specific pull request in GitHub repository"
+      },
+      {
+        "name": "pull_request_review_write",
+        "description": "Create and/or submit, delete review of a pull request"
+      },
+      {
+        "name": "push_files",
+        "description": "Push multiple files to a GitHub repository in a single commit"
+      },
+      {
+        "name": "request_copilot_review",
+        "description": "Request a GitHub Copilot code review for a pull request"
+      },
+      {
+        "name": "search_code",
+        "description": "Fast and precise code search across ALL GitHub repositories using GitHub's native search engine"
+      },
+      {
+        "name": "search_issues",
+        "description": "Search for issues in GitHub repositories using issues search syntax"
+      },
+      {
+        "name": "search_pull_requests",
+        "description": "Search for pull requests in GitHub repositories using issues search syntax"
+      },
+      {
+        "name": "search_repositories",
+        "description": "Find GitHub repositories by name, description, readme, topics, or other metadata"
+      },
+      {
+        "name": "search_users",
+        "description": "Find GitHub users by username, real name, or other profile information"
+      },
+      {
+        "name": "sub_issue_write",
+        "description": "Add a sub-issue to a parent issue in a GitHub repository"
+      },
+      {
+        "name": "update_pull_request",
+        "description": "Update an existing pull request in a GitHub repository"
+      },
+      {
+        "name": "update_pull_request_branch",
+        "description": "Update the branch of a pull request with the latest changes from the base branch"
+      }
+    ]
+  },
   "lightspeed-mcp": {
     "repository": "https://github.com/RedHatInsights/insights-mcp/tree/main",
     "tools": [

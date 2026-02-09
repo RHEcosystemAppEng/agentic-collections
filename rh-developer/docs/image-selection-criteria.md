@@ -1,3 +1,17 @@
+---
+title: Image Selection Criteria Reference
+category: containers
+sources:
+  - title: Red Hat Container Best Practices
+    url: https://developers.redhat.com/articles/2023/02/14/best-practices-building-images-pass-red-hat-container-certification
+    sections: Image sizing, Security considerations
+    date_accessed: 2026-02-08
+  - title: OpenShift Image Guidelines
+    url: https://docs.openshift.com/container-platform/latest/openshift_images/create-images.html
+    sections: Image creation, Optimization
+    date_accessed: 2026-02-08
+---
+
 # Image Selection Criteria Reference
 
 This document provides detailed criteria for selecting the optimal container image based on use case requirements.

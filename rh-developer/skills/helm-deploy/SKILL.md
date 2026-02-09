@@ -44,8 +44,6 @@ Is this the correct cluster and namespace? (yes/no)
 
 If user says "no", wait for them to switch context and tell you to continue.
 
-If connection fails, refer to error-handling-agent for authentication error patterns.
-
 ### Step 2: Detect Helm Chart
 
 Search for Helm charts in this order:
@@ -160,7 +158,7 @@ Before installing, check if a release with the same name exists:
 ```markdown
 ## Checking for Existing Release...
 
-[Use mcp_kubernetes_helm_list to check]
+[Use helm_list to check]
 ```
 
 **If release exists:**
@@ -271,7 +269,7 @@ helm install [release-name] [chart-path] -n [namespace] [--set options]
 
 ### Step 7: Execute Deployment
 
-Use kubernetes MCP `mcp_kubernetes_helm_install` or `mcp_kubernetes_helm_upgrade`:
+Use kubernetes MCP `helm_install` or `helm_upgrade`:
 
 ```markdown
 ## Deploying with Helm...
@@ -298,7 +296,7 @@ Waiting for resources to be ready...
 ---
 ```
 
-Monitor pod status using `mcp_kubernetes_pods_list_in_namespace` until pods are ready or timeout.
+Monitor pod status using `pods_list_in_namespace` until pods are ready or timeout.
 
 ### Step 8: Deployment Complete
 
@@ -355,16 +353,16 @@ Your application is live!
 
 | Tool | Purpose |
 |------|---------|
-| `mcp_kubernetes_helm_list` | Check existing releases |
-| `mcp_kubernetes_helm_install` | Install new release |
-| `mcp_kubernetes_helm_upgrade` | Upgrade existing release |
-| `mcp_kubernetes_helm_status` | Get release status |
-| `mcp_kubernetes_helm_history` | Get release history |
-| `mcp_kubernetes_helm_rollback` | Rollback to revision |
-| `mcp_kubernetes_helm_uninstall` | Remove release |
-| `mcp_kubernetes_pods_list_in_namespace` | Monitor pod status |
-| `mcp_kubernetes_pods_log` | View pod logs |
-| `mcp_kubernetes_events_list` | Check for errors |
+| `helm_list` | Check existing releases |
+| `helm_install` | Install new release |
+| `helm_upgrade` | Upgrade existing release |
+| `helm_status` | Get release status |
+| `helm_history` | Get release history |
+| `helm_rollback` | Rollback to revision |
+| `helm_uninstall` | Remove release |
+| `pods_list_in_namespace` | Monitor pod status |
+| `pods_log` | View pod logs |
+| `events_list` | Check for errors |
 
 ## Output Variables
 

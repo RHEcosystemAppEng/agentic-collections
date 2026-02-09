@@ -1,14 +1,19 @@
 {
   "mcpServers": {
-    "kubernetes": {
-      "command": "npx",
-      "args": ["-y", "kubernetes-mcp-server@latest"],
+    "openshift": {
+      "command": "podman",
+      "args": [
+        "run", "-i", "--rm",
+        "-v", "${HOME}/.kube:/home/nonroot/.kube:ro",
+        "-e", "KUBECONFIG=/home/nonroot/.kube/config",
+        "quay.io/redhat-user-workloads/ocp-mcp-server-tenant/openshift-mcp-server-release-010:latest"
+      ],
       "env": {
         "KUBECONFIG": "${KUBECONFIG}"
       },
-      "description": "Kubernetes/OpenShift MCP server for cluster management, resource operations, and Helm deployments",
+      "description": "OpenShift MCP server for cluster management, resource operations, and Helm deployments",
       "security": {
-        "isolation": "process",
+        "isolation": "container",
         "network": "local",
         "credentials": "env-only"
       }

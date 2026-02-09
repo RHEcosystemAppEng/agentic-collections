@@ -1,3 +1,21 @@
+---
+title: RHEL Deployment Reference
+category: deployment
+sources:
+  - title: RHEL System Administrator's Guide - systemd
+    url: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_basic_system_settings/managing-system-services-with-systemctl_configuring-basic-system-settings
+    sections: Managing services, Unit files
+    date_accessed: 2026-02-08
+  - title: RHEL SELinux Guide
+    url: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux
+    sections: Contexts, Port labeling
+    date_accessed: 2026-02-08
+  - title: RHEL Firewall Configuration
+    url: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters
+    sections: firewalld, Opening ports
+    date_accessed: 2026-02-08
+---
+
 # RHEL Deployment Reference
 
 Reference material for deploying applications to standalone RHEL systems.
