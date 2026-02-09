@@ -10,7 +10,7 @@
         "--userns=keep-id:uid=65532,gid=65532",
         "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
         "--entrypoint", "/app/kubernetes-mcp-server",
-        "localhost/openshift-mcp-server:latest",
+        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
         "--kubeconfig", "/kubeconfig",
         "--toolsets", "core,kubevirt"
       ],

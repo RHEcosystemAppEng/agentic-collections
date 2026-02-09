@@ -67,12 +67,13 @@ The OpenShift MCP server is not published to public registries, so you need to b
 3. Verify the image was built successfully:
    ```bash
    podman images localhost/openshift-mcp-server:latest
+   podman tag localhost/openshift-mcp-server:latest quay.io/ecosystem-appeng/openshift-mcp-server:latest
    ```
 
    Expected output:
    ```
-   REPOSITORY                      TAG         IMAGE ID      CREATED        SIZE
-   localhost/openshift-mcp-server  latest      <image-id>    <timestamp>    ~192 MB
+   REPOSITORY                                            TAG         IMAGE ID      CREATED        SIZE
+   quay.io/ecosystem-appeng/openshift-mcp-server:latest  latest      <image-id>    <timestamp>    ~192 MB
    ```
 
 **Note**: The build process takes several minutes as it compiles the Go binary and downloads dependencies. The final image size is approximately 192 MB.
@@ -207,7 +208,7 @@ The server provides two toolsets enabled via `--toolsets core,kubevirt`:
         "--userns=keep-id:uid=65532,gid=65532",
         "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
         "--entrypoint", "/app/kubernetes-mcp-server",
-        "localhost/openshift-mcp-server:latest",
+        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
         "--kubeconfig", "/kubeconfig",
         "--toolsets", "core,kubevirt"
       ],
@@ -317,7 +318,7 @@ MCP server is configured in `.mcp.json`:
         "--userns=keep-id:uid=65532,gid=65532",
         "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
         "--entrypoint", "/app/kubernetes-mcp-server",
-        "localhost/openshift-mcp-server:latest",
+        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
         "--kubeconfig", "/kubeconfig",
         "--toolsets", "core,kubevirt"
       ],
@@ -336,7 +337,7 @@ MCP server is configured in `.mcp.json`:
 ```
 
 **Key Configuration Notes**:
-- Uses Podman to run locally-built container image `localhost/openshift-mcp-server:latest`
+- Uses Podman to run locally-built container image `quay.io/ecosystem-appeng/openshift-mcp-server:latest`
 - `--userns=keep-id:uid=65532,gid=65532` - Enables rootless container security with user namespace mapping
 - Mounts `KUBECONFIG` as read-only volume inside container with `,Z` for SELinux labeling
 - `--entrypoint /app/kubernetes-mcp-server` - Specifies the MCP server binary

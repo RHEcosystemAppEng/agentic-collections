@@ -75,12 +75,7 @@ When prerequisites fail:
 ❌ Cannot execute vm-lifecycle-manager: MCP server 'openshift-virtualization' is not available
 
 📋 Setup Instructions:
-1. Build the OpenShift MCP server container image locally:
-   git clone https://github.com/openshift/openshift-mcp-server.git
-   cd openshift-mcp-server
-   podman build -t localhost/openshift-mcp-server:latest -f Dockerfile .
-
-2. Add openshift-virtualization to .mcp.json:
+1. Add openshift-virtualization to .mcp.json:
    {
      "mcpServers": {
        "openshift-virtualization": {
@@ -93,7 +88,7 @@ When prerequisites fail:
            "--userns=keep-id:uid=65532,gid=65532",
            "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
            "--entrypoint", "/app/kubernetes-mcp-server",
-           "localhost/openshift-mcp-server:latest",
+           "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
            "--kubeconfig", "/kubeconfig",
            "--toolsets", "core,kubevirt"
          ],
@@ -104,10 +99,10 @@ When prerequisites fail:
      }
    }
 
-3. Set KUBECONFIG environment variable:
+2. Set KUBECONFIG environment variable:
    export KUBECONFIG="/path/to/your/kubeconfig"
 
-4. Restart Claude Code to reload MCP servers
+3. Restart Claude Code to reload MCP servers
 
 🔗 Documentation: https://github.com/openshift/openshift-mcp-server
 
