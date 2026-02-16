@@ -137,36 +137,393 @@ Please respond with your choice.
 - User wants to list VMs → Use `/vm-inventory` skill instead
 - User only wants information about VMs (not creation) → Use `/vm-inventory` skill instead
 
+## CRITICAL: MCP Tools First Policy
+
+**MANDATORY REQUIREMENT**: You MUST ALWAYS use MCP tools from the openshift-virtualization server for ALL cluster operations.
+
+**MCP Tools Available:**
+- `namespaces_list` - List all namespaces
+- `resources_list` - List resources (StorageClass, VirtualMachine, etc.)
+- `resources_get` - Get specific resource details
+- `resources_create_or_update` - Create or update resources
+- `resources_delete` - Delete resources
+- `pods_list` - List pods
+- `pods_exec` - Execute commands in pods
+- `events_list` - List cluster events
+- And many more...
+
+**Policy:**
+1. **ALWAYS check if an MCP tool exists** for the operation you need to perform
+2. **ONLY use kubectl/oc CLI commands** when:
+   - No equivalent MCP tool exists for that specific operation
+   - The MCP tool has been tried and failed
+   - You have explicit confirmation that the MCP approach is not possible
+
+**Examples:**
+- ❌ WRONG: `kubectl get namespaces` → ✅ CORRECT: Use `namespaces_list` MCP tool
+- ❌ WRONG: `kubectl get storageclass -o json` → ✅ CORRECT: Use `resources_list` MCP tool with apiVersion="storage.k8s.io/v1", kind="StorageClass"
+- ❌ WRONG: `kubectl get vm <name> -n <namespace>` → ✅ CORRECT: Use `resources_get` MCP tool with apiVersion="kubevirt.io/v1", kind="VirtualMachine"
+- ❌ WRONG: `kubectl config view --minify` → ⚠️ ACCEPTABLE: No MCP equivalent exists for kubeconfig context detection
+
+**Why this matters:**
+- MCP tools provide structured, validated outputs
+- Better error handling and user experience
+- Consistent interface across all operations
+- Reduced dependency on CLI tools
+- Better integration with Claude Code environment
+
+**If you catch yourself about to use kubectl/oc:**
+1. STOP
+2. Check the available MCP tools list above
+3. Use the MCP tool instead
+4. Only proceed with kubectl/oc if absolutely no alternative exists
+
 ## Workflow
 
 ### Step 1: Gather VM Requirements and Confirm Configuration
 
-**Collect information from user**, then present for confirmation before proceeding.
+**CRITICAL**: When user does NOT explicitly specify all VM parameters, you MUST use the AskUserQuestion tool to present an interactive menu.
 
-**Required Parameters:**
-1. **VM Name** - Name for the virtual machine
-   - Example: "web-server", "database-01", "test-vm"
+#### Step 1a: Determine What Information Is Missing
 
-2. **Namespace** - OpenShift namespace where VM will be created
-   - Example: "vms", "production", "dev-environment"
+**First: Detect Current Namespace from KUBECONFIG Context**
 
-**Optional Parameters (with defaults):**
-3. **Operating System** (`workload`) - Default: `"fedora"`
-   - Supported: `fedora`, `ubuntu`, `centos`, `centos-stream`, `debian`, `rhel`, `opensuse`, `opensuse-tumbleweed`, `opensuse-leap`
-   - Can also accept full container disk image URLs
+Before asking for namespace, detect the current context:
 
-4. **Size** (`size`) - VM sizing hint
-   - Options: `small`, `medium`, `large`, `xlarge`
-   - If not specified, MCP server uses default instance type
+**Note**: There is no MCP tool equivalent for detecting the current kubeconfig context namespace. This is one of the rare cases where kubectl CLI is acceptable:
 
-5. **Storage** (`storage`) - Default: `"30Gi"`
-   - Root disk size: `"30Gi"`, `"50Gi"`, `"100Gi"`, etc.
+```bash
+# Get current namespace from kubeconfig context
+kubectl config view --minify -o jsonpath='{..namespace}' 2>/dev/null || echo "default"
+```
 
-6. **Autostart** (`autostart`) - Default: `false`
-   - `true`: VM starts automatically after creation
-   - `false`: VM created in halted state
+**Store this as the default namespace** to use in the interactive menu.
 
-**After gathering parameters, present configuration for confirmation:**
+**VM Name Validation Rules:**
+- Lowercase alphanumeric characters or hyphens only
+- Must start with a letter
+- Must end with alphanumeric character
+- Maximum 63 characters
+- Must be unique within the namespace
+
+**Check if user explicitly provided:**
+1. **VM Name** - Required, always ask if not provided. Validate against rules above.
+2. **Namespace** - Required, always ask if not provided. Use detected namespace as default.
+3. **Operating System** - If not specified, use interactive menu (default: `fedora`)
+4. **Size** - If not specified, use interactive menu (default: `medium`)
+5. **Storage** - If not specified, use interactive menu (default: `30Gi`)
+6. **Storage Class** - If not specified, use interactive menu (default: cluster default)
+7. **Performance Profile** - If not specified, use interactive menu (default: `u1` general-purpose)
+8. **Autostart** - If not specified, use interactive menu (default: `false`)
+
+#### Step 1b: Gather Missing Parameters via Interactive Menu
+
+**BEFORE presenting the menu, gather cluster information using MCP tools:**
+
+1. **Detect current namespace** (if not provided by user):
+
+   **Note**: No MCP equivalent exists - use kubectl:
+   ```bash
+   kubectl config view --minify -o jsonpath='{..namespace}' 2>/dev/null || echo "default"
+   ```
+
+2. **Get available namespaces**:
+
+   **Use MCP Tool**: `namespaces_list` (from openshift-virtualization)
+
+   **Parameters**: None
+
+   This returns a list of all namespaces in the cluster.
+
+3. **Get available StorageClasses and identify default**:
+
+   **Use MCP Tool**: `resources_list` (from openshift-virtualization)
+
+   **Parameters**:
+   - `apiVersion`: "storage.k8s.io/v1"
+   - `kind`: "StorageClass"
+
+   This returns all StorageClass resources with full details including annotations and specifications.
+
+4. **Analyze StorageClasses** for the menu:
+   - **Performance**: Check `volumeBindingMode` (Immediate = faster provisioning, WaitForFirstConsumer = delayed)
+   - **Live Migration Support**: Check access modes - RWX (ReadWriteMany) supports live migration, RWO (ReadWriteOnce) does not
+   - Extract from MCP tool response:
+     - `.metadata.annotations["storageclass.kubernetes.io/is-default-class"]` = "true" for default
+     - `.volumeBindingMode` for performance
+     - `.provisioner` for hints (rbd/cephfs = likely RWX support)
+
+**If ANY parameters are missing, use AskUserQuestion tool with the following structure:**
+
+**Use the AskUserQuestion tool** to present an interactive menu for missing configuration parameters:
+
+```json
+{
+  "questions": [
+    {
+      "question": "What is the name for your new virtual machine?",
+      "header": "VM Name",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "Enter custom name",
+          "description": "Provide VM name (lowercase, alphanumeric+hyphens, start with letter, max 63 chars)"
+        }
+      ]
+    },
+    {
+      "question": "Which namespace should this VM be created in?",
+      "header": "Namespace",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "<detected-current-namespace> (Current)",
+          "description": "Your current namespace from kubeconfig context"
+        },
+        {
+          "label": "Other namespace",
+          "description": "Specify a different namespace from: <list-of-namespaces>"
+        }
+      ]
+    },
+    {
+      "question": "Which operating system should the VM run?",
+      "header": "OS",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "Fedora (Recommended)",
+          "description": "Latest Fedora Linux distribution - general purpose"
+        },
+        {
+          "label": "Ubuntu",
+          "description": "Ubuntu Linux distribution - popular for web services"
+        },
+        {
+          "label": "RHEL",
+          "description": "Red Hat Enterprise Linux - enterprise-grade stability"
+        },
+        {
+          "label": "CentOS Stream",
+          "description": "CentOS Stream - upstream for RHEL"
+        },
+        {
+          "label": "Debian",
+          "description": "Debian Linux - stable and minimal"
+        },
+        {
+          "label": "OpenSUSE",
+          "description": "OpenSUSE - community-driven Linux distribution"
+        }
+      ]
+    },
+    {
+      "question": "What performance profile do you need?",
+      "header": "Performance",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "General Purpose (u1) (Recommended)",
+          "description": "Balanced CPU/memory ratio - suitable for most workloads"
+        },
+        {
+          "label": "Compute Optimized (c1)",
+          "description": "More CPU, less memory - CPU-intensive applications"
+        },
+        {
+          "label": "Memory Optimized (m1)",
+          "description": "More memory, less CPU - memory-intensive applications"
+        },
+        {
+          "label": "Overcommitted (o1)",
+          "description": "Lower resource guarantees - development/testing environments"
+        }
+      ]
+    },
+    {
+      "question": "What size should the VM be?",
+      "header": "Size",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "Small",
+          "description": "1 vCPU, 2Gi RAM - lightweight workloads"
+        },
+        {
+          "label": "Medium (Recommended)",
+          "description": "2-4 vCPU, 4-8Gi RAM - general purpose applications"
+        },
+        {
+          "label": "Large",
+          "description": "4-8 vCPU, 8-16Gi RAM - resource-intensive workloads"
+        },
+        {
+          "label": "XLarge",
+          "description": "8+ vCPU, 16+ Gi RAM - high-performance applications"
+        }
+      ]
+    },
+    {
+      "question": "How much storage should the VM have?",
+      "header": "Storage",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "30Gi (Recommended)",
+          "description": "30 Gigabytes - sufficient for most workloads"
+        },
+        {
+          "label": "50Gi",
+          "description": "50 Gigabytes - moderate storage needs"
+        },
+        {
+          "label": "100Gi",
+          "description": "100 Gigabytes - large storage requirements"
+        },
+        {
+          "label": "Custom size",
+          "description": "Specify a custom storage size (e.g., 75Gi, 200Gi)"
+        }
+      ]
+    },
+    {
+      "question": "Which StorageClass should be used for the VM disk?",
+      "header": "Storage Class",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "<default-sc-name> (Default)",
+          "description": "Cluster default - <performance-hint>, <live-migration-hint>"
+        },
+        {
+          "label": "<sc-name-1>",
+          "description": "<performance-hint>, <live-migration-hint>"
+        },
+        {
+          "label": "<sc-name-2>",
+          "description": "<performance-hint>, <live-migration-hint>"
+        }
+      ]
+    },
+    {
+      "question": "Should the VM start automatically after creation?",
+      "header": "Autostart",
+      "multiSelect": false,
+      "options": [
+        {
+          "label": "No (Recommended)",
+          "description": "Create VM in stopped state - start manually when ready"
+        },
+        {
+          "label": "Yes",
+          "description": "VM will start automatically after creation"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Important Notes:**
+- Only ask questions for parameters NOT explicitly provided by the user
+- If user said "Create a Fedora VM", don't ask about OS - they specified Fedora
+- If user said "in namespace production", don't ask about namespace
+- Always include "Recommended" on the default options
+- The "Other" option is automatically added by the system for each question
+- For namespace: Use detected current namespace from kubeconfig context as default
+- For StorageClass: Populate options dynamically from cluster, mark default
+  - Performance hints: "Immediate provisioning" or "Delayed provisioning"
+  - Live migration hints: "Supports live migration (RWX)" or "No live migration (RWO)"
+
+#### Step 1c: Process Interactive Menu Responses
+
+**After receiving AskUserQuestion responses, map them to VM parameters:**
+
+1. **VM Name**:
+   - Use custom text input from user
+   - **Validate** against rules: lowercase, alphanumeric+hyphens, start with letter, max 63 chars
+   - If invalid: Prompt user to provide valid name
+
+2. **Namespace**:
+   - "<detected-current-namespace> (Current)" → use detected namespace
+   - "Other namespace" → use custom text input
+   - Store for use in existence check (Step 1d)
+
+3. **Operating System**:
+   - "Fedora (Recommended)" → `"fedora"`
+   - "Ubuntu" → `"ubuntu"`
+   - "RHEL" → `"rhel"`
+   - "CentOS Stream" → `"centos-stream"`
+   - "Debian" → `"debian"`
+   - "OpenSUSE" → `"opensuse"`
+   - Other → custom text input (could be `opensuse-tumbleweed`, `opensuse-leap`, container image URL)
+
+4. **Performance Profile**:
+   - "General Purpose (u1) (Recommended)" → `"u1"`
+   - "Compute Optimized (c1)" → `"c1"`
+   - "Memory Optimized (m1)" → `"m1"`
+   - "Overcommitted (o1)" → `"o1"`
+
+5. **Size**:
+   - "Small" → `"small"`
+   - "Medium (Recommended)" → `"medium"`
+   - "Large" → `"large"`
+   - "XLarge" → `"xlarge"`
+
+6. **Storage**:
+   - "30Gi (Recommended)" → `"30Gi"`
+   - "50Gi" → `"50Gi"`
+   - "100Gi" → `"100Gi"`
+   - "Custom size" → use custom text input (validate format: number + unit, e.g., "75Gi")
+
+7. **StorageClass**:
+   - "<default-sc-name> (Default)" → use cluster default SC name
+   - "<sc-name-X>" → use selected SC name
+   - Store SC name for inclusion in vm_create parameters (if MCP tool supports it)
+
+8. **Autostart**:
+   - "No (Recommended)" → `false`
+   - "Yes" → `true`
+
+#### Step 1d: Check VM Existence and Present Final Configuration for Confirmation
+
+**CRITICAL: Before presenting configuration, check if VM already exists**
+
+**Use MCP Tool**: `resources_get` (from openshift-virtualization)
+
+**Parameters**:
+```json
+{
+  "apiVersion": "kubevirt.io/v1",
+  "kind": "VirtualMachine",
+  "namespace": "<namespace>",
+  "name": "<vm-name>"
+}
+```
+
+**Handle result:**
+- **If VM exists**:
+  ```markdown
+  ⚠️ **VM Already Exists**
+
+  A VirtualMachine named `<vm-name>` already exists in namespace `<namespace>`.
+
+  **Current VM status**: <status>
+
+  **Options:**
+  1. Choose a different VM name
+  2. Delete existing VM first (use vm-inventory and manual deletion)
+  3. Cancel operation
+
+  What would you like to do?
+  ```
+  **STOP and wait for user decision.** Do NOT proceed with configuration confirmation.
+
+- **If VM does not exist**: Proceed to configuration confirmation below
+
+---
+
+**After confirming VM doesn't exist, present configuration table:**
 
 ```markdown
 ## Virtual Machine Configuration
@@ -175,12 +532,14 @@ Please respond with your choice.
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| VM Name | `web-server` | [from user input] |
-| Namespace | `vms` | [from user input] |
-| Operating System | `fedora` | [default / user specified] |
-| Size | `medium` | [user specified / omitted for default] |
-| Storage | `50Gi` | [user specified / default: 30Gi] |
-| Autostart | `no` | [default / user specified] |
+| VM Name | `<vm-name>` | from user input (validated) |
+| Namespace | `<namespace>` | from user selection/input or current context |
+| Operating System | `<os>` | from user selection/input |
+| Performance Profile | `<performance>` | from user selection (default: u1) |
+| Size | `<size>` | from user selection (default: medium) |
+| Storage | `<storage>` | from user selection (default: 30Gi) |
+| Storage Class | `<storage-class>` | from user selection (default: cluster default) |
+| Autostart | `<yes/no>` | from user selection (default: no) |
 
 **This will create a new VirtualMachine resource consuming cluster resources.**
 
@@ -265,28 +624,52 @@ Extract `status.printableStatus` from the response.
 
 **Diagnostic Workflow (when ErrorUnschedulable detected)**:
 
-#### 3a. Consult Troubleshooting Documentation
+#### 3a. Analyze Error and Gather Diagnostic Information
 
-**Document Consultation** (REQUIRED):
-1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand ErrorUnschedulable causes
-2. **Output to user**: "I detected the VM is ErrorUnschedulable. I consulted [troubleshooting.md](../../docs/troubleshooting.md) to diagnose the issue."
+**When ErrorUnschedulable is detected**, proceed with diagnostics immediately.
+
+**Output to user**: "I detected the VM is ErrorUnschedulable. I'm diagnosing the issue now."
 
 #### 3b. Gather Diagnostic Information
 
-**Execute diagnostic commands** using MCP tools or bash:
+**Execute diagnostic commands using MCP tools:**
 
-```bash
-# Get VM events to see scheduling failures
-oc describe vm <vm-name> -n <namespace> | grep -A 10 "Events:"
+1. **Get VM events to see scheduling failures:**
 
-# Check node taints
-oc get nodes -o json | jq '.items[] | select(.spec.taints != null) | {name: .metadata.name, taints: .spec.taints}'
-```
+   **Use MCP Tool**: `events_list` (from openshift-virtualization)
+
+   **Parameters**:
+   - `namespace`: "<namespace>" (the VM's namespace)
+
+   Filter events related to the VirtualMachine or VirtualMachineInstance to identify scheduling issues.
+
+2. **Get VM details to see conditions:**
+
+   **Use MCP Tool**: `resources_get` (from openshift-virtualization)
+
+   **Parameters**:
+   - `apiVersion`: "kubevirt.io/v1"
+   - `kind`: "VirtualMachine"
+   - `name`: "<vm-name>"
+   - `namespace`: "<namespace>"
+
+   Check `.status.conditions` array for error messages and details.
+
+3. **Check node taints (if taint issue suspected):**
+
+   **Use MCP Tool**: `resources_list` (from openshift-virtualization)
+
+   **Parameters**:
+   - `apiVersion`: "v1"
+   - `kind`: "Node"
+
+   Parse results to extract `.spec.taints` from each node to identify taints that might block scheduling.
 
 **Parse results** to identify root cause:
 - Events contain "taints that the pod didn't tolerate" → **Taints/Tolerations issue**
 - Events contain "Insufficient cpu" or "Insufficient memory" → **Resource constraints**
 - Events contain "no nodes available" → **No suitable nodes**
+- Conditions array shows "Unschedulable" reason → Check reason field for details
 
 #### 3c. Present Diagnosis to User
 
@@ -365,7 +748,16 @@ Please respond with your choice.
 
 **ONLY if user responds with "apply workaround" or similar confirmation:**
 
-**Execute patch command**:
+**Option 1: Try MCP Tool First** (Preferred):
+
+**Use MCP Tool**: `resources_create_or_update` (from openshift-virtualization)
+
+Fetch the current VM using `resources_get`, add the tolerations to `.spec.template.spec.tolerations`, then update using `resources_create_or_update`.
+
+**Option 2: Use CLI Patch** (If MCP approach doesn't work):
+
+**Note**: Strategic merge patch via CLI is acceptable when MCP tools cannot perform the same operation.
+
 ```bash
 oc patch vm <vm-name> -n <namespace> --type=merge -p '
 spec:
@@ -379,15 +771,58 @@ spec:
 '
 ```
 
-**Verify patch success**:
-```bash
-# Check if tolerations were added
-oc get vm <vm-name> -n <namespace> -o jsonpath='{.spec.template.spec.tolerations}'
+**Verify patch success using MCP Tools**:
 
-# Wait 5 seconds and check status again
-sleep 5
-oc get vm <vm-name> -n <namespace> -o jsonpath='{.status.printableStatus}'
-```
+1. **Check if tolerations were added:**
+
+   **Use MCP Tool**: `resources_get` (from openshift-virtualization)
+
+   **Parameters**:
+   - `apiVersion`: "kubevirt.io/v1"
+   - `kind`: "VirtualMachine"
+   - `name`: "<vm-name>"
+   - `namespace`: "<namespace>"
+
+   Inspect `.spec.template.spec.tolerations` in the response.
+
+2. **Wait 5-10 seconds and check status again:**
+
+   **Use MCP Tool**: `resources_get` (from openshift-virtualization) - same parameters as above
+
+   Check `.status.printableStatus` for the new status.
+
+3. **CRITICAL: Restart the VM to apply the toleration:**
+
+   Simply patching the VM spec does NOT immediately update the existing VirtualMachineInstance. You must restart the VM to force the old VMI to be deleted and a new one created with the updated tolerations.
+
+   **Use MCP Tool**: `vm_lifecycle` (from openshift-virtualization)
+
+   **Parameters**:
+   - `namespace`: "<namespace>"
+   - `name`: "<vm-name>"
+   - `action`: "restart"
+
+   This will:
+   - Delete the old VirtualMachineInstance (created without tolerations)
+   - Create a new VirtualMachineInstance with the updated spec (including tolerations)
+   - Force the scheduler to re-evaluate the VM placement
+
+4. **Wait for VM to reach Running status:**
+
+   After restart, wait 15-20 seconds for the VM to:
+   - Schedule on the virtualization node (with new tolerations)
+   - Provision the DataVolume (if first boot)
+   - Reach Running status
+
+   **Use MCP Tool**: `resources_get` (from openshift-virtualization)
+
+   **Parameters**:
+   - `apiVersion`: "kubevirt.io/v1"
+   - `kind`: "VirtualMachine"
+   - `name`: "<vm-name>"
+   - `namespace`: "<namespace>"
+
+   Check `.status.printableStatus` should transition: Stopped → Provisioning → Running
 
 **Report result**:
 ```markdown
@@ -395,17 +830,25 @@ oc get vm <vm-name> -n <namespace> -o jsonpath='{.status.printableStatus}'
 
 **VM Name**: `<vm-name>`
 **Namespace**: `<namespace>`
-**Action**: Added tolerations for taint `<taint-spec>`
+**Action**: Added tolerations for taint `<taint-spec>` and restarted VM
 
-**New Status**: <new-status> (VM can now be scheduled)
+**Status Progression**:
+- ✓ Toleration patch applied
+- ✓ VM restarted to force rescheduling
+- ✓ New VirtualMachineInstance created with tolerations
+- ✓ VM successfully scheduled on virtualization node
+- ✓ Current Status: <current-status> (should be Running or Provisioning)
 
-**Next Steps**:
-To start the VM:
-```
-"Start VM <vm-name> in namespace <namespace>"
-```
+**What happened:**
+1. Added toleration to VM spec
+2. Restarted VM to delete old VirtualMachineInstance
+3. New VirtualMachineInstance created with updated spec (generation increased)
+4. Scheduler successfully placed VM on virtualization node
+5. VM is now running (or provisioning)
 
 **Note**: This workaround was needed because the MCP tool doesn't yet support tolerations. Future VMs in this cluster will need the same fix until the tool is enhanced.
+
+**Next Steps**: Your VM is now running and ready to use! See the "Accessing the VM" section above for connection options.
 ```
 
 ### Step 4: Report Creation Status
@@ -421,9 +864,21 @@ To start the VM:
 - **Name**: `web-server`
 - **Namespace**: `vms`
 - **Operating System**: Fedora
+- **Performance**: General Purpose (u1)
 - **Size**: medium
-- **Storage**: 50Gi
+- **Storage**: 50Gi (StorageClass: <storage-class-name>)
 - **Status**: Halted (VM is created but not running)
+
+**What happens next:**
+- DataVolume provisioning: ~2-5 minutes (depends on image size and StorageClass)
+- VM will be in "Provisioning" status during image import
+- Once complete, status changes to "Stopped" (if autostart=no) or "Running" (if autostart=yes)
+
+**To monitor progress:**
+```
+"Show status of VM web-server"
+```
+Watch for status transition: Provisioning → Stopped → Running (when started)
 
 **Next Steps:**
 
@@ -441,6 +896,64 @@ To view full VM details:
 ```
 "Get details of web-server VM"
 ```
+
+---
+
+## 🔐 Accessing the VM
+
+**After the VM is running**, you can access it using:
+
+### Option 1: Serial Console (virtctl)
+```bash
+virtctl console web-server -n vms
+```
+- Direct terminal access to VM
+- Requires virtctl CLI tool installed
+
+### Option 2: VNC Console (OpenShift Web Console)
+1. Navigate to: OpenShift Console → Virtualization → VirtualMachines
+2. Select namespace: `vms`
+3. Click on VM: `web-server`
+4. Click "Console" tab
+5. Use VNC or Serial console
+
+### Option 3: SSH Access (if configured)
+```bash
+# Requires cloud-init SSH key configuration
+# Get VM IP using MCP tool: resources_get with apiVersion="kubevirt.io/v1", kind="VirtualMachineInstance", name="web-server", namespace="vms"
+# Extract .status.interfaces[0].ipAddress from the response
+
+# Then SSH:
+ssh <user>@<vm-ip>
+```
+
+### Option 4: Port Forwarding
+```bash
+# Forward a port from VM to localhost
+virtctl port-forward vmi/web-server -n vms 8080:80
+# Access via: http://localhost:8080
+```
+
+---
+
+## 👤 Default Credentials
+
+Would you like me to display the default credentials for the VM? (yes/no)
+
+**If yes**, I'll show the OS-specific default credentials:
+- **Fedora**: User: `fedora`, Password: (none - requires SSH key or console access to set)
+- **Ubuntu**: User: `ubuntu`, Password: (none - requires SSH key or console access to set)
+- **RHEL**: User: `cloud-user`, Password: (none - requires SSH key)
+- **CentOS**: User: `centos`, Password: (none - requires SSH key)
+- **Debian**: User: `debian`, Password: (none - requires SSH key)
+- **OpenSUSE**: User: `opensuse`, Password: (none - requires SSH key)
+
+**Note**: Most cloud images require SSH key authentication. To set a password:
+1. Access via console: `virtctl console <vm-name> -n <namespace>`
+2. Login (may auto-login on first boot)
+3. Set password: `sudo passwd <username>`
+
+---
 
 **Note**: The VM is created in a halted state. Use the `/vm-lifecycle-manager` skill to start it.
 ```
@@ -460,10 +973,10 @@ To view full VM details:
 - **OpenShift Virtualization not installed** - Operator must be installed on cluster
 
 **Troubleshooting:**
-1. Verify namespace exists: `oc get namespace <namespace>`
-2. Check permissions: `oc auth can-i create virtualmachines -n <namespace>`
-3. View cluster capacity: `oc describe nodes`
-4. Verify operator installed: `oc get csv -n openshift-cnv`
+1. Verify namespace exists using MCP tool: `namespaces_list`
+2. Check permissions using CLI (no MCP equivalent): `oc auth can-i create virtualmachines -n <namespace>`
+3. View cluster capacity using MCP tool: `nodes_top` or `resources_list` for Node resources
+4. Verify operator installed using MCP tool: `resources_list` with apiVersion="operators.coreos.com/v1alpha1", kind="ClusterServiceVersion", namespace="openshift-cnv"
 
 Would you like help troubleshooting this error?
 ```
@@ -550,8 +1063,8 @@ vm_create({
 **Error**: "Namespace 'xyz' not found"
 
 **Solution:**
-1. List available namespaces: Suggest using `oc get namespaces` or `kubectl get ns`
-2. Create namespace if needed: `oc create namespace <name>`
+1. List available namespaces using MCP tool: `namespaces_list`
+2. Create namespace if needed using MCP tool: `resources_create_or_update` with Namespace resource, OR use CLI: `oc create namespace <name>`
 3. Verify ServiceAccount has access to the namespace
 
 ### Issue 2: Insufficient Permissions
@@ -569,7 +1082,7 @@ vm_create({
 **Error**: "Insufficient resources to schedule VM"
 
 **Solution:**
-1. Check cluster capacity: CPU, memory available
+1. Check cluster capacity using MCP tool `nodes_top` or `resources_list` for Node resources
 2. Try smaller `size` (e.g., change "large" to "medium")
 3. Reduce `storage` size if possible
 4. Contact cluster admin to scale nodes
@@ -580,7 +1093,7 @@ vm_create({
 
 **Solution:**
 - OpenShift Virtualization operator must be installed
-- Verify: `oc get csv -n openshift-cnv`
+- Verify using MCP tool: `resources_list` with apiVersion="operators.coreos.com/v1alpha1", kind="ClusterServiceVersion", namespace="openshift-cnv"
 - Contact cluster admin to install operator
 
 ## Dependencies
@@ -596,10 +1109,11 @@ vm_create({
 - `vm-inventory` - List and view created VMs
 
 ### Reference Documentation
-- [troubleshooting.md](../../docs/troubleshooting.md) - VM error diagnosis and workarounds
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
+- [Troubleshooting VMs](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/troubleshooting_vms.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
+- [StorageClass Documentation](https://docs.openshift.com/container-platform/latest/storage/understanding-persistent-storage.html)
 
 ## Security Considerations
 
@@ -612,12 +1126,29 @@ vm_create({
 
 ## Example Usage
 
-**Example 1: Simple VM creation with defaults**
+**Example 1: Complete interactive menu workflow (no user input)**
 
 ```
-User: "Create a Fedora VM called web-01 in namespace apps"
+User: "Create a VM"
 
 Agent: [Invokes /vm-creator skill]
+       [Detects current namespace from kubeconfig: "production"]
+       [Queries available StorageClasses, finds default: "ocs-storagecluster-ceph-rbd"]
+       [No parameters provided, uses AskUserQuestion for full interactive menu]
+
+[Interactive Menu Presented - User selects:]
+- VM Name: my-app-server
+- Namespace: production (Current)
+- Operating System: Fedora (Recommended)
+- Performance Profile: General Purpose (u1) (Recommended)
+- Size: Medium (Recommended)
+- Storage: 30Gi (Recommended)
+- Storage Class: ocs-storagecluster-ceph-rbd (Default) - Immediate provisioning, Supports live migration (RWX)
+- Autostart: No (Recommended)
+
+Agent: [Validates VM name: "my-app-server" ✓]
+       [Checks if VM exists in namespace "production": Not found ✓]
+       [Processes responses]
 
 ## Virtual Machine Configuration
 
@@ -625,12 +1156,14 @@ Please review and confirm the VM configuration:
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| VM Name | `web-01` | from user input |
-| Namespace | `apps` | from user input |
-| Operating System | `fedora` | default |
-| Size | (default) | MCP server will select |
-| Storage | `30Gi` | default |
-| Autostart | `no` | default |
+| VM Name | `my-app-server` | from interactive menu (validated) |
+| Namespace | `production` | from interactive menu (current context) |
+| Operating System | `fedora` | from interactive menu |
+| Performance Profile | `u1` | from interactive menu (default) |
+| Size | `medium` | from interactive menu (default) |
+| Storage | `30Gi` | from interactive menu (default) |
+| Storage Class | `ocs-storagecluster-ceph-rbd` | from interactive menu (default: cluster default) |
+| Autostart | `no` | from interactive menu (default) |
 
 This will create a new VirtualMachine resource consuming cluster resources.
 
@@ -638,40 +1171,115 @@ Confirm these settings or tell me what to change.
 
 User: "yes"
 
-Agent: [Calls vm_create with namespace="apps", name="web-01", workload="fedora"]
+Agent: [Calls vm_create with namespace="production", name="my-app-server", workload="fedora", performance="u1", size="medium", storage="30Gi", autostart=false]
 
 ## ✓ Virtual Machine Created Successfully
 
 VM Details:
-- Name: `web-01`
-- Namespace: `apps`
+- Name: `my-app-server`
+- Namespace: `production`
 - OS: Fedora
-- Status: Halted
+- Performance: General Purpose (u1)
+- Size: medium
+- Storage: 30Gi (ocs-storagecluster-ceph-rbd)
+- Status: Provisioning → Stopped (wait 2-5 minutes)
 
-Next Steps: "Start VM web-01 in namespace apps"
+[Displays full access instructions and credential prompt]
+
+Next Steps: "Start VM my-app-server in namespace production"
 ```
 
-**Example 2: Custom configuration with modifications**
+**Example 2: Partial interactive menu (some parameters specified by user)**
 
 ```
-User: "Deploy a large RHEL VM with 100Gi storage called db-server in production namespace"
+User: "Create an Ubuntu VM called web-01 in namespace apps"
 
 Agent: [Invokes /vm-creator skill]
+       [Detects VM name="web-01", namespace="apps", OS="ubuntu"]
+       [Queries StorageClasses for menu]
+       [Uses AskUserQuestion only for: Performance, Size, Storage, Storage Class, Autostart]
+
+[Interactive Menu Presented - User selects:]
+- Performance Profile: General Purpose (u1) (Recommended)
+- Size: Large
+- Storage: 100Gi
+- Storage Class: local-storage - Delayed provisioning, No live migration (RWO)
+- Autostart: Yes
+
+Agent: [Validates VM name: "web-01" ✓]
+       [Checks if VM exists in namespace "apps": Not found ✓]
+       [Processes responses]
+
+## Virtual Machine Configuration
+
+Please review and confirm the VM configuration:
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| VM Name | `web-01` | from user input (validated) |
+| Namespace | `apps` | from user input |
+| Operating System | `ubuntu` | from user input |
+| Performance Profile | `u1` | from interactive menu (default) |
+| Size | `large` | from interactive menu |
+| Storage | `100Gi` | from interactive menu |
+| Storage Class | `local-storage` | from interactive menu |
+| Autostart | `yes` | from interactive menu |
+
+This will create a new VirtualMachine resource consuming cluster resources.
+
+Confirm these settings or tell me what to change.
+
+User: "yes"
+
+Agent: [Calls vm_create with namespace="apps", name="web-01", workload="ubuntu", performance="u1", size="large", storage="100Gi", autostart=true]
+
+## ✓ Virtual Machine Created and Starting
+
+VM Details:
+- Name: `web-01`
+- Namespace: `apps`
+- OS: Ubuntu
+- Performance: General Purpose (u1)
+- Size: large
+- Storage: 100Gi (local-storage)
+- Status: Provisioning → Running (autostarted)
+
+[Displays full access instructions]
+```
+
+**Example 3: User modifies configuration before confirming**
+
+```
+User: "Deploy a memory-optimized RHEL VM called db-server in production namespace"
+
+Agent: [Invokes /vm-creator skill]
+       [Detects: name="db-server", namespace="production", OS="rhel", performance="m1" (memory-optimized)]
+       [Uses AskUserQuestion for: Size, Storage, Storage Class, Autostart]
+
+[Interactive Menu - User selects:]
+- Size: Large
+- Storage: 100Gi
+- Storage Class: ceph-rbd (Default)
+- Autostart: No (Recommended)
+
+Agent: [Validates and checks existence ✓]
 
 ## Virtual Machine Configuration
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| VM Name | `db-server` | from user input |
+| VM Name | `db-server` | from user input (validated) |
 | Namespace | `production` | from user input |
 | Operating System | `rhel` | from user input |
-| Size | `large` | from user input |
-| Storage | `100Gi` | from user input |
-| Autostart | `no` | default |
+| Performance Profile | `m1` | from user input (memory-optimized) |
+| Size | `large` | from interactive menu |
+| Storage | `100Gi` | from interactive menu |
+| Storage Class | `ceph-rbd` | from interactive menu (default) |
+| Autostart | `no` | from interactive menu (default) |
 
 Confirm these settings or tell me what to change.
 
-User: "Actually, autostart it"
+User: "Actually, autostart it and make it compute-optimized instead"
 
 Agent: [Updates configuration]
 
@@ -679,40 +1287,89 @@ Agent: [Updates configuration]
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
+| Performance Profile | `c1` | updated per user request (compute-optimized) |
 | Autostart | `yes` | updated per user request |
 
 Confirm?
 
 User: "yes"
 
-Agent: [Calls vm_create with all parameters including autostart=true]
+Agent: [Calls vm_create with namespace="production", name="db-server", workload="rhel", performance="c1", size="large", storage="100Gi", autostart=true]
 
-## ✓ Virtual Machine Created and Started
+## ✓ Virtual Machine Created and Starting
 
 VM Details:
 - Name: `db-server`
 - Namespace: `production`
 - OS: RHEL
+- Performance: Compute Optimized (c1)
 - Size: large
-- Storage: 100Gi
-- Status: Running (autostarted)
+- Storage: 100Gi (ceph-rbd)
+- Status: Provisioning → Running (autostarted)
+
+[Displays access instructions]
 ```
 
-**Example 3: User cancels after reviewing configuration**
+**Example 4: VM name already exists - user prompted to choose different name**
 
 ```
-User: "Create a VM named test in namespace dev"
+User: "Create a VM named apache-server in namespace vms"
 
 Agent: [Invokes /vm-creator skill]
+       [Validates name: "apache-server" ✓]
+       [Checks if VM exists...]
+
+⚠️ **VM Already Exists**
+
+A VirtualMachine named `apache-server` already exists in namespace `vms`.
+
+**Current VM status**: Stopped
+
+**Options:**
+1. Choose a different VM name
+2. Delete existing VM first (use vm-inventory and manual deletion)
+3. Cancel operation
+
+What would you like to do?
+
+User: "Choose a different name: apache-server-02"
+
+Agent: [Validates new name: "apache-server-02" ✓]
+       [Checks existence: Not found ✓]
+       [Continues with interactive menu for remaining parameters...]
 
 ## Virtual Machine Configuration
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| VM Name | `test` | from user input |
+| VM Name | `apache-server-02` | from user input (updated, validated) |
+| Namespace | `vms` | from user input |
+...
+
+[Continues normally]
+```
+
+**Example 5: User cancels after reviewing configuration**
+
+```
+User: "Create a VM named test in namespace dev"
+
+Agent: [Invokes /vm-creator skill]
+       [Interactive menu presented...]
+       [Processes responses]
+
+## Virtual Machine Configuration
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| VM Name | `test` | from user input (validated) |
 | Namespace | `dev` | from user input |
-| Operating System | `fedora` | default |
-| Storage | `30Gi` | default |
+| Operating System | `fedora` | from interactive menu (default) |
+| Performance Profile | `u1` | from interactive menu (default) |
+| Size | `medium` | from interactive menu (default) |
+| Storage | `30Gi` | from interactive menu (default) |
+| Storage Class | `default-sc` | from interactive menu (default) |
+| Autostart | `no` | from interactive menu (default) |
 
 Confirm these settings or tell me what to change.
 

@@ -9,9 +9,9 @@ OpenShift Virtualization management tools for administering virtual machines on 
 
 The rh-virt collection provides specialized tools for managing virtual machines in OpenShift Virtualization environments:
 
-- **3 specialized skills** for VM administration tasks
+- **4 specialized skills** for complete VM lifecycle management
 - **OpenShift MCP server integration** for KubeVirt operations
-- **VM lifecycle management** from creation to operational monitoring
+- **Full VM lifecycle coverage** from creation to deletion with safety-first design
 
 ## Quick Start
 
@@ -96,7 +96,7 @@ claude plugin install openshift-virtualization
 
 ## Skills
 
-The pack provides 3 specialized skills for common virtualization operations:
+The pack provides 4 specialized skills for complete VM lifecycle management:
 
 ### 1. **vm-creator** - Virtual Machine Provisioning
 
@@ -160,6 +160,32 @@ List and inspect virtual machines across namespaces with comprehensive status in
 - Filters VMs by labels or field selectors
 - Displays resource usage, node placement, and health conditions
 - Read-only operations with fallback to `oc` CLI if MCP tools unavailable
+
+### 4. **vm-delete** - VM Destruction and Cleanup
+
+Permanently delete virtual machines and their associated resources with strict safety confirmations.
+
+**Use when:**
+- "Delete VM [name]"
+- "Remove virtual machine [name]"
+- "Destroy VM [name]"
+- "Clean up VM [name]"
+
+**MCP Tools Used:**
+- `resources_delete` (core toolset) - Deletes VirtualMachine, DataVolume, and PVC resources
+- `resources_get` (core toolset) - Verifies VM exists and retrieves details
+- `resources_list` (core toolset) - Discovers dependent storage resources
+- `vm_lifecycle` (kubevirt toolset) - Stops running VMs before deletion
+
+**What it does:**
+- **Permanent VM deletion** with typed confirmation (user must type VM name exactly)
+- **Pre-deletion validation** - checks VM exists, running state, dependent resources
+- **Protection enforcement** - refuses deletion of VMs with `protected: "true"` label
+- **Deletion options** - VM only (preserve storage) or VM + storage (complete cleanup)
+- **Graceful shutdown** - stops running VMs before deletion
+- **Storage discovery** - identifies and optionally deletes DataVolumes and PVCs
+- **Safety-first design** - multiple confirmation steps, clear warnings about data loss
+- Requires explicit user confirmation at each critical step (human-in-the-loop)
 
 ## MCP Server Integration
 
@@ -269,7 +295,28 @@ User: "Restart the api-server VM"
 → vm-lifecycle-manager skill restarts the VM
 ```
 
-### Workflow 4: Automatic Error Diagnosis and Remediation
+### Workflow 4: VM Deletion and Cleanup
+
+```
+User: "Delete VM test-vm in namespace dev"
+→ vm-delete skill validates VM exists
+→ Discovers 30Gi DataVolume attached
+→ Presents deletion options (VM only vs VM + storage)
+
+User: "Delete VM + storage"
+
+Agent: "Type 'test-vm' to confirm permanent deletion: _____"
+
+User: "test-vm"
+
+Agent: "Proceed with permanent deletion? (yes/cancel)"
+
+User: "yes"
+→ vm-delete deletes VM and storage
+→ Reports 30Gi storage freed
+```
+
+### Workflow 5: Automatic Error Diagnosis and Remediation
 
 ```
 User: "Create a Fedora VM called test-vm in namespace demo"
@@ -409,17 +456,20 @@ rh-virt/
 └── skills/
     ├── vm-creator/SKILL.md      # VM provisioning with auto-diagnosis
     ├── vm-lifecycle-manager/SKILL.md  # VM power management
-    └── vm-inventory/SKILL.md    # VM discovery and status
+    ├── vm-inventory/SKILL.md    # VM discovery and status
+    └── vm-delete/SKILL.md       # VM destruction and cleanup
 ```
 
 ### Key Patterns
 
 - **Skills encapsulate operations** - Each skill handles one category of VM tasks
+- **Complete lifecycle coverage** - Create → Inventory → Lifecycle → Delete
 - **MCP provides tools** - OpenShift MCP server exposes KubeVirt operations
 - **Environment-based auth** - KUBECONFIG for secure cluster access
 - **Automatic diagnosis** - Skills detect errors, consult docs, propose workarounds
 - **Document consultation** - Skills read troubleshooting.md for domain knowledge
-- **Human-in-the-loop** - User approval required before applying fixes
+- **Human-in-the-loop** - User approval required before critical operations (lifecycle changes, deletion)
+- **Safety-first design** - Typed confirmation for destructive operations, protection labels, multi-step validation
 - **Workaround transparency** - Clear communication of MCP tool limitations and temporary solutions
 
 ## Security Model

@@ -201,26 +201,51 @@ oc get vm -A -o json
 
 **Step 2: Format and Display Results**
 
-Present VMs organized by namespace with key information:
+**CRITICAL FORMATTING RULE**:
+- **If total VMs > 2**: Display results in a **table format** ordered by namespace and status
+- **If total VMs ≤ 2**: Use list format organized by namespace
+
+**Table Format (when VMs > 2):**
+
+```markdown
+## 📋 Virtual Machines (All Namespaces)
+
+| Namespace | VM Name | Status | Age | Resources | Node |
+|-----------|---------|--------|-----|-----------|------|
+| default | alejandro-test | ✓ Running | 1h | 2 vCPU, 4Gi | ip-10-0-15-252 |
+| production | database-vm | ✗ Stopped | 30d | 8 vCPU, 16Gi | - |
+| production | web-server-01 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-01 |
+| production | web-server-02 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-02 |
+| development | debug-vm | ⚠ Pending | 2d | 2 vCPU, 4Gi | - |
+| development | test-vm | ✓ Running | 5d | 2 vCPU, 4Gi | worker-03 |
+
+**Summary:**
+- **Total VMs**: 6
+- **Running**: 4
+- **Stopped**: 1
+- **Pending**: 1
+```
+
+**List Format (when VMs ≤ 2):**
 
 ```markdown
 ## 📋 Virtual Machines (All Namespaces)
 
 ### Namespace: production
 - ✓ **web-server-01** - Running (4 vCPU, 8Gi RAM)
-- ✓ **web-server-02** - Running (4 vCPU, 8Gi RAM)
-- ✗ **database-vm** - Stopped (8 vCPU, 16Gi RAM)
 
 ### Namespace: development
 - ✓ **test-vm** - Running (2 vCPU, 4Gi RAM)
-- ⚠ **debug-vm** - Pending (2 vCPU, 4Gi RAM)
 
 ### Summary:
-- **Total VMs**: 5
-- **Running**: 3
-- **Stopped**: 1
-- **Pending**: 1
+- **Total VMs**: 2
+- **Running**: 2
 ```
+
+**Table Ordering Rules:**
+1. **Primary sort**: Namespace (alphabetical)
+2. **Secondary sort**: Status (Running → Pending → Stopped → Failed/Error)
+3. **Tertiary sort**: VM Name (alphabetical within same namespace and status)
 
 **Status Indicators:**
 - ✓ Running/Ready
@@ -704,7 +729,7 @@ No VMs were found in this namespace.
 
 ## Example Usage
 
-**Example 1: List all VMs (using MCP tool)**
+**Example 1: List all VMs (using MCP tool - Table format for > 2 VMs)**
 
 ```
 User: "List all VMs"
@@ -712,18 +737,21 @@ User: "List all VMs"
 Agent: [Invokes /vm-inventory skill]
        [Attempts MCP tool: resources_list with apiVersion="kubevirt.io/v1", kind="VirtualMachine", allNamespaces=true]
        [Tool succeeds]
+       [4 VMs found - using table format]
 
 ## 📋 Virtual Machines (All Namespaces)
 
-Namespace: production
-- ✓ web-server-01 - Running (4 vCPU, 8Gi)
-- ✓ web-server-02 - Running (4 vCPU, 8Gi)
-- ✗ database-vm - Stopped (8 vCPU, 16Gi)
+| Namespace | VM Name | Status | Age | Resources | Node |
+|-----------|---------|--------|-----|-----------|------|
+| development | test-vm | ✓ Running | 5d | 2 vCPU, 4Gi | worker-03 |
+| production | database-vm | ✗ Stopped | 30d | 8 vCPU, 16Gi | - |
+| production | web-server-01 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-01 |
+| production | web-server-02 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-02 |
 
-Namespace: development
-- ✓ test-vm - Running (2 vCPU, 4Gi)
-
-Summary: 4 VMs (3 running, 1 stopped)
+**Summary:**
+- **Total VMs**: 4
+- **Running**: 3
+- **Stopped**: 1
 ```
 
 **Example 1b: List all VMs (MCP tool unavailable, CLI fallback)**
@@ -745,10 +773,34 @@ Would you like me to proceed with the CLI command?
 User: "yes"
 
 Agent: [Executes: oc get virtualmachines -A -o json]
+       [4 VMs found - using table format]
 
 ## 📋 Virtual Machines (All Namespaces)
 
-[Same output as above]
+[Same table output as Example 1 above]
+```
+
+**Example 1c: List all VMs (List format for ≤ 2 VMs)**
+
+```
+User: "List all VMs"
+
+Agent: [Invokes /vm-inventory skill]
+       [Attempts MCP tool: resources_list with apiVersion="kubevirt.io/v1", kind="VirtualMachine", allNamespaces=true]
+       [Tool succeeds]
+       [2 VMs found - using list format]
+
+## 📋 Virtual Machines (All Namespaces)
+
+### Namespace: default
+- ✓ **web-server** - Running (4 vCPU, 8Gi RAM, worker-01)
+
+### Namespace: production
+- ✓ **database-vm** - Running (8 vCPU, 16Gi RAM, worker-02)
+
+**Summary:**
+- **Total VMs**: 2
+- **Running**: 2
 ```
 
 **Example 2: Get details of specific VM**
