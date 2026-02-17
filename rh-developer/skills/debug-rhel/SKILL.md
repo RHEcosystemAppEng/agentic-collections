@@ -40,6 +40,10 @@ See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandat
 
 If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
 
+## Note: SSH/Bash Required
+
+This skill operates on **remote RHEL hosts** via SSH, not local MCP servers. Unlike OpenShift/Podman skills, direct Bash commands with SSH are the correct approach here since MCP servers run locally and cannot access remote systems.
+
 ## Trigger
 
 - User types `/debug-rhel`

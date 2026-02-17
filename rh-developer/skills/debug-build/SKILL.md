@@ -28,6 +28,12 @@ See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandat
 
 If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
 
+## Critical: Prefer MCP Tools
+
+**IMPORTANT:** Prefer MCP tools over CLI commands for better integration and user experience:
+1. **Search for MCP tools first** - Use `ToolSearch` to load OpenShift MCP tools (e.g., `+openshift pods_get`) before diagnostic actions
+2. **Use MCP when available** - Prefer `pods_get`, `pods_log`, `events_list`, `resources_get` over `oc`/`kubectl` commands
+
 ## Trigger
 
 - User types `/debug-build`

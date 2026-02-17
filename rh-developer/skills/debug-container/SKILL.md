@@ -40,6 +40,12 @@ See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandat
 
 If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
 
+## Critical: Prefer MCP Tools
+
+**IMPORTANT:** Prefer MCP tools over CLI commands for better integration and user experience:
+1. **Search for MCP tools first** - Use `ToolSearch` to load Podman MCP tools (e.g., `+podman container_inspect`) before diagnostic actions
+2. **Use MCP when available** - Prefer `container_list`, `container_inspect`, `container_logs` over `podman`/`docker` commands
+
 ## Trigger
 
 - User types `/debug-container`
