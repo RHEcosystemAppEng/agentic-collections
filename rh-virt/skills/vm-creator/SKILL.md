@@ -624,13 +624,29 @@ Extract `status.printableStatus` from the response.
 
 **Diagnostic Workflow (when ErrorUnschedulable detected)**:
 
-#### 3a. Analyze Error and Gather Diagnostic Information
+#### 3a. Consult Troubleshooting Documentation (REQUIRED)
 
-**When ErrorUnschedulable is detected**, proceed with diagnostics immediately.
+**CRITICAL**: Document consultation MUST happen BEFORE diagnostic commands.
 
-**Output to user**: "I detected the VM is ErrorUnschedulable. I'm diagnosing the issue now."
+**When ErrorUnschedulable is detected**, consult documentation first to understand root causes.
 
-#### 3b. Gather Diagnostic Information
+**Document Consultation** (REQUIRED - Execute FIRST):
+1. **Action**: Read [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) using the Read tool to understand ErrorUnschedulable root causes (node taints, resource constraints, node selectors) and workaround patterns
+2. **Output to user**: "I detected the VM is ErrorUnschedulable. I consulted [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) to understand the diagnosis and remediation strategies."
+
+**Expected Knowledge Gained from Documentation**:
+- ErrorUnschedulable is caused by: node taints, insufficient resources, or node selector mismatches
+- Most common cause: Node taints that VM doesn't tolerate
+- Workaround pattern: Diagnose → Propose → Confirm → Execute using `oc patch`
+- MCP tool limitation: `vm_create` doesn't support tolerations parameter
+
+#### 3b. Analyze Error and Gather Diagnostic Information
+
+**Based on the troubleshooting guide**, proceed with diagnostics to identify the specific root cause.
+
+**Output to user**: "I'm now gathering diagnostic information to identify the specific issue."
+
+#### 3c. Gather Diagnostic Information
 
 **Execute diagnostic commands using MCP tools:**
 
@@ -671,7 +687,7 @@ Extract `status.printableStatus` from the response.
 - Events contain "no nodes available" → **No suitable nodes**
 - Conditions array shows "Unschedulable" reason → Check reason field for details
 
-#### 3c. Present Diagnosis to User
+#### 3d. Present Diagnosis to User
 
 **Report findings in clear format**:
 
@@ -729,7 +745,7 @@ spec:
 ⚠️ **This is a temporary limitation**: The openshift-virtualization MCP server doesn't yet support tolerations parameter in vm_create. Consider filing an issue at: https://github.com/openshift/openshift-mcp-server/issues
 ```
 
-#### 3d. Wait for User Decision (Human-in-the-Loop)
+#### 3e. Wait for User Decision (Human-in-the-Loop)
 
 **CRITICAL**: Do NOT execute the workaround without explicit user confirmation.
 
@@ -744,7 +760,7 @@ How would you like to proceed?
 Please respond with your choice.
 ```
 
-#### 3e. Execute Workaround (ONLY if user confirms)
+#### 3f. Execute Workaround (ONLY if user confirms)
 
 **ONLY if user responds with "apply workaround" or similar confirmation:**
 
@@ -1109,6 +1125,11 @@ vm_create({
 - `vm-inventory` - List and view created VMs
 
 ### Reference Documentation
+- [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable root causes and workarounds (consulted during diagnostic workflows)
+- [storage-errors.md](../../docs/troubleshooting/storage-errors.md) - ErrorDataVolumeNotReady and storage provisioning issues
+- [runtime-errors.md](../../docs/troubleshooting/runtime-errors.md) - CrashLoopBackOff and guest OS failures
+- [network-errors.md](../../docs/troubleshooting/network-errors.md) - Network attachment failures
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [Troubleshooting VMs](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/troubleshooting_vms.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)

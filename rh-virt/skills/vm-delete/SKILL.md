@@ -629,6 +629,13 @@ oc delete pvc <pvc-name> -n <namespace>
 ```
 
 **On partial failure (VM deleted but storage deletion failed):**
+
+**OPTIONAL**: If storage deletion fails, consult documentation for storage-related deletion issues.
+
+**Document Consultation** (OPTIONAL - when storage deletion fails):
+1. **Action**: Read [storage-errors.md](../../docs/troubleshooting/storage-errors.md) using the Read tool to understand storage deletion issues and PVC cleanup strategies
+2. **Output to user**: "I consulted [storage-errors.md](../../docs/troubleshooting/storage-errors.md) to understand the storage deletion failure."
+
 ```markdown
 ## ⚠️ Partial Deletion Completed
 
@@ -655,6 +662,24 @@ Would you like help troubleshooting the storage deletion failure?
 ```
 
 **On complete failure (VM deletion failed):**
+
+**OPTIONAL**: If deletion operation fails, consult documentation for common deletion failure scenarios.
+
+**Document Consultation** (OPTIONAL - when deletion fails):
+1. **Action**: Read [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) using the Read tool to understand VM deletion failure scenarios, finalizer issues, and stuck Terminating states
+2. **Output to user**: "I consulted [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) to understand potential causes for the deletion failure."
+
+**When to consult**:
+- VM deletion fails with finalizer errors
+- VM stuck in Terminating state
+- Storage deletion fails (PVC/DataVolume errors)
+- Unexpected error messages from resources_delete tool
+
+**When NOT to consult**:
+- Simple "VM not found" errors (clear cause)
+- RBAC permission errors (clear cause)
+- Namespace doesn't exist (clear cause)
+
 ```markdown
 ## ❌ VM Deletion Failed
 
@@ -681,14 +706,12 @@ Would you like help troubleshooting the storage deletion failure?
    ```
 
 3. **Check for finalizers:**
-   ```
-   oc get vm <vm-name> -n <namespace> -o jsonpath='{.metadata.finalizers}'
-   ```
+
+   Consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) "VM Stuck in Terminating State" section for MCP-first diagnostic steps using `resources_get` to check finalizers.
 
 4. **Manual deletion (if needed):**
-   ```
-   oc delete vm <vm-name> -n <namespace>
-   ```
+
+   Use `resources_delete` MCP tool or consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) for proper deletion procedure.
 
 Would you like help troubleshooting this error?
 ```
@@ -825,10 +848,9 @@ This safeguard prevents accidental deletion of critical infrastructure.
 
 **Solution:**
 - VMs with finalizers require finalizer removal before deletion
-- Check finalizers:
-  ```
-  oc get vm <name> -n <namespace> -o jsonpath='{.metadata.finalizers}'
-  ```
+- Consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) "VM Stuck in Terminating State" section for MCP-first approach:
+  - Use `resources_get` to check finalizers
+  - Use `resources_create_or_update` to remove finalizers (if needed)
 - Common finalizers: `kubevirt.io/virtualMachineControllerFinalize`
 - Wait for controllers to remove finalizers, or manually patch VM (advanced)
 
@@ -838,15 +860,11 @@ This safeguard prevents accidental deletion of critical infrastructure.
 
 **Solution:**
 1. Verify VM was deleted first (VMs must be deleted before storage)
-2. Check if PVC is mounted by other resources:
-   ```
-   oc get pods -n <namespace> -o json | grep <pvc-name>
-   ```
+2. Consult [storage-errors.md](../../docs/troubleshooting/storage-errors.md) "Storage Deletion Failures" section for MCP-first diagnostics:
+   - Use `pods_list_in_namespace` to check if PVC is mounted by other resources
+   - Use `resources_get` to check PVC status
 3. Wait for VM pod termination (can take 30-60 seconds)
-4. Retry storage deletion manually:
-   ```
-   oc delete pvc <pvc-name> -n <namespace>
-   ```
+4. Use `resources_delete` to delete PVC, or consult storage-errors.md for proper procedure
 
 ### Issue 5: User Typed Wrong VM Name
 
@@ -895,6 +913,9 @@ Names do not match. Deletion cancelled for safety.
 - `vm-creator` - Create VMs after cleanup operations
 
 ### Reference Documentation
+- [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM deletion failure scenarios, finalizer issues, and stuck Terminating states (optionally consulted when deletion operations fail)
+- [storage-errors.md](../../docs/troubleshooting/storage-errors.md) - Storage deletion strategies and PVC cleanup procedures (optionally consulted when storage deletion fails)
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [Kubernetes Finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)

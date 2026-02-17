@@ -315,6 +315,24 @@ To start the VM again:
 
 **On Failure:**
 
+**OPTIONAL**: If lifecycle operation fails, consult documentation for common failure scenarios.
+
+**Document Consultation** (OPTIONAL - when lifecycle operation fails):
+1. **Action**: Read relevant troubleshooting guides to understand VM lifecycle failure scenarios:
+   - [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - For start/stop failures, stuck transitions
+   - [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - For ErrorUnschedulable, resource constraints
+2. **Output to user**: "I consulted [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) and [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) to understand potential causes for the lifecycle operation failure."
+
+**When to consult**:
+- VM fails to start (may be ErrorUnschedulable, resource constraints)
+- VM fails to stop (may be stuck in transition, finalizers)
+- Unexpected error messages from vm_lifecycle tool
+
+**When NOT to consult**:
+- Simple "VM already in desired state" messages
+- VM not found errors (clear cause)
+- RBAC permission errors (clear cause)
+
 ```markdown
 ## ❌ Failed to Execute Lifecycle Operation
 
@@ -463,6 +481,9 @@ User: "Start web-server if it's not running"
 - `vm-troubleshooter` (planned) - Diagnose VM startup/shutdown issues
 
 ### Reference Documentation
+- [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM start/stop failures and stuck transitions (optionally consulted when lifecycle operations fail)
+- [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable and resource constraint errors (optionally consulted when VM won't start)
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine Lifecycle](https://kubevirt.io/user-guide/virtual_machines/lifecycle/)
 - [RunStrategy Documentation](https://kubevirt.io/user-guide/virtual_machines/run_strategies/)

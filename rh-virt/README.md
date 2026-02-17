@@ -9,7 +9,7 @@ OpenShift Virtualization management tools for administering virtual machines on 
 
 The rh-virt collection provides specialized tools for managing virtual machines in OpenShift Virtualization environments:
 
-- **4 specialized skills** for complete VM lifecycle management
+- **5 specialized skills** for complete VM lifecycle management
 - **OpenShift MCP server integration** for KubeVirt operations
 - **Full VM lifecycle coverage** from creation to deletion with safety-first design
 
@@ -96,7 +96,7 @@ claude plugin install openshift-virtualization
 
 ## Skills
 
-The pack provides 4 specialized skills for complete VM lifecycle management:
+The pack provides 5 specialized skills for complete VM lifecycle management:
 
 ### 1. **vm-creator** - Virtual Machine Provisioning
 
@@ -186,6 +186,31 @@ Permanently delete virtual machines and their associated resources with strict s
 - **Storage discovery** - identifies and optionally deletes DataVolumes and PVCs
 - **Safety-first design** - multiple confirmation steps, clear warnings about data loss
 - Requires explicit user confirmation at each critical step (human-in-the-loop)
+
+### 5. **vm-clone** - VM Cloning and Duplication
+
+Clone existing virtual machines for testing, scaling, or creating VM templates.
+
+**Use when:**
+- "Clone VM [source] to [target]"
+- "Create a copy of VM [name]"
+- "Duplicate VM [name] for testing"
+- "Create 3 copies of template-vm"
+
+**MCP Tools Used:**
+- `resources_get` (core toolset) - Get source VM configuration
+- `resources_create_or_update` (core toolset) - Create cloned VM and storage resources
+- `resources_list` (core toolset) - List DataVolumes, PVCs, VMs
+
+**What it does:**
+- **Clone VM configuration** - copies instance type, preferences, network settings, tolerations
+- **Flexible storage strategies** - clone storage (full copy), reference existing (shared), or create new empty storage
+- **Batch cloning** - create multiple copies in one operation
+- **Cross-namespace cloning** - clone VMs between different namespaces
+- **Name conflict detection** - verifies target VM name availability
+- **Resource impact preview** - shows CPU, memory, storage consumption before cloning
+- **Automatic UUID generation** - generates new firmware UUIDs and MAC addresses for clones
+- Requires explicit user confirmation and storage strategy selection (human-in-the-loop)
 
 ## MCP Server Integration
 
@@ -316,13 +341,51 @@ User: "yes"
 → Reports 30Gi storage freed
 ```
 
-### Workflow 5: Automatic Error Diagnosis and Remediation
+### Workflow 5: VM Cloning for Test Environment
+
+```
+User: "Clone production-web to staging-web in namespace staging"
+→ vm-clone skill validates source VM exists
+→ Discovers 100Gi storage
+→ Presents storage cloning options
+
+Agent: "How should storage be cloned?
+        1. Clone Storage (full copy) - 100Gi new allocation
+        2. Reference Existing Storage (shared - dangerous)
+        3. Create New Empty Storage - 100Gi new allocation
+        4. Cancel"
+
+User: "1"
+
+→ vm-clone presents complete configuration preview
+
+Agent: "Clone Configuration Review:
+        Source: production-web (production namespace)
+        Target: staging-web (staging namespace)
+        Storage: Clone Storage (100Gi)
+
+        Proceed with VM cloning? (yes/no)"
+
+User: "yes"
+
+→ vm-clone creates DataVolume with PVC clone source
+→ Creates cloned VirtualMachine with new UUIDs
+→ Monitors storage cloning progress
+
+Agent: "⏳ Storage cloning in progress... (45%)
+        ...
+        ✓ VM Cloned Successfully
+        Clone completed in 8m15s
+        VM staging-web ready to start"
+```
+
+### Workflow 6: Automatic Error Diagnosis and Remediation
 
 ```
 User: "Create a Fedora VM called test-vm in namespace demo"
 → vm-creator skill creates the VM
 → Detects ErrorUnschedulable status
-→ Consults troubleshooting.md documentation
+→ Consults docs/troubleshooting/scheduling-errors.md for domain knowledge
 → Diagnoses: Node taints prevent scheduling
 → Proposes workaround: Add tolerations to VM spec
 
@@ -343,7 +406,7 @@ Agent: "✓ Workaround Applied Successfully
 
 **Key Features**:
 - **Automatic diagnosis**: Detects ErrorUnschedulable and other common errors
-- **Documentation consultation**: Reads troubleshooting.md for domain knowledge
+- **Documentation consultation**: Reads troubleshooting/INDEX.md and category files for domain knowledge
 - **Intelligent workarounds**: Proposes fixes for MCP tool limitations
 - **Human-in-the-loop**: Requires explicit user confirmation before applying patches
 - **Transparent**: Explains temporary limitations and suggests filing enhancement requests
@@ -400,7 +463,7 @@ MCP server is configured in `.mcp.json`:
 The **vm-creator** skill includes automatic error diagnosis and workaround proposals. When VMs encounter scheduling issues:
 
 1. **Detection**: Skill automatically detects ErrorUnschedulable and other error states
-2. **Diagnosis**: Consults `docs/troubleshooting.md` to understand root cause
+2. **Diagnosis**: Consults `docs/troubleshooting/INDEX.md` and category files to understand root cause
 3. **Investigation**: Executes diagnostic commands (node taints, resource availability, events)
 4. **Proposal**: Presents clear diagnosis with workaround options
 5. **Remediation**: Applies fix with user confirmation (human-in-the-loop)
@@ -409,7 +472,7 @@ The **vm-creator** skill includes automatic error diagnosis and workaround propo
 - **ErrorUnschedulable** - Node taints/tolerations mismatch, resource constraints, node selector issues
 - **ErrorDataVolumeNotReady** - Storage provisioning delays, storage class issues, quota exceeded
 
-**For comprehensive troubleshooting guidance**, see [docs/troubleshooting.md](docs/troubleshooting.md).
+**For comprehensive troubleshooting guidance**, see [docs/troubleshooting/INDEX.md](docs/troubleshooting/INDEX.md).
 
 ### MCP Server Won't Start
 
@@ -452,22 +515,31 @@ rh-virt/
 │   └── plugin.json              # Plugin metadata
 ├── .mcp.json                    # MCP server configuration
 ├── docs/                        # AI-optimized knowledge base
-│   └── troubleshooting.md       # VM error diagnosis and workarounds
+│   └── troubleshooting/         # VM error diagnosis and workarounds (categorized by error type)
+│       ├── INDEX.md             # Navigation hub for troubleshooting docs
+│       ├── scheduling-errors.md # ErrorUnschedulable diagnostics
+│       ├── storage-errors.md    # Storage provisioning issues
+│       ├── lifecycle-errors.md  # Start/stop/terminating problems
+│       ├── runtime-errors.md    # CrashLoopBackOff diagnostics
+│       ├── network-errors.md    # Network attachment failures
+│       └── .ai-index/           # Semantic indexing for AI discovery
+│           └── semantic-index.json
 └── skills/
     ├── vm-creator/SKILL.md      # VM provisioning with auto-diagnosis
     ├── vm-lifecycle-manager/SKILL.md  # VM power management
     ├── vm-inventory/SKILL.md    # VM discovery and status
-    └── vm-delete/SKILL.md       # VM destruction and cleanup
+    ├── vm-delete/SKILL.md       # VM destruction and cleanup
+    └── vm-clone/SKILL.md        # VM cloning and duplication
 ```
 
 ### Key Patterns
 
 - **Skills encapsulate operations** - Each skill handles one category of VM tasks
-- **Complete lifecycle coverage** - Create → Inventory → Lifecycle → Delete
+- **Complete lifecycle coverage** - Create → Clone → Inventory → Lifecycle → Delete
 - **MCP provides tools** - OpenShift MCP server exposes KubeVirt operations
 - **Environment-based auth** - KUBECONFIG for secure cluster access
 - **Automatic diagnosis** - Skills detect errors, consult docs, propose workarounds
-- **Document consultation** - Skills read troubleshooting.md for domain knowledge
+- **Document consultation** - Skills read troubleshooting/ category files for domain knowledge
 - **Human-in-the-loop** - User approval required before critical operations (lifecycle changes, deletion)
 - **Safety-first design** - Typed confirmation for destructive operations, protection labels, multi-step validation
 - **Workaround transparency** - Clear communication of MCP tool limitations and temporary solutions

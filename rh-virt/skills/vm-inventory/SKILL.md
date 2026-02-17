@@ -17,6 +17,23 @@ color: cyan
 
 List and inspect virtual machines in OpenShift Virtualization clusters. This skill provides read-only access to VM information without making any modifications.
 
+## Critical: Human-in-the-Loop Requirements
+
+**Not applicable** - This skill performs read-only operations and does not modify any cluster resources. No user confirmation is required.
+
+**Read-only operations:**
+- Listing VirtualMachines across namespaces or in specific namespaces
+- Retrieving VM details, status, and resource configurations
+- Displaying VM health conditions and resource usage
+- Filtering VMs by labels or field selectors
+- Viewing VM network, storage, and node placement information
+
+**No modifications performed:**
+- ✓ Does not change VM state (start/stop/restart)
+- ✓ Does not modify VM configuration
+- ✓ Does not delete VMs or resources
+- ✓ Does not consume cluster resources
+
 ## Prerequisites
 
 **Required MCP Server**: `openshift-virtualization` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
@@ -369,7 +386,24 @@ oc get virtualmachine <vm-name> -n <namespace> -o yaml
 oc get vm <vm-name> -n <namespace> -o yaml
 ```
 
-**Step 3: Display Detailed Information**
+**Step 3: Interpret Status and Conditions (Optional)**
+
+**OPTIONAL**: If the VM has error status or complex conditions, consult documentation for interpretation.
+
+**Document Consultation** (OPTIONAL - when VM has error/warning status):
+1. **Action**: Read [troubleshooting/INDEX.md](../../docs/troubleshooting/INDEX.md) using the Read tool to understand status meanings (ErrorUnschedulable, ErrorDataVolumeNotReady, CrashLoopBackOff, etc.)
+2. **Output to user**: "I consulted [troubleshooting/INDEX.md](../../docs/troubleshooting/INDEX.md) to interpret the VM status '<status-value>'."
+
+**When to consult**:
+- VM status is ErrorUnschedulable, ErrorDataVolumeNotReady, ErrorPvcNotFound
+- VM conditions show warnings or errors
+- VM in unexpected state (e.g., CrashLoopBackOff, Terminating stuck)
+
+**When NOT to consult**:
+- VM status is normal (Running, Stopped, Provisioning)
+- Simple status queries without error conditions
+
+**Step 4: Display Detailed Information**
 
 ```markdown
 ## 🖥️ Virtual Machine Details
@@ -713,6 +747,7 @@ No VMs were found in this namespace.
 - `vm-troubleshooter` (planned) - Diagnose problematic VMs from inventory
 
 ### Reference Documentation
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - VM status interpretation and navigation hub for discovering error-specific troubleshooting guides (optionally consulted when displaying VM details with error states)
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [Accessing VMs](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/virt-accessing-vm-consoles.html)
