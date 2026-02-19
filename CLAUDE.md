@@ -645,7 +645,7 @@ last_updated: YYYY-MM-DD
 5. Test with `Skill` tool invocation
 
 **Collection-Specific Standards:**
-- **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` and validate with `rh-virt/SKILLS_CHECKLIST.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
+- **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
 
 ### Adding an Agent
 
@@ -693,7 +693,6 @@ When creating new collection, use `rh-sre` as the architectural reference.
 
 The `rh-virt` pack demonstrates skill quality standardization:
 - Comprehensive skill templates (`SKILL_TEMPLATE.md`)
-- Validation checklist (`SKILLS_CHECKLIST.md`)
 - Risk-based color coding (cyan/green/blue/yellow/red)
 - Mandatory Common Issues and Example Usage sections
 - Consistent section ordering and formatting
