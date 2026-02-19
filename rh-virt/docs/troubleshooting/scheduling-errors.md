@@ -27,7 +27,7 @@ This document covers VM scheduling failures where the Kubernetes scheduler canno
 - VM shows status `ErrorUnschedulable` after creation or start attempt
 - VM events mention scheduling failures, taints, resources, or node selectors
 
-**Skills that use this**: vm-creator, vm-lifecycle-manager
+**Skills that use this**: vm-create, vm-lifecycle-manager
 
 ---
 
@@ -280,7 +280,7 @@ oc describe vm <vm-name> -n <namespace> | grep "Insufficient"
 **Solutions** (Use MCP Tools First):
 
 1. **Scale cluster** - Add more worker nodes (cluster admin task, no MCP tool)
-2. **Reduce VM resources** - Delete and recreate with smaller instance type using vm-creator skill
+2. **Reduce VM resources** - Delete and recreate with smaller instance type using vm-create skill
 3. **Delete unused VMs** - Use vm-delete skill to free up resources
 4. **Check resource quotas**:
 

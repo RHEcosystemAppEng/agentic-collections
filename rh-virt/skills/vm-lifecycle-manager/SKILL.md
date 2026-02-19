@@ -9,6 +9,8 @@ description: |
 
   This skill handles VM state transitions safely with user confirmation for each action.
 
+  NOT for creating VMs (use vm-create) or deleting VMs (use vm-delete).
+
 model: inherit
 color: blue
 ---
@@ -16,24 +18,6 @@ color: blue
 # /vm-lifecycle-manager Skill
 
 Control virtual machine power state and lifecycle operations in OpenShift Virtualization using the `vm_lifecycle` tool from the openshift-virtualization MCP server.
-
-## Critical: Human-in-the-Loop Requirements
-
-**IMPORTANT:** This skill requires explicit user confirmation before executing lifecycle actions. You MUST:
-
-1. **Wait for user confirmation** on the specific action (start/stop/restart) before executing `vm_lifecycle`
-2. **Do NOT proceed** with the lifecycle operation until the user explicitly approves
-3. **Present the action clearly** with VM name, namespace, and intended state change
-4. **Never auto-execute** VM lifecycle changes without user approval - these operations impact running services
-5. **Warn about consequences** - stopping VMs interrupts services, starting consumes resources, restarting causes brief downtime
-
-If the user says "no" or wants to reconsider, do not proceed with the operation.
-
-**Why this matters:**
-- **Start**: Consumes cluster resources (CPU, memory), affects resource availability for other VMs
-- **Stop**: Interrupts running services and applications, may cause service downtime
-- **Restart**: Causes brief service interruption, running processes will be terminated
-- User should verify they're targeting the correct VM and understand the impact
 
 ## Prerequisites
 
@@ -134,7 +118,7 @@ Please respond with your choice.
 - "/vm-lifecycle-manager" (explicit command)
 
 **Do NOT use this skill when:**
-- User wants to create a new VM → Use `/vm-creator` skill instead
+- User wants to create a new VM → Use `/vm-create` skill instead
 - User wants to list VMs → Use `/vm-inventory` skill instead
 - User wants to delete a VM → Different operation (not lifecycle management)
 
@@ -405,7 +389,7 @@ Would you like help troubleshooting this error?
 1. Check cluster resource availability
 2. Stop other VMs first to free resources
 3. Consider scaling cluster nodes
-4. Resize VM to smaller instance type (using `/vm-creator` to recreate)
+4. Resize VM to smaller instance type (using `/vm-create` to recreate)
 
 ## Understanding RunStrategy
 
@@ -424,7 +408,7 @@ When you execute lifecycle actions, the VM's `runStrategy` changes:
 
 **Note**: This skill sets `Always` for start/restart and `Halted` for stop.
 
-## Advanced Usage
+## Advanced Features
 
 ### Batch Operations
 
@@ -476,7 +460,7 @@ User: "Start web-server if it's not running"
 - `vm_lifecycle` (from openshift-virtualization) - Manage VM power state (start/stop/restart)
 
 ### Related Skills
-- `vm-creator` - Create VMs before managing their lifecycle
+- `vm-create` - Create VMs before managing their lifecycle
 - `vm-inventory` - Check current VM status before lifecycle operations
 - `vm-troubleshooter` (planned) - Diagnose VM startup/shutdown issues
 
@@ -484,10 +468,28 @@ User: "Start web-server if it's not running"
 - [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM start/stop failures and stuck transitions (optionally consulted when lifecycle operations fail)
 - [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable and resource constraint errors (optionally consulted when VM won't start)
 - [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
-- [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
+- [OpenShift Virtualization Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine Lifecycle](https://kubevirt.io/user-guide/virtual_machines/lifecycle/)
 - [RunStrategy Documentation](https://kubevirt.io/user-guide/virtual_machines/run_strategies/)
 - [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
+
+## Critical: Human-in-the-Loop Requirements
+
+**IMPORTANT:** This skill requires explicit user confirmation before executing lifecycle actions. You MUST:
+
+1. **Wait for user confirmation** on the specific action (start/stop/restart) before executing `vm_lifecycle`
+2. **Do NOT proceed** with the lifecycle operation until the user explicitly approves
+3. **Present the action clearly** with VM name, namespace, and intended state change
+4. **Never auto-execute** VM lifecycle changes without user approval - these operations impact running services
+5. **Warn about consequences** - stopping VMs interrupts services, starting consumes resources, restarting causes brief downtime
+
+If the user says "no" or wants to reconsider, do not proceed with the operation.
+
+**Why this matters:**
+- **Start**: Consumes cluster resources (CPU, memory), affects resource availability for other VMs
+- **Stop**: Interrupts running services and applications, may cause service downtime
+- **Restart**: Causes brief service interruption, running processes will be terminated
+- User should verify they're targeting the correct VM and understand the impact
 
 ## Security Considerations
 

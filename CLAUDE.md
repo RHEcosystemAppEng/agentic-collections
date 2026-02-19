@@ -644,6 +644,9 @@ last_updated: YYYY-MM-DD
 4. Include concrete examples
 5. Test with `Skill` tool invocation
 
+**Collection-Specific Standards:**
+- **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` and validate with `rh-virt/SKILLS_CHECKLIST.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
+
 ### Adding an Agent
 
 1. Create `agents/<agent-name>.md`
@@ -685,6 +688,20 @@ The `rh-sre` pack is the most complete implementation, demonstrating:
 - Red Hat Lightspeed platform integration
 
 When creating new collection, use `rh-sre` as the architectural reference.
+
+### rh-virt (Quality-Controlled Pattern)
+
+The `rh-virt` pack demonstrates skill quality standardization:
+- Comprehensive skill templates (`SKILL_TEMPLATE.md`)
+- Validation checklist (`SKILLS_CHECKLIST.md`)
+- Risk-based color coding (cyan/green/blue/yellow/red)
+- Mandatory Common Issues and Example Usage sections
+- Consistent section ordering and formatting
+
+Use `rh-virt` as reference for collections requiring high consistency and maintainability.
+
+When creating new collections, follow the pattern that best matches your needs:
+- **Tool-focused domains** (infrastructure, operations) → Follow rh-virt pattern
 
 ## Key Principles
 

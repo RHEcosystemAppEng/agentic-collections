@@ -25,7 +25,7 @@ This document covers VM runtime failures where the virt-launcher pod or guest OS
 - virt-launcher pod repeatedly restarting
 - Guest OS kernel panics on boot
 
-**Skills that use this**: vm-creator, vm-lifecycle-manager
+**Skills that use this**: vm-create, vm-lifecycle-manager
 
 ---
 
@@ -278,7 +278,7 @@ virtctl console <vm-name> -n <namespace>
 
    Extract `.spec.domain.resources.requests.memory`.
 
-   If too high for node, delete and recreate with smaller instance type using vm-creator skill (change from "large" to "medium" or "small").
+   If too high for node, delete and recreate with smaller instance type using vm-create skill (change from "large" to "medium" or "small").
 
    **CLI Fallback** (if MCP unavailable):
    ```bash
@@ -334,7 +334,7 @@ virtctl console <vm-name> -n <namespace>
 
 7. **Simplify VM configuration** (eliminate variables):
 
-   Try creating minimal VM using vm-creator skill with:
+   Try creating minimal VM using vm-create skill with:
    - Small instance type
    - No secondary networks
    - Simple container disk (e.g., Fedora)
@@ -344,7 +344,7 @@ virtctl console <vm-name> -n <namespace>
 
 8. **Recreate VM with different workload** (test disk image):
 
-   If guest OS consistently crashes, use vm-creator skill to try different OS image (e.g., switch from Ubuntu to Fedora). This tests if issue is workload-specific.
+   If guest OS consistently crashes, use vm-create skill to try different OS image (e.g., switch from Ubuntu to Fedora). This tests if issue is workload-specific.
 
 **Verification** (Use MCP Tools First):
 

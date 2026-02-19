@@ -39,7 +39,7 @@ This guide provides comprehensive diagnostic procedures and workarounds for Virt
 - **Networking**: Secondary network attachment failures
 - **Runtime**: CrashLoopBackOff, guest OS boot failures
 
-This guide is consulted by all rh-virt skills (vm-creator, vm-inventory, vm-lifecycle-manager, vm-delete, vm-clone) when diagnosing and remediating VM issues.
+This guide is consulted by all rh-virt skills (vm-create, vm-inventory, vm-lifecycle-manager, vm-delete, vm-clone) when diagnosing and remediating VM issues.
 
 ---
 
@@ -55,7 +55,7 @@ The troubleshooting documentation is organized by error category for easier navi
 - ErrorUnschedulable - Insufficient Resources
 - ErrorUnschedulable - Node Selector Mismatch
 
-**Skills that use this**: vm-creator, vm-lifecycle-manager
+**Skills that use this**: vm-create, vm-lifecycle-manager
 
 ---
 
@@ -68,7 +68,7 @@ The troubleshooting documentation is organized by error category for easier navi
 - Storage Deletion Failures
 - DataVolume Cloning Failures
 
-**Skills that use this**: vm-creator, vm-delete, vm-clone
+**Skills that use this**: vm-create, vm-delete, vm-clone
 
 ---
 
@@ -90,7 +90,7 @@ The troubleshooting documentation is organized by error category for easier navi
 **Errors covered**:
 - CrashLoopBackOff
 
-**Skills that use this**: vm-creator, vm-lifecycle-manager
+**Skills that use this**: vm-create, vm-lifecycle-manager
 
 ---
 
@@ -100,7 +100,7 @@ The troubleshooting documentation is organized by error category for easier navi
 **Errors covered**:
 - Network Attachment Failures (Multus, SR-IOV)
 
-**Skills that use this**: vm-creator
+**Skills that use this**: vm-create
 
 ---
 
@@ -225,7 +225,7 @@ Each error section includes:
 
 ## 🔍 Quick Navigation by Skill
 
-**vm-creator**:
+**vm-create**:
 - [Scheduling Errors](scheduling-errors.md) - ErrorUnschedulable diagnostics
 - [Storage Errors](storage-errors.md) - ErrorDataVolumeNotReady, storage provisioning
 - [Runtime Errors](runtime-errors.md) - CrashLoopBackOff

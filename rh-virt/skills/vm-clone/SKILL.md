@@ -19,35 +19,6 @@ color: blue
 
 Clone existing virtual machines in OpenShift Virtualization, creating new VMs with copied configuration and optional storage cloning. This skill is ideal for creating test environments, scaling workloads, or duplicating VM templates.
 
-## Critical: Human-in-the-Loop Requirements
-
-**IMPORTANT:** This skill creates new resources that consume cluster capacity. You MUST:
-
-1. **Before Cloning**
-   - Verify source VM exists and get full configuration
-   - Ask user for clone configuration (name, namespace, storage strategy)
-   - Present clone preview with resource impact
-   - Wait for explicit user confirmation
-
-2. **Configuration Confirmation**
-   - Display source VM details
-   - Show target VM configuration
-   - Indicate storage cloning strategy
-   - Estimate resource consumption (CPU, memory, storage)
-   - Ask: "Proceed with VM cloning? (yes/no)"
-   - Wait for explicit "yes"
-
-3. **Never Auto-Execute**
-   - **NEVER clone without user confirmation**
-   - **NEVER assume storage strategy** - always ask user
-   - **NEVER proceed if user says "no", "wait", "cancel"**
-
-**Why This Matters:**
-- **Resource Consumption**: Clones consume cluster resources (CPU, memory, storage)
-- **Storage Costs**: Storage cloning can consume significant disk space
-- **Naming Conflicts**: Duplicate names cause errors
-- **Network Configuration**: May need adjustment for clones
-
 ## Prerequisites
 
 **Required MCP Server**: `openshift-virtualization` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
@@ -149,7 +120,7 @@ Please respond with your choice.
 - "/vm-clone" (explicit command)
 
 **Do NOT use this skill when:**
-- User wants to create a new VM from scratch → Use `/vm-creator` skill instead
+- User wants to create a new VM from scratch → Use `/vm-create` skill instead
 - User wants a point-in-time backup → Use snapshots instead
 - User wants to move/migrate a VM → Use migration tools instead
 - User wants to resize a VM → Modify existing VM instead
@@ -867,7 +838,7 @@ Modifications could include:
   - Source: https://github.com/openshift/openshift-mcp-server/blob/main/pkg/toolsets/core/resources.go
 
 ### Related Skills
-- `vm-creator` - Create new VMs from scratch (alternative to cloning)
+- `vm-create` - Create new VMs from scratch (alternative to cloning)
 - `vm-inventory` - List and verify source/target VMs
 - `vm-lifecycle-manager` - Start cloned VMs after creation
 - `vm-delete` - Clean up failed clones or unwanted copies
@@ -875,10 +846,39 @@ Modifications could include:
 ### Reference Documentation
 - [storage-errors.md](../../docs/troubleshooting/storage-errors.md) - VM cloning failure scenarios, storage provisioning issues, and DataVolume cloning errors (optionally consulted when cloning operations fail)
 - [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
-- [OpenShift Virtualization Cloning](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/cloning_vms/virt-cloning-vm.html)
+- [OpenShift Virtualization Cloning](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/virtual_machines/cloning_vms/virt-cloning-vm.html)
 - [DataVolume Cloning](https://github.com/kubevirt/containerized-data-importer/blob/main/doc/datavolumes.md#cloning)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [CSI Volume Cloning](https://kubernetes.io/docs/concepts/storage/volume-pvc-datasource/)
+
+## Critical: Human-in-the-Loop Requirements
+
+**IMPORTANT:** This skill creates new resources that consume cluster capacity. You MUST:
+
+1. **Before Cloning**
+   - Verify source VM exists and get full configuration
+   - Ask user for clone configuration (name, namespace, storage strategy)
+   - Present clone preview with resource impact
+   - Wait for explicit user confirmation
+
+2. **Configuration Confirmation**
+   - Display source VM details
+   - Show target VM configuration
+   - Indicate storage cloning strategy
+   - Estimate resource consumption (CPU, memory, storage)
+   - Ask: "Proceed with VM cloning? (yes/no)"
+   - Wait for explicit "yes"
+
+3. **Never Auto-Execute**
+   - **NEVER clone without user confirmation**
+   - **NEVER assume storage strategy** - always ask user
+   - **NEVER proceed if user says "no", "wait", "cancel"**
+
+**Why This Matters:**
+- **Resource Consumption**: Clones consume cluster resources (CPU, memory, storage)
+- **Storage Costs**: Storage cloning can consume significant disk space
+- **Naming Conflicts**: Duplicate names cause errors
+- **Network Configuration**: May need adjustment for clones
 
 ## Security Considerations
 

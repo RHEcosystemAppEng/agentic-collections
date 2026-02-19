@@ -439,7 +439,7 @@ oc describe vm <vm-name> -n <namespace> | grep -A 20 "Events:"
 
    Extract `.spec.domain.resources.requests.memory`.
 
-   If too low, delete VM and recreate with larger instance type (e.g., change from "small" to "medium" in vm-creator).
+   If too low, delete VM and recreate with larger instance type (e.g., change from "small" to "medium" in vm-create).
 
    **CLI Fallback** (if MCP unavailable):
    ```bash

@@ -98,7 +98,7 @@ claude plugin install openshift-virtualization
 
 The pack provides 5 specialized skills for complete VM lifecycle management:
 
-### 1. **vm-creator** - Virtual Machine Provisioning
+### 1. **vm-create** - Virtual Machine Provisioning
 
 Create new virtual machines in OpenShift Virtualization with automatic error diagnosis and workarounds.
 
@@ -291,7 +291,7 @@ The server provides two toolsets enabled via `--toolsets core,kubevirt`:
 
 ```
 User: "Create a VM called web-server in namespace production"
-→ vm-creator skill creates the VM
+→ vm-create skill creates the VM
 
 User: "Start the web-server VM"
 → vm-lifecycle-manager skill starts the VM
@@ -383,7 +383,7 @@ Agent: "⏳ Storage cloning in progress... (45%)
 
 ```
 User: "Create a Fedora VM called test-vm in namespace demo"
-→ vm-creator skill creates the VM
+→ vm-create skill creates the VM
 → Detects ErrorUnschedulable status
 → Consults docs/troubleshooting/scheduling-errors.md for domain knowledge
 → Diagnoses: Node taints prevent scheduling
@@ -396,7 +396,7 @@ Agent: "⚠️ VM Scheduling Issue Detected
         How would you like to proceed?"
 
 User: "apply workaround"
-→ vm-creator patches VM with tolerations
+→ vm-create patches VM with tolerations
 → Verifies VM can now be scheduled
 → Reports success
 
@@ -460,7 +460,7 @@ MCP server is configured in `.mcp.json`:
 
 ### Automatic Diagnosis (Recommended)
 
-The **vm-creator** skill includes automatic error diagnosis and workaround proposals. When VMs encounter scheduling issues:
+The **vm-create** skill includes automatic error diagnosis and workaround proposals. When VMs encounter scheduling issues:
 
 1. **Detection**: Skill automatically detects ErrorUnschedulable and other error states
 2. **Diagnosis**: Consults `docs/troubleshooting/INDEX.md` and category files to understand root cause
@@ -492,7 +492,7 @@ The **vm-creator** skill includes automatic error diagnosis and workaround propo
 2. Check namespace exists and ServiceAccount has access
 3. Verify RBAC permissions for VirtualMachine resources
 4. Check cluster resource availability (CPU, memory, storage)
-5. Let vm-creator skill run automatic diagnosis (see Workflow 4 above)
+5. Let vm-create skill run automatic diagnosis (see Workflow 4 above)
 
 ### Skills Not Triggering
 
@@ -525,7 +525,7 @@ rh-virt/
 │       └── .ai-index/           # Semantic indexing for AI discovery
 │           └── semantic-index.json
 └── skills/
-    ├── vm-creator/SKILL.md      # VM provisioning with auto-diagnosis
+    ├── vm-create/SKILL.md      # VM provisioning with auto-diagnosis
     ├── vm-lifecycle-manager/SKILL.md  # VM power management
     ├── vm-inventory/SKILL.md    # VM discovery and status
     ├── vm-delete/SKILL.md       # VM destruction and cleanup

@@ -29,7 +29,7 @@ This document covers VM storage-related failures including storage provisioning,
 - DataVolume cloning operations fail
 - PVC provisioning issues
 
-**Skills that use this**: vm-creator, vm-delete, vm-clone
+**Skills that use this**: vm-create, vm-delete, vm-clone
 
 ---
 
@@ -1001,7 +1001,7 @@ oc get pvc <target-vm>-rootdisk -n <target-namespace> -o jsonpath='{.status.phas
 # Should return: Bound
 ```
 
-**Alternative**: If cloning continuously fails, use vm-creator skill to create new VM with container disk or DataSource instead.
+**Alternative**: If cloning continuously fails, use vm-create skill to create new VM with container disk or DataSource instead.
 
 ---
 

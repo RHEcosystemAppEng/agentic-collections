@@ -19,50 +19,6 @@ color: red
 
 Permanently delete virtual machines and their associated resources (storage, DataVolumes) from OpenShift Virtualization clusters. This skill enforces strict safety protocols including typed confirmation and pre-deletion validation.
 
-## Critical: Human-in-the-Loop Requirements
-
-**CRITICAL: This skill performs IRREVERSIBLE operations.** You MUST:
-
-1. **Pre-Deletion Validation** (Execute FIRST, before asking for confirmation)
-   - Verify VM exists using `resources_get`
-   - Check VM running state
-   - Discover dependent resources (DataVolumes, PVCs)
-   - Check for protection labels (`protected: "true"`)
-
-2. **Safety Checks**
-   - **REFUSE deletion** if VM has label `protected: "true"`
-   - **REQUIRE VM to be stopped first** if currently running
-   - **List all resources** that will be deleted (VM, storage, DataVolumes)
-
-3. **Typed Confirmation Protocol** (MANDATORY)
-   - Display complete deletion scope
-   - **Require user to type the exact VM name** to confirm
-   - Accept only exact match (case-sensitive)
-   - If name doesn't match → Cancel operation, do not proceed
-
-4. **Deletion Options**
-   - Ask user what to delete:
-     - Option 1: VM only (preserve storage)
-     - Option 2: VM + storage (complete cleanup)
-     - Option 3: Cancel
-   - **NEVER assume** which option user wants
-
-5. **Final Confirmation Before Each Deletion**
-   - After typed confirmation, show exactly what will be deleted
-   - Ask: "Proceed with permanent deletion? (yes/cancel)"
-   - Wait for explicit "yes"
-
-6. **Never Auto-Execute**
-   - **NEVER delete without explicit typed confirmation**
-   - **NEVER proceed if user says "no", "wait", "cancel"**
-   - **NEVER skip the typed verification step**
-
-**Why This Matters:**
-- **Permanent**: Deleted VMs cannot be recovered
-- **Data Loss**: Storage deletion destroys all VM data
-- **Service Impact**: Deleting running VMs causes immediate service outage
-- **Accidental Deletion**: Typed verification prevents mistakes (typos, wrong VM name)
-
 ## Prerequisites
 
 **Required MCP Server**: `openshift-virtualization` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
@@ -166,7 +122,7 @@ Please respond with your choice.
 
 **Do NOT use this skill when:**
 - User wants to stop a VM temporarily → Use `/vm-lifecycle-manager` skill instead
-- User wants to create a VM → Use `/vm-creator` skill instead
+- User wants to create a VM → Use `/vm-create` skill instead
 - User wants to view VMs → Use `/vm-inventory` skill instead
 - User wants to pause or suspend VM → Use lifecycle management (not deletion)
 
@@ -910,17 +866,61 @@ Names do not match. Deletion cancelled for safety.
 ### Related Skills
 - `vm-inventory` - Verify VM exists and get details before deletion
 - `vm-lifecycle-manager` - Stop running VMs before deletion (used internally by vm-delete)
-- `vm-creator` - Create VMs after cleanup operations
+- `vm-create` - Create VMs after cleanup operations
 
 ### Reference Documentation
 - [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM deletion failure scenarios, finalizer issues, and stuck Terminating states (optionally consulted when deletion operations fail)
 - [storage-errors.md](../../docs/troubleshooting/storage-errors.md) - Storage deletion strategies and PVC cleanup procedures (optionally consulted when storage deletion fails)
 - [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
-- [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
+- [OpenShift Virtualization Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [Kubernetes Finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)
 - [PVC Deletion](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#delete)
 - [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
+
+## Critical: Human-in-the-Loop Requirements
+
+**CRITICAL: This skill performs IRREVERSIBLE operations.** You MUST:
+
+1. **Pre-Deletion Validation** (Execute FIRST, before asking for confirmation)
+   - Verify VM exists using `resources_get`
+   - Check VM running state
+   - Discover dependent resources (DataVolumes, PVCs)
+   - Check for protection labels (`protected: "true"`)
+
+2. **Safety Checks**
+   - **REFUSE deletion** if VM has label `protected: "true"`
+   - **REQUIRE VM to be stopped first** if currently running
+   - **List all resources** that will be deleted (VM, storage, DataVolumes)
+
+3. **Typed Confirmation Protocol** (MANDATORY)
+   - Display complete deletion scope
+   - **Require user to type the exact VM name** to confirm
+   - Accept only exact match (case-sensitive)
+   - If name doesn't match → Cancel operation, do not proceed
+
+4. **Deletion Options**
+   - Ask user what to delete:
+     - Option 1: VM only (preserve storage)
+     - Option 2: VM + storage (complete cleanup)
+     - Option 3: Cancel
+   - **NEVER assume** which option user wants
+
+5. **Final Confirmation Before Each Deletion**
+   - After typed confirmation, show exactly what will be deleted
+   - Ask: "Proceed with permanent deletion? (yes/cancel)"
+   - Wait for explicit "yes"
+
+6. **Never Auto-Execute**
+   - **NEVER delete without explicit typed confirmation**
+   - **NEVER proceed if user says "no", "wait", "cancel"**
+   - **NEVER skip the typed verification step**
+
+**Why This Matters:**
+- **Permanent**: Deleted VMs cannot be recovered
+- **Data Loss**: Storage deletion destroys all VM data
+- **Service Impact**: Deleting running VMs causes immediate service outage
+- **Accidental Deletion**: Typed verification prevents mistakes (typos, wrong VM name)
 
 ## Security Considerations
 

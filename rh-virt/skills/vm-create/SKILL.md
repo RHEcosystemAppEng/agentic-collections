@@ -1,5 +1,5 @@
 ---
-name: vm-creator
+name: vm-create
 description: |
   Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection. Use this skill when users request:
   - "Create a new VM"
@@ -9,31 +9,15 @@ description: |
 
   This skill handles VM creation with intelligent defaults for OpenShift Virtualization.
 
+  NOT for managing existing VMs (use vm-lifecycle-manager or vm-delete instead).
+
 model: inherit
 color: green
 ---
 
-# /vm-creator Skill
+# /vm-create Skill
 
 Create virtual machines in OpenShift Virtualization using the `vm_create` tool from the openshift-virtualization MCP server.
-
-## Critical: Human-in-the-Loop Requirements
-
-**IMPORTANT:** This skill requires explicit user confirmation before creating VMs. You MUST:
-
-1. **Wait for user confirmation** on all VM configuration parameters before executing `vm_create`.
-2. **Do NOT proceed** with VM creation until the user explicitly approves the configuration.
-3. **Present configuration clearly** in a table format and wait for user response.
-4. **Never auto-execute** VM creation without user approval - creating VMs is a additive operation that consumes cluster resources, affects quotas and may incur cost.
-5. **Allow modifications** - If user wants to change parameters, update and re-confirm before proceeding.
-
-If the user says "no" or wants modifications, address their concerns before proceeding.
-
-**Why this matters:**
-- VM creation consumes cluster resources (CPU, memory, storage)
-- VMs persist until explicitly deleted
-- Incorrect configuration can impact cluster performance
-- User should verify namespace, sizing, and other parameters
 
 ## Prerequisites
 
@@ -72,7 +56,7 @@ If the user says "no" or wants modifications, address their concerns before proc
 When prerequisites fail:
 
 ```
-❌ Cannot execute vm-creator: MCP server 'openshift-virtualization' is not available
+❌ Cannot execute vm-create: MCP server 'openshift-virtualization' is not available
 
 📋 Setup Instructions:
 1. Add openshift-virtualization to .mcp.json:
@@ -120,7 +104,7 @@ Please respond with your choice.
 ## When to Use This Skill
 
 **Trigger this skill when:**
-- User explicitly invokes `/vm-creator` command
+- User explicitly invokes `/vm-create` command
 - User requests creating a new virtual machine
 - Deploying VMs with specific OS (Fedora, Ubuntu, RHEL, CentOS, Debian)
 - Setting up VMs with custom sizing (small, medium, large)
@@ -130,53 +114,12 @@ Please respond with your choice.
 - "Create a Fedora VM in namespace vms"
 - "Deploy a medium Ubuntu VM with 100Gi disk"
 - "Set up a RHEL VM called database-01"
-- "/vm-creator" (explicit command)
+- "/vm-create" (explicit command)
 
 **Do NOT use this skill when:**
 - User wants to start/stop existing VMs → Use `/vm-lifecycle-manager` skill instead
 - User wants to list VMs → Use `/vm-inventory` skill instead
 - User only wants information about VMs (not creation) → Use `/vm-inventory` skill instead
-
-## CRITICAL: MCP Tools First Policy
-
-**MANDATORY REQUIREMENT**: You MUST ALWAYS use MCP tools from the openshift-virtualization server for ALL cluster operations.
-
-**MCP Tools Available:**
-- `namespaces_list` - List all namespaces
-- `resources_list` - List resources (StorageClass, VirtualMachine, etc.)
-- `resources_get` - Get specific resource details
-- `resources_create_or_update` - Create or update resources
-- `resources_delete` - Delete resources
-- `pods_list` - List pods
-- `pods_exec` - Execute commands in pods
-- `events_list` - List cluster events
-- And many more...
-
-**Policy:**
-1. **ALWAYS check if an MCP tool exists** for the operation you need to perform
-2. **ONLY use kubectl/oc CLI commands** when:
-   - No equivalent MCP tool exists for that specific operation
-   - The MCP tool has been tried and failed
-   - You have explicit confirmation that the MCP approach is not possible
-
-**Examples:**
-- ❌ WRONG: `kubectl get namespaces` → ✅ CORRECT: Use `namespaces_list` MCP tool
-- ❌ WRONG: `kubectl get storageclass -o json` → ✅ CORRECT: Use `resources_list` MCP tool with apiVersion="storage.k8s.io/v1", kind="StorageClass"
-- ❌ WRONG: `kubectl get vm <name> -n <namespace>` → ✅ CORRECT: Use `resources_get` MCP tool with apiVersion="kubevirt.io/v1", kind="VirtualMachine"
-- ❌ WRONG: `kubectl config view --minify` → ⚠️ ACCEPTABLE: No MCP equivalent exists for kubeconfig context detection
-
-**Why this matters:**
-- MCP tools provide structured, validated outputs
-- Better error handling and user experience
-- Consistent interface across all operations
-- Reduced dependency on CLI tools
-- Better integration with Claude Code environment
-
-**If you catch yourself about to use kubectl/oc:**
-1. STOP
-2. Check the available MCP tools list above
-3. Use the MCP tool instead
-4. Only proceed with kubectl/oc if absolutely no alternative exists
 
 ## Workflow
 
@@ -997,7 +940,7 @@ Would you like me to display the default credentials for the VM? (yes/no)
 Would you like help troubleshooting this error?
 ```
 
-## Advanced Usage
+## Advanced Features
 
 ### Custom Container Disk Images
 
@@ -1130,11 +1073,29 @@ vm_create({
 - [runtime-errors.md](../../docs/troubleshooting/runtime-errors.md) - CrashLoopBackOff and guest OS failures
 - [network-errors.md](../../docs/troubleshooting/network-errors.md) - Network attachment failures
 - [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
-- [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
-- [Troubleshooting VMs](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/troubleshooting_vms.html)
+- [OpenShift Virtualization Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
+- [Troubleshooting VMs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/virtual_machines/troubleshooting_vms.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
-- [StorageClass Documentation](https://docs.openshift.com/container-platform/latest/storage/understanding-persistent-storage.html)
+- [StorageClass Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#storage/understanding-persistent-storage.html)
+
+## Critical: Human-in-the-Loop Requirements
+
+**IMPORTANT:** This skill requires explicit user confirmation before creating VMs. You MUST:
+
+1. **Wait for user confirmation** on all VM configuration parameters before executing `vm_create`.
+2. **Do NOT proceed** with VM creation until the user explicitly approves the configuration.
+3. **Present configuration clearly** in a table format and wait for user response.
+4. **Never auto-execute** VM creation without user approval - creating VMs is a additive operation that consumes cluster resources, affects quotas and may incur cost.
+5. **Allow modifications** - If user wants to change parameters, update and re-confirm before proceeding.
+
+If the user says "no" or wants modifications, address their concerns before proceeding.
+
+**Why this matters:**
+- VM creation consumes cluster resources (CPU, memory, storage)
+- VMs persist until explicitly deleted
+- Incorrect configuration can impact cluster performance
+- User should verify namespace, sizing, and other parameters
 
 ## Security Considerations
 
@@ -1152,7 +1113,7 @@ vm_create({
 ```
 User: "Create a VM"
 
-Agent: [Invokes /vm-creator skill]
+Agent: [Invokes /vm-create skill]
        [Detects current namespace from kubeconfig: "production"]
        [Queries available StorageClasses, finds default: "ocs-storagecluster-ceph-rbd"]
        [No parameters provided, uses AskUserQuestion for full interactive menu]
@@ -1215,7 +1176,7 @@ Next Steps: "Start VM my-app-server in namespace production"
 ```
 User: "Create an Ubuntu VM called web-01 in namespace apps"
 
-Agent: [Invokes /vm-creator skill]
+Agent: [Invokes /vm-create skill]
        [Detects VM name="web-01", namespace="apps", OS="ubuntu"]
        [Queries StorageClasses for menu]
        [Uses AskUserQuestion only for: Performance, Size, Storage, Storage Class, Autostart]
@@ -1273,7 +1234,7 @@ VM Details:
 ```
 User: "Deploy a memory-optimized RHEL VM called db-server in production namespace"
 
-Agent: [Invokes /vm-creator skill]
+Agent: [Invokes /vm-create skill]
        [Detects: name="db-server", namespace="production", OS="rhel", performance="m1" (memory-optimized)]
        [Uses AskUserQuestion for: Size, Storage, Storage Class, Autostart]
 
@@ -1336,7 +1297,7 @@ VM Details:
 ```
 User: "Create a VM named apache-server in namespace vms"
 
-Agent: [Invokes /vm-creator skill]
+Agent: [Invokes /vm-create skill]
        [Validates name: "apache-server" ✓]
        [Checks if VM exists...]
 
@@ -1375,7 +1336,7 @@ Agent: [Validates new name: "apache-server-02" ✓]
 ```
 User: "Create a VM named test in namespace dev"
 
-Agent: [Invokes /vm-creator skill]
+Agent: [Invokes /vm-create skill]
        [Interactive menu presented...]
        [Processes responses]
 

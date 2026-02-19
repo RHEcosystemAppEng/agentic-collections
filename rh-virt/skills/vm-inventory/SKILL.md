@@ -9,6 +9,8 @@ description: |
 
   This skill provides comprehensive VM inventory and status reporting.
 
+  NOT for creating or modifying VMs (use vm-create or vm-lifecycle-manager instead).
+
 model: inherit
 color: cyan
 ---
@@ -16,23 +18,6 @@ color: cyan
 # /vm-inventory Skill
 
 List and inspect virtual machines in OpenShift Virtualization clusters. This skill provides read-only access to VM information without making any modifications.
-
-## Critical: Human-in-the-Loop Requirements
-
-**Not applicable** - This skill performs read-only operations and does not modify any cluster resources. No user confirmation is required.
-
-**Read-only operations:**
-- Listing VirtualMachines across namespaces or in specific namespaces
-- Retrieving VM details, status, and resource configurations
-- Displaying VM health conditions and resource usage
-- Filtering VMs by labels or field selectors
-- Viewing VM network, storage, and node placement information
-
-**No modifications performed:**
-- ✓ Does not change VM state (start/stop/restart)
-- ✓ Does not modify VM configuration
-- ✓ Does not delete VMs or resources
-- ✓ Does not consume cluster resources
 
 ## Prerequisites
 
@@ -145,7 +130,7 @@ Please respond with your choice.
 - "/vm-inventory" (explicit command)
 
 **Do NOT use this skill when:**
-- User wants to create a VM → Use `/vm-creator` skill instead
+- User wants to create a VM → Use `/vm-create` skill instead
 - User wants to start/stop VMs → Use `/vm-lifecycle-manager` skill instead
 - User wants to modify VM configuration → Different operation (not inventory)
 
@@ -523,7 +508,7 @@ Found 3 VMs:
 - web-dev-01 (development) - Running
 ```
 
-## Common Queries and Responses
+## Common Issues
 
 ### "Show me all running VMs"
 
@@ -680,7 +665,7 @@ No VMs were found in this namespace.
 - Insufficient permissions to view VMs
 
 **Next steps:**
-- Create a VM: Use /vm-creator skill
+- Create a VM: Use /vm-create skill
 - List all namespaces: "Show me all namespaces"
 - Check permissions: `oc auth can-i list virtualmachines -n production`
 ```
@@ -707,7 +692,7 @@ No VMs were found in this namespace.
 
 ## Integration with Other Skills
 
-**Before creating a VM** (vm-creator):
+**Before creating a VM** (vm-create):
 - Use vm-inventory to check if VM name already exists
 - Verify namespace exists and has capacity
 
@@ -742,16 +727,33 @@ No VMs were found in this namespace.
 **Important**: Always attempt MCP tools first. Only use CLI commands after MCP tool failure and with user confirmation.
 
 ### Related Skills
-- `vm-creator` - Create VMs after checking inventory
+- `vm-create` - Create VMs after checking inventory
 - `vm-lifecycle-manager` - Manage VMs discovered in inventory
 - `vm-troubleshooter` (planned) - Diagnose problematic VMs from inventory
 
 ### Reference Documentation
 - [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - VM status interpretation and navigation hub for discovering error-specific troubleshooting guides (optionally consulted when displaying VM details with error states)
-- [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
+- [OpenShift Virtualization Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
-- [Accessing VMs](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/virt-accessing-vm-consoles.html)
+- [Accessing VMs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/virtual_machines/virt-accessing-vm-consoles.html)
 - [VM Status Conditions](https://kubevirt.io/user-guide/virtual_machines/vm_status_conditions/)
+
+## Critical: Human-in-the-Loop Requirements
+
+**Not applicable** - This skill performs read-only operations and does not modify any cluster resources. No user confirmation is required.
+
+**Read-only operations:**
+- Listing VirtualMachines across namespaces or in specific namespaces
+- Retrieving VM details, status, and resource configurations
+- Displaying VM health conditions and resource usage
+- Filtering VMs by labels or field selectors
+- Viewing VM network, storage, and node placement information
+
+**No modifications performed:**
+- ✓ Does not change VM state (start/stop/restart)
+- ✓ Does not modify VM configuration
+- ✓ Does not delete VMs or resources
+- ✓ Does not consume cluster resources
 
 ## Security Considerations
 
@@ -906,5 +908,5 @@ To create a VM:
 "Create a VM in namespace test"
 ```
 
-The /vm-creator skill will help you set up a new virtual machine.
+The /vm-create skill will help you set up a new virtual machine.
 ```

@@ -26,7 +26,7 @@ This document covers VM secondary network attachment failures using Multus CNI a
 - Multus CNI failures
 - SR-IOV device attachment issues
 
-**Skills that use this**: vm-creator
+**Skills that use this**: vm-create
 
 ---
 
@@ -364,7 +364,7 @@ oc describe pod virt-launcher-<vm-name>-xxx -n <namespace>
 
 7. **Recreate VM with corrected network configuration** (if needed):
 
-   If network attachment is fundamentally broken, delete and recreate VM with correct NAD references using vm-creator skill.
+   If network attachment is fundamentally broken, delete and recreate VM with correct NAD references using vm-create skill.
 
 **Verification** (Use MCP Tools First):
 
