@@ -1,0 +1,148 @@
+{
+  "index_version": "1.0.0",
+  "last_updated": "2026-02-17",
+  "description": "Semantic index for VM troubleshooting documentation - maps skills and error types to relevant documentation files",
+
+  "documents": [
+    {
+      "file": "INDEX.md",
+      "title": "VM Troubleshooting Guide - Index",
+      "category": "navigation",
+      "keywords": ["index", "navigation", "overview", "MCP tools", "quick reference"],
+      "use_cases": ["navigation", "tool-reference", "general-guidance"],
+      "token_estimate": 450,
+      "skills": ["all"]
+    },
+    {
+      "file": "scheduling-errors.md",
+      "title": "VM Scheduling Errors",
+      "category": "scheduling",
+      "keywords": ["ErrorUnschedulable", "node taints", "tolerations", "insufficient resources", "node selector", "scheduling failure"],
+      "use_cases": ["vm-creation", "vm-lifecycle", "scheduling-diagnosis"],
+      "errors_covered": [
+        "ErrorUnschedulable - Node Taints",
+        "ErrorUnschedulable - Insufficient Resources",
+        "ErrorUnschedulable - Node Selector Mismatch"
+      ],
+      "token_estimate": 820,
+      "skills": ["vm-creator", "vm-lifecycle-manager"]
+    },
+    {
+      "file": "storage-errors.md",
+      "title": "VM Storage Errors",
+      "category": "storage",
+      "keywords": ["ErrorDataVolumeNotReady", "ErrorPvcNotFound", "storage deletion", "PVC", "DataVolume", "cloning", "CDI", "storage class", "storage provisioning"],
+      "use_cases": ["vm-creation", "vm-deletion", "vm-cloning", "storage-diagnosis"],
+      "errors_covered": [
+        "ErrorDataVolumeNotReady - DataVolume Still Provisioning",
+        "ErrorDataVolumeNotReady - Storage Class Not Found",
+        "ErrorDataVolumeNotReady - Insufficient Storage Quota",
+        "ErrorPvcNotFound",
+        "Storage Deletion Failures",
+        "DataVolume Cloning Failures"
+      ],
+      "token_estimate": 1350,
+      "skills": ["vm-creator", "vm-delete", "vm-clone"]
+    },
+    {
+      "file": "lifecycle-errors.md",
+      "title": "VM Lifecycle Errors",
+      "category": "lifecycle",
+      "keywords": ["terminating", "finalizers", "start failure", "stop failure", "VMI", "virt-launcher", "runStrategy"],
+      "use_cases": ["vm-deletion", "vm-lifecycle", "start-stop-issues"],
+      "errors_covered": [
+        "VM Stuck in Terminating State",
+        "VM Won't Start (Non-Scheduling Issues)",
+        "VM Won't Stop"
+      ],
+      "token_estimate": 1150,
+      "skills": ["vm-delete", "vm-lifecycle-manager"]
+    },
+    {
+      "file": "runtime-errors.md",
+      "title": "VM Runtime Errors",
+      "category": "runtime",
+      "keywords": ["CrashLoopBackOff", "pod crashes", "kernel panic", "QEMU crash", "OOM", "guest OS failure", "virt-launcher restart"],
+      "use_cases": ["vm-creation", "vm-lifecycle", "runtime-diagnosis", "crash-diagnosis"],
+      "errors_covered": [
+        "CrashLoopBackOff"
+      ],
+      "token_estimate": 850,
+      "skills": ["vm-creator", "vm-lifecycle-manager"]
+    },
+    {
+      "file": "network-errors.md",
+      "title": "VM Network Errors",
+      "category": "networking",
+      "keywords": ["network attachment", "Multus", "NetworkAttachmentDefinition", "NAD", "SR-IOV", "secondary networks", "CNI"],
+      "use_cases": ["vm-creation", "network-troubleshooting"],
+      "errors_covered": [
+        "Network Attachment Failures"
+      ],
+      "token_estimate": 580,
+      "skills": ["vm-creator"]
+    }
+  ],
+
+  "skill_to_docs_mapping": {
+    "vm-creator": {
+      "primary_docs": ["scheduling-errors.md", "storage-errors.md"],
+      "secondary_docs": ["runtime-errors.md", "network-errors.md"],
+      "index": "INDEX.md",
+      "total_token_estimate": 3650,
+      "description": "VM creation failures - scheduling, storage provisioning, crashes, networks"
+    },
+    "vm-delete": {
+      "primary_docs": ["lifecycle-errors.md", "storage-errors.md"],
+      "secondary_docs": [],
+      "index": "INDEX.md",
+      "total_token_estimate": 2950,
+      "description": "VM deletion failures - stuck terminating, storage cleanup"
+    },
+    "vm-clone": {
+      "primary_docs": ["storage-errors.md"],
+      "secondary_docs": [],
+      "index": "INDEX.md",
+      "total_token_estimate": 1800,
+      "description": "VM cloning failures - DataVolume cloning, storage provisioning"
+    },
+    "vm-lifecycle-manager": {
+      "primary_docs": ["lifecycle-errors.md", "scheduling-errors.md"],
+      "secondary_docs": ["runtime-errors.md"],
+      "index": "INDEX.md",
+      "total_token_estimate": 3270,
+      "description": "VM start/stop failures - lifecycle management, scheduling"
+    },
+    "vm-inventory": {
+      "primary_docs": [],
+      "secondary_docs": [],
+      "index": "INDEX.md",
+      "total_token_estimate": 450,
+      "description": "General guidance for status interpretation"
+    }
+  },
+
+  "error_to_docs_mapping": {
+    "ErrorUnschedulable": "scheduling-errors.md",
+    "ErrorDataVolumeNotReady": "storage-errors.md",
+    "ErrorPvcNotFound": "storage-errors.md",
+    "Terminating": "lifecycle-errors.md",
+    "CrashLoopBackOff": "runtime-errors.md",
+    "NetworkAttachmentFailed": "network-errors.md"
+  },
+
+  "cross_references": {
+    "scheduling-errors.md": ["storage-errors.md", "runtime-errors.md"],
+    "storage-errors.md": ["scheduling-errors.md", "lifecycle-errors.md"],
+    "lifecycle-errors.md": ["storage-errors.md", "runtime-errors.md"],
+    "runtime-errors.md": ["lifecycle-errors.md", "scheduling-errors.md"],
+    "network-errors.md": ["scheduling-errors.md"]
+  },
+
+  "progressive_disclosure_strategy": {
+    "description": "Load only the minimum documentation needed for current task",
+    "pattern": "error_type → primary_doc → cross_references (if needed)",
+    "token_savings": "29% average reduction vs single-file (based on rh-sre data)",
+    "navigation_overhead_reduction": "85% vs single-file navigation"
+  }
+}

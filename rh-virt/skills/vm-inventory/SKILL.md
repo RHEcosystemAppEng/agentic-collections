@@ -17,6 +17,23 @@ color: cyan
 
 List and inspect virtual machines in OpenShift Virtualization clusters. This skill provides read-only access to VM information without making any modifications.
 
+## Critical: Human-in-the-Loop Requirements
+
+**Not applicable** - This skill performs read-only operations and does not modify any cluster resources. No user confirmation is required.
+
+**Read-only operations:**
+- Listing VirtualMachines across namespaces or in specific namespaces
+- Retrieving VM details, status, and resource configurations
+- Displaying VM health conditions and resource usage
+- Filtering VMs by labels or field selectors
+- Viewing VM network, storage, and node placement information
+
+**No modifications performed:**
+- ✓ Does not change VM state (start/stop/restart)
+- ✓ Does not modify VM configuration
+- ✓ Does not delete VMs or resources
+- ✓ Does not consume cluster resources
+
 ## Prerequisites
 
 **Required MCP Server**: `openshift-virtualization` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
@@ -201,26 +218,51 @@ oc get vm -A -o json
 
 **Step 2: Format and Display Results**
 
-Present VMs organized by namespace with key information:
+**CRITICAL FORMATTING RULE**:
+- **If total VMs > 2**: Display results in a **table format** ordered by namespace and status
+- **If total VMs ≤ 2**: Use list format organized by namespace
+
+**Table Format (when VMs > 2):**
+
+```markdown
+## 📋 Virtual Machines (All Namespaces)
+
+| Namespace | VM Name | Status | Age | Resources | Node |
+|-----------|---------|--------|-----|-----------|------|
+| default | alejandro-test | ✓ Running | 1h | 2 vCPU, 4Gi | ip-10-0-15-252 |
+| production | database-vm | ✗ Stopped | 30d | 8 vCPU, 16Gi | - |
+| production | web-server-01 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-01 |
+| production | web-server-02 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-02 |
+| development | debug-vm | ⚠ Pending | 2d | 2 vCPU, 4Gi | - |
+| development | test-vm | ✓ Running | 5d | 2 vCPU, 4Gi | worker-03 |
+
+**Summary:**
+- **Total VMs**: 6
+- **Running**: 4
+- **Stopped**: 1
+- **Pending**: 1
+```
+
+**List Format (when VMs ≤ 2):**
 
 ```markdown
 ## 📋 Virtual Machines (All Namespaces)
 
 ### Namespace: production
 - ✓ **web-server-01** - Running (4 vCPU, 8Gi RAM)
-- ✓ **web-server-02** - Running (4 vCPU, 8Gi RAM)
-- ✗ **database-vm** - Stopped (8 vCPU, 16Gi RAM)
 
 ### Namespace: development
 - ✓ **test-vm** - Running (2 vCPU, 4Gi RAM)
-- ⚠ **debug-vm** - Pending (2 vCPU, 4Gi RAM)
 
 ### Summary:
-- **Total VMs**: 5
-- **Running**: 3
-- **Stopped**: 1
-- **Pending**: 1
+- **Total VMs**: 2
+- **Running**: 2
 ```
+
+**Table Ordering Rules:**
+1. **Primary sort**: Namespace (alphabetical)
+2. **Secondary sort**: Status (Running → Pending → Stopped → Failed/Error)
+3. **Tertiary sort**: VM Name (alphabetical within same namespace and status)
 
 **Status Indicators:**
 - ✓ Running/Ready
@@ -344,7 +386,24 @@ oc get virtualmachine <vm-name> -n <namespace> -o yaml
 oc get vm <vm-name> -n <namespace> -o yaml
 ```
 
-**Step 3: Display Detailed Information**
+**Step 3: Interpret Status and Conditions (Optional)**
+
+**OPTIONAL**: If the VM has error status or complex conditions, consult documentation for interpretation.
+
+**Document Consultation** (OPTIONAL - when VM has error/warning status):
+1. **Action**: Read [troubleshooting/INDEX.md](../../docs/troubleshooting/INDEX.md) using the Read tool to understand status meanings (ErrorUnschedulable, ErrorDataVolumeNotReady, CrashLoopBackOff, etc.)
+2. **Output to user**: "I consulted [troubleshooting/INDEX.md](../../docs/troubleshooting/INDEX.md) to interpret the VM status '<status-value>'."
+
+**When to consult**:
+- VM status is ErrorUnschedulable, ErrorDataVolumeNotReady, ErrorPvcNotFound
+- VM conditions show warnings or errors
+- VM in unexpected state (e.g., CrashLoopBackOff, Terminating stuck)
+
+**When NOT to consult**:
+- VM status is normal (Running, Stopped, Provisioning)
+- Simple status queries without error conditions
+
+**Step 4: Display Detailed Information**
 
 ```markdown
 ## 🖥️ Virtual Machine Details
@@ -688,6 +747,7 @@ No VMs were found in this namespace.
 - `vm-troubleshooter` (planned) - Diagnose problematic VMs from inventory
 
 ### Reference Documentation
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - VM status interpretation and navigation hub for discovering error-specific troubleshooting guides (optionally consulted when displaying VM details with error states)
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
 - [Accessing VMs](https://docs.openshift.com/container-platform/latest/virt/virtual_machines/virt-accessing-vm-consoles.html)
@@ -704,7 +764,7 @@ No VMs were found in this namespace.
 
 ## Example Usage
 
-**Example 1: List all VMs (using MCP tool)**
+**Example 1: List all VMs (using MCP tool - Table format for > 2 VMs)**
 
 ```
 User: "List all VMs"
@@ -712,18 +772,21 @@ User: "List all VMs"
 Agent: [Invokes /vm-inventory skill]
        [Attempts MCP tool: resources_list with apiVersion="kubevirt.io/v1", kind="VirtualMachine", allNamespaces=true]
        [Tool succeeds]
+       [4 VMs found - using table format]
 
 ## 📋 Virtual Machines (All Namespaces)
 
-Namespace: production
-- ✓ web-server-01 - Running (4 vCPU, 8Gi)
-- ✓ web-server-02 - Running (4 vCPU, 8Gi)
-- ✗ database-vm - Stopped (8 vCPU, 16Gi)
+| Namespace | VM Name | Status | Age | Resources | Node |
+|-----------|---------|--------|-----|-----------|------|
+| development | test-vm | ✓ Running | 5d | 2 vCPU, 4Gi | worker-03 |
+| production | database-vm | ✗ Stopped | 30d | 8 vCPU, 16Gi | - |
+| production | web-server-01 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-01 |
+| production | web-server-02 | ✓ Running | 15d | 4 vCPU, 8Gi | worker-02 |
 
-Namespace: development
-- ✓ test-vm - Running (2 vCPU, 4Gi)
-
-Summary: 4 VMs (3 running, 1 stopped)
+**Summary:**
+- **Total VMs**: 4
+- **Running**: 3
+- **Stopped**: 1
 ```
 
 **Example 1b: List all VMs (MCP tool unavailable, CLI fallback)**
@@ -745,10 +808,34 @@ Would you like me to proceed with the CLI command?
 User: "yes"
 
 Agent: [Executes: oc get virtualmachines -A -o json]
+       [4 VMs found - using table format]
 
 ## 📋 Virtual Machines (All Namespaces)
 
-[Same output as above]
+[Same table output as Example 1 above]
+```
+
+**Example 1c: List all VMs (List format for ≤ 2 VMs)**
+
+```
+User: "List all VMs"
+
+Agent: [Invokes /vm-inventory skill]
+       [Attempts MCP tool: resources_list with apiVersion="kubevirt.io/v1", kind="VirtualMachine", allNamespaces=true]
+       [Tool succeeds]
+       [2 VMs found - using list format]
+
+## 📋 Virtual Machines (All Namespaces)
+
+### Namespace: default
+- ✓ **web-server** - Running (4 vCPU, 8Gi RAM, worker-01)
+
+### Namespace: production
+- ✓ **database-vm** - Running (8 vCPU, 16Gi RAM, worker-02)
+
+**Summary:**
+- **Total VMs**: 2
+- **Running**: 2
 ```
 
 **Example 2: Get details of specific VM**
