@@ -1,5 +1,5 @@
 {
-  "name": "Red Hat SRE Agentic Skills Collection",
+  "name": "rh-sre",
   "version": "1.0.0",
   "description": "Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.",
   "author": {

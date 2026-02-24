@@ -1,13 +1,16 @@
 ---
 name: playbook-generator
 description: |
-  **CRITICAL**: This skill must be used for playbook generation. DO NOT use raw MCP tools like create_vulnerability_playbook directly.
+  **CRITICAL**: This skill ONLY GENERATES playbooks. It does NOT EXECUTE them. For execution, use /playbook-executor skill.
 
   Generate production-ready Ansible remediation playbooks for CVE vulnerabilities with Red Hat best practices, error handling, and Kubernetes safety patterns. Use this skill when you need to create remediation playbooks that follow Red Hat Lightspeed patterns and incorporate RHEL-specific considerations.
 
   This skill orchestrates MCP tools (create_vulnerability_playbook) while consulting documentation (cve-remediation-templates.md, package-management.md) to enhance playbooks with Red Hat best practices and RHEL-specific patterns.
 
-  **IMPORTANT**: ALWAYS use this skill instead of calling create_vulnerability_playbook directly for playbook generation.
+  **IMPORTANT**: 
+  - ALWAYS use this skill instead of calling create_vulnerability_playbook directly
+  - NEVER execute playbooks using ansible-playbook CLI
+  - ALWAYS delegate execution to /playbook-executor skill
 ---
 
 # Ansible Playbook Generator Skill
@@ -18,11 +21,18 @@ This skill generates Ansible remediation playbooks for CVE vulnerabilities, appl
 
 ## When to Use This Skill
 
+**🚨 CRITICAL SCOPE LIMITATION**: This skill **ONLY GENERATES** playbooks. It does **NOT EXECUTE** them.
+
 **Use this skill directly when you need**:
 - Generate a remediation playbook for a specific CVE
 - Create batch remediation playbooks for multiple CVEs
 - Apply Red Hat best practices to playbook generation
 - Standalone playbook generation without full remediation workflow
+
+**Do NOT use this skill when you need**:
+- Execute playbooks → Use `/playbook-executor` skill instead
+- Run ansible-playbook CLI → Use `/playbook-executor` skill via AAP MCP
+- Monitor job execution → Use `/playbook-executor` skill instead
 
 **Use the sre-agents:remediator agent when you need**:
 - End-to-end CVE remediation (analysis → validation → playbook → execution → verification)
@@ -30,7 +40,11 @@ This skill generates Ansible remediation playbooks for CVE vulnerabilities, appl
 - System context gathering and remediation strategy determination
 - Execution guidance and verification workflows
 
-**How they work together**: The sre-agents:remediator agent (invoked) orchestrates this skill after gathering system context and determining remediation strategy. The agent provides CVE details, system information, and deployment context, and this skill generates the optimized playbook.
+**How they work together**: 
+1. The sre-agents:remediator agent (invoked) orchestrates this skill after gathering system context
+2. This skill generates the optimized playbook
+3. The agent then invokes `/playbook-executor` skill for execution via AAP MCP
+4. Finally, `/remediation-verifier` skill confirms success
 
 ## Workflow
 
@@ -250,6 +264,8 @@ This skill generates code that will execute on production systems. **Explicit us
 
 ### 7. Return Playbook
 
+**🚨 CRITICAL**: This skill **ONLY GENERATES** playbooks. It does **NOT EXECUTE** them.
+
 **ONLY after receiving explicit user confirmation**, return the production-ready playbook with metadata:
 
 ```yaml
@@ -274,6 +290,39 @@ playbook:
     - "Ensure kubectl access if Kubernetes systems"
     - "Back up critical data before execution"
 ```
+
+## Critical: Execution Handoff
+
+**🚨 THIS SKILL DOES NOT EXECUTE PLAYBOOKS**
+
+After generating the playbook, if the user requests execution:
+
+❌ **WRONG** - Do NOT use `ansible-playbook` CLI:
+```bash
+ansible-playbook remediation.yml --check  # ❌ This skill cannot do this
+```
+
+✅ **CORRECT** - Delegate to the `/playbook-executor` skill:
+```markdown
+I've generated the remediation playbook. To execute it in dry-run mode, I'll invoke the playbook-executor skill:
+
+[Invoke /playbook-executor skill with the playbook content]
+```
+
+**When user asks to execute**:
+1. Save the playbook to a file (if needed for reference)
+2. Invoke `/playbook-executor` skill with instruction:
+   ```
+   "Execute this playbook for CVE-XXXX-YYYY in dry-run mode using AAP job template [ID]. Monitor job status and report results."
+   ```
+3. The playbook-executor skill handles all execution via AAP MCP tools
+
+**Never attempt to**:
+- Run `ansible-playbook` command directly
+- Execute playbooks via Shell/Bash tool
+- Use any local Ansible execution method
+
+**Always delegate execution to** `/playbook-executor` skill.
 
 ## Output Template
 
@@ -305,25 +354,31 @@ When completing playbook generation, provide output in this format:
 [Complete playbook YAML]
 ```
 
-## Execution Instructions
+## Next Steps: Execution
 
-**Prerequisites**:
-- Ansible 2.9+ installed
-- SSH access to target systems
-- Sudo privileges on target systems
-- (If K8s) kubectl configured and accessible
+**🔴 IMPORTANT**: Do NOT execute this playbook using `ansible-playbook` CLI.
 
-**Execution Command**:
-```bash
-ansible-playbook -i inventory remediation-CVE-YYYY-NNNNN.yml --become
+**✅ To execute this playbook**, invoke the `/playbook-executor` skill:
+
+```markdown
+Ready to execute? The playbook-executor skill will:
+1. Add this playbook to your AAP Git project
+2. Create/use an AAP job template
+3. Execute in dry-run mode first (if requested)
+4. Launch actual execution (with your approval)
+5. Monitor job status and report results
+
+Would you like me to invoke the playbook-executor skill now?
+Options:
+- "yes" or "execute" - Invoke playbook-executor skill
+- "dry-run first" - Execute in check mode first
+- "save only" - Just save the playbook file for later
 ```
 
-**Recommended Workflow**:
-1. Test in staging environment first
-2. Review playbook for environment-specific adjustments
-3. Schedule maintenance window if reboot required
-4. Execute playbook
-5. Verify remediation success (use remediation-verifier skill)
+**Execution Flow**:
+1. **This skill** → Generates playbook (DONE ✓)
+2. **playbook-executor skill** → Executes via AAP MCP tools
+3. **remediation-verifier skill** → Verifies success after execution
 
 **Safety Notes**:
 - Playbook includes rollback capability via snapshots (RHEL 8/9)
@@ -441,15 +496,17 @@ Proceeding with standard playbook (without pod eviction). Add pod eviction manua
 
 ## Best Practices
 
-1. **Always consult documentation first** - Read [cve-remediation-templates.md] and [package-management.md] BEFORE calling MCP tools
-2. **Detect CVE type** - Use appropriate template for kernel vs package vs service CVEs
-3. **Check Kubernetes context** - Add pod eviction for K8s-deployed systems
-4. **RHEL version awareness** - Use dnf for RHEL 8/9, yum for RHEL 7
-5. **Include pre-flight checks** - Validate OS, subscription status before proceeding
-6. **Add rollback capability** - Use snapshots, backups for safety
-7. **Audit everything** - Log all actions to /var/log/cve-remediation.log
-8. **Require user approval** - ALWAYS get explicit confirmation before providing executable playbooks
-9. **Test first** - Always recommend testing in staging before production
+1. **🚨 NEVER EXECUTE PLAYBOOKS** - This skill generates only. Always delegate execution to `/playbook-executor` skill
+2. **Always consult documentation first** - Read [cve-remediation-templates.md] and [package-management.md] BEFORE calling MCP tools
+3. **Detect CVE type** - Use appropriate template for kernel vs package vs service CVEs
+4. **Check Kubernetes context** - Add pod eviction for K8s-deployed systems
+5. **RHEL version awareness** - Use dnf for RHEL 8/9, yum for RHEL 7
+6. **Include pre-flight checks** - Validate OS, subscription status before proceeding
+7. **Add rollback capability** - Use snapshots, backups for safety
+8. **Audit everything** - Log all actions to /var/log/cve-remediation.log
+9. **Require user approval** - ALWAYS get explicit confirmation before providing playbooks
+10. **Test first** - Always recommend testing in staging before production
+11. **Clear handoff** - After generation, explicitly tell user to invoke `/playbook-executor` for execution
 
 ## Tools Reference
 

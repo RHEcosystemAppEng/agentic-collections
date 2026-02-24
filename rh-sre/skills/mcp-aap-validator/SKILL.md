@@ -97,28 +97,38 @@ fi
 
 **If missing**: Proceed to Human Notification Protocol (Step 4)
 
-### Step 3: Test MCP Server Connection
+### Step 3: Test MCP Server Connection and Resources
 
-**Action**: Attempt connectivity test to verify server accessibility
+**Action**: Attempt connectivity test to verify server accessibility and check for required resources
 
 **Test approach**:
 1. **Test Job Management Server**:
    - Tool: `job_templates_list` (from aap-mcp-job-management)
-   - Parameters: `page_size: 1` (minimal query)
-   - Expected: Returns list (even if empty)
+   - Parameters: `page_size: 10` (check for templates)
+   - Expected: Returns list
    - Success: Server responds with valid data
    - Failure: Connection timeout, auth error, or server unavailable
+   - **Validation**: Check if at least one job template exists
+     - If `count: 0` → Warning: No job templates configured
+     - If `count > 0` → Success: Templates available for use
 
 2. **Test Inventory Management Server**:
    - Tool: `inventories_list` (from aap-mcp-inventory-management)
-   - Parameters: `page_size: 1` (minimal query)
-   - Expected: Returns list (even if empty)
+   - Parameters: `page_size: 10` (check for inventories)
+   - Expected: Returns list
    - Success: Server responds with valid data
    - Failure: Connection timeout, auth error, or server unavailable
+   - **Validation**: Check if at least one inventory exists
+     - If `count: 0` → Warning: No inventories configured
+     - If `count > 0` → Success: Inventories available for use
 
 **Report to user**:
 - ✓ "Successfully connected to aap-mcp-job-management"
 - ✓ "Successfully connected to aap-mcp-inventory-management"
+- ✓ "Found N job template(s) available"
+- ✓ "Found N inventory/inventories available"
+- ⚠ "Connected but no job templates found (you'll need to create one)"
+- ⚠ "Connected but no inventories found (you'll need to create one)"
 - ⚠ "Configuration appears correct but connectivity test unavailable"
 - ✗ "Cannot connect to aap-mcp-job-management (check server status and credentials)"
 - ✗ "Cannot connect to aap-mcp-inventory-management (check server status and credentials)"
@@ -256,6 +266,10 @@ Configuration:
 ✓ Job management server connectivity verified
 ✓ Inventory management server connectivity verified
 
+Resources:
+✓ Found 5 job template(s) available
+✓ Found 3 inventory/inventories available
+
 Ready to execute AAP operations.
 
 Available capabilities:
@@ -265,7 +279,30 @@ Available capabilities:
 - System context gathering for remediation
 ```
 
-**Partial success case**:
+**Partial success case** (connected but no resources):
+```
+⚠ AAP MCP Validation: PARTIAL
+
+Configuration:
+✓ MCP server aap-mcp-job-management configured
+✓ MCP server aap-mcp-inventory-management configured
+✓ Environment variables are set
+✓ Server connectivity verified
+
+Resources:
+⚠ No job templates found (create one before executing playbooks)
+⚠ No inventories found (create one to target systems)
+
+Note: AAP is accessible but requires resource setup.
+You'll need to create job templates and inventories before executing remediation playbooks.
+
+Next steps:
+1. Create inventory with target systems
+2. Create job template for remediation playbooks
+3. Re-run validation to confirm setup
+```
+
+**Partial success case** (connectivity not tested):
 ```
 ⚠ AAP MCP Validation: PARTIAL
 

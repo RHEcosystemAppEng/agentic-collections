@@ -232,8 +232,8 @@ Generate Ansible remediation playbooks following Red Hat best practices.
 - Includes error handling and rollback steps
 - Follows Red Hat standards
 
-### 6. **playbook-executor** - Ansible Playbook Execution
-Execute Ansible playbooks and track job status (requires separate ansible-mcp-server configuration).
+### 6. **playbook-executor** - AAP Playbook Execution
+Execute Ansible playbooks via AAP (Ansible Automation Platform) with dry-run capabilities, real-time monitoring, and comprehensive reporting.
 
 **Use when:**
 - "Execute this remediation playbook"

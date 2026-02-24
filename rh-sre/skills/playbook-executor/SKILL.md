@@ -1,27 +1,71 @@
 ---
 name: playbook-executor
 description: |
-  **CRITICAL**: This skill must be used for Ansible playbook execution. DO NOT use raw MCP tools like execute_playbook or get_job_status directly.
+  **CRITICAL**: This skill must be used for Ansible playbook execution via AAP. DO NOT use raw MCP tools directly.
 
-  Execute Ansible remediation playbooks and track job status through the mock Ansible MCP server. Use this skill after generating a playbook to execute it and monitor completion status. The skill handles temporary file creation, job submission, status polling, and completion reporting.
+  Execute Ansible remediation playbooks through AAP (Ansible Automation Platform) with comprehensive job management, dry-run capabilities, and detailed reporting. Use this skill after generating a playbook to execute it on production systems with proper validation and monitoring.
 
-  This skill orchestrates MCP tools (execute_playbook, get_job_status) from ansible-mcp-server to provide reliable playbook execution with job tracking and status monitoring.
+  This skill orchestrates AAP MCP tools (job_templates_launch_retrieve, jobs_retrieve, jobs_stdout_retrieve, jobs_job_events_list, jobs_job_host_summaries_list) to provide production-grade playbook execution with dry-run testing, real-time progress monitoring, and comprehensive reporting.
 
-  **IMPORTANT**: ALWAYS use this skill instead of calling execute_playbook or get_job_status directly.
+  **IMPORTANT**: ALWAYS use this skill instead of calling AAP MCP tools directly.
 ---
 
-# Ansible Playbook Executor Skill
+# AAP Playbook Executor Skill
 
-This skill executes Ansible remediation playbooks and tracks their execution status through the mock Ansible MCP server.
+This skill executes Ansible remediation playbooks through AAP (Ansible Automation Platform) with full job management capabilities.
 
-**Integration with Remediator Agent**: The sre-agents:remediator agent (invoked) orchestrates this skill as part of its Step 5 (Execute Playbook) workflow. For standalone playbook execution, you can invoke this skill directly.
+**Integration with Remediator Agent**: The sre-agents:remediator agent orchestrates this skill as part of its Step 5 (Execute Playbook) workflow. For standalone playbook execution, you can invoke this skill directly.
+
+## Prerequisites
+
+**Required MCP Servers**: `aap-mcp-job-management`, `aap-mcp-inventory-management` ([setup guide](https://docs.redhat.com/))
+
+**Required MCP Tools**:
+- `job_templates_list` (from aap-mcp-job-management) - List job templates
+- `job_templates_retrieve` (from aap-mcp-job-management) - Get template details
+- `job_templates_launch_retrieve` (from aap-mcp-job-management) - Launch jobs
+- `jobs_retrieve` (from aap-mcp-job-management) - Get job status
+- `jobs_stdout_retrieve` (from aap-mcp-job-management) - Get console output
+- `jobs_job_events_list` (from aap-mcp-job-management) - Get task events
+- `jobs_job_host_summaries_list` (from aap-mcp-job-management) - Get host statistics
+- `inventories_list` (from aap-mcp-inventory-management) - List inventories
+- `hosts_list` (from aap-mcp-inventory-management) - List inventory hosts
+
+**Required Environment Variables**:
+- `AAP_SERVER` - AAP server URL
+- `AAP_API_TOKEN` - AAP API authentication token
+
+### Prerequisite Validation
+
+**CRITICAL**: Before executing operations, invoke the [mcp-aap-validator](../mcp-aap-validator/SKILL.md) skill to verify AAP MCP server availability.
+
+**Validation freshness**: Can skip if already validated in this session. See [Validation Freshness Policy](../mcp-aap-validator/SKILL.md#validation-freshness-policy).
+
+**How to invoke**:
+```
+Use the Skill tool:
+  skill: "mcp-aap-validator"
+```
+
+**Handle validation result**:
+- **If validation PASSED**: Continue with playbook execution workflow
+- **If validation PARTIAL**: Warn user and ask to proceed
+- **If validation FAILED**: Stop execution, provide setup instructions from validator
+
+**Human Notification on Failure**:
+If prerequisites are not met:
+- ❌ "Cannot proceed: AAP MCP servers are not available"
+- 📋 "Setup required: Configure AAP_SERVER and AAP_API_TOKEN environment variables"
+- ❓ "How would you like to proceed? (setup now / skip / abort)"
+- ⏸️ Wait for user decision
 
 ## When to Use This Skill
 
 **Use this skill directly when you need**:
-- Execute a previously generated Ansible playbook
-- Track the status of a running playbook execution
+- Execute a previously generated Ansible playbook via AAP
+- Track the status of a running AAP job
 - Monitor playbook job completion
+- Run dry-run (check mode) before production execution
 - Verify playbook execution succeeded
 
 **Use the sre-agents:remediator agent when you need**:
@@ -29,436 +73,949 @@ This skill executes Ansible remediation playbooks and tracks their execution sta
 - Integrated CVE analysis → playbook generation → execution → verification
 - End-to-end remediation orchestration
 
-**How they work together**: The sre-agents:remediator agent (invoked) invokes this skill after generating a remediation playbook, asking the user for confirmation before execution, then monitoring the job to completion.
+**How they work together**: The sre-agents:remediator agent invokes this skill after generating a remediation playbook, managing the full workflow from analysis to verification.
 
 ## Workflow
 
-### 1. Save Playbook to Temporary Location
+### Phase 0: Validate AAP MCP Prerequisites
 
-**CRITICAL: Playbooks MUST be saved under /tmp for container access**
+**Action**: Invoke the [mcp-aap-validator](../mcp-aap-validator/SKILL.md) skill
 
-The ansible-mcp-server runs in a container with `/tmp` mounted to `/playbooks`. All playbooks must be saved to `/tmp` on the host.
+**Note**: Can skip if validation was performed earlier in this session and succeeded.
 
-```python
-import tempfile
-import os
-
-# Create temporary file with .yml extension in /tmp directory
-temp_fd, temp_path = tempfile.mkstemp(suffix='.yml', prefix='remediation-', dir='/tmp')
-
-# Write playbook content to file
-with os.fdopen(temp_fd, 'w') as f:
-    f.write(playbook_yaml_content)
-
-# temp_path now contains the absolute path to the playbook file
-# Example: /tmp/remediation-abc123.yml
+**How to invoke**:
+```
+Use the Skill tool:
+  skill: "mcp-aap-validator"
 ```
 
-**Key Requirements**:
-- Playbook MUST be saved to `/tmp` directory (mounted into container as `/playbooks`)
-- Playbook MUST be saved as a `.yml` or `.yaml` file
-- Use absolute filesystem path starting with `/tmp/` (not relative)
-- File must exist and be readable before calling execute_playbook
-- Keep track of temp_path for cleanup after completion
+**Handle validation result**:
+- **If validation PASSED**: Continue to Phase 1
+- **If validation PARTIAL**: Warn user and ask to proceed
+- **If validation FAILED**: Stop execution, user must set up AAP MCP servers
 
-## Critical: Human-in-the-Loop Requirements
+### Phase 1: Job Template Selection/Creation
 
-This skill executes code on production systems. **Explicit user confirmation is REQUIRED** before playbook execution.
+**Goal**: Identify or create an AAP job template suitable for executing the remediation playbook.
 
-**Before Playbook Execution** (REQUIRED):
-1. **Display Playbook Path**: Show which playbook file will be executed
-2. **Display Target Systems**: Show which systems will be affected
-3. **Display Risk Assessment**: Show reboot requirements, downtime estimates, affected services
-4. **Ask for Confirmation**:
-   ```
-   ⚠️  CRITICAL: Playbook Execution Confirmation Required
+#### Step 1.1: List Available Job Templates
 
-   This playbook will:
-   - Execute on: N production systems
-   - Require reboot: [Yes/No]
-   - Estimated downtime: X minutes per system
-   - Affected services: [list]
-
-   Playbook file: /tmp/remediation-CVE-YYYY-NNNNN.yml
-
-   ❓ Execute this playbook now?
-
-   Options:
-   - "yes" or "execute" - Proceed with playbook execution
-   - "review" - Show playbook content again
-   - "abort" - Cancel execution
-
-   Please respond with your choice.
-   ```
-4. **Wait for Explicit Confirmation**: Do not execute without "yes" or "execute"
-
-**Never assume approval** - always wait for explicit user confirmation before executing playbooks on production systems.
-
-### 2. Execute Playbook
-
-**ONLY after receiving explicit user confirmation**, proceed with execution.
-
-**MCP Tool**: `execute_playbook` (from ansible-mcp-server)
+**MCP Tool**: `job_templates_list` (from aap-mcp-job-management)
 
 **Parameters**:
-- `playbook_path`: Absolute path to playbook file in container filesystem
-  - Example: `"/playbooks/remediation-CVE-2024-1234.yml"`
-  - Format: MUST start with `/playbooks/` (container mount point)
-  - Conversion: Host path `/tmp/file.yml` → Container path `/playbooks/file.yml`
-
-**Path Conversion Logic**:
-```
-IMPORTANT: Convert host path to container path before calling execute_playbook
-
-Host path:      /tmp/remediation-CVE-2024-1234.yml
-Container path: /playbooks/remediation-CVE-2024-1234.yml
-
-Python conversion:
-container_path = host_path.replace('/tmp/', '/playbooks/')
-```
+- `page_size`: 50 (retrieve up to 50 templates)
+- `search`: "" (search for all templates)
 
 **Expected Output**:
 ```json
 {
-  "job_id": "job_12345",
-  "status": "PENDING",
-  "playbook_path": "/playbooks/remediation-CVE-2024-1234.yml"
+  "count": 3,
+  "results": [
+    {
+      "id": 10,
+      "name": "CVE Remediation Template",
+      "project": 5,
+      "inventory": 1,
+      "playbook": "playbooks/remediation/remediation-template.yml"
+    }
+  ]
 }
 ```
 
-**Verification**:
+#### Step 1.2: Filter Compatible Templates
+
+For each template, check if it satisfies remediation requirements:
+
+**Requirements**:
+1. **Inventory Match**: Inventory contains target systems from CVE analysis
+2. **Project Suitability**: Project contains or can contain remediation playbooks
+3. **Credentials Configured**: Has machine credentials (SSH) and privilege escalation enabled
+4. **Launch-Time Flexibility**: Supports prompt on launch for variables and/or limit (optional but recommended)
+
+**Filtering Logic**:
 ```
-✓ job_id returned (string - used for status tracking)
-✓ status = "PENDING" (job queued for execution)
-✓ playbook_path uses container path (/playbooks/)
+For each template:
+  1. Get template details with job_templates_retrieve(id=template_id)
+  2. Check if template.inventory matches target systems
+  3. Check if template.project is suitable for remediation playbooks
+  4. Check if template has credentials configured
+  5. Score template based on matches (0-4 points)
 ```
 
-**Error Handling**:
+**Result**: List of compatible templates ranked by suitability score.
+
+#### Step 1.3: User Selection
+
+**If compatible templates found**:
 ```
-If playbook file not found:
-→ Error: "Playbook file not found: /playbooks/remediation-CVE-2024-1234.yml"
-→ Action: Verify file was saved to /tmp on host, check path conversion to /playbooks/
+Found N compatible job template(s):
 
-If execute_playbook fails:
-→ Retry once after verifying file exists
-→ If retry fails, report error to user with troubleshooting steps
+1. "CVE Remediation Template" (ID: 10)
+   - Inventory: Production Servers (1)
+   - Project: Remediation Playbooks (5)
+   - Credentials: ✓ Configured
+   - Launch flexibility: ✓ Variables and limit
+
+2. "Dynamic Remediation" (ID: 15)
+   - Inventory: All Systems (2)
+   - Project: Remediation Playbooks (5)
+   - Credentials: ✓ Configured
+   - Launch flexibility: ✓ Variables only
+
+❓ Which template would you like to use?
+- Enter template number (1-N)
+- "create" - Create new template via Web UI
+- "abort" - Cancel execution
+
+Please respond with your choice.
 ```
 
-### 3. Track Job Status
+**If no compatible templates found**:
+```
+⚠️ No suitable job templates found for this remediation.
 
-**MCP Tool**: `get_job_status` (from ansible-mcp-server)
+Required:
+- Inventory containing target systems
+- Project for remediation playbooks
+- Machine credentials (SSH + sudo)
+
+Options:
+1. Create new template via AAP Web UI (I'll guide you)
+2. Modify existing template to add requirements
+3. Abort execution
+
+Please choose an option (1-3):
+```
+
+#### Step 1.4: Create Template (If Needed)
+
+If user chooses to create a new template, invoke the **job-template-creator** skill:
+
+```
+Skill: job-template-creator
+Args: playbook-name target-systems
+```
+
+The job-template-creator skill will guide the user through:
+- Adding playbook to Git repository
+- Creating job template via AAP Web UI
+- Verifying template is ready
+
+**Wait for template creation to complete** before proceeding to Phase 2.
+
+### Phase 2: Playbook Preparation
+
+**Goal**: Ensure the generated playbook is available in the AAP project.
+
+#### Step 2.1: Add Playbook to Git Repository
+
+**Options**:
+
+**Option A: User has existing Git repository configured in AAP**
+1. Ask user for Git repository location
+2. Provide commands to add playbook to repository:
+   ```bash
+   cd /path/to/playbooks-repo
+   mkdir -p playbooks/remediation
+   cat > playbooks/remediation/remediation-CVE-YYYY-NNNNN.yml << 'EOF'
+   [playbook content]
+   EOF
+   git add playbooks/remediation/remediation-CVE-YYYY-NNNNN.yml
+   git commit -m "Add remediation playbook for CVE-YYYY-NNNNN"
+   git push origin main
+   ```
+3. Instruct user to sync AAP project:
+   - Navigate to AAP Web UI → Automation Execution → Projects
+   - Find project and click Sync button (🔄)
+   - Wait for sync to complete
+
+**Option B: Temporary playbook testing**
+1. Explain that playbook can be added to an existing AAP project playbook
+2. User manually copies playbook to AAP project location
+3. User syncs project
+
+#### Step 2.2: Verify Playbook Available
+
+After Git sync, verify playbook appears in project:
+```
+✓ Playbook added to Git repository
+✓ AAP project synced successfully
+✓ Playbook path: playbooks/remediation/remediation-CVE-YYYY-NNNNN.yml
+
+Ready to proceed to execution.
+```
+
+### Phase 3: Dry-Run Execution (Recommended)
+
+**Goal**: Test playbook in check mode before actual execution to simulate changes.
+
+#### Step 3.1: Display Playbook Preview
+
+Show user the playbook structure and explain tasks:
+
+```markdown
+# Playbook Preview
+
+**Playbook**: remediation-CVE-2025-49794.yml
+**Target Systems**: 5 systems
+
+## Tasks Overview:
+1. **Gather Facts** - Collect system information
+2. **Check Disk Space** - Ensure sufficient space for updates (>500MB)
+3. **Backup Configuration** - Snapshot critical configs
+4. **Update Package: httpd** - Upgrade to version 2.4.57-8.el9
+5. **Restart Service: httpd** - Apply changes
+6. **Verify Service Status** - Confirm httpd is running
+7. **Update Audit Log** - Record remediation event
+
+**Estimated Duration**: 3-5 minutes per system
+**Requires Reboot**: No
+**Downtime**: Brief (~10 seconds during service restart)
+```
+
+#### Step 3.2: Offer Dry-Run
+
+```
+⚠️ Recommended: Run dry-run first
+
+Dry-run mode (--check) simulates changes without applying them.
+This helps identify:
+- Package availability issues
+- Permission problems
+- Configuration conflicts
+- Unexpected side effects
+
+❓ Run dry-run before actual execution?
+- "yes" - Run dry-run first (recommended)
+- "no" - Skip to actual execution
+- "abort" - Cancel execution
+
+Please respond with your choice.
+```
+
+#### Step 3.3: Launch Dry-Run Job
+
+**ONLY if user confirms**, proceed with dry-run.
+
+**MCP Tool**: `job_templates_launch_retrieve` (from aap-mcp-job-management)
 
 **Parameters**:
-- `job_id`: Job identifier from execute_playbook response
-  - Example: `"job_12345"`
-  - Format: String returned from execute_playbook
-
-**Expected Output** (varies by job status):
 ```json
-// When PENDING
 {
-  "job_id": "job_12345",
-  "status": "PENDING",
-  "started_at": null,
-  "completed_at": null
-}
-
-// When RUNNING
-{
-  "job_id": "job_12345",
-  "status": "RUNNING",
-  "started_at": "2024-01-20T15:30:02Z",
-  "completed_at": null
-}
-
-// When COMPLETED
-{
-  "job_id": "job_12345",
-  "status": "COMPLETED",
-  "started_at": "2024-01-20T15:30:02Z",
-  "completed_at": "2024-01-20T15:30:07Z"
+  "id": "10",
+  "requestBody": {
+    "job_type": "check",
+    "extra_vars": {
+      "target_cve": "CVE-2025-49794",
+      "remediation_mode": "automated"
+    },
+    "limit": "prod-web-01,prod-web-02,prod-web-03"
+  }
 }
 ```
 
-**Job Status Timeline Example**:
-```
-T+0s:  Status: PENDING   (started_at: null, completed_at: null)
-T+2s:  Status: RUNNING   (started_at: ISO8601, completed_at: null)
-T+7s:  Status: COMPLETED (started_at: ISO8601, completed_at: ISO8601)
+**Key Parameter**: `job_type: "check"` - Runs Ansible in check mode (dry-run)
 
-Status Transitions:
-PENDING → RUNNING → COMPLETED
+**Expected Output**:
+```json
+{
+  "job": 1234,
+  "status": "pending",
+  "url": "/api/controller/v2/jobs/1234/"
+}
 ```
+
+#### Step 3.4: Monitor Dry-Run Progress
+
+Poll job status with `jobs_retrieve` every 2 seconds:
+
+```
+⏳ Dry-run in progress...
+
+Job ID: 1234
+Status: running
+Elapsed: 0m 45s
+
+[Live progress updates from jobs_job_events_list]
+- ✓ Gathering Facts (completed)
+- ✓ Checking Disk Space (completed)
+- ⏳ Simulating Package Update (running)
+```
+
+#### Step 3.5: Display Dry-Run Results
+
+**MCP Tool**: `jobs_stdout_retrieve` (from aap-mcp-job-management)
+
+**Parameters**:
+- `id`: "1234" (job ID)
+- `format`: "txt" (plain text output)
+
+Get per-host summary:
+
+**MCP Tool**: `jobs_job_host_summaries_list` (from aap-mcp-job-management)
+
+**Parameters**:
+- `id`: "1234"
+
+**Display Format**:
+```markdown
+# Dry-Run Results
+
+## Job Summary
+**Job ID**: 1234
+**Status**: ✓ Successful (Check Mode)
+**Duration**: 2m 15s
+**Completed**: 2024-01-20 15:32:17 UTC
+
+## Simulated Changes
+| Host | Would Change | OK | Failed | Status |
+|------|--------------|-----|--------|--------|
+| prod-web-01 | 3 | 8 | 0 | ✓ Ready |
+| prod-web-02 | 3 | 8 | 0 | ✓ Ready |
+| prod-web-03 | 3 | 8 | 0 | ✓ Ready |
+
+## Changes That Would Be Made:
+1. **httpd package** - Would update from 2.4.53-7.el9 to 2.4.57-8.el9
+2. **httpd service** - Would restart
+3. **audit log** - Would add remediation entry
+
+## Dry-Run Output:
+<details>
+<summary>Click to expand full output</summary>
+
+[Full stdout from jobs_stdout_retrieve]
+
+</details>
+
+✓ No errors detected in dry-run
+✓ All systems passed pre-flight checks
+```
+
+#### Step 3.6: Proceed to Actual Execution?
+
+```
+❓ Dry-run completed successfully. Proceed with actual execution?
+
+Options:
+- "yes" or "execute" - Proceed with actual remediation
+- "review" - Show dry-run output again
+- "abort" - Cancel execution
+
+Please respond with your choice.
+```
+
+### Phase 4: Actual Execution
+
+**ONLY execute if user explicitly confirms** (either after dry-run or directly if they skipped dry-run).
+
+#### Step 4.1: Final Confirmation
+
+```
+⚠️ CRITICAL: Playbook Execution Confirmation Required
+
+This playbook will:
+- Execute on: 3 production systems
+- Update packages: httpd (2.4.53-7.el9 → 2.4.57-8.el9)
+- Restart services: httpd
+- Estimated downtime: ~10 seconds per system
+- Requires reboot: No
+
+Job Template: CVE Remediation Template (ID: 10)
+AAP URL: https://aap.example.com/jobs/
+
+❓ Execute this playbook now?
+
+Options:
+- "yes" or "execute" - Proceed with execution
+- "abort" - Cancel execution
+
+Please respond with your choice.
+```
+
+Wait for explicit "yes" or "execute" response.
+
+#### Step 4.2: Launch Production Job
+
+**MCP Tool**: `job_templates_launch_retrieve` (from aap-mcp-job-management)
+
+**Parameters**:
+```json
+{
+  "id": "10",
+  "requestBody": {
+    "job_type": "run",
+    "extra_vars": {
+      "target_cve": "CVE-2025-49794",
+      "remediation_mode": "automated",
+      "verify_after": true
+    },
+    "limit": "prod-web-01,prod-web-02,prod-web-03"
+  }
+}
+```
+
+**Key Parameter**: `job_type: "run"` - Runs Ansible in execution mode (actual changes)
+
+**Expected Output**:
+```json
+{
+  "job": 1235,
+  "status": "pending",
+  "url": "/api/controller/v2/jobs/1235/"
+}
+```
+
+#### Step 4.3: Monitor Execution Progress
 
 **Polling Strategy**:
+1. Call `jobs_retrieve(id=job_id)` every 2 seconds
+2. Get task events with `jobs_job_events_list(id=job_id)` for progress updates
+3. Display real-time task completion status
+4. Continue until status is "successful", "failed", or "error"
+
+**Progress Display**:
 ```
-1. Initial check: Immediately after execute_playbook
-2. While status = "PENDING" or "RUNNING":
-   - Wait 2 seconds
-   - Call get_job_status(job_id=job_id)
-   - Check status field
-3. When status = "COMPLETED":
-   - Stop polling
-   - Report success
-```
+⏳ Execution in progress...
 
-**Status Interpretation**:
-```
-Status: PENDING
-→ Job queued, not yet started
-→ Action: Continue polling
+Job ID: 1235
+Status: running
+Elapsed: 1m 23s
+AAP URL: https://aap.example.com/#/jobs/playbook/1235
 
-Status: RUNNING
-→ Playbook execution in progress
-→ Action: Continue polling, update user on progress
-
-Status: COMPLETED
-→ Playbook execution finished successfully
-→ Action: Stop polling, report success
-
-Status: FAILED (if supported by server)
-→ Playbook execution encountered errors
-→ Action: Report failure, provide troubleshooting guidance
+Recent Events:
+- ✓ Gathering Facts (completed - all hosts)
+- ✓ Check Disk Space (completed - all hosts)
+- ✓ Backup Configuration (completed - all hosts)
+- ⏳ Update Package: httpd (running - prod-web-01, prod-web-02)
+  └─ prod-web-01: Installing httpd-2.4.57-8.el9...
+  └─ prod-web-02: Installing httpd-2.4.57-8.el9...
+- ⏸  Restart Service: httpd (pending)
 ```
 
-**Error Handling**:
+**Update every 2 seconds** until completion.
+
+### Phase 5: Execution Report
+
+**Goal**: Generate comprehensive report with job details, per-host results, and full output.
+
+#### Step 5.1: Gather Job Details
+
+**MCP Tool**: `jobs_retrieve` (from aap-mcp-job-management)
+
+**Parameters**:
+- `id`: "1235"
+
+**Expected Output**:
+```json
+{
+  "id": 1235,
+  "name": "CVE Remediation Template",
+  "status": "successful",
+  "started": "2024-01-20T15:35:02Z",
+  "finished": "2024-01-20T15:40:25Z",
+  "elapsed": 323.45,
+  "job_template": 10,
+  "inventory": 1,
+  "limit": "prod-web-01,prod-web-02,prod-web-03",
+  "playbook": "playbooks/remediation/remediation-CVE-2025-49794.yml"
+}
 ```
-If get_job_status returns "Job not found":
-→ Error: Invalid job_id or job expired
-→ Action: Report error, suggest re-executing playbook
 
-If polling timeout (>60 seconds):
-→ Warning: Job taking longer than expected
-→ Action: Continue polling but warn user
+#### Step 5.2: Get Per-Host Statistics
+
+**MCP Tool**: `jobs_job_host_summaries_list` (from aap-mcp-job-management)
+
+**Parameters**:
+- `id`: "1235"
+
+**Expected Output**:
+```json
+{
+  "results": [
+    {
+      "host_name": "prod-web-01",
+      "ok": 8,
+      "changed": 3,
+      "failed": 0,
+      "unreachable": 0
+    },
+    {
+      "host_name": "prod-web-02",
+      "ok": 8,
+      "changed": 3,
+      "failed": 0,
+      "unreachable": 0
+    },
+    {
+      "host_name": "prod-web-03",
+      "ok": 5,
+      "changed": 0,
+      "failed": 1,
+      "unreachable": 0
+    }
+  ]
+}
 ```
 
-### 4. Report Execution Results
+#### Step 5.3: Get Task Timeline
 
-Generate execution summary with job details:
+**MCP Tool**: `jobs_job_events_list` (from aap-mcp-job-management)
+
+**Parameters**:
+- `id`: "1235"
+
+**Expected Output**: List of task events with timestamps, task names, and status per host.
+
+#### Step 5.4: Get Full Console Output
+
+**MCP Tool**: `jobs_stdout_retrieve` (from aap-mcp-job-management)
+
+**Parameters**:
+- `id`: "1235"
+- `format`: "txt"
+
+**Expected Output**: Complete Ansible playbook execution output.
+
+#### Step 5.5: Generate Comprehensive Report
+
+Format all gathered data into structured report:
 
 ```markdown
 # Playbook Execution Report
 
-## Job Details
-**Job ID**: job_12345
-**Status**: COMPLETED ✓
-**Started At**: 2024-01-20T15:30:02Z
-**Completed At**: 2024-01-20T15:30:07Z
-**Duration**: 5 seconds
+## Job Summary
+**Job ID**: 1235
+**Status**: ✅ Successful
+**Duration**: 5m 23s
+**Started**: 2024-01-20 15:35:02 UTC
+**Completed**: 2024-01-20 15:40:25 UTC
+**Job Template**: CVE Remediation Template
+**Playbook**: playbooks/remediation/remediation-CVE-2025-49794.yml
+**AAP URL**: [View in AAP](https://aap.example.com/#/jobs/playbook/1235)
 
-## Playbook Information
-**Playbook Path**: /tmp/remediation-CVE-2024-1234.yml
-**CVE**: CVE-2024-1234
-**Target Systems**: 5 systems
+## Per-Host Results
+| Host | OK | Changed | Failed | Unreachable | Status |
+|------|-----|---------|--------|-------------|--------|
+| prod-web-01 | 8 | 3 | 0 | 0 | ✅ Success |
+| prod-web-02 | 8 | 3 | 0 | 0 | ✅ Success |
+| prod-web-03 | 8 | 3 | 0 | 0 | ✅ Success |
 
-## Execution Timeline
-1. T+0s: Job submitted (PENDING)
-2. T+2s: Execution started (RUNNING)
-3. T+7s: Execution completed (COMPLETED)
+**Summary**: 3 of 3 hosts successfully remediated
+
+## Task Timeline
+1. ✅ Gather Facts (2s)
+2. ✅ Check disk space (1s)  
+3. ✅ Backup configuration (3s)
+4. ✅ Update package httpd (45s)
+   - prod-web-01: 2.4.53-7.el9 → 2.4.57-8.el9
+   - prod-web-02: 2.4.53-7.el9 → 2.4.57-8.el9
+   - prod-web-03: 2.4.53-7.el9 → 2.4.57-8.el9
+5. ✅ Restart httpd service (15s)
+6. ✅ Verify service status (2s)
+7. ✅ Update audit log (1s)
+
+## Full Console Output
+<details>
+<summary>Click to expand (187 lines)</summary>
+
+[Full stdout from jobs_stdout_retrieve]
+
+</details>
 
 ## Next Steps
-- Verify remediation success using remediation-verifier skill
-- Check affected systems are no longer vulnerable
-- Update vulnerability tracking system
+1. ✅ All systems successfully remediated
+2. ☐ Verify remediation with remediation-verifier skill
+3. ☐ Update vulnerability tracking system
+4. ☐ Schedule follow-up verification in 24-48 hours
+
+---
+
+**Recommendation**: Run remediation-verifier skill to confirm CVE status has been updated in Red Hat Lightspeed.
 ```
 
-### 5. Cleanup Temporary Files
+### Phase 6: Error Handling
 
-After job completion, clean up temporary playbook file:
+**If job status is "failed" or "error"**, provide detailed troubleshooting.
 
-```python
-import os
+#### Step 6.1: Parse Error Output
 
-# After job completes successfully
-if os.path.exists(temp_path):
-    os.remove(temp_path)
-    print(f"Cleaned up temporary playbook: {temp_path}")
-```
+**MCP Tool**: `jobs_stdout_retrieve` (from aap-mcp-job-management)
 
-**Cleanup Strategy**:
-- Remove temp file after COMPLETED status
-- Keep temp file if FAILED status (for debugging)
-- Warn user if cleanup fails (not critical)
+Analyze output for common error patterns:
 
-## Output Template
+**Error Categories**:
+1. **Connection Failures**: SSH timeout, host unreachable, authentication failed
+2. **Permission Errors**: sudo required, insufficient privileges, SELinux denials
+3. **Package Manager Issues**: repo unavailable, package not found, dependency conflicts
+4. **Service Failures**: service not found, restart failed, timeout
+5. **Disk Space**: insufficient space for updates
+6. **General Failures**: playbook syntax errors, task failures
 
-When completing playbook execution, provide output in this format:
+#### Step 6.2: Generate Error Report
 
 ```markdown
-# Ansible Playbook Execution
+# Playbook Execution Failed
 
-## Execution Started
-**Playbook**: remediation-CVE-2024-1234.yml
-**Job ID**: job_12345
-**Status**: Submitted for execution
+## Job Summary
+**Job ID**: 1235
+**Status**: ❌ Failed
+**Duration**: 2m 45s
+**Started**: 2024-01-20 15:35:02 UTC
+**Failed At**: 2024-01-20 15:37:47 UTC
+**Job Template**: CVE Remediation Template
+**AAP URL**: [View in AAP](https://aap.example.com/#/jobs/playbook/1235)
 
-Monitoring job status...
+## Per-Host Results
+| Host | OK | Changed | Failed | Unreachable | Status |
+|------|-----|---------|--------|-------------|--------|
+| prod-web-01 | 8 | 3 | 0 | 0 | ✅ Success |
+| prod-web-02 | 8 | 3 | 0 | 0 | ✅ Success |
+| prod-web-03 | 5 | 0 | 1 | 0 | ❌ Failed |
 
-## Status Updates
-- T+0s: PENDING (job queued)
-- T+2s: RUNNING (execution started)
-- T+7s: COMPLETED (execution finished)
+**Summary**: 2 of 3 hosts succeeded, 1 failed
 
-## Execution Complete ✓
+## Failed Tasks Details
 
-**Job ID**: job_12345
-**Status**: COMPLETED
-**Duration**: 5 seconds
-**Started**: 2024-01-20T15:30:02Z
-**Completed**: 2024-01-20T15:30:07Z
+### Host: prod-web-03
 
-## Next Steps
-1. Verify remediation success:
-   - Use remediation-verifier skill to confirm CVE is resolved
-   - Check package versions on affected systems
-   - Verify services are running properly
+**Task**: Restart httpd service
+**Error**: "Failed to restart httpd.service: Unit httpd.service not found."
 
-2. Update tracking:
-   - Mark CVE-2024-1234 as remediated in vulnerability tracker
-   - Document remediation in change management system
+**Error Category**: Service Failure
 
-3. Monitor systems:
-   - Watch for 24-48 hours for any issues
-   - Verify Red Hat Lightspeed reflects patched status
+**Root Cause**: The httpd service is not installed or not recognized by systemd.
+
+**Troubleshooting Steps**:
+1. Check if httpd is installed:
+   ```bash
+   ssh prod-web-03 'rpm -q httpd'
+   ```
+2. If not installed, the package update may have failed:
+   ```bash
+   ssh prod-web-03 'dnf info httpd'
+   ```
+3. Check systemd service status:
+   ```bash
+   ssh prod-web-03 'systemctl status httpd'
+   ```
+4. Review package manager logs:
+   ```bash
+   ssh prod-web-03 'tail -50 /var/log/dnf.log'
+   ```
+
+**Recommended Action**: 
+- Verify httpd package installation on prod-web-03
+- Check if package update completed successfully
+- Manually install httpd if needed: `dnf install httpd`
+- Relaunch job for failed host only
+
+## Console Output (Last 50 Lines)
+<details>
+<summary>Click to expand error context</summary>
+
+[Relevant error output from jobs_stdout_retrieve]
+
+</details>
+
+## Relaunch Options
+
+Would you like to:
+1. **Relaunch for failed hosts only** - Run job again with limit="prod-web-03"
+2. **Fix issues manually and relaunch** - Resolve problems first, then relaunch
+3. **View full job output** - See complete execution logs
+4. **Abort** - Stop remediation workflow
+
+Please choose an option (1-4):
+```
+
+#### Step 6.3: Offer Relaunch
+
+If user chooses to relaunch:
+
+**MCP Tool**: `jobs_relaunch_retrieve` (from aap-mcp-job-management)
+
+**Parameters**:
+```json
+{
+  "id": "1235",
+  "requestBody": {
+    "hosts": "failed",
+    "job_type": "run"
+  }
+}
+```
+
+This relaunches the job for only the failed hosts.
+
+## Output Templates
+
+### Success Template
+
+```markdown
+✅ Playbook Execution Successful
+
+Job ID: 1235
+Duration: 5m 23s
+Systems Remediated: 3 of 3
+
+View full report above for details.
+
+Next Steps:
+- Run remediation-verifier skill to confirm CVE resolution
+- Update vulnerability tracking system
+- Monitor systems for 24-48 hours
+
+AAP URL: https://aap.example.com/#/jobs/playbook/1235
+```
+
+### Partial Success Template
+
+```markdown
+⚠️ Playbook Execution Completed with Failures
+
+Job ID: 1235
+Duration: 2m 45s
+Systems Remediated: 2 of 3
+Failed Systems: prod-web-03
+
+See error details above for troubleshooting steps.
+
+Options:
+- Relaunch for failed hosts
+- Manual remediation
+- Skip failed hosts
+
+AAP URL: https://aap.example.com/#/jobs/playbook/1235
+```
+
+### Failure Template
+
+```markdown
+❌ Playbook Execution Failed
+
+Job ID: 1235
+Duration: 1m 15s
+Systems Remediated: 0 of 3
+
+Critical errors prevented execution.
+See error details above for troubleshooting.
+
+AAP URL: https://aap.example.com/#/jobs/playbook/1235
 ```
 
 ## Examples
 
-### Example 1: Execute Single CVE Remediation
+### Example 1: Full Workflow with Dry-Run
 
-**User Request**: "Execute the playbook for CVE-2024-1234"
-
-**Skill Response**:
-1. Receive playbook YAML content from agent
-2. Save to `/tmp/remediation-CVE-2024-1234.yml` (host path)
-3. Convert to container path: `/playbooks/remediation-CVE-2024-1234.yml`
-4. Call `execute_playbook(playbook_path="/playbooks/remediation-CVE-2024-1234.yml")` → job_id: "job_12345", status: PENDING
-5. Poll `get_job_status` every 2 seconds
-6. Status changes: PENDING → RUNNING → COMPLETED
-7. Report: "Playbook executed successfully in 5 seconds"
-8. Cleanup temp file from `/tmp/` on host
-9. Suggest: "Use remediation-verifier skill to confirm success"
-
-### Example 2: Track Long-Running Playbook
-
-**User Request**: "Check status of job_67890"
+**User Request**: "Execute the CVE-2025-49794 remediation playbook"
 
 **Skill Response**:
-1. Call `get_job_status(job_id="job_67890")`
-2. Response: status: RUNNING, started_at: 2 minutes ago
-3. Continue polling every 2 seconds
-4. After 3 minutes: status: COMPLETED
-5. Report: "Job completed successfully after 3 minutes"
 
-### Example 3: Handle Job Not Found
+1. **Validate AAP Prerequisites**:
+   - Invoke mcp-aap-validator skill → PASSED
 
-**User Request**: "Check status of job_99999"
+2. **List Job Templates**:
+   - Call `job_templates_list()` → Found 2 templates
+   - Filter compatible templates → 1 matches requirements
+
+3. **User Selects Template**:
+   ```
+   Found 1 compatible job template:
+   1. "CVE Remediation Template" (ID: 10)
+   
+   Select template (1) or "create" for new: 1
+   ```
+
+4. **Playbook Preparation**:
+   ```
+   Guide user to add playbook to Git:
+   - Commands provided
+   - User syncs AAP project
+   - Verification: Playbook available ✓
+   ```
+
+5. **Offer Dry-Run**:
+   ```
+   Run dry-run first? yes
+   ```
+
+6. **Execute Dry-Run**:
+   - Launch with `job_type="check"`
+   - Monitor progress → COMPLETED
+   - Display dry-run results:
+     ```
+     Would change 3 tasks on 3 hosts
+     No errors detected
+     ```
+
+7. **Proceed to Actual Execution**:
+   ```
+   Proceed with actual execution? yes
+   ```
+
+8. **Execute Playbook**:
+   - Launch with `job_type="run"`
+   - Monitor progress → COMPLETED
+   - Generate report:
+     ```
+     ✅ 3 of 3 hosts successfully remediated
+     Duration: 5m 23s
+     ```
+
+9. **Suggest Verification**:
+   ```
+   Recommend: Run remediation-verifier skill to confirm CVE resolution
+   ```
+
+### Example 2: Handle Execution Failure
+
+**User Request**: "Execute remediation playbook"
 
 **Skill Response**:
-1. Call `get_job_status(job_id="job_99999")`
-2. Response: "Job not found"
-3. Report: "Job ID not found. Possible reasons: invalid ID, job expired, or execution completed and cleaned up"
-4. Suggest: "Re-execute playbook if needed"
 
-## Error Handling
+1-7. [Same as Example 1 through execution]
 
-**Playbook File Not Found**:
-```
-Execution Failed: Playbook file not found
+8. **Execute Playbook**:
+   - Launch job → FAILED on 1 of 3 hosts
+   - Generate error report:
+     ```
+     ❌ prod-web-03 failed
+     Error: httpd service not found
+     Troubleshooting steps provided
+     ```
 
-Container Path: /playbooks/remediation-CVE-2024-1234.yml
-Host Path: /tmp/remediation-CVE-2024-1234.yml
+9. **Offer Relaunch**:
+   ```
+   Relaunch for failed host only? yes
+   ```
 
-Possible causes:
-1. File was not saved to /tmp before calling execute_playbook
-2. Path conversion from /tmp/ to /playbooks/ was not performed
-3. File permissions prevent reading
-4. Volume mount not configured correctly
+10. **Relaunch Job**:
+    - Call `jobs_relaunch_retrieve` with hosts="failed"
+    - Monitor → COMPLETED
+    - Final report:
+      ```
+      ✅ All 3 hosts successfully remediated (1 after retry)
+      ```
 
-Troubleshooting:
-1. Verify file exists on host: ls -l /tmp/remediation-CVE-2024-1234.yml
-2. Check file permissions: should be readable
-3. Verify path conversion: /tmp/file.yml → /playbooks/file.yml
-4. Ensure .mcp.json has volume mount: "-v", "/tmp:/playbooks:Z"
-5. Ensure file has .yml or .yaml extension
-```
+### Example 3: Skip Dry-Run
 
-**Job Execution Timeout**:
-```
-Execution Timeout: Job running longer than expected
+**User Request**: "Execute playbook directly, skip dry-run"
 
-Job ID: job_12345
-Status: RUNNING
-Duration: 65 seconds (exceeded 60s threshold)
+**Skill Response**:
 
-Action: Continuing to monitor job status
-Note: Some playbooks may take longer for large-scale remediations
-```
+1-4. [Same as Example 1 through template selection]
 
-**Job Status Polling Error**:
-```
-Status Check Failed: Unable to retrieve job status
+5. **Offer Dry-Run**:
+   ```
+   Run dry-run first? no
+   ```
 
-Job ID: job_12345
-Error: Network timeout
+6. **Final Confirmation**:
+   ```
+   ⚠️ Execute on production without dry-run?
+   This will make changes immediately.
+   Confirm: yes
+   ```
 
-Troubleshooting:
-1. Check ansible-mcp-server is running
-2. Verify network connectivity
-3. Retry status check manually: get_job_status(job_id="job_12345")
-```
+7. **Execute Playbook**:
+   - Launch with `job_type="run"`
+   - Monitor and report as in Example 1
 
 ## Dependencies
 
 ### Required MCP Servers
-- `ansible-mcp-server` - Mock Ansible playbook execution server (container-based)
+- `aap-mcp-job-management` - AAP job management and execution
+- `aap-mcp-inventory-management` - AAP inventory management
 
 ### Required MCP Tools
-- `execute_playbook` (from ansible-mcp-server) - Submit playbook for execution
-  - Parameters: playbook_path (string - absolute path in container filesystem starting with /playbooks/)
-  - Returns: Job object with job_id, status, playbook_path
-  - Note: Mock implementation validates path and creates test job
-- `get_job_status` (from ansible-mcp-server) - Track execution progress
-  - Parameters: job_id (string - job ID from execute_playbook)
-  - Returns: Job status object with job_id, status (PENDING/RUNNING/COMPLETED), started_at, completed_at
-  - Note: Mock implementation simulates job lifecycle
+- `job_templates_list` (from aap-mcp-job-management) - List templates
+- `job_templates_retrieve` (from aap-mcp-job-management) - Get template details
+- `job_templates_launch_retrieve` (from aap-mcp-job-management) - Launch jobs
+- `jobs_retrieve` (from aap-mcp-job-management) - Get job status
+- `jobs_stdout_retrieve` (from aap-mcp-job-management) - Get console output
+- `jobs_job_events_list` (from aap-mcp-job-management) - Get task events
+- `jobs_job_host_summaries_list` (from aap-mcp-job-management) - Get host statistics
+- `inventories_list` (from aap-mcp-inventory-management) - List inventories
+- `hosts_list` (from aap-mcp-inventory-management) - List hosts
 
 ### Related Skills
-- `mcp-ansible-validator` - **PREREQUISITE** - Validates ansible-mcp-server before execution (invoke in Step 0 if not validated in session)
-- `playbook-generator` - Generates playbooks that this skill executes
-- `remediation-verifier` - Verifies success after this skill completes execution
+- `mcp-aap-validator` - **PREREQUISITE** - Validates AAP MCP servers (invoke in Phase 0)
+- `job-template-creator` - Creates/guides AAP job template setup
+- `playbook-generator` - Generates playbooks for execution
+- `remediation-verifier` - Verifies success after execution
 
 ### Reference Documentation
-- None required (execution skill)
+- [AAP Job Execution Guide](../../docs/ansible/aap-job-execution.md) - AAP job execution best practices
+- [Playbook Integration with AAP](../../docs/ansible/playbook-integration-aap.md) - Playbook-to-AAP workflow
+
+## Critical: Human-in-the-Loop Requirements
+
+This skill executes code on production systems. **Explicit user confirmation is REQUIRED** at multiple stages.
+
+**Before Dry-Run Execution** (if user chooses dry-run):
+1. **Display Playbook Preview**: Show tasks and explain changes
+2. **Ask for Dry-Run Confirmation**:
+   ```
+   ❓ Run dry-run to simulate changes?
+   
+   Options:
+   - "yes" - Run dry-run (recommended)
+   - "no" - Skip to actual execution
+   - "abort" - Cancel
+
+   Please respond with your choice.
+   ```
+3. **Wait for Explicit Response**: Do not proceed without confirmation
+
+**Before Actual Execution** (REQUIRED):
+1. **Display Execution Summary**: Show systems, changes, downtime estimate
+2. **Ask for Final Confirmation**:
+   ```
+   ⚠️ CRITICAL: Execute playbook on production systems?
+   
+   This will make real changes to N systems.
+   
+   Options:
+   - "yes" or "execute" - Proceed
+   - "abort" - Cancel
+   
+   Please respond with your choice.
+   ```
+3. **Wait for Explicit "yes" or "execute"**: Do not proceed without confirmation
+
+**Never assume approval** - always wait for explicit user confirmation before executing playbooks.
 
 ## Best Practices
 
-1. **Always save playbook to /tmp** - Required for container volume mount access (mount: `/tmp:/playbooks:Z`)
-2. **Convert paths correctly** - Host path `/tmp/file.yml` → Container path `/playbooks/file.yml` before calling execute_playbook
-3. **Require user confirmation** - ALWAYS get explicit "yes" or "execute" before submitting playbook (HITL requirement)
-4. **Poll status efficiently** - 2-second intervals balance responsiveness and overhead
-5. **Handle all status transitions** - PENDING → RUNNING → COMPLETED (mock implementation)
-6. **Cleanup temp files** - Remove after successful completion from `/tmp/` on host
-7. **Provide progress updates** - Keep user informed during polling with status messages
-8. **Link to verification** - Always suggest remediation-verifier skill after execution completes
-9. **Keep temp files on failure** - Useful for debugging failed executions
-10. **Use unique temp filenames** - Include CVE ID or timestamp to avoid conflicts (e.g., `remediation-CVE-2024-1234-{timestamp}.yml`)
+1. **Always validate AAP prerequisites** - Invoke mcp-aap-validator in Phase 0
+2. **Recommend dry-run** - Offer check mode before production execution
+3. **Filter compatible templates** - Check inventory, project, and credentials match
+4. **Monitor in real-time** - Display task progress during execution
+5. **Comprehensive reporting** - Include per-host stats, task timeline, full output
+6. **Error categorization** - Parse errors and provide specific troubleshooting
+7. **Relaunch capability** - Offer to retry failed hosts
+8. **Link to AAP** - Provide direct URL to job in AAP Web UI
+9. **Suggest verification** - Always recommend remediation-verifier after success
+10. **Document job details** - Save job ID and template info for audit trail
 
 ## Integration with Other Skills
 
 - **playbook-generator**: Generates playbooks that this skill executes
+- **job-template-creator**: Creates AAP job templates when needed
 - **remediation-verifier**: Verifies success after this skill completes execution
-- **sre-agents:remediator agent**: Orchestrates full workflow including playbook execution (invoked)
+- **sre-agents:remediator agent**: Orchestrates full workflow including playbook execution
 
-**Orchestration Example** (from sre-agents:remediator agent - invoked):
+**Orchestration Example** (from sre-agents:remediator agent):
 1. Agent invokes playbook-generator skill → Creates playbook YAML
-2. playbook-generator skill asks for confirmation → User approves playbook content
-3. Agent invokes playbook-executor skill → Skill asks for execution confirmation
-4. User approves execution → Skill saves to temp file, executes, monitors
-5. Skill reports: "Playbook executed successfully"
-6. Agent invokes remediation-verifier skill → Confirms CVE resolved
+2. playbook-generator asks for confirmation → User approves playbook content
+3. Agent invokes playbook-executor skill (this skill) → Execution workflow
+4. Skill guides template selection → User selects or creates template
+5. Skill offers dry-run → User runs check mode
+6. Skill asks for execution confirmation → User approves
+7. Skill executes and monitors → Reports completion
+8. Agent invokes remediation-verifier skill → Confirms CVE resolved
 
-**Note**: Both playbook-generator and playbook-executor require separate confirmations:
+**Note**: Both playbook-generator and playbook-executor require separate confirmations for different purposes:
 - playbook-generator: Confirms playbook content is acceptable
 - playbook-executor: Confirms execution on production systems is approved
 
