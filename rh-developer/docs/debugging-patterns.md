@@ -10,6 +10,10 @@ sources:
     url: https://docs.openshift.com/container-platform/latest/support/troubleshooting/troubleshooting-operator-issues.html
     sections: Pod issues, Build issues
     date_accessed: 2026-02-16
+  - title: OpenShift Pipelines Troubleshooting
+    url: https://docs.openshift.com/pipelines/latest/about/about-openshift-pipelines.html
+    sections: Troubleshooting, PipelineRun status, TaskRun status
+    date_accessed: 2026-02-25
   - title: Podman Troubleshooting
     url: https://github.com/containers/podman/blob/main/troubleshooting.md
     sections: Common Issues
@@ -210,6 +214,61 @@ java.lang.OutOfMemoryError: Java heap space
    → Add MAVEN_OPTS=-Xmx512m
 ```
 
+## Pipeline/Tekton Failure Patterns
+
+### PipelineRun Failure Decision Tree
+
+```
+PipelineRun Failed
+├─ Check PipelineRun status conditions
+│  ├─ "PipelineRunTimeout" → Increase spec.timeouts.pipeline
+│  ├─ "CouldntGetPipeline" → Pipeline reference invalid, check name/namespace
+│  ├─ "PipelineRunCancelled" → Check if timeout or manual cancellation
+│  └─ "Failed" → Check which TaskRun failed (see below)
+├─ Check failed TaskRun
+│  ├─ Step failure (non-zero exit)
+│  │  ├─ git-clone step → Auth/URL issue (check SA secrets)
+│  │  ├─ build step → Compilation/dependency error
+│  │  ├─ push step → Registry auth (check SA dockerconfigjson secret)
+│  │  └─ test step → Test failures
+│  ├─ Pod scheduling failure → Resource constraints (FailedScheduling event)
+│  ├─ Workspace issue → PVC not bound or permission denied
+│  └─ Step image pull failure → ImagePullBackOff on step container
+└─ Pipeline stuck (Running too long)
+   ├─ TaskRun pending → Pod can't be scheduled
+   ├─ Step running indefinitely → Check logs for hang/deadlock
+   └─ Custom task waiting → Check custom task controller
+```
+
+### TaskRun Failure Analysis
+
+```
+TaskRun Failed
+├─ Pod not created → Check ServiceAccount exists, resource quotas
+├─ Pod pending → Scheduling issue (see Pod Failure Patterns)
+├─ Pod terminated → Check step statuses
+│  ├─ Exit 1 → Script/application error (check step logs)
+│  ├─ Exit 125-127 → Entrypoint/command issue in step image
+│  └─ Exit 137 → OOM killed (increase step resources)
+└─ Workspace binding failure
+   ├─ PVC not found → Create PVC or fix workspace binding
+   ├─ RWO blocks parallel tasks → Use RWX or separate workspaces
+   └─ Permission denied → Check fsGroup, runAsUser in pod security context
+```
+
+### Common Tekton Error Messages
+
+| Error Message | Fix |
+|--------------|-----|
+| `task "X" not found` | Verify Task name, kind (Task vs ClusterTask), namespace |
+| `could not read Username for...` | Add git-credentials secret (annotated with `tekton.dev/git-0`) to ServiceAccount |
+| `unauthorized: access denied` (push) | Add dockerconfigjson secret (annotated with `tekton.dev/docker-0`) to ServiceAccount |
+| `persistentvolumeclaim "X" not found` | Create PVC or change workspace binding to emptyDir |
+| `exceeded timeout` | Increase timeouts in PipelineRun spec (`spec.timeouts.pipeline` / `spec.timeouts.tasks`) |
+| `missing required parameter "X"` | Add parameter value to PipelineRun spec |
+| `couldn't find remote ref` | Fix git `revision` parameter (branch/tag name) |
+| `unable to open Containerfile/Dockerfile` | Fix `DOCKERFILE` param path relative to workspace root |
+
 ## Network Troubleshooting
 
 ### Service Has No Endpoints
@@ -317,6 +376,26 @@ Build failures
    └─ Compare with last successful build
 ```
 
+### Pipeline Keeps Failing
+
+```
+Pipeline failures
+├─ Same task always fails?
+│  ├─ git-clone → Check ServiceAccount secrets, git URL, revision
+│  ├─ build step → Check source code, Containerfile path, build context
+│  └─ push step → Check ServiceAccount imagePullSecrets, registry URL
+├─ Different tasks fail?
+│  ├─ Resource exhaustion → Reduce parallel tasks or increase quotas
+│  └─ Workspace contention → Use RWX PVC or separate workspaces
+├─ Pipeline hangs?
+│  ├─ TaskRun pending → Pod can't be scheduled
+│  └─ Step running indefinitely → Check step logs
+└─ Pipeline never triggers?
+   ├─ EventListener pod not running → Check EL deployment/logs
+   ├─ Webhook misconfigured → Verify webhook URL and secret
+   └─ TriggerBinding wrong → Check CEL expression param extraction
+```
+
 ## Quick Reference Commands
 
 ### OpenShift Debugging
@@ -339,6 +418,28 @@ oc get endpoints [service-name]
 
 # Build logs
 oc logs build/[build-name]
+```
+
+### Pipeline/Tekton Debugging
+
+```bash
+# List PipelineRuns (oldest first)
+oc get pipelinerun --sort-by='.metadata.creationTimestamp'
+
+# Get PipelineRun details
+oc get pipelinerun [name] -o yaml
+
+# List TaskRuns for a PipelineRun
+oc get taskrun -l tekton.dev/pipelineRun=[pipelinerun-name]
+
+# Get TaskRun pod logs for a specific step
+oc logs [taskrun-name]-pod -c step-[step-name]
+
+# Get events for pipeline resources
+oc get events --field-selector involvedObject.kind=PipelineRun
+
+# Describe EventListener
+oc get eventlistener [name] -o yaml
 ```
 
 ### RHEL Debugging

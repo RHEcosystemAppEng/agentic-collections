@@ -51,6 +51,29 @@
         "network": "local",
         "credentials": "env-only"
       }
+    },
+    "lightspeed-mcp": {
+      "command": "podman",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--env",
+        "LIGHTSPEED_CLIENT_ID",
+        "--env",
+        "LIGHTSPEED_CLIENT_SECRET",
+        "quay.io/redhat-services-prod/insights-management-tenant/insights-mcp/red-hat-lightspeed-mcp:latest"
+      ],
+      "env": {
+        "LIGHTSPEED_CLIENT_ID": "${LIGHTSPEED_CLIENT_ID}",
+        "LIGHTSPEED_CLIENT_SECRET": "${LIGHTSPEED_CLIENT_SECRET}"
+      },
+      "description": "Red Hat Lightspeed MCP server for vulnerability, advisor, inventory, and planning data from Red Hat Insights (optional, used by /debug-rhel and /rhel-deploy)",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
     }
   }
 }

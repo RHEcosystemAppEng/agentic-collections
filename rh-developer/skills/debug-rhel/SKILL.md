@@ -327,7 +327,59 @@ Continue to diagnosis summary? (yes/no)
 
 **WAIT for user confirmation before proceeding.**
 
-### Phase 7: Present Diagnosis Summary
+### Phase 7: Red Hat Insights Check (Optional)
+
+**This phase runs only if the `lightspeed-mcp` server is available.** Use `ToolSearch` to check for Lightspeed MCP tools. If not available, skip this phase silently and proceed to Phase 8.
+
+**Step 1:** Use `find_host_by_name` with the hostname from `RHEL_HOST` to look up the system in Red Hat Insights.
+
+**Step 2:** If system found, use `get_system_cves` with the system ID to check for known CVEs affecting this system.
+
+**Step 3:** Use `get_active_rules` to get advisor configuration recommendations. Optionally use `get_rule_by_text_search` with error text found in Phase 4 logs to find relevant advisor recommendations.
+
+```markdown
+## Red Hat Insights Check
+
+**System in Insights:** [Found / Not registered]
+
+[If found:]
+**System Details:**
+| Field | Value |
+|-------|-------|
+| Display Name | [hostname] |
+| RHEL Version | [version] |
+| Last Check-in | [timestamp] |
+| Stale | [yes/no] |
+
+**Known Vulnerabilities:**
+| CVE | CVSS | Severity | Remediation |
+|-----|------|----------|-------------|
+| [CVE-ID] | [score] | [severity] | [Available/None] |
+
+**Advisor Recommendations:**
+| Rule | Category | Risk | Description |
+|------|----------|------|-------------|
+| [rule-id] | [Security/Performance/Availability/Stability] | [Critical/Important/Moderate/Low] | [description] |
+
+[If any CVE or advisor rule matches the symptoms from earlier phases:]
+**Potentially Related to Current Issue:**
+- [CVE or advisor rule that matches the symptoms]
+
+Continue to diagnosis summary? (yes/no)
+```
+
+**WAIT for user confirmation before proceeding.**
+
+[If system not registered in Insights, just note it:]
+```markdown
+## Red Hat Insights Check
+
+System [hostname] is not registered in Red Hat Insights. Skipping vulnerability and advisor checks.
+
+Continue to diagnosis summary? (yes/no)
+```
+
+### Phase 8: Present Diagnosis Summary
 
 ```markdown
 ## Diagnosis Summary: [service-name] on [host]
@@ -344,6 +396,7 @@ Continue to diagnosis summary? (yes/no)
 | Firewall | [OK/BLOCKED] | [port status] |
 | Permissions | [OK/FAIL] | [file/dir issues] |
 | Resources | [OK/FAIL] | [memory/cpu/disk] |
+| Insights/CVE | [OK/WARN/N/A] | [CVE count or "Not registered"] |
 
 ### Detailed Findings
 
@@ -438,7 +491,16 @@ See [docs/selinux-troubleshooting.md](../../docs/selinux-troubleshooting.md) for
 
 ## MCP Tools Used
 
-This skill uses Bash (SSH commands) instead of MCP tools since it operates on remote RHEL hosts.
+This skill primarily uses Bash (SSH commands) since it operates on remote RHEL hosts.
+
+**Optional Lightspeed MCP tools** (used in Phase 7 if `lightspeed-mcp` is available):
+
+| Tool | Purpose |
+|------|---------|
+| `find_host_by_name` | Look up the target system in Red Hat Insights inventory |
+| `get_system_cves` | Get CVEs affecting the specific system |
+| `get_active_rules` | Get advisor configuration recommendations |
+| `get_rule_by_text_search` | Search advisor recommendations by error text from logs |
 
 ## Output Variables
 
@@ -450,12 +512,17 @@ This skill uses Bash (SSH commands) instead of MCP tools since it operates on re
 | `SELINUX_DENIALS` | AVC denial count | `3` |
 | `FIREWALL_BLOCKING` | Port blocked | `true` / `false` |
 | `ROOT_CAUSE` | Identified root cause | `SELinux port binding denied` |
+| `INSIGHTS_SYSTEM_ID` | Insights system ID (if registered) | `abc-def-123` |
+| `CVE_COUNT` | Number of CVEs affecting system | `3` |
 
 ## Dependencies
 
 ### Required Tools
 - SSH client with key-based authentication
 - sudo access on target host
+
+### Optional MCP Servers
+- `lightspeed-mcp` - Red Hat Insights vulnerability, advisor, and inventory data (Phase 7)
 
 ### Related Skills
 - `/rhel-deploy` - To redeploy after fixing issues
