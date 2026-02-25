@@ -159,6 +159,43 @@ ssh [target] "firewall-cmd --state 2>/dev/null || echo 'Not running'"
 
 Store `RHEL_VERSION`, `PODMAN_AVAILABLE`, `SELINUX_STATUS`, `FIREWALL_STATUS` in session state.
 
+### Phase 2b: Red Hat Insights Pre-Deploy Check (Optional)
+
+**This phase runs only if the `lightspeed-mcp` server is available.** Use `ToolSearch` to check for Lightspeed MCP tools. If not available, skip silently and proceed to Phase 3.
+
+**Step 1:** Use `find_host_by_name` with the target hostname to look up the system in Red Hat Insights.
+
+**Step 2:** If found, use `get_system_cves` to check for critical/important CVEs on the target.
+
+**Step 3:** Use `get_rhel_lifecycle` to verify the target RHEL version is still supported.
+
+Append to Phase 2 output:
+
+```markdown
+**Red Hat Insights (Optional):**
+| Check | Status | Details |
+|-------|--------|---------|
+| Registered in Insights | [Yes/No] | [system-id or "Not found"] |
+| RHEL Lifecycle | [Active/Maintenance/EOL] | [end date] |
+| Critical/Important CVEs | [count] | [top 3 CVE IDs] |
+
+[If critical CVEs found:]
+**WARNING:** Target system has [N] critical/important CVEs. Consider remediating before deploying.
+
+[If RHEL version is EOL:]
+**WARNING:** RHEL [version] has reached End of Life ([date]). Consider upgrading before deploying.
+```
+
+These are informational warnings only — they do not block deployment.
+
+**MCP tools used:**
+
+| Tool | Purpose |
+|------|---------|
+| `find_host_by_name` | Look up target system in Red Hat Insights |
+| `get_system_cves` | Check CVEs on target system |
+| `get_rhel_lifecycle` | Verify RHEL version support status |
+
 ### Phase 3: Strategy Selection
 
 ```markdown
@@ -590,8 +627,12 @@ When delegating to `/recommend-image`:
 
 | Skill | Use When |
 |-------|----------|
-| `/debug-rhel` | systemd failures, SELinux denials, firewall blocking |
+| `/debug-rhel` | systemd failures, SELinux denials, firewall blocking, Insights CVE/advisor analysis |
 | `/debug-container` | Container startup issues on RHEL host |
+
+## Optional MCP Servers
+
+- `lightspeed-mcp` - Red Hat Insights vulnerability and planning data (Phase 2b)
 
 ## Reference Documentation
 
