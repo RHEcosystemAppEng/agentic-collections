@@ -1,0 +1,111 @@
+name: Design Compliance Check
+
+# Runs on every PR that targets main, plus manually when needed.
+# The job is named 'design-compliance' so it can be added as a required
+# status check in branch protection settings.
+#
+# See .github/DESIGN_COMPLIANCE.md for setup instructions.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base branch/ref to diff against (default: main)"
+        required: false
+        default: main
+
+# Least-privilege: read-only access to repo content and PR metadata.
+# The GITHUB_TOKEN is also used to authenticate with GitHub Models.
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  design-compliance:
+    name: design-compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full history so we can diff against the base branch
+          fetch-depth: 0
+
+      # ── 2. Python setup ──────────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install --quiet requests pyyaml
+
+      # ── 3. Collect PR diff ───────────────────────────────────────────────
+      - name: Collect PR diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            echo "Using PR base SHA: $BASE_SHA"
+          else
+            BASE_REF="${{ inputs.base_ref || 'main' }}"
+            git fetch origin "$BASE_REF" --depth=50
+            BASE_SHA="$(git rev-parse "origin/$BASE_REF")"
+            echo "Using workflow_dispatch base: $BASE_REF ($BASE_SHA)"
+          fi
+
+          # Collect diff for relevant file types only
+          git diff "${BASE_SHA}...HEAD" \
+            -- '*.md' '*.yml' '*.yaml' '*.json' \
+            > /tmp/pr.diff 2>/dev/null || true
+
+          DIFF_BYTES="$(wc -c < /tmp/pr.diff)"
+          echo "Diff size: ${DIFF_BYTES} bytes"
+
+          # Hard-cap at 100 KB before passing to the script
+          # (the script applies its own per-section limit)
+          MAX_BYTES=102400
+          if [ "$DIFF_BYTES" -gt "$MAX_BYTES" ]; then
+            head -c "$MAX_BYTES" /tmp/pr.diff > /tmp/pr_cap.diff
+            printf '\n[NOTE: Raw diff capped at %d bytes before processing]\n' \
+              "$MAX_BYTES" >> /tmp/pr_cap.diff
+            mv /tmp/pr_cap.diff /tmp/pr.diff
+            echo "⚠️  Diff capped at ${MAX_BYTES} bytes"
+          fi
+
+      # ── 4. Run design compliance check ───────────────────────────────────
+      - name: Run design compliance check
+        id: compliance
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/design_compliance.py \
+            --diff-file    /tmp/pr.diff \
+            --policy-file  policy/design-compliance.yml \
+            --output-file  /tmp/compliance-report.json \
+            --summary-file /tmp/compliance-summary.md
+
+      # ── 5. Append summary to job page ────────────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ -f /tmp/compliance-summary.md ]; then
+            cat /tmp/compliance-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ⚠️ Design Compliance Check" >> "$GITHUB_STEP_SUMMARY"
+            echo "Summary file not generated – check the step logs above." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # ── 6. Upload JSON report as artifact ────────────────────────────────
+      - name: Upload compliance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-compliance-report
+          path: /tmp/compliance-report.json
+          if-no-files-found: warn
+          retention-days: 30

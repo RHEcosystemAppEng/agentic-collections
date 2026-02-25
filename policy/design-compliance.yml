@@ -1,0 +1,65 @@
+# Design Compliance Policy
+# Controls the behaviour of the design-compliance GitHub Actions check.
+# See .github/DESIGN_COMPLIANCE.md for full documentation.
+
+# ─── GitHub Models settings ────────────────────────────────────────────────
+model:
+  # Any GitHub Models-supported model name.
+  # gpt-4o-mini is fast, cost-effective, and supports JSON mode.
+  name: gpt-4o-mini
+  max_tokens: 2000
+  temperature: 0.1
+
+# ─── Diff collection limits ────────────────────────────────────────────────
+diff_limits:
+  # Maximum diff bytes sent to the LLM (per run).
+  # Diffs larger than this are truncated with a note.
+  max_bytes: 51200  # 50 KB
+
+# ─── Deterministic pre-checks ──────────────────────────────────────────────
+# These checks run BEFORE the LLM call to catch obvious violations cheaply.
+deterministic_checks:
+
+  # Patterns that must NOT appear verbatim inside agent files
+  # (agents/*.md).  Agents must delegate to Skills; direct MCP tool
+  # references here indicate the agent is bypassing the skill layer.
+  #
+  # Add / remove patterns to match the MCP servers used in your packs.
+  mcp_tool_denylist:
+    - "vulnerability__"
+    - "insights__"
+    - "ansible__"
+    - "lightspeed__"
+    - "advisor__"
+    - "patch__"
+    - "__get_cves"
+    - "__get_cve"
+    - "__get_systems"
+    - "__create_job"
+    - "__run_playbook"
+    - "__launch_job"
+    - "__get_job_status"
+
+  # YAML frontmatter fields required in every skill file (skills/*/SKILL.md).
+  # These align with validate_structure.py (name + description are mandatory).
+  # Optionally add 'model' or 'color' to enforce stricter conformance.
+  skill_required_frontmatter:
+    - name
+    - description
+
+  # YAML frontmatter fields required in every agent file (agents/*.md).
+  agent_required_frontmatter:
+    - name
+    - description
+
+  # Markdown section headings (case-insensitive) required in skill files.
+  # The matcher is flexible: "## Your Workflow" satisfies "Workflow".
+  # Optionally add "Prerequisites" to enforce CLAUDE.md Principle 7.
+  skill_required_sections:
+    - Workflow
+    - Dependencies
+
+  # Markdown section headings (case-insensitive) required in agent files.
+  # Optionally add "Prerequisites" to enforce CLAUDE.md Principle 7.
+  agent_required_sections:
+    - Workflow
