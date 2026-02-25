@@ -36,12 +36,14 @@ A Claude Code plugin for building and deploying applications on Red Hat platform
 - OpenShift cluster access (for S2I and OpenShift deployments)
 - Podman installed locally
 - GitHub personal access token (for GitHub integration)
+- Red Hat Insights service account with Client ID and Secret (optional, for vulnerability and advisor data in `/debug-rhel` and `/rhel-deploy`)
 
 ## MCP Servers
 
 - **openshift** - OpenShift cluster management and Helm deployments
 - **podman** - Container image management and local builds
 - **github** - Repository browsing and code analysis
+- **lightspeed** - Red Hat Insights data (vulnerability, advisor, inventory, planning) — optional
 
 ## Supported Languages
 
