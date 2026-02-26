@@ -1,6 +1,6 @@
 # Design Principles for Skills and Agents
 
-This document defines the design principles for creating skills and agents in agentic collections. It is referenced from [CLAUDE.md](CLAUDE.md#design-principles-for-skills-and-agents). Validate compliance with `make validate-skill-design` (see [README.md](README.md#skill-design-validation)).
+This document defines the design principles for creating skills and agents in agentic collections. It is referenced from [CLAUDE.md](CLAUDE.md). Validate compliance with `make validate-skill-design` (see [README.md](README.md#skill-design-validation)).
 
 ## 1. Document Consultation Transparency
 
