@@ -106,11 +106,32 @@ description: |
   - "List high-severity CVEs"
 
   NOT for remediation actions (use remediator agent instead).
-model: inherit
+model: inherit        # Root: Runtime - host needs before skill runs
+color: blue           # Root: UX - IDE sidebar/terminal theme
 ---
 ```
 
 **Rationale**: Minimizes token usage at agent initialization while maintaining clarity.
+
+### Root-Level Frontmatter (2026 Agentic Skills Standard)
+
+Primary UI and runtime configuration fields belong at the **root level** of YAML frontmatter so the IDE or Agent Host can parse them without traversing nested blocks.
+
+| Field Type | Location | Examples |
+|------------|----------|----------|
+| Runtime | Root | `model`, `allowed-tools` |
+| UX/UI | Root | `color`, `icon`, `version` |
+| Custom | `metadata` | `author`, `priority`, `compliance` |
+
+**Standard Color Values** (Cursor, Claude Code):
+
+| Color | Use Case |
+|-------|----------|
+| blue, cyan | Analysis, read-only |
+| green | Success, deployment |
+| yellow | Caution, validation |
+| red | Critical, security, remediation |
+| magenta | Creative, generation |
 
 ## 4. Dependencies Declaration
 
@@ -188,7 +209,11 @@ name: skill-name
 description: |
   [Concise when-to-use with 3-5 examples]
 model: inherit|sonnet|haiku
-color: red|blue|green|yellow
+color: red|blue|green|yellow|cyan|magenta
+version: 1.0.0
+metadata:
+  author: "team-name"
+  priority: "high"
 ---
 
 # [Skill Name]
@@ -402,7 +427,11 @@ name: skill-name
 description: |
   [Concise when-to-use with 3-5 examples - under 500 tokens]
 model: inherit|sonnet|haiku
-color: red|blue|green|yellow
+color: red|blue|green|yellow|cyan|magenta
+version: 1.0.0
+metadata:
+  author: "team-name"
+  priority: "high"
 ---
 
 # [Skill Name]
@@ -451,6 +480,9 @@ description: |
   [Concise with 3-5 examples - under 500 tokens]
 model: inherit
 color: red
+version: 1.0.0
+metadata:
+  author: "team-name"
 tools: ["All"]
 ---
 

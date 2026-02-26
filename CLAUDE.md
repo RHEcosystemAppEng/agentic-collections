@@ -152,7 +152,7 @@ last_updated: YYYY-MM-DD
 ### Adding a Skill
 
 1. Create `skills/<skill-name>/SKILL.md`
-2. Define YAML frontmatter (name, description, model, color)
+2. Define YAML frontmatter with root-level fields (name, description, model, color) and optional `metadata` for custom fields (author, priority, etc.). See [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for the 2026 Agentic Skills structure.
 3. Document workflow with MCP tool references
 4. Include concrete examples
 5. Test with `Skill` tool invocation

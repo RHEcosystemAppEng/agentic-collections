@@ -87,8 +87,6 @@ make validate-skill-design PACK=rh-sre
 # Treat warnings as errors
 uv run python scripts/validate_skill_design.py --warnings-as-errors
 
-# Skip missing 'model' field (for legacy skills)
-uv run python scripts/validate_skill_design.py --skip-missing-model
 ```
 
 ## Security

@@ -39,8 +39,13 @@ CRITICAL_SKILL_KEYWORDS = [
     "remediator",
 ]
 
-# Required section order (DP6)
+# Required sections (DP6) - Prerequisites is optional
 REQUIRED_SECTIONS = [
+    "When to Use This Skill",
+    "Workflow",
+]
+# Expected order when all present
+ORDERED_SECTIONS = [
     "Prerequisites",
     "When to Use This Skill",
     "Workflow",
@@ -236,7 +241,8 @@ def check_dp5_human_in_loop(
 def check_dp6_mandatory_sections(body: str, result: ValidationResult) -> None:
     """
     DP6: Mandatory Skill Sections.
-    Must have Prerequisites, When to Use This Skill, Workflow in order.
+    Must have When to Use This Skill, Workflow. Prerequisites is optional.
+    When present, sections must appear in order: Prerequisites, When to Use, Workflow.
     """
     section_headings = re.findall(r"^## ([^\n#]+)", body, re.MULTILINE)
 
@@ -245,12 +251,12 @@ def check_dp6_mandatory_sections(body: str, result: ValidationResult) -> None:
             result.errors.append(f"DP6: Missing required section '## {required}'")
             return
 
-    # Check order
+    # Check order for sections that are present (Prerequisites, When to Use, Workflow)
     indices = []
     for i, heading in enumerate(section_headings):
-        for req in REQUIRED_SECTIONS:
+        for req in ORDERED_SECTIONS:
             if req in heading or heading.strip() == req:
-                indices.append((REQUIRED_SECTIONS.index(req), i))
+                indices.append((ORDERED_SECTIONS.index(req), i))
                 break
 
     if len(indices) >= 2:
@@ -258,8 +264,8 @@ def check_dp6_mandatory_sections(body: str, result: ValidationResult) -> None:
         for i in range(1, len(indices)):
             if indices[i][1] < indices[i - 1][1]:
                 result.warnings.append(
-                    f"DP6: Required sections should appear in order: "
-                    f"{', '.join(REQUIRED_SECTIONS)}"
+                    f"DP6: Sections should appear in order: "
+                    f"{', '.join(ORDERED_SECTIONS)}"
                 )
                 break
 
@@ -303,30 +309,33 @@ def check_dp7_credential_exposure(body: str, result: ValidationResult) -> None:
 def check_frontmatter_fields(
     frontmatter: dict | None,
     result: ValidationResult,
-    *,
-    skip_model: bool = False,
 ) -> None:
-    """Check required frontmatter fields (name, description, model, color)."""
+    """Check required frontmatter fields (name, description). Model is optional."""
     if not frontmatter:
         result.errors.append("Missing or invalid YAML frontmatter")
         return
 
     required = ["name", "description"]
-    if not skip_model:
-        required.append("model")
     for field_name in required:
         if field_name not in frontmatter:
             result.errors.append(f"Frontmatter missing required field: {field_name}")
 
     if "color" in frontmatter:
-        valid_colors = {"red", "blue", "green", "yellow", "cyan"}
+        valid_colors = {"red", "blue", "green", "yellow", "cyan", "magenta"}
         if frontmatter["color"].lower() not in valid_colors:
             result.warnings.append(
-                f"Frontmatter 'color' should be one of: {', '.join(valid_colors)}"
+                f"Frontmatter 'color' should be one of: {', '.join(sorted(valid_colors))}"
+            )
+
+    if "metadata" in frontmatter:
+        meta = frontmatter["metadata"]
+        if not isinstance(meta, dict):
+            result.warnings.append(
+                "Frontmatter 'metadata' should be a key-value map (dict), not a string or list"
             )
 
 
-def validate_skill(skill_path: Path, *, skip_model: bool = False) -> ValidationResult:
+def validate_skill(skill_path: Path) -> ValidationResult:
     """Run all design principle checks on a skill file."""
     result = ValidationResult(path=skill_path)
 
@@ -338,7 +347,7 @@ def validate_skill(skill_path: Path, *, skip_model: bool = False) -> ValidationR
 
     frontmatter, body = extract_frontmatter(content)
 
-    check_frontmatter_fields(frontmatter, result, skip_model=skip_model)
+    check_frontmatter_fields(frontmatter, result)
     check_dp1_document_consultation(body, result)
     check_dp2_parameter_order(body, result)
     check_dp3_conciseness(frontmatter, result)
@@ -367,11 +376,6 @@ def main() -> int:
         "--warnings-as-errors",
         action="store_true",
         help="Treat warnings as errors",
-    )
-    parser.add_argument(
-        "--skip-missing-model",
-        action="store_true",
-        help="Do not fail on missing 'model' frontmatter (for packs with legacy skills)",
     )
     args = parser.parse_args()
 
@@ -402,7 +406,7 @@ def main() -> int:
     all_warnings: list[tuple[Path, str]] = []
 
     for skill_path in sorted(skill_files):
-        result = validate_skill(skill_path, skip_model=args.skip_missing_model)
+        result = validate_skill(skill_path)
         rel_path = skill_path.relative_to(Path.cwd()) if skill_path.is_relative_to(Path.cwd()) else skill_path
 
         if result.errors:

@@ -13,14 +13,14 @@ description: |
 
 Run the programmatic compliance check for skills in this agentic-collections repository.
 
-## When to Use
+## When to Use This Skill
 
 Invoke this skill when the user wants to:
 - Validate skills against [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md)
 - Check compliance before committing or opening a PR
 - Verify design principle adherence (DP1–DP7)
 
-## Instructions
+## Workflow
 
 1. **Run from project root** (the workspace root).
 
@@ -55,4 +55,4 @@ Invoke this skill when the user wants to:
 - DP4: Dependencies declaration
 - DP5: Human-in-the-loop for critical skills
 - DP6: Mandatory sections (Prerequisites, When to Use, Workflow)
-- DP7: Credential security (no `echo $VAR`)
+- DP7: Credential security (avoid echoing env vars)

@@ -88,8 +88,11 @@ description: |            # REQUIRED: Must be under 500 tokens total
 
 model: inherit           # REQUIRED: Always "inherit" unless special case
                          # Only use "sonnet" or "haiku" if skill needs specific model
-color: <risk-color>      # REQUIRED: red|yellow|blue|green|cyan - see Color Guide below
+color: <risk-color>      # REQUIRED: red|yellow|blue|green|cyan|magenta - see Color Guide below
                          # Indicates operation risk level for user safety
+metadata:                # Optional: Custom fields (2026 Agentic Skills standard)
+  author: "team-name"
+  priority: "high"
 ---
 
 # /<skill-name> Skill
@@ -550,6 +553,7 @@ Use the following color codes based on operation characteristics:
 | **blue** | Reversible state changes | vm-lifecycle-manager, vm-clone |
 | **yellow** | Destructive but recoverable operations | vm-snapshot-delete |
 | **red** | Irreversible/critical operations (data loss risk) | vm-delete, vm-snapshot-restore |
+| **magenta** | Creative, generation tasks | content generation, templating |
 
 ---
 
