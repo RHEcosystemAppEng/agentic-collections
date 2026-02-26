@@ -13,6 +13,11 @@ import yaml
 # List of agentic packs to parse
 PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt']
 
+# Mapping from directory name to key in docs/plugins.json (if different)
+PACK_TO_PLUGINS_KEY = {
+    'ocp-admin': 'rh-ocp-admin',  # Directory is ocp-admin, but plugins.json key is rh-ocp-admin
+}
+
 
 def parse_yaml_frontmatter(file_path: Path) -> Dict[str, Any]:
     """
@@ -41,12 +46,38 @@ def parse_yaml_frontmatter(file_path: Path) -> Dict[str, Any]:
         return {}
 
 
-def parse_plugin_json(pack_dir: str) -> Dict[str, Any]:
+def load_plugin_titles() -> Dict[str, str]:
     """
-    Parse plugin.json from a pack directory.
+    Load plugin title mappings from docs/plugins.json.
+
+    Returns:
+        Dictionary mapping plugin names to display titles
+    """
+    plugins_file = Path('docs/plugins.json')
+
+    if not plugins_file.exists():
+        print("Warning: docs/plugins.json not found, using default titles")
+        return {}
+
+    try:
+        with open(plugins_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Extract just the titles into a simple mapping
+        return {name: info['title'] for name, info in data.items()}
+
+    except Exception as e:
+        print(f"Warning: Failed to load docs/plugins.json: {e}")
+        return {}
+
+
+def parse_plugin_json(pack_dir: str, plugin_titles: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Parse plugin.json from a pack directory and merge with title from docs/plugins.json.
 
     Args:
         pack_dir: Name of the pack directory
+        plugin_titles: Dictionary mapping plugin names to display titles
 
     Returns:
         Dictionary with plugin metadata, or defaults if file doesn't exist
@@ -63,7 +94,13 @@ def parse_plugin_json(pack_dir: str) -> Dict[str, Any]:
         'keywords': []
     }
 
+    # Check if pack_dir has a different key in plugins.json
+    plugins_key = PACK_TO_PLUGINS_KEY.get(pack_dir, pack_dir)
+
     if not plugin_path.exists():
+        # Use title from plugins.json if available
+        if plugins_key in plugin_titles:
+            defaults['title'] = plugin_titles[plugins_key]
         return defaults
 
     try:
@@ -71,10 +108,22 @@ def parse_plugin_json(pack_dir: str) -> Dict[str, Any]:
             data = json.load(f)
 
         # Merge with defaults (in case some fields are missing)
-        return {**defaults, **data}
+        result = {**defaults, **data}
+        
+        # Override with title from docs/plugins.json if available
+        if plugins_key in plugin_titles:
+            result['title'] = plugin_titles[plugins_key]
+        elif 'title' not in result:
+            # Fallback: use name as title if not set
+            result['title'] = result['name']
+
+        return result
 
     except Exception as e:
         print(f"Warning: Failed to parse {plugin_path}: {e}")
+        # Use title from plugins.json if available even on error
+        if plugins_key in plugin_titles:
+            defaults['title'] = plugin_titles[plugins_key]
         return defaults
 
 
@@ -235,6 +284,9 @@ def generate_pack_data() -> List[Dict[str, Any]]:
         List of pack dictionaries
     """
     packs = []
+    
+    # Load plugin title mappings from docs/plugins.json
+    plugin_titles = load_plugin_titles()
 
     for pack_dir in PACK_DIRS:
         pack_path = Path(pack_dir)
@@ -248,7 +300,7 @@ def generate_pack_data() -> List[Dict[str, Any]]:
         pack = {
             'name': pack_dir,
             'path': f'./{pack_dir}',
-            'plugin': parse_plugin_json(pack_dir),
+            'plugin': parse_plugin_json(pack_dir, plugin_titles),
             'skills': parse_skills(pack_dir),
             'agents': parse_agents(pack_dir),
             'docs': docs,
@@ -257,7 +309,9 @@ def generate_pack_data() -> List[Dict[str, Any]]:
 
         packs.append(pack)
 
-        print(f"✓ Parsed {pack_dir}: {len(pack['skills'])} skills, {len(pack['agents'])} agents, {len(docs)} docs")
+        # Use title from plugin data for display
+        plugin_title = pack['plugin'].get('title', pack_dir)
+        print(f"✓ Parsed {plugin_title}: {len(pack['skills'])} skills, {len(pack['agents'])} agents, {len(docs)} docs")
 
     return packs
 
@@ -275,5 +329,7 @@ if __name__ == '__main__':
     print("Summary:")
     for pack in packs:
         plugin = pack['plugin']
-        print(f"  • {plugin['name']} v{plugin['version']}")
+        title = plugin.get('title', plugin['name'])
+        print(f"  • {title} v{plugin['version']}")
+        print(f"    ({plugin['name']})")
         print(f"    Skills: {len(pack['skills'])}, Agents: {len(pack['agents'])}, Docs: {len(pack['docs'])}")

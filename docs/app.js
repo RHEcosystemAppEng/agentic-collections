@@ -130,7 +130,7 @@ function createPackCard(pack) {
     }
     
     const titleText = document.createElement('span');
-    titleText.textContent = pack.plugin.name || pack.name;
+    titleText.textContent = pack.plugin.title || pack.plugin.name || pack.name;
     h3.appendChild(titleText);
     
     div.appendChild(h3);
@@ -360,10 +360,11 @@ function handleSearch(event) {
 
     // Filter packs
     const filteredPacks = allPacks.filter(pack => {
-        // Search in pack name, description, skills, agents
+        // Search in pack name, title, description, skills, agents
         const searchText = [
             pack.name,
             pack.plugin.name,
+            pack.plugin.title,
             pack.plugin.description,
             ...pack.skills.map(s => s.name + ' ' + s.description),
             ...pack.agents.map(a => a.name + ' ' + a.description)
@@ -451,7 +452,7 @@ function showPackDetails(packName) {
     titleGroup.className = 'modal-title-group';
 
     const h2 = document.createElement('h2');
-    h2.textContent = pack.plugin.name || pack.name;
+    h2.textContent = pack.plugin.title || pack.plugin.name || pack.name;
     titleGroup.appendChild(h2);
 
     // Owner subtitle
@@ -510,6 +511,29 @@ function showPackDetails(packName) {
         desc.className = 'modal-description';
         desc.textContent = pack.plugin.description;
         header.appendChild(desc);
+    }
+
+    // Plugin name field (if different from title)
+    if (pack.plugin.name && pack.plugin.name !== pack.plugin.title) {
+        const pluginNameDiv = document.createElement('div');
+        pluginNameDiv.style.marginTop = '1rem';
+        pluginNameDiv.style.fontSize = '0.9rem';
+        pluginNameDiv.style.color = 'var(--text-muted)';
+        
+        const label = document.createElement('strong');
+        label.textContent = 'Plugin name: ';
+        label.style.color = 'var(--text-primary)';
+        pluginNameDiv.appendChild(label);
+        
+        const nameCode = document.createElement('code');
+        nameCode.textContent = pack.plugin.name;
+        nameCode.style.backgroundColor = 'rgba(238, 0, 0, 0.1)';
+        nameCode.style.padding = '0.25rem 0.5rem';
+        nameCode.style.borderRadius = '4px';
+        nameCode.style.fontSize = '0.85rem';
+        pluginNameDiv.appendChild(nameCode);
+        
+        header.appendChild(pluginNameDiv);
     }
 
     details.appendChild(header);

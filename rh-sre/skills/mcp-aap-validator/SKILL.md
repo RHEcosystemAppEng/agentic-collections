@@ -60,7 +60,7 @@ Do NOT use when:
 **Action**: Check that required environment variables are set (without exposing values)
 
 **Required Environment Variables**:
-- `AAP_SERVER` - Base URL for AAP instance
+- `AAP_MCP_SERVER` - Base URL for the MCP endpoint of the AAP server (used in .mcp.json; e.g. "https://aap-mcp.example.com"). Must point to the AAP MCP gateway, not the main AAP Web UI.
 - `AAP_API_TOKEN` - Authentication token for AAP API
 
 **CRITICAL SECURITY CONSTRAINT**:
@@ -72,14 +72,14 @@ Do NOT use when:
 **How to verify** (without exposing values):
 ```bash
 # Check if set (exit code only, no output)
-test -n "$AAP_SERVER"
+test -n "$AAP_MCP_SERVER"
 test -n "$AAP_API_TOKEN"
 
 # Or check and report boolean result
-if [ -n "$AAP_SERVER" ]; then
-  echo "✓ AAP_SERVER is set"
+if [ -n "$AAP_MCP_SERVER" ]; then
+  echo "✓ AAP_MCP_SERVER is set"
 else
-  echo "✗ AAP_SERVER is not set"
+  echo "✗ AAP_MCP_SERVER is not set"
 fi
 
 if [ -n "$AAP_API_TOKEN" ]; then
@@ -90,43 +90,56 @@ fi
 ```
 
 **Report to user**:
-- ✓ "Environment variable AAP_SERVER is set"
+- ✓ "Environment variable AAP_MCP_SERVER is set"
 - ✓ "Environment variable AAP_API_TOKEN is set"
-- ✗ "Environment variable AAP_SERVER is not set"
+- ✗ "Environment variable AAP_MCP_SERVER is not set"
 - ✗ "Environment variable AAP_API_TOKEN is not set"
+
+**Note**: `AAP_MCP_SERVER` must point to the MCP endpoint of the AAP server (the MCP gateway URL). If unset, the MCP server will fail to connect.
 
 **If missing**: Proceed to Human Notification Protocol (Step 4)
 
-### Step 3: Test MCP Server Connection
+### Step 3: Test MCP Server Connection and Resources
 
-**Action**: Attempt connectivity test to verify server accessibility
+**Action**: Attempt connectivity test to verify server accessibility and check for required resources
 
 **Test approach**:
 1. **Test Job Management Server**:
    - Tool: `job_templates_list` (from aap-mcp-job-management)
-   - Parameters: `page_size: 1` (minimal query)
-   - Expected: Returns list (even if empty)
+   - Parameters: `page_size: 10` (check for templates)
+   - Expected: Returns list
    - Success: Server responds with valid data
    - Failure: Connection timeout, auth error, or server unavailable
+   - **Validation**: Check if at least one job template exists
+     - If `count: 0` → Warning: No job templates configured
+     - If `count > 0` → Success: Templates available for use
 
 2. **Test Inventory Management Server**:
    - Tool: `inventories_list` (from aap-mcp-inventory-management)
-   - Parameters: `page_size: 1` (minimal query)
-   - Expected: Returns list (even if empty)
+   - Parameters: `page_size: 10` (check for inventories)
+   - Expected: Returns list
    - Success: Server responds with valid data
    - Failure: Connection timeout, auth error, or server unavailable
+   - **Validation**: Check if at least one inventory exists
+     - If `count: 0` → Warning: No inventories configured
+     - If `count > 0` → Success: Inventories available for use
 
 **Report to user**:
 - ✓ "Successfully connected to aap-mcp-job-management"
 - ✓ "Successfully connected to aap-mcp-inventory-management"
+- ✓ "Found N job template(s) available"
+- ✓ "Found N inventory/inventories available"
+- ⚠ "Connected but no job templates found (you'll need to create one)"
+- ⚠ "Connected but no inventories found (you'll need to create one)"
 - ⚠ "Configuration appears correct but connectivity test unavailable"
 - ✗ "Cannot connect to aap-mcp-job-management (check server status and credentials)"
 - ✗ "Cannot connect to aap-mcp-inventory-management (check server status and credentials)"
 
 **Common connection errors for AAP MCP servers**:
+- `Invalid tool parameters`: Often caused by AAP_MCP_SERVER not set or wrong—the MCP URL in .mcp.json fails to resolve. Verify AAP_MCP_SERVER points to the MCP endpoint of the AAP server.
 - `401 Unauthorized`: Invalid or expired AAP_API_TOKEN
 - `403 Forbidden`: Token lacks required permissions
-- `404 Not Found`: Incorrect AAP_SERVER URL or missing endpoints
+- `404 Not Found`: Incorrect AAP_MCP_SERVER URL or missing endpoints
 - `Connection timeout`: Server unreachable or network issue
 - `SSL/TLS error`: Certificate verification issues
 
@@ -151,13 +164,13 @@ For missing MCP server configuration:
    {
      "mcpServers": {
        "aap-mcp-job-management": {
-         "url": "https://${AAP_SERVER}/job_management/mcp",
+         "url": "https://${AAP_MCP_SERVER}/job_management/mcp",
          "headers": {
            "Authorization": "Bearer ${AAP_API_TOKEN}"
          }
        },
        "aap-mcp-inventory-management": {
-         "url": "https://${AAP_SERVER}/inventory_management/mcp",
+         "url": "https://${AAP_MCP_SERVER}/inventory_management/mcp",
          "headers": {
            "Authorization": "Bearer ${AAP_API_TOKEN}"
          }
@@ -174,8 +187,10 @@ For missing environment variables:
 
 📋 Setup Instructions:
 1. Set required environment variables:
-   export AAP_SERVER="https://your-aap-server.com"
+   export AAP_MCP_SERVER="https://your-aap-mcp-gateway.com"
    export AAP_API_TOKEN="your-api-token"
+
+   Note: .mcp.json uses AAP_MCP_SERVER for MCP URLs. Use the MCP gateway URL, not the main AAP UI URL.
 
 2. To get an API token:
    - Log in to AAP Web UI
@@ -198,9 +213,9 @@ For connection failures:
 ❌ Cannot connect to AAP MCP servers
 
 📋 Troubleshooting steps:
-1. Verify AAP server is accessible:
-   - Check AAP_SERVER URL is correct
-   - Test connectivity: curl -I ${AAP_SERVER}
+1. Verify AAP MCP server is accessible:
+   - Check AAP_MCP_SERVER URL is correct (must match .mcp.json)
+   - Test connectivity: curl -I ${AAP_MCP_SERVER}
    - Verify network connectivity and firewall rules
 
 2. Verify API token is valid:
@@ -209,8 +224,8 @@ For connection failures:
    - Generate new token if needed
 
 3. Check AAP MCP endpoints:
-   - Job Management: ${AAP_SERVER}/job_management/mcp
-   - Inventory Management: ${AAP_SERVER}/inventory_management/mcp
+   - Job Management: ${AAP_MCP_SERVER}/job_management/mcp
+   - Inventory Management: ${AAP_MCP_SERVER}/inventory_management/mcp
    - Verify endpoints are exposed and accessible
 
 4. Review authentication errors:
@@ -251,10 +266,14 @@ Please respond with your choice.
 Configuration:
 ✓ MCP server aap-mcp-job-management configured in .mcp.json
 ✓ MCP server aap-mcp-inventory-management configured in .mcp.json
-✓ Environment variable AAP_SERVER is set
+✓ Environment variable AAP_MCP_SERVER is set
 ✓ Environment variable AAP_API_TOKEN is set
 ✓ Job management server connectivity verified
 ✓ Inventory management server connectivity verified
+
+Resources:
+✓ Found 5 job template(s) available
+✓ Found 3 inventory/inventories available
 
 Ready to execute AAP operations.
 
@@ -265,7 +284,30 @@ Available capabilities:
 - System context gathering for remediation
 ```
 
-**Partial success case**:
+**Partial success case** (connected but no resources):
+```
+⚠ AAP MCP Validation: PARTIAL
+
+Configuration:
+✓ MCP server aap-mcp-job-management configured
+✓ MCP server aap-mcp-inventory-management configured
+✓ Environment variables are set
+✓ Server connectivity verified
+
+Resources:
+⚠ No job templates found (create one before executing playbooks)
+⚠ No inventories found (create one to target systems)
+
+Note: AAP is accessible but requires resource setup.
+You'll need to create job templates and inventories before executing remediation playbooks.
+
+Next steps:
+1. Create inventory with target systems
+2. Create job template for remediation playbooks
+3. Re-run validation to confirm setup
+```
+
+**Partial success case** (connectivity not tested):
 ```
 ⚠ AAP MCP Validation: PARTIAL
 
@@ -311,7 +353,7 @@ See troubleshooting steps above. Please resolve configuration issues before proc
   - Returns: List of inventories
 
 ### Required Environment Variables
-- `AAP_SERVER` - Base URL for AAP instance (e.g., "https://aap.example.com")
+- `AAP_MCP_SERVER` - Base URL for the MCP endpoint of the AAP server (must match .mcp.json; e.g., "https://aap-mcp.example.com"). Must point to the AAP MCP gateway.
 - `AAP_API_TOKEN` - Personal Access Token for AAP API authentication
 
 ### Related Skills
@@ -358,7 +400,7 @@ Checking MCP server configuration...
 ✓ MCP server `aap-mcp-inventory-management` is configured in .mcp.json
 
 Checking environment variables...
-✓ Environment variable AAP_SERVER is set
+✓ Environment variable AAP_MCP_SERVER is set
 ✓ Environment variable AAP_API_TOKEN is set
 
 Testing server connectivity...
@@ -394,14 +436,14 @@ Checking MCP server configuration...
 ✓ MCP server `aap-mcp-inventory-management` is configured in .mcp.json
 
 Checking environment variables...
-✗ Environment variable AAP_SERVER is not set
+✗ Environment variable AAP_MCP_SERVER is not set
 ✗ Environment variable AAP_API_TOKEN is not set
 
 ❌ Cannot validate AAP MCP: Required environment variables not set
 
 📋 Setup Instructions:
 1. Set required environment variables:
-   export AAP_SERVER="https://your-aap-server.com"
+   export AAP_MCP_SERVER="https://your-aap-mcp-gateway.com"
    export AAP_API_TOKEN="your-api-token"
 
 2. To get an API token:
@@ -442,7 +484,7 @@ Checking MCP server configuration...
 ✓ MCP server `aap-mcp-inventory-management` is configured in .mcp.json
 
 Checking environment variables...
-✓ Environment variable AAP_SERVER is set
+✓ Environment variable AAP_MCP_SERVER is set
 ✓ Environment variable AAP_API_TOKEN is set
 
 Testing server connectivity...
@@ -459,7 +501,7 @@ Testing server connectivity...
 
 2. Test token manually:
    curl -H "Authorization: Bearer ${AAP_API_TOKEN}" \
-        ${AAP_SERVER}/api/controller/v2/ping/
+        ${AAP_MCP_SERVER}/api/controller/v2/ping/
 
 3. If token is valid but error persists:
    - Check AAP MCP proxy/gateway configuration

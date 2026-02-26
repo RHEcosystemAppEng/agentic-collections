@@ -37,7 +37,7 @@ This skill helps SREs create AAP job templates for executing Ansible playbooks, 
 - ⚠️ `job_templates_update` - **NOT CURRENTLY AVAILABLE**
 
 **Required Environment Variables**:
-- `AAP_SERVER` - AAP MCP server URL
+- `AAP_MCP_SERVER` - Base URL for the MCP endpoint of the AAP server (must point to the AAP MCP gateway)
 - `AAP_API_TOKEN` - AAP API authentication token
 
 ### Prerequisite Validation
@@ -80,6 +80,23 @@ This skill documents both the **current manual workflow** and the **intended aut
 - Job templates already exist (use `playbook-executor` skill instead)
 - Only need to execute existing templates (use `job_templates_launch_retrieve`)
 - Need to modify existing templates (requires AAP Web UI currently)
+
+## Invocation from playbook-executor
+
+When invoked from the [playbook-executor](../playbook-executor/SKILL.md) skill (Scenario 3 - No suitable template), this skill receives playbook content in context. The playbook-executor invokes with an instruction such as:
+
+```
+Create a job template for this remediation playbook. Playbook: [content]. Filename: [filename]. Path: [our_playbook_path]. CVE: [cve_id]. Target systems: [list].
+```
+
+**When playbook content is provided**:
+- Use the provided content for Phase 1 (Prepare Playbook in Git) instead of asking the user to supply it
+- Write the playbook to the specified path in the user's Git repository (ask for repo path if not provided)
+- Follow the Git flow: add, commit (with checkpoint for confirmation), push
+- Then guide template creation via AAP Web UI (Phase 4)
+- **Output**: Include the created template ID and name in the final report so playbook-executor can retrieve and validate it
+
+**Phase 0 - Check context**: If playbook content is provided by the invoking skill, execute the git flow (write, add, commit with confirmation checkpoint, push) before guiding template creation. Otherwise, use the existing manual flow where the user supplies the playbook.
 
 ## Workflow
 
@@ -394,7 +411,7 @@ Before creating a job template, collect:
 
 **Step 1: Navigate to AAP Web Interface**
 
-1. Open your browser and go to: `${AAP_SERVER}`
+1. Open your browser and go to your AAP Web UI (the main AAP instance URL; this may differ from the MCP endpoint)
 2. Log in with your AAP credentials
 
 **Step 2: Navigate to Templates**
@@ -717,6 +734,7 @@ When completing job template creation, provide:
 
 ### Related Skills
 - `mcp-aap-validator` - **PREREQUISITE** - Validates AAP MCP server before creation (invoke in Phase 0 if not validated in session)
+- `job-template-remediation-validator` - Validates created template meets remediation requirements
 - `playbook-executor` - Execute templates after creation
 - `playbook-generator` - Generate remediation playbooks for templates
 - `system-context` - Identify target systems for inventory selection

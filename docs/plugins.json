@@ -1,0 +1,17 @@
+{
+  "rh-sre": {
+    "title": "Red Hat SRE Agentic Skills Collection"
+  },
+  "rh-virt": {
+    "title": "Red Hat Virtualization Agentic Collection"
+  },
+  "rh-developer": {
+    "title": "Red Hat Developer Agentic Skills Collection"
+  },
+  "rh-ocp-admin": {
+    "title": "Red Hat OpenShift Administration Agentic Skills Collection"
+  },
+  "rh-support-engineer": {
+    "title": "Red Hat Support Engineer Agentic Skills Collection"
+  }
+}

@@ -232,8 +232,8 @@ Generate Ansible remediation playbooks following Red Hat best practices.
 - Includes error handling and rollback steps
 - Follows Red Hat standards
 
-### 6. **playbook-executor** - Ansible Playbook Execution
-Execute Ansible playbooks and track job status (requires separate ansible-mcp-server configuration).
+### 6. **playbook-executor** - AAP Playbook Execution
+Execute Ansible playbooks via AAP (Ansible Automation Platform) with dry-run capabilities, real-time monitoring, and comprehensive reporting.
 
 **Use when:**
 - "Execute this remediation playbook"
@@ -285,7 +285,7 @@ Validate AAP (Ansible Automation Platform) MCP server configuration and connecti
 
 **What it does:**
 - Checks both AAP MCP servers (job-management, inventory-management)
-- Verifies environment variables (AAP_SERVER, AAP_API_TOKEN)
+- Verifies environment variables (AAP_MCP_SERVER, AAP_API_TOKEN)
 - Tests server connectivity and authentication
 - Reports validation status (PASSED/PARTIAL/FAILED)
 
@@ -317,6 +317,20 @@ Create AAP job templates for executing Ansible playbooks through Ansible Automat
 - Provides instructions for template creation (Web UI or API)
 - Verifies template creation
 - Prepares for AAP-based playbook execution
+
+### 12. **job-template-remediation-validator** - AAP Job Template Remediation Validation
+Verify an AAP job template meets requirements for executing CVE remediation playbooks.
+
+**Use when:**
+- "Does this job template support remediation playbooks?"
+- "Validate job template X for CVE remediation"
+- "Check if template is ready for playbook-executor"
+
+**What it does:**
+- Validates required fields (inventory, project, playbook, credentials, privilege escalation)
+- Checks recommended options (ask variables/limit on launch)
+- Verifies project and inventory exist
+- Reports PASSED / PASSED WITH WARNINGS / FAILED
 
 ## Agent
 
@@ -353,6 +367,7 @@ The remediator agent orchestrates the CVE-related skills to provide complete CVE
 | "Validate Lightspeed MCP" | **mcp-lightspeed-validator skill** | MCP server validation |
 | "Validate AAP MCP" | **mcp-aap-validator skill** | AAP MCP validation |
 | "Create job template" | **job-template-creator skill** | AAP template setup |
+| "Validate template for remediation" | **job-template-remediation-validator skill** | Template compatibility check |
 | "Generate execution summary" | **execution-summary skill** | Audit trail reporting |
 | "Remediate CVE-2024-1234" | **remediator agent** | Multi-step workflow |
 | "Create playbook for CVE-X" | **remediator agent** | Orchestration needed |
@@ -396,7 +411,7 @@ The pack integrates with three MCP servers (configured in `.mcp.json`):
 - Job template management (list, retrieve, launch)
 - Job execution tracking and monitoring
 - Workflow job management
-- Requires: `AAP_SERVER`, `AAP_API_TOKEN`
+- Requires: `AAP_MCP_SERVER`, `AAP_API_TOKEN`
 
 **Type**: HTTP MCP server
 
@@ -404,7 +419,7 @@ The pack integrates with three MCP servers (configured in `.mcp.json`):
 - Inventory and host management
 - Group and variable management
 - System discovery and targeting
-- Requires: `AAP_SERVER`, `AAP_API_TOKEN`
+- Requires: `AAP_MCP_SERVER`, `AAP_API_TOKEN`
 
 **Type**: HTTP MCP server
 
@@ -479,13 +494,13 @@ MCP servers are configured in `.mcp.json`:
       }
     },
     "aap-mcp-job-management": {
-      "url": "https://${AAP_SERVER}/job_management/mcp",
+      "url": "https://${AAP_MCP_SERVER}/job_management/mcp",
       "headers": {
         "Authorization": "Bearer ${AAP_API_TOKEN}"
       }
     },
     "aap-mcp-inventory-management": {
-      "url": "https://${AAP_SERVER}/inventory_management/mcp",
+      "url": "https://${AAP_MCP_SERVER}/inventory_management/mcp",
       "headers": {
         "Authorization": "Bearer ${AAP_API_TOKEN}"
       }
@@ -496,7 +511,8 @@ MCP servers are configured in `.mcp.json`:
 
 **Key Configuration Notes**:
 - HTTP MCP servers for AAP use URL-based connections with Bearer token authentication
-- Environment variables (`AAP_SERVER`, `AAP_API_TOKEN`) injected at runtime
+- `AAP_MCP_SERVER` must point to the MCP endpoint of the AAP server (the MCP gateway URL), not the main AAP Web UI
+- Environment variables (`AAP_MCP_SERVER`, `AAP_API_TOKEN`) injected at runtime
 - Container-based server (lightspeed-mcp) uses Podman with environment variable injection
 
 ## Troubleshooting
@@ -533,7 +549,7 @@ MCP servers are configured in `.mcp.json`:
 **Solutions**:
 1. Verify AAP server is accessible:
    ```bash
-   curl -I ${AAP_SERVER}
+   curl -I ${AAP_MCP_SERVER}
    ```
 2. Check API token validity:
    - Log in to AAP Web UI
@@ -542,12 +558,12 @@ MCP servers are configured in `.mcp.json`:
 3. Test API authentication:
    ```bash
    curl -H "Authorization: Bearer ${AAP_API_TOKEN}" \
-        ${AAP_SERVER}/api/controller/v2/ping/
+        ${AAP_MCP_SERVER}/api/controller/v2/ping/
    ```
-4. Verify environment variables are set:
+4. Verify environment variables are set (do not echo values; check presence only):
    ```bash
-   echo $AAP_SERVER
-   echo $AAP_API_TOKEN  # Should show token value
+   test -n "$AAP_MCP_SERVER" && echo "AAP_MCP_SERVER is set"
+   test -n "$AAP_API_TOKEN" && echo "AAP_API_TOKEN is set"
    ```
 
 ### Skills Not Triggering
@@ -584,6 +600,7 @@ rh-sre/
 │   ├── mcp-lightspeed-validator/SKILL.md
 │   ├── mcp-aap-validator/SKILL.md
 │   ├── job-template-creator/SKILL.md
+│   ├── job-template-remediation-validator/SKILL.md
 │   └── execution-summary/SKILL.md
 └── docs/                        # AI-optimized documentation
     ├── INDEX.md

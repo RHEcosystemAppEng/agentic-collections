@@ -1,5 +1,5 @@
 {
-  "name": "OpenShift Administration Agentic Skills Collection",
+  "name": "rh-ocp-admin",
   "version": "1.0.0",
   "description": "Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks.",
   "author": {
