@@ -38,8 +38,13 @@ Generate and view documentation locally:
 # Install dependencies (first time only)
 make install
 
-# Validate pack structure
+# Validate pack structure (plugin.json, .mcp.json, frontmatter)
 make validate
+
+# Validate skills against Design Principles (SKILL_DESIGN_PRINCIPLES.md)
+make validate-skill-design
+# Or validate a specific pack:
+make validate-skill-design PACK=rh-sre
 
 # Generate docs/data.json
 make generate
@@ -54,6 +59,32 @@ make test-full
 Updates are automatically deployed to GitHub Pages when changes are pushed to main.
 
 For more details, see [docs/README.md](docs/README.md).
+
+### Skill Design Validation
+
+The `validate-skill-design` target checks skills against the [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) defined in CLAUDE.md. Use it when creating or modifying skills to ensure compliance with:
+
+- Document consultation transparency (DP1)
+- Parameter specification and ordering (DP2)
+- Description conciseness (DP3)
+- Dependencies declaration (DP4)
+- Human-in-the-loop requirements for critical operations (DP5)
+- Mandatory sections (Prerequisites, When to Use, Workflow) (DP6)
+- Credential security (no `echo $VAR` exposure) (DP7)
+
+```bash
+# Validate all packs
+make validate-skill-design
+
+# Validate a specific pack only
+make validate-skill-design PACK=rh-sre
+
+# Treat warnings as errors
+uv run python scripts/validate_skill_design.py --warnings-as-errors
+
+# Skip missing 'model' field (for legacy skills)
+uv run python scripts/validate_skill_design.py --skip-missing-model
+```
 
 ## Security
 

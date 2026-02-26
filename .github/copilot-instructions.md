@@ -88,7 +88,7 @@ Same YAML frontmatter requirement (`name` + `description`). Agents orchestrate s
 
 **NEVER hardcode credentials.** Always use `${ENV_VAR}` references. Gitleaks runs as a pre-commit hook and in CI.
 
-## Design Principles (from CLAUDE.md)
+## Design Principles (from SKILL_DESIGN_PRINCIPLES.md)
 
 1. **Skills encapsulate tools** — never call MCP tools directly; always go through a skill.
 2. **Agents orchestrate skills** — complex workflows delegate to specialized skills.

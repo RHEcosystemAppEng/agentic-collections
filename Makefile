@@ -1,11 +1,12 @@
-.PHONY: help install validate generate serve clean test test-full check-uv
+.PHONY: help install validate validate-skill-design generate serve clean test test-full check-uv
 
 help:
 	@echo "agentic-collections Documentation Generator"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  install     - Install Python dependencies (requires uv)"
-	@echo "  validate    - Validate pack structure"
+	@echo "  install              - Install Python dependencies (requires uv)"
+	@echo "  validate             - Validate pack structure (plugin.json, .mcp.json, frontmatter)"
+	@echo "  validate-skill-design - Validate skills (use PACK=rh-sre for a specific pack)"
 	@echo "  generate    - Generate docs/data.json"
 	@echo "  serve       - Start local server on http://localhost:8000"
 	@echo "  test        - Quick test (validate + generate + verify)"
@@ -38,6 +39,9 @@ validate: check-uv
 	@echo "Validating agentic collection structure..."
 	@uv run python scripts/validate_structure.py
 	@echo "✓ Validation passed!"
+
+validate-skill-design: check-uv
+	@uv run python scripts/validate_skill_design.py $(if $(PACK),$(PACK))
 
 generate: check-uv
 	@echo "Generating documentation..."
