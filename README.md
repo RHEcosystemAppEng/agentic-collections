@@ -42,8 +42,10 @@ make install
 make validate
 
 # Validate skills against Design Principles (SKILL_DESIGN_PRINCIPLES.md)
+# Validate only changed skills (staged + unstaged) - recommended for local dev:
+make validate-skill-design-changed
+# Or validate all skills / a specific pack:
 make validate-skill-design
-# Or validate a specific pack:
 make validate-skill-design PACK=rh-sre
 
 # Generate docs/data.json
@@ -62,7 +64,7 @@ For more details, see [docs/README.md](docs/README.md).
 
 ### Skill Design Validation
 
-The `validate-skill-design` target checks skills against the [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) defined in CLAUDE.md. Use it when creating or modifying skills to ensure compliance with:
+The `validate-skill-design` and `validate-skill-design-changed` targets check skills against the [Design Principles](SKILL_DESIGN_PRINCIPLES.md) referenced from CLAUDE.md. **CI runs this validation automatically** on pull requests and pushes to main, but only for changed skills. For local development, use `validate-skill-design-changed` to validate only your modified skills (staged + unstaged). Use `validate-skill-design` for full validation or a specific pack. Ensure compliance with:
 
 - Document consultation transparency (DP1)
 - Parameter specification and ordering (DP2)
@@ -73,6 +75,9 @@ The `validate-skill-design` target checks skills against the [SKILL_DESIGN_PRINC
 - Credential security (no `echo $VAR` exposure) (DP7)
 
 ```bash
+# Validate only changed skills (staged + unstaged) - recommended for local dev
+make validate-skill-design-changed
+
 # Validate all packs
 make validate-skill-design
 

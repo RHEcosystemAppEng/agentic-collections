@@ -6,11 +6,11 @@ This template provides the standardized structure for all skills in the `rh-virt
 
 This template implements:
 - **Repository Standards**: rh-virt collection-specific patterns and conventions
-- **Claude Guidelines**: Official skill structure from `/CLAUDE.md` (Design Principles #1-7)
+- **Claude Guidelines**: Official skill structure from [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md) (Design Principles #1-7)
 - **MCP Integration**: OpenShift Virtualization MCP server tool usage patterns
 - **Human-in-the-Loop**: Safety confirmations for critical operations
 
-**Reference**: See `/CLAUDE.md` "Design Principles for Skills and Agents" for complete rationale.
+**Reference**: See [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md) for complete rationale.
 
 ## Quick Start
 
@@ -180,7 +180,7 @@ Please respond with your choice.
 
 **Purpose**: Step-by-step instructions for executing this skill.
 
-**Requirements** (from CLAUDE.md Design Principles #1-2):
+**Requirements** (from SKILL_DESIGN_PRINCIPLES.md Design Principles #1-2):
 - Document Consultation BEFORE tool invocation (REQUIRED when relevant troubleshooting docs exist)
 - Precise parameter specifications with examples
 - Clear error handling for each step
@@ -591,7 +591,7 @@ Sections MUST appear in this exact order:
 - [ ] Includes Human Notification Protocol for failures
 - [ ] **SECURITY**: Never exposes credential values in output
 
-### 4. Workflow Section (Design Principles #1-2)
+### 4. Workflow Section (SKILL_DESIGN_PRINCIPLES.md #1-2)
 
 - [ ] **Document Consultation** pattern included when relevant troubleshooting docs exist
   - REQUIRED when skill relates to documented error scenarios
@@ -709,7 +709,7 @@ See `SKILLS_CHECKLIST.md` for the complete validation guide with scoring criteri
 
 ### Claude Code Compliance
 
-5. **Follow Design Principles**: Reference `/CLAUDE.md` for rationale
+5. **Follow Design Principles**: Reference [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md) for rationale
    - **Principle #1**: Document Consultation (read docs before tools)
    - **Principle #2**: Precise Parameters (exact formats with examples)
    - **Principle #3**: Concise Descriptions (under 500 tokens)
@@ -787,7 +787,7 @@ See `SKILLS_CHECKLIST.md` for the complete validation guide with scoring criteri
 
 ## Claude Code Design Principles Reference
 
-For complete details, see `/CLAUDE.md` "Design Principles for Skills and Agents" section.
+For complete details, see [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md).
 
 ### Principle #1: Document Consultation Transparency
 

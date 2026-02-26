@@ -1,12 +1,13 @@
-.PHONY: help install validate validate-skill-design generate serve clean test test-full check-uv
+.PHONY: help install validate validate-skill-design validate-skill-design-changed generate serve clean test test-full check-uv
 
 help:
 	@echo "agentic-collections Documentation Generator"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  install              - Install Python dependencies (requires uv)"
-	@echo "  validate             - Validate pack structure (plugin.json, .mcp.json, frontmatter)"
-	@echo "  validate-skill-design - Validate skills (use PACK=rh-sre for a specific pack)"
+	@echo "  install                       - Install Python dependencies (requires uv)"
+	@echo "  validate                      - Validate pack structure (plugin.json, .mcp.json, frontmatter)"
+	@echo "  validate-skill-design         - Validate all skills (use PACK=rh-sre for a specific pack)"
+	@echo "  validate-skill-design-changed - Validate only changed skills (staged + unstaged, for local dev)"
 	@echo "  generate    - Generate docs/data.json"
 	@echo "  serve       - Start local server on http://localhost:8000"
 	@echo "  test        - Quick test (validate + generate + verify)"
@@ -42,6 +43,9 @@ validate: check-uv
 
 validate-skill-design: check-uv
 	@uv run python scripts/validate_skill_design.py $(if $(PACK),$(PACK))
+
+validate-skill-design-changed: check-uv
+	@VALIDATE_INCLUDE_UNCOMMITTED=1 ./scripts/ci-validate-changed-skills.sh
 
 generate: check-uv
 	@echo "Generating documentation..."
