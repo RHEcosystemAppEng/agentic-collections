@@ -1,0 +1,9 @@
+[project]
+name = "agentic-collections"
+version = "0.1.0"
+description = "Agentic collections for Red Hat platforms (skills, agents, MCP)"
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6.0",
+    "jsonschema>=4.0",
+]

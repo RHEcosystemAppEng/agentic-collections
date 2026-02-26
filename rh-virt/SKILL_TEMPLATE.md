@@ -6,11 +6,11 @@ This template provides the standardized structure for all skills in the `rh-virt
 
 This template implements:
 - **Repository Standards**: rh-virt collection-specific patterns and conventions
-- **Claude Guidelines**: Official skill structure from `/CLAUDE.md` (Design Principles #1-7)
+- **Claude Guidelines**: Official skill structure from [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md) (Design Principles #1-7)
 - **MCP Integration**: OpenShift Virtualization MCP server tool usage patterns
 - **Human-in-the-Loop**: Safety confirmations for critical operations
 
-**Reference**: See `/CLAUDE.md` "Design Principles for Skills and Agents" for complete rationale.
+**Reference**: See [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md) for complete rationale.
 
 ## Quick Start
 
@@ -88,8 +88,11 @@ description: |            # REQUIRED: Must be under 500 tokens total
 
 model: inherit           # REQUIRED: Always "inherit" unless special case
                          # Only use "sonnet" or "haiku" if skill needs specific model
-color: <risk-color>      # REQUIRED: red|yellow|blue|green|cyan - see Color Guide below
+color: <risk-color>      # REQUIRED: red|yellow|blue|green|cyan|magenta - see Color Guide below
                          # Indicates operation risk level for user safety
+metadata:                # Optional: Custom fields (2026 Agentic Skills standard)
+  author: "team-name"
+  priority: "high"
 ---
 
 # /<skill-name> Skill
@@ -180,7 +183,7 @@ Please respond with your choice.
 
 **Purpose**: Step-by-step instructions for executing this skill.
 
-**Requirements** (from CLAUDE.md Design Principles #1-2):
+**Requirements** (from SKILL_DESIGN_PRINCIPLES.md Design Principles #1-2):
 - Document Consultation BEFORE tool invocation (REQUIRED when relevant troubleshooting docs exist)
 - Precise parameter specifications with examples
 - Clear error handling for each step
@@ -550,6 +553,7 @@ Use the following color codes based on operation characteristics:
 | **blue** | Reversible state changes | vm-lifecycle-manager, vm-clone |
 | **yellow** | Destructive but recoverable operations | vm-snapshot-delete |
 | **red** | Irreversible/critical operations (data loss risk) | vm-delete, vm-snapshot-restore |
+| **magenta** | Creative, generation | content generation, templating |
 
 ---
 
@@ -591,7 +595,7 @@ Sections MUST appear in this exact order:
 - [ ] Includes Human Notification Protocol for failures
 - [ ] **SECURITY**: Never exposes credential values in output
 
-### 4. Workflow Section (Design Principles #1-2)
+### 4. Workflow Section (SKILL_DESIGN_PRINCIPLES.md #1-2)
 
 - [ ] **Document Consultation** pattern included when relevant troubleshooting docs exist
   - REQUIRED when skill relates to documented error scenarios
@@ -709,7 +713,7 @@ See `SKILLS_CHECKLIST.md` for the complete validation guide with scoring criteri
 
 ### Claude Code Compliance
 
-5. **Follow Design Principles**: Reference `/CLAUDE.md` for rationale
+5. **Follow Design Principles**: Reference [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md) for rationale
    - **Principle #1**: Document Consultation (read docs before tools)
    - **Principle #2**: Precise Parameters (exact formats with examples)
    - **Principle #3**: Concise Descriptions (under 500 tokens)
@@ -787,7 +791,7 @@ See `SKILLS_CHECKLIST.md` for the complete validation guide with scoring criteri
 
 ## Claude Code Design Principles Reference
 
-For complete details, see `/CLAUDE.md` "Design Principles for Skills and Agents" section.
+For complete details, see [SKILL_DESIGN_PRINCIPLES.md](/SKILL_DESIGN_PRINCIPLES.md).
 
 ### Principle #1: Document Consultation Transparency
 

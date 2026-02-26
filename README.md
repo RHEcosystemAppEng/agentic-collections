@@ -38,8 +38,15 @@ Generate and view documentation locally:
 # Install dependencies (first time only)
 make install
 
-# Validate pack structure
+# Validate pack structure (plugin.json, .mcp.json, frontmatter)
 make validate
+
+# Validate skills against Design Principles (SKILL_DESIGN_PRINCIPLES.md)
+# Validate only changed skills (staged + unstaged) - recommended for local dev:
+make validate-skill-design-changed
+# Or validate all skills / a specific pack:
+make validate-skill-design
+make validate-skill-design PACK=rh-sre
 
 # Generate docs/data.json
 make generate
@@ -54,6 +61,33 @@ make test-full
 Updates are automatically deployed to GitHub Pages when changes are pushed to main.
 
 For more details, see [docs/README.md](docs/README.md).
+
+### Skill Design Validation
+
+Use the `validate-skill-design` and `validate-skill-design-changed` targets to check skills against the [Design Principles](SKILL_DESIGN_PRINCIPLES.md) referenced from CLAUDE.md. **CI runs this validation automatically** on pull requests and pushes to main, but only for changed skills. For local development, run `validate-skill-design-changed` to validate only your modified skills (staged + unstaged). To perform full validation or validate a specific pack, run `validate-skill-design`. Ensure compliance with:
+
+- Document consultation transparency (DP1)
+- Parameter specification and ordering (DP2)
+- Description conciseness (DP3)
+- Dependencies declaration (DP4)
+- Human-in-the-loop requirements for critical operations (DP5)
+- Mandatory sections (Prerequisites, When to Use, Workflow) (DP6)
+- Credential security (no `echo $VAR` exposure) (DP7)
+
+```bash
+# Validate only changed skills (staged + unstaged) - recommended for local dev
+make validate-skill-design-changed
+
+# Validate all packs
+make validate-skill-design
+
+# Validate a specific pack only
+make validate-skill-design PACK=rh-sre
+
+# Treat warnings as errors
+uv run python scripts/validate_skill_design.py --warnings-as-errors
+
+```
 
 ## Security
 

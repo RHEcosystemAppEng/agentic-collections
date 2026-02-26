@@ -53,7 +53,7 @@ Packs known to the validator are listed in `scripts/validate_structure.py` (`PAC
 
 ### Skills — `skills/<name>/SKILL.md`
 
-Must start with valid YAML frontmatter containing at minimum `name` and `description`:
+Must start with valid YAML frontmatter. Root-level fields: `name`, `description`, `model`, `color`. Use `metadata` for custom fields (author, priority). See SKILL_DESIGN_PRINCIPLES.md for the 2026 Agentic Skills structure.
 
 ```yaml
 ---
@@ -63,6 +63,8 @@ description: |
   Keep under 500 tokens.
 model: inherit
 color: blue
+metadata:
+  author: "team-name"
 ---
 ```
 
@@ -88,7 +90,7 @@ Same YAML frontmatter requirement (`name` + `description`). Agents orchestrate s
 
 **NEVER hardcode credentials.** Always use `${ENV_VAR}` references. Gitleaks runs as a pre-commit hook and in CI.
 
-## Design Principles (from CLAUDE.md)
+## Design Principles (from SKILL_DESIGN_PRINCIPLES.md)
 
 1. **Skills encapsulate tools** — never call MCP tools directly; always go through a skill.
 2. **Agents orchestrate skills** — complex workflows delegate to specialized skills.
