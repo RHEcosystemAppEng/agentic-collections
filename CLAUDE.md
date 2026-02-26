@@ -57,9 +57,24 @@ Each pack follows this structure:
 
 **Key Pattern**: Agents orchestrate skills; skills encapsulate tools. Never call MCP tools directly - always go through skills.
 
-## Design Principles for Skills and Agents
+## Skill and Agent Requirements
 
+<<<<<<< Updated upstream
 See [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for the complete design principles, templates, and rationale. Validate compliance with `make validate-skill-design`.
+=======
+**CRITICAL:** EVERY SKILL and AGENT must be created and validated against [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md).
+
+**No exceptions.** All skills must comply with:
+- **Tier 1:** agentskills.io specification compliance (MANDATORY)
+- **Tier 2:** Repository design principles and standards (MANDATORY)
+
+**Before committing any skill:**
+1. Review [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) completely
+2. Ensure all mandatory requirements are met
+3. Validate using: `./scripts/validate-skills.sh path/to/skill/`
+
+See SKILL_CHECKLIST.md for complete requirements, examples, and validation criteria.
+>>>>>>> Stashed changes
 
 ### MCP Server Integration
 
@@ -152,6 +167,7 @@ last_updated: YYYY-MM-DD
 ### Adding a Skill
 
 1. Create `skills/<skill-name>/SKILL.md`
+<<<<<<< Updated upstream
 2. Define YAML frontmatter with root-level fields (name, description, model, color) and optional `metadata` for custom fields (author, priority, etc.). See [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for the 2026 Agentic Skills structure.
 3. Document workflow with MCP tool references
 4. Include concrete examples
@@ -159,14 +175,23 @@ last_updated: YYYY-MM-DD
 
 **Collection-Specific Standards:**
 - **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
+=======
+2. Follow requirements in [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md)
+3. Define YAML frontmatter (name, description, model)
+4. Document Prerequisites, When to Use, Workflow, and Dependencies sections
+5. Include concrete examples and error handling
+6. Test with `Skill` tool invocation
+7. Validate with `./scripts/validate-skills.sh skills/<skill-name>/`
+>>>>>>> Stashed changes
 
 ### Adding an Agent
 
 1. Create `agents/<agent-name>.md`
-2. Define YAML frontmatter (name, description, model, tools, color)
-3. Document workflow orchestrating skills
-4. Provide clear examples of when to use agent vs skills
-5. Test with `Task` tool invocation
+2. Follow skill requirements in [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) (agents use same structure)
+3. Define YAML frontmatter (name, description, model, tools)
+4. Document workflow that orchestrates multiple skills
+5. Provide clear examples of when to use agent vs individual skills
+6. Test with `Task` tool invocation
 
 ### Adding Documentation (rh-sre pattern)
 
@@ -220,19 +245,20 @@ When creating new collections, follow the pattern that best matches your needs:
 ### Core Architecture
 1. **Skills encapsulate tools** - Never call MCP tools directly; always invoke skills
 2. **Agents orchestrate skills** - Complex workflows delegate to specialized skills
-3. **Skill precedence** - Skills > Tools in all cases (Design Principle #3)
+3. **agentskills.io compliance** - All skills follow the official specification
+4. **Progressive disclosure** - Load docs incrementally based on task needs
 
 ### Security & Configuration
-4. **Environment variables for secrets** - Never hardcode credentials
-5. **Never expose credential values** - Check env vars are set, but NEVER print their values in output
-6. **Verify prerequisites** - Check MCP server availability before execution (Design Principle #7)
-7. **Human-in-the-loop for critical ops** - Require explicit confirmation (Design Principle #5)
+5. **Environment variables for secrets** - Never hardcode credentials
+6. **Never expose credential values** - Check env vars are set, but NEVER print their values in output
+7. **MCP server integration** - Use `.mcp.json` with environment variable references
 
-### Documentation & Transparency
+### Documentation & Quality
 8. **Official sources only** - Document all sources in SOURCES.md
-9. **Declare document consultation** - Explicitly state "I consulted [file]" (Design Principle #1)
-10. **Progressive disclosure** - Load docs incrementally based on task needs
+9. **Production-ready examples** - No toy code, include error handling
+10. **Persona-focused design** - Each collection serves specific user roles
 
+<<<<<<< Updated upstream
 ### Quality & Usability
 11. **Precise parameters** - Specify exact tool parameters for first-attempt success (Design Principle #2)
 12. **Declare dependencies** - List all skills, tools, docs, and MCP servers (Design Principle #4)
@@ -241,3 +267,6 @@ When creating new collections, follow the pattern that best matches your needs:
 15. **Concise skill descriptions** - Keep YAML frontmatter under 500 tokens (Design Principle #3)
 
 **See**: [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for detailed requirements and templates.
+=======
+**See [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) for complete skill requirements, design principles, and validation criteria.**
+>>>>>>> Stashed changes
