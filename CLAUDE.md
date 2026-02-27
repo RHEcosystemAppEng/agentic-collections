@@ -258,15 +258,4 @@ When creating new collections, follow the pattern that best matches your needs:
 9. **Production-ready examples** - No toy code, include error handling
 10. **Persona-focused design** - Each collection serves specific user roles
 
-<<<<<<< Updated upstream
-### Quality & Usability
-11. **Precise parameters** - Specify exact tool parameters for first-attempt success (Design Principle #2)
-12. **Declare dependencies** - List all skills, tools, docs, and MCP servers (Design Principle #4)
-13. **Production-ready examples** - No toy code, include error handling
-14. **Persona-focused design** - Each collection serves specific user roles
-15. **Concise skill descriptions** - Keep YAML frontmatter under 500 tokens (Design Principle #3)
-
-**See**: [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for detailed requirements and templates.
-=======
 **See [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) for complete skill requirements, design principles, and validation criteria.**
->>>>>>> Stashed changes

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Detect changed skills in CI (PRs and pushes to main)
+# Outputs list of changed skill directories (one per line)
+# Exits 0 if no skills changed
+
+set -e
+
+if [ -n "$VALIDATE_INCLUDE_UNCOMMITTED" ]; then
+  # Local dev: include staged + unstaged changes vs HEAD
+  DIFF_CMD="git diff --name-only HEAD"
+elif [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+  # Three-dot diff: merge-base(base, HEAD)..HEAD = changes in the PR
+  BASE_REF="${GITHUB_BASE_REF:-main}"
+  git fetch origin "$BASE_REF" 2>/dev/null || true
+  DIFF_CMD="git diff --name-only origin/$BASE_REF...HEAD"
+elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+  # Push event: diff between before and after
+  BEFORE="${GITHUB_EVENT_BEFORE:-}"
+  if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+    # No base commit for diff, exit with no changes
+    exit 0
+  fi
+  DIFF_CMD="git diff --name-only $BEFORE HEAD"
+else
+  # Default: local dev, include uncommitted changes
+  DIFF_CMD="git diff --name-only HEAD"
+fi
+
+# Find changed SKILL.md files and extract their directories
+CHANGED_FILES=$($DIFF_CMD 2>/dev/null | grep -E '^([^/]+/skills/[^/]+/SKILL\.md|\.claude/skills/[^/]+/SKILL\.md)$' || true)
+
+if [ -z "$CHANGED_FILES" ]; then
+  exit 0
+fi
+
+# Extract skill directories from SKILL.md paths
+echo "$CHANGED_FILES" | while read -r file; do
+  dirname "$file"
+done

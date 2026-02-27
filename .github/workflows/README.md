@@ -4,110 +4,285 @@ This directory contains CI/CD workflows for the agentic collections repository.
 
 ## Available Workflows
 
-### 1. `validate-skills.yml` - Universal Skill Validation
+### 1. `skill-spec-report.yml` - Skill Specification Linter Report
 
-**Purpose**: Validates all skills against SKILL_CHECKLIST.md requirements (agentskills.io specification + repository design principles).
+**Purpose**: Validates skills against agentskills.io specification using the skill-linter and generates a comprehensive compliance report.
 
 **Triggers**:
-- **Every pull request** (opened, synchronized, reopened, or marked ready for review)
-- Pushes to `main` branch
-- **Excludes**: Draft pull requests (validation runs only when PR is ready for review)
+- **Pull requests** → Validates ONLY changed skills (fast feedback)
+- **Pushes to main** → Validates ALL skills (ensures repo health)
+- **Manual dispatch** → Choose between all skills or changed skills
+- **Excludes**: Draft pull requests
+
+**Validation Strategy** (Option 2: Changed Skills + Manual Full Scan):
+- ⚡ **PRs**: Fast validation of only changed skills
+- 🔍 **Push to main**: Full validation of all 37 skills
+- 🎛️ **Manual**: Choose validation scope via workflow dispatch
 
 **What it validates**:
 
-**Tier 1 - agentskills.io specification (MANDATORY):**
+**agentskills.io Specification Compliance:**
 - ✅ Directory structure (skill-name/SKILL.md)
-- ✅ Name format (1-64 chars, lowercase, no consecutive hyphens)
-- ✅ Description length (1-1024 chars, under 500 tokens)
-- ✅ YAML frontmatter completeness (name, description)
+- ✅ YAML frontmatter delimiters and completeness
+- ✅ Name field (1-64 chars, lowercase, pattern matching, directory alignment)
+- ✅ Description field (1-1024 chars, routing keywords, no marketing copy)
+- ✅ Optional fields (compatibility, allowed-tools format)
+- ✅ Line count (max 500 lines in SKILL.md)
+- ✅ Subdirectory validation (only scripts/, references/, assets/)
+- ✅ Content quality (no ASCII art, no persona statements)
 
-**Tier 2 - Repository design principles (MANDATORY):**
-- ✅ Model field (must be: inherit, sonnet, or haiku)
-- ✅ Color field (must be: cyan, green, blue, yellow, or red)
-- ✅ SKILL.md header format (# /<skill-name> Skill or # [Skill Name])
-- ✅ Required sections presence and order
-- ✅ Prerequisites with verification steps
-- ✅ When to Use This Skill with anti-patterns
-- ✅ Workflow with MCP tools and parameters
-- ✅ Document consultation transparency
-- ✅ Dependencies declaration
-- ✅ Human-in-the-Loop requirements
-- ✅ Security (no credential exposure)
-- ✅ Content quality (links, file size)
+**Behavior**:
+- **Errors detected** → ❌ Workflow fails, blocks PR merge
+- **Warnings only** → ⚠️ Workflow passes, allows merge with warnings
+- **All pass** → ✅ Workflow passes
+
+**Report Format**:
+- Real-time progress (✅/⚠️/❌) for each skill
+- **Detailed error output** shown ONLY for failed skills
+- **Summary table** at the end with counts (Total/Passed/Warnings/Failed)
 
 **How to run locally**:
 ```bash
-# Validate all skills in all collections
-./scripts/validate-skills.sh
+# Validate ALL skills
+./scripts/run-skill-linter.sh
 
-# Validate specific collection
-./scripts/validate-skills.sh rh-virt/
+# Validate only changed skills (detects git changes)
+CHANGED=$(./scripts/detect-changed-skills.sh)
+if [ -n "$CHANGED" ]; then
+  ./scripts/run-skill-linter.sh $CHANGED
+fi
 
-# Validate single skill
-./scripts/validate-skills.sh rh-virt/skills/vm-create/
+# Validate specific skills
+./scripts/run-skill-linter.sh rh-virt/skills/vm-create rh-virt/skills/vm-delete
 
-# Strict mode (exit on first error)
-./scripts/validate-skills.sh --strict rh-virt/
-
-# Verbose output
-./scripts/validate-skills.sh --verbose
+# Validate single skill (detailed output)
+./.claude/skills/skill-linter/scripts/validate-skill.sh rh-virt/skills/vm-create/
 ```
+
+**Manual workflow dispatch**:
+1. Go to Actions → Skill Specification Report
+2. Click "Run workflow"
+3. Choose:
+   - **Validate all skills: true** → Full scan (37 skills)
+   - **Validate all skills: false** → Changed skills only
 
 **Expected output**:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Universal Skill Validator
-Validates skills against CLAUDE.md and agentskills.io specification
+            Skill Specification Linter Report
+         agentskills.io Specification Compliance
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Found 9 skill(s) to validate
+Found 37 skill(s) to validate
+
+✅ rh-sre/cve-impact
+✅ rh-sre/fleet-inventory
+⚠️  rh-developer/helm-deploy - PASSED WITH WARNINGS
+❌ rh-virt/vm-create - FAILED
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Validating: vm-create
+
+DETAILED ERROR REPORT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✓ Skill 'vm-create' passed validation
-
+FAILED: rh-virt/vm-create
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[FAIL] Missing frontmatter opening delimiter (---)
 ...
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Validation Summary
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total Skills:    9
-Passed:          9
-Failed:          0
-Total Errors:    0
 
-✓ All skills passed validation
+VALIDATION SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Metric                                   Count
+────────────────────────────────────────────────────────────────
+Total Skills:                            37
+✅ Passed:                               30
+⚠️  Passed with Warnings:                6
+❌ Failed:                               1
+
+❌ VALIDATION FAILED - ERRORS DETECTED
+Skills with errors must be fixed before merge
 ```
 
-**Validation Levels**:
+**When validation fails**:
 
-The script validates all requirements from SKILL_CHECKLIST.md:
-- **Level 1:** agentskills.io specification (Sections 0-9) - MANDATORY
-- **Level 2:** Repository design principles (Sections 10-37) - MANDATORY
+The workflow will:
+1. Show detailed error output for each failed skill
+2. Display summary table with failure counts
+3. Block PR merge (exit code 1)
+4. Provide guidance on fixing errors locally
 
-All skills must pass both levels to be committed.
+**When validation passes with warnings**:
+
+The workflow will:
+1. Show which skills have warnings
+2. Display summary table
+3. Allow PR merge (exit code 0)
+4. Warn that warnings should be reviewed
+
+**Common validation errors**:
+- Missing frontmatter delimiters (---)
+- Name doesn't match directory name
+- Description exceeds 1024 characters or lacks routing keywords
+- Line count exceeds 500 lines
+- Invalid `allowed-tools` format (must be space-delimited)
+- ASCII art or persona statements in content
+- Marketing buzzwords in description
+
+**Related files**:
+- `scripts/run-skill-linter.sh` - Comprehensive linter reporter script (accepts optional skill dirs)
+- `scripts/detect-changed-skills.sh` - Detects changed skills in PRs and commits
+- `.claude/skills/skill-linter/scripts/validate-skill.sh` - Core validation script
+- `.claude/skills/skill-linter/SKILL.md` - Linter documentation
+
+**Performance**:
+- **PR validation**: ~5-30 seconds (1-3 changed skills typically)
+- **Full validation**: ~60-90 seconds (all 37 skills)
+- **Changed-only**: 80-95% faster than full validation
+
+**Scope**: This workflow validates **ONLY** agentskills.io specification compliance. Repository-specific design principles (model, color, sections, etc.) are validated by other workflows.
+
+### 2. `compliance-check.yml` - Agentic Collections Structure Validation
+
+**Purpose**: Validates the entire agentic collections repository structure and runs skill design compliance checks on changed skills only.
+
+**Triggers**:
+- **Every pull request**
+- Pushes to `main` branch
+
+**What it validates**:
+
+**Repository structure validation (`make validate`):**
+- ✅ Collection directory structure and naming conventions
+- ✅ Required files presence (README.md, .mcp.json, etc.)
+- ✅ Plugin metadata completeness
+- ✅ MCP server configurations
+
+**Changed skills validation (`./scripts/ci-validate-changed-skills.sh`):**
+- ✅ Detects which skills were modified in the PR/push
+- ✅ Validates only changed skills against SKILL_DESIGN_PRINCIPLES.md
+- ✅ Runs design compliance checks specific to modified skills
+
+**How to run locally**:
+```bash
+# Validate entire repository structure
+make validate
+
+# Validate changed skills (simulates CI environment)
+./scripts/ci-validate-changed-skills.sh
+
+# Or validate all skills
+make validate-skill-design
+```
+
+**Expected output**:
+```
+Validating repository structure...
+✓ Collection structure valid
+✓ Plugin metadata valid
+✓ MCP configurations valid
+
+Validating changed skills...
+Found 2 changed skill(s): vm-create, vm-delete
+✓ vm-create passed design compliance
+✓ vm-delete passed design compliance
+```
 
 **When validation fails**:
 
 The workflow will fail and provide:
-1. Specific errors for each skill
-2. Common issues and fixes
-3. Local validation command
-4. Reference to SKILL_CHECKLIST.md for detailed requirements
+1. Specific structural errors in the repository
+2. Design compliance violations for changed skills
+3. Reference to SKILL_DESIGN_PRINCIPLES.md
 
 **Common validation errors**:
-- Missing or invalid `model` field (must be: inherit, sonnet, or haiku)
-- Missing or invalid `color` field (must be: cyan, green, blue, yellow, or red)
-- Invalid SKILL.md header format (must be: # /<skill-name> Skill)
-- Missing required sections (Prerequisites, When to Use, Workflow, Dependencies)
-- Missing "NOT for" anti-patterns in description
+- Missing required collection files (README.md, .mcp.json)
+- Invalid MCP server configuration syntax
+- Skills not following design principles (see SKILL_DESIGN_PRINCIPLES.md)
+- Missing documentation in collections
 
 **Related files**:
-- `scripts/validate-skills.sh` - Main validation script
-- `SKILL_CHECKLIST.md` - Universal skill requirements checklist (single source of truth)
-- `CLAUDE.md` - Repository architecture and patterns
+- `Makefile` - Build and validation targets
+- `scripts/ci-validate-changed-skills.sh` - Changed skills detector and validator
+- `scripts/validate_skill_design.py` - Design compliance validation script
+- `SKILL_DESIGN_PRINCIPLES.md` - Design principles checklist
+
+### 3. `deploy-pages.yml` - GitHub Pages Documentation Deployment
+
+**Purpose**: Generates and deploys HTML documentation for all agentic collections to GitHub Pages.
+
+**Triggers**:
+- **Manual dispatch** (workflow_dispatch)
+- Pushes to `main` branch affecting documentation paths:
+  - `rh-sre/**`
+  - `rh-developer/**`
+  - `ocp-admin/**`
+  - `rh-support-engineer/**`
+  - `rh-virt/**`
+  - `scripts/**`
+  - `docs/**`
+  - `.github/workflows/deploy-pages.yml`
+
+**What it does**:
+
+**Documentation generation (`make generate`):**
+- ✅ Generates HTML documentation from Markdown files
+- ✅ Creates collection indexes and navigation
+- ✅ Builds skill reference pages
+- ✅ Generates searchable documentation site
+
+**Deployment:**
+- ✅ Configures GitHub Pages environment
+- ✅ Uploads documentation artifacts
+- ✅ Deploys to GitHub Pages with proper permissions
+
+**How to run locally**:
+```bash
+# Generate documentation locally
+make generate
+
+# Preview generated docs
+cd docs && python3 -m http.server 8000
+# Open http://localhost:8000 in your browser
+```
+
+**Expected output**:
+```
+Generating documentation...
+✓ Processing rh-sre collection
+✓ Processing rh-developer collection
+✓ Processing rh-virt collection
+✓ Building site navigation
+✓ Documentation generated in docs/
+
+Deploying to GitHub Pages...
+✓ Artifact uploaded
+✓ Deployed successfully
+```
+
+**When deployment fails**:
+
+The workflow will fail if:
+1. Documentation generation fails (invalid Markdown, missing files)
+2. GitHub Pages permissions not configured
+3. Artifact upload fails
+4. Deployment step fails
+
+**Common deployment errors**:
+- Missing Python dependencies (resolved by `make install`)
+- Invalid frontmatter in Markdown files
+- GitHub Pages not enabled in repository settings
+- Insufficient workflow permissions
+
+**Related files**:
+- `Makefile` - Documentation generation targets
+- `scripts/generate-docs.py` - Documentation generator (if exists)
+- `docs/` - Generated documentation output directory
+
+**Concurrency settings**:
+- Only one deployment runs at a time (group: "pages")
+- New deployments cancel in-progress ones
 
 ## Adding New Workflows
 
@@ -182,5 +357,7 @@ This README should be updated when:
 - New validation levels are introduced
 - Troubleshooting patterns emerge
 
-**Last Updated**: 2026-02-26
-**Workflows Count**: 1 (validate-skills.yml)
+**Last Updated**: 2026-02-27
+**Workflows Count**: 3 (skill-spec-report.yml, compliance-check.yml, deploy-pages.yml)
+
+**Note**: `validate-skills.yml` was removed 2026-02-27. Repository-specific design principle validation (Tier 2) will be handled by a separate workflow.
