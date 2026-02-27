@@ -27,7 +27,7 @@ else
   DIFF_CMD="git diff --name-only HEAD"
 fi
 
-CHANGED=$($DIFF_CMD 2>/dev/null | grep -E '^([^/]+/skills/[^/]+/SKILL\.md|\.claude/skills/[^/]+/SKILL\.md)$' || true)
+CHANGED=$($DIFF_CMD 2>/dev/null | grep -E '^[^/]+/skills/[^/]+/SKILL\.md$' | grep -v '^\.claude/' || true)
 
 if [ -z "$CHANGED" ]; then
   echo "No skills changed, skipping skill design validation"
