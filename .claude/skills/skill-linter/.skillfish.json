@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "skill-linter",
+  "owner": "majesticlabs-dev",
+  "repo": "majestic-marketplace",
+  "path": ".claude/skills/skill-linter",
+  "branch": "master",
+  "sha": "2ded694ad1e9b7103d6aa6d2d2243d2dc79f23b4",
+  "source": "manual"
+}
