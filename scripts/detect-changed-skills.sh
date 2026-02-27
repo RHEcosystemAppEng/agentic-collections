@@ -27,7 +27,8 @@ else
 fi
 
 # Find changed SKILL.md files and extract their directories
-CHANGED_FILES=$($DIFF_CMD 2>/dev/null | grep -E '^([^/]+/skills/[^/]+/SKILL\.md|\.claude/skills/[^/]+/SKILL\.md)$' || true)
+# Exclude .claude/ directory (internal tooling, not subject to same validation)
+CHANGED_FILES=$($DIFF_CMD 2>/dev/null | grep -E '^[^/]+/skills/[^/]+/SKILL\.md$' | grep -v '^\.claude/' || true)
 
 if [ -z "$CHANGED_FILES" ]; then
   exit 0
