@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Detect changed skills in CI (PRs and pushes to main)
-# Outputs list of changed skill directories (one per line)
+# Outputs ALL skills in affected packs (not just changed skills)
 # Exits 0 if no skills changed
+#
+# Strategy: If ANY skill changes in a pack (e.g., rh-virt),
+#           validate ALL skills in that pack for consistency
 
 set -e
 
@@ -26,7 +29,7 @@ else
   DIFF_CMD="git diff --name-only HEAD"
 fi
 
-# Find changed SKILL.md files and extract their directories
+# Find changed SKILL.md files
 # Exclude .claude/ directory (internal tooling, not subject to same validation)
 CHANGED_FILES=$($DIFF_CMD 2>/dev/null | grep -E '^[^/]+/skills/[^/]+/SKILL\.md$' | grep -v '^\.claude/' || true)
 
@@ -34,7 +37,10 @@ if [ -z "$CHANGED_FILES" ]; then
   exit 0
 fi
 
-# Extract skill directories from SKILL.md paths
-echo "$CHANGED_FILES" | while read -r file; do
-  dirname "$file"
+# Extract unique pack names (rh-virt, rh-sre, etc.)
+AFFECTED_PACKS=$(echo "$CHANGED_FILES" | cut -d'/' -f1 | sort -u)
+
+# For each affected pack, find ALL skills in that pack
+for pack in $AFFECTED_PACKS; do
+  find "$pack/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort
 done

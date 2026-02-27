@@ -67,7 +67,7 @@ TOTAL_SKILLS=$(echo "$SKILL_PATHS" | wc -l | tr -d ' ')
 if [ "$VALIDATION_MODE" = "all" ]; then
   echo -e "${BLUE}Validating ALL skills: ${TOTAL_SKILLS} skill(s)${NC}"
 else
-  echo -e "${BLUE}Validating CHANGED skills: ${TOTAL_SKILLS} skill(s)${NC}"
+  echo -e "${BLUE}Validating skills in affected packs: ${TOTAL_SKILLS} skill(s)${NC}"
 fi
 echo ""
 

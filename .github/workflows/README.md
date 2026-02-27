@@ -9,14 +9,15 @@ This directory contains CI/CD workflows for the agentic collections repository.
 **Purpose**: Validates skills against agentskills.io specification using the skill-linter and generates a comprehensive compliance report.
 
 **Triggers**:
-- **Pull requests** → Validates ONLY changed skills (fast feedback)
-- **Pushes to main** → Validates ALL skills (ensures repo health)
-- **Manual dispatch** → Choose between all skills or changed skills
+- **Pull requests** → Validates ALL skills in affected packs (ensures pack consistency)
+- **Pushes to main** → Validates ALL skills across all packs (ensures repo health)
+- **Manual dispatch** → Choose between all skills or pack-wide validation
 - **Excludes**: Draft pull requests
 
-**Validation Strategy** (Option 2: Changed Skills + Manual Full Scan):
-- ⚡ **PRs**: Fast validation of only changed skills
-- 🔍 **Push to main**: Full validation of all 37 skills
+**Validation Strategy** (Pack-Wide Validation):
+- ⚡ **PRs**: Validates ALL skills in affected packs (pack-wide consistency)
+  - Example: Change `rh-virt/skills/vm-create/SKILL.md` → validates ALL `rh-virt/skills/*`
+- 🔍 **Push to main**: Full validation of all 37 skills across all packs
 - 🎛️ **Manual**: Choose validation scope via workflow dispatch
 
 **What it validates**:
@@ -137,9 +138,10 @@ The workflow will:
 - `.claude/skills/skill-linter/SKILL.md` - Linter documentation
 
 **Performance**:
-- **PR validation**: ~5-30 seconds (1-3 changed skills typically)
-- **Full validation**: ~60-90 seconds (all 37 skills)
-- **Changed-only**: 80-95% faster than full validation
+- **PR validation (single pack)**: ~10-40 seconds (e.g., all 9 rh-virt skills)
+- **PR validation (multiple packs)**: ~20-60 seconds (varies by pack count)
+- **Full validation (all packs)**: ~60-90 seconds (all 37 skills)
+- **Pack-wide**: 30-60% faster than full validation (depends on pack size)
 
 **Scope**: This workflow validates **ONLY** agentskills.io specification compliance. Repository-specific design principles (model, color, sections, etc.) are validated by other workflows.
 
