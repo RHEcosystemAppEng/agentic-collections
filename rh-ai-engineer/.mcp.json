@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "openshift": {
+      "command": "podman",
+      "args": [
+        "run", "--rm", "-i", "--network=host",
+        "--userns=keep-id:uid=65532,gid=65532",
+        "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
+        "--entrypoint", "/app/kubernetes-mcp-server",
+        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
+        "--kubeconfig", "/kubeconfig",
+        "--toolsets", "core,config,observability"
+      ],
+      "env": { "KUBECONFIG": "${KUBECONFIG}" },
+      "description": "OpenShift MCP server for Kubernetes resource CRUD, pod management, logs, and events",
+      "security": { "isolation": "container", "network": "local", "credentials": "env-only" }
+    },
+    "ai-observability": {
+      "type": "http",
+      "url": "${AI_OBSERVABILITY_MCP_URL}/mcp",
+      "env": { "AI_OBSERVABILITY_MCP_URL": "${AI_OBSERVABILITY_MCP_URL}" },
+      "description": "AI Observability MCP server for vLLM model performance analysis, GPU monitoring, OpenShift metrics, and distributed tracing. Deployed on-cluster from quay.io/ecosystem-appeng/aiobs-mcp-server. See: https://github.com/rh-ai-quickstart/ai-observability-summarizer",
+      "security": { "isolation": "remote", "network": "cluster", "credentials": "env-only" }
+    }
+  }
+}
