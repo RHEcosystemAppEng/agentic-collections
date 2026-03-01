@@ -14,8 +14,6 @@ description: |
 
   NOT for NIM platform setup (use /nim-setup first).
   NOT for custom runtime creation (use /serving-runtime-config).
-model: inherit
-color: green
 ---
 
 # /model-deploy Skill

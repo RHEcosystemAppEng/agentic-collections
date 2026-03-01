@@ -13,8 +13,6 @@ description: |
 
   NOT for deploying models (use /model-deploy instead).
   NOT for vLLM or Caikit deployments (NIM-specific only).
-model: inherit
-color: green
 ---
 
 # /nim-setup Skill

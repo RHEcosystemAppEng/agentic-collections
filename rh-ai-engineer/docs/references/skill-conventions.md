@@ -3,7 +3,7 @@ title: Skill Conventions
 category: references
 tags: [conventions, prerequisites, human-in-the-loop, security]
 semantic_keywords: [prerequisite verification, human confirmation, credential security, skill shared patterns]
-use_cases: [nim-setup, model-deploy, serving-runtime-config, debug-inference]
+use_cases: [nim-setup, model-deploy, serving-runtime-config, debug-inference, ai-observability]
 last_updated: 2026-03-01
 ---
 

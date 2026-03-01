@@ -679,16 +679,60 @@
     "description": "AI Observability MCP server for vLLM model performance analysis, GPU monitoring, OpenShift metrics, and distributed tracing",
     "tools": [
       {
-        "name": "vllm_metrics",
-        "description": "Get vLLM model serving performance metrics including throughput, latency, and token generation rates"
+        "name": "list_models",
+        "description": "List available AI models being served and monitored by vLLM"
       },
       {
-        "name": "gpu_monitoring",
-        "description": "Monitor GPU utilization, memory usage, and health status for inference workloads"
+        "name": "list_vllm_namespaces",
+        "description": "Get monitored Kubernetes namespaces with vLLM observability data"
       },
       {
-        "name": "distributed_tracing",
-        "description": "Get distributed traces for AI/ML inference requests across services"
+        "name": "get_gpu_info",
+        "description": "Get cluster GPU inventory including count, vendors, models, temperatures, and power usage"
+      },
+      {
+        "name": "get_deployment_info",
+        "description": "Get deployment status for a model in a namespace (is_new_deployment, deployment_date)"
+      },
+      {
+        "name": "analyze_vllm",
+        "description": "Analyze vLLM model performance metrics (latency, throughput, errors, token rates) with LLM-generated summary"
+      },
+      {
+        "name": "chat_vllm",
+        "description": "Conversational follow-up on vLLM metrics analysis with context from previous analysis"
+      },
+      {
+        "name": "analyze_openshift",
+        "description": "Analyze OpenShift metrics by category (Fleet Overview, GPU & Accelerators, Workloads & Pods, etc.) with cluster-wide or namespace scope"
+      },
+      {
+        "name": "list_openshift_metric_groups",
+        "description": "List available OpenShift metric group categories for cluster-wide analysis"
+      },
+      {
+        "name": "list_openshift_namespaces",
+        "description": "List all OpenShift namespaces observed in Prometheus"
+      },
+      {
+        "name": "query_tempo_tool",
+        "description": "Query distributed traces from Tempo by TraceQL query, service, operation, or time range"
+      },
+      {
+        "name": "get_trace_details_tool",
+        "description": "Get detailed trace information with spans, operations, durations, and tags by trace ID"
+      },
+      {
+        "name": "search_metrics",
+        "description": "Search for Prometheus metrics using semantic pattern matching"
+      },
+      {
+        "name": "execute_promql",
+        "description": "Execute a PromQL query and return structured results with time range support"
+      },
+      {
+        "name": "korrel8r_get_correlated",
+        "description": "Find correlated observability signals (logs, traces, metrics, alerts) across domains using Korrel8r"
       }
     ]
   },

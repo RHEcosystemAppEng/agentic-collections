@@ -14,8 +14,6 @@ description: |
 
   NOT for deploying models (use /model-deploy).
   NOT for creating runtimes (use /serving-runtime-config).
-model: inherit
-color: green
 ---
 
 # /debug-inference Skill
