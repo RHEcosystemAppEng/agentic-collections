@@ -8,6 +8,7 @@ Agentic collections to automate interaction with Red Hat platforms and products 
 | [OpenShift Administration](ocp-admin/README.md) | OpenShift Administration | Claude code, Cursor |
 | [Red Hat Support Engineer](rh-support-engineer/README.md) | Support Engineer | Claude code, Cursor, ChatGPT |
 | [Red Hat Virtualization](rh-virt/README.md) | Virt Admin | Claude code, Cursor |
+| [Red Hat AI Engineer](rh-ai-engineer/README.md) | AI/ML Engineer | Claude code, Cursor |
 
 ## Documentation Site
 

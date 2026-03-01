@@ -670,6 +670,28 @@
       }
     ]
   },
+  "ai-observability": {
+    "title": "AI Observability MCP Server",
+    "tier": "Community",
+    "owner": "Red Hat Ecosystem Engineering",
+    "type": "http",
+    "repository": "https://github.com/rh-ai-quickstart/ai-observability-summarizer/tree/main/src/mcp_server",
+    "description": "AI Observability MCP server for vLLM model performance analysis, GPU monitoring, OpenShift metrics, and distributed tracing",
+    "tools": [
+      {
+        "name": "vllm_metrics",
+        "description": "Get vLLM model serving performance metrics including throughput, latency, and token generation rates"
+      },
+      {
+        "name": "gpu_monitoring",
+        "description": "Monitor GPU utilization, memory usage, and health status for inference workloads"
+      },
+      {
+        "name": "distributed_tracing",
+        "description": "Get distributed traces for AI/ML inference requests across services"
+      }
+    ]
+  },
   "openshift-virtualization": {
     "title": "OpenShift MCP Server - Virtualization",
     "tier": "Official",

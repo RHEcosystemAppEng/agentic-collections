@@ -11,7 +11,7 @@ import yaml
 import re
 
 # List of agentic collections to validate
-PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt']
+PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt', 'rh-ai-engineer']
 
 
 def validate_plugin_json(pack_dir: str) -> List[str]:

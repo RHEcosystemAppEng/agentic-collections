@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 # List of agentic packs to parse
-PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt']
+PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt', 'rh-ai-engineer']
 
 
 def extract_env_vars(env_dict: Dict[str, str]) -> List[str]:

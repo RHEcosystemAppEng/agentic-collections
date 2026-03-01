@@ -4,7 +4,8 @@
     "rh-developer": "💻",
     "ocp-admin": "☸️",
     "rh-support-engineer": "🎯",
-    "rh-virt": "🖥️"
+    "rh-virt": "🖥️",
+    "rh-ai-engineer": "🤖"
   },
   "mcp_servers": {
     "lightspeed-mcp": "💡",
@@ -13,6 +14,7 @@
     "openshift": "☸️",
     "openshift-virtualization": "🖥️",
     "podman": "🐳",
-    "github": "🐙"
+    "github": "🐙",
+    "ai-observability": "🔬"
   }
 }
