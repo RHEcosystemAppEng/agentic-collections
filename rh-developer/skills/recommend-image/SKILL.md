@@ -2,6 +2,8 @@
 name: recommend-image
 description: |
   Intelligently recommend the optimal S2I builder image or container base image for a project based on detected language/framework, use-case requirements, security posture, and deployment target. Supports GitHub URLs for remote project analysis (delegates to /detect-project). Use this skill when the user needs a container image recommendation, wants to compare image options, or asks about production vs development images. Triggers on /recommend-image command, or when advanced image selection beyond basic version matching is needed. Supports Node.js, Python, Java, Go, Ruby, .NET, PHP, and Perl on Red Hat UBI.
+metadata:
+   user_invocable: "true"
 ---
 
 # /recommend-image Skill

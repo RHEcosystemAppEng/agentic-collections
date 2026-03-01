@@ -2,6 +2,8 @@
 name: detect-project
 description: |
   Analyze a project folder or GitHub repository to detect programming language, framework, and version requirements. Use this skill when containerizing an application, selecting an S2I builder image, deploying to OpenShift or RHEL, or determining a project's tech stack. Supports Node.js, Python, Java, Go, Ruby, .NET, PHP, and Perl. Triggers on /detect-project command or when user needs build strategy recommendations. Run before /s2i-build or /rhel-deploy.
+metadata:
+   user_invocable: "true"
 ---
 
 # /detect-project Skill

@@ -2,6 +2,8 @@
 name: helm-deploy
 description: |
   Deploy applications to OpenShift using Helm charts. Use this skill when user wants to deploy with Helm, when a Helm chart is detected in the project, or when /helm-deploy command is invoked. Supports both existing charts and chart creation. Handles chart detection, values customization, install/upgrade operations, and rollback. Requires kubernetes MCP Helm tools.
+metadata:
+   user_invocable: "true"
 ---
 
 # /helm-deploy Skill

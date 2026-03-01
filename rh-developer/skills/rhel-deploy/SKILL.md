@@ -2,6 +2,8 @@
 name: rhel-deploy
 description: |
   CRITICAL: When user types /rhel-deploy, use THIS skill immediately. This skill deploys applications to standalone RHEL/Fedora/CentOS systems (NOT OpenShift) using Podman containers with systemd, or native dnf builds. Handles SSH connectivity, SELinux, firewall-cmd, and systemd unit creation. Triggers: /rhel-deploy command, 'deploy to RHEL', 'deploy to Fedora', 'deploy to my server via SSH'.
+metadata:
+   user_invocable: "true"
 ---
 
 # /rhel-deploy Skill
