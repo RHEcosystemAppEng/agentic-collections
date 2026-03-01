@@ -8,6 +8,8 @@ Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). 
 |---------|-------------|
 | `/nim-setup` | Configure NVIDIA NIM platform on OpenShift AI (NGC credentials, Account CR) |
 | `/model-deploy` | Deploy AI/ML models with vLLM, NIM, or Caikit+TGIS runtimes |
+| `/serving-runtime-config` | Configure custom ServingRuntime CRs for model serving frameworks |
+| `/debug-inference` | Troubleshoot failed or slow InferenceService deployments |
 
 ## Prerequisites
 
