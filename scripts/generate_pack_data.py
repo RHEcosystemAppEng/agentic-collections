@@ -13,11 +13,6 @@ import yaml
 # List of agentic packs to parse
 PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt']
 
-# Mapping from directory name to key in docs/plugins.json (if different)
-PACK_TO_PLUGINS_KEY = {
-    'ocp-admin': 'rh-ocp-admin',  # Directory is ocp-admin, but plugins.json key is rh-ocp-admin
-}
-
 
 def parse_yaml_frontmatter(file_path: Path) -> Dict[str, Any]:
     """
@@ -94,13 +89,10 @@ def parse_plugin_json(pack_dir: str, plugin_titles: Dict[str, str]) -> Dict[str,
         'keywords': []
     }
 
-    # Check if pack_dir has a different key in plugins.json
-    plugins_key = PACK_TO_PLUGINS_KEY.get(pack_dir, pack_dir)
-
     if not plugin_path.exists():
         # Use title from plugins.json if available
-        if plugins_key in plugin_titles:
-            defaults['title'] = plugin_titles[plugins_key]
+        if pack_dir in plugin_titles:
+            defaults['title'] = plugin_titles[pack_dir]
         return defaults
 
     try:
@@ -111,8 +103,8 @@ def parse_plugin_json(pack_dir: str, plugin_titles: Dict[str, str]) -> Dict[str,
         result = {**defaults, **data}
         
         # Override with title from docs/plugins.json if available
-        if plugins_key in plugin_titles:
-            result['title'] = plugin_titles[plugins_key]
+        if pack_dir in plugin_titles:
+            result['title'] = plugin_titles[pack_dir]
         elif 'title' not in result:
             # Fallback: use name as title if not set
             result['title'] = result['name']
@@ -122,8 +114,8 @@ def parse_plugin_json(pack_dir: str, plugin_titles: Dict[str, str]) -> Dict[str,
     except Exception as e:
         print(f"Warning: Failed to parse {plugin_path}: {e}")
         # Use title from plugins.json if available even on error
-        if plugins_key in plugin_titles:
-            defaults['title'] = plugin_titles[plugins_key]
+        if pack_dir in plugin_titles:
+            defaults['title'] = plugin_titles[pack_dir]
         return defaults
 
 

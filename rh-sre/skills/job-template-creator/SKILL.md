@@ -42,15 +42,11 @@ This skill helps SREs create AAP job templates for executing Ansible playbooks, 
 
 ### Prerequisite Validation
 
-**CRITICAL**: Before executing operations, invoke the [mcp-aap-validator](../mcp-aap-validator/SKILL.md) skill to verify AAP MCP server availability.
+**CRITICAL**: Before executing operations, execute the `/mcp-aap-validator` skill to verify AAP MCP server availability.
 
 **Validation freshness**: Can skip if already validated in this session. See [Validation Freshness Policy](../mcp-aap-validator/SKILL.md#validation-freshness-policy).
 
-**How to invoke**:
-```
-Use the Skill tool:
-  skill: "mcp-aap-validator"
-```
+**How to invoke**: Execute the `/mcp-aap-validator` skill
 
 **Handle validation result**:
 - **If validation PASSED**: Continue with job template creation workflow
@@ -77,7 +73,7 @@ This skill documents both the **current manual workflow** and the **intended aut
 - Automate job template creation as part of remediation setup
 
 **Do NOT use this skill when**:
-- Job templates already exist (use `playbook-executor` skill instead)
+- Job templates already exist (use `/playbook-executor` skill instead)
 - Only need to execute existing templates (use `job_templates_launch_retrieve`)
 - Need to modify existing templates (requires AAP Web UI currently)
 
@@ -102,15 +98,11 @@ Create a job template for this remediation playbook. Playbook: [content]. Filena
 
 ### Phase 0: Validate AAP MCP Prerequisites
 
-**Action**: Invoke the [mcp-aap-validator](../mcp-aap-validator/SKILL.md) skill
+**Action**: Execute the `/mcp-aap-validator` skill
 
 **Note**: Can skip if validation was performed earlier in this session and succeeded. See [Validation Freshness Policy](../mcp-aap-validator/SKILL.md#validation-freshness-policy).
 
-**How to invoke**:
-```
-Use the Skill tool:
-  skill: "mcp-aap-validator"
-```
+**How to invoke**: Execute the `/mcp-aap-validator` skill
 
 **Handle validation result**:
 - **If validation PASSED**: Continue to Phase 1
@@ -485,6 +477,7 @@ Configure the template with these settings:
 **Options** (checkboxes at bottom):
 - ✅ **Enable Privilege Escalation**: Yes (required for package updates and system changes)
 - ✅ **Prompt on Launch**: Check fields you want to override at launch time:
+  - ☑️ **Job Type** (REQUIRED—enables dry-run with `check` and actual execution with `run`; job-template-remediation-validator requires this)
   - ☑️ **Variables** (recommended for dynamic CVE targeting)
   - ☑️ **Limit** (recommended for targeting specific hosts)
 - ☐ **Allow Simultaneous**: No (prevent conflicts during remediation)
@@ -699,6 +692,7 @@ When completing job template creation, provide:
      ✅ Enable Privilege Escalation: Yes
      
    Prompt on Launch (check these):
+     ☑️ Job Type (REQUIRED—enables dry-run and run from same template)
      ☑️ Variables (allows passing different CVE IDs at runtime)
      ☑️ Limit (allows targeting specific hosts at runtime)
    
@@ -794,6 +788,7 @@ When `job_templates_create` MCP tool is added, the workflow will become:
   "project": 6,
   "playbook": "remediation-CVE-2025-49794.yml",
   "become_enabled": true,
+  "ask_job_type_on_launch": true,
   "ask_variables_on_launch": true,
   "ask_limit_on_launch": true,
   "extra_vars": "{\"target_cve\": \"CVE-2025-49794\"}"

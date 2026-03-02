@@ -36,6 +36,13 @@ This knowledge base provides comprehensive Red Hat-specific patterns for CVE rem
   - Red Hat severity mappings (Critical/Important/Moderate/Low)
   - Priority decision matrix
 
+- **[Lightspeed MCP Parameters](references/lightspeed-mcp-parameters.md)** ✅
+  - Correct parameter names for Lightspeed MCP tools (e.g. `per_page` not `page_size` for list_hosts)
+  - Consult before calling inventory__list_hosts to avoid validation errors
+
+- **[Lightspeed MCP Tool Failures](references/lightspeed-mcp-tool-failures.md)** ✅
+  - Generic pattern for backend errors (e.g. explain_cves `'dnf_modules'`) — user-friendly message, workarounds, no raw error exposure
+
 - **RHEL Version Compatibility** (planned)
   - RHEL 7/8/9 compatibility matrix
   - Package naming differences

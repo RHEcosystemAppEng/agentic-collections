@@ -9,14 +9,14 @@ description: |
   - "Check if template is ready for playbook-executor"
   - Before playbook-executor selects a template
 
-  NOT for: AAP MCP connectivity (use mcp-aap-validator), creating templates (use job-template-creator).
+  NOT for: AAP MCP connectivity (use `/mcp-aap-validator`), creating templates (use `/job-template-creator`).
 model: inherit
 color: blue
 ---
 
 # AAP Job Template Remediation Validator
 
-This skill verifies that an AAP (Ansible Automation Platform) job template meets the requirements for executing CVE remediation playbooks as defined by the remediator agent and playbook-executor workflow.
+This skill verifies that an AAP (Ansible Automation Platform) job template meets the requirements for executing CVE remediation playbooks as defined by the remediation skill and playbook-executor workflow.
 
 ## Prerequisites
 
@@ -34,15 +34,11 @@ This skill verifies that an AAP (Ansible Automation Platform) job template meets
 
 ### Prerequisite Validation
 
-**CRITICAL**: Before executing, invoke the [mcp-aap-validator](../mcp-aap-validator/SKILL.md) skill to verify AAP MCP server availability.
+**CRITICAL**: Before executing, execute the `/mcp-aap-validator` skill to verify AAP MCP server availability.
 
 **Validation freshness**: Can skip if already validated in this session. See [Validation Freshness Policy](../mcp-aap-validator/SKILL.md#validation-freshness-policy).
 
-**How to invoke**:
-```
-Use the Skill tool:
-  skill: "mcp-aap-validator"
-```
+**How to invoke**: Execute the `/mcp-aap-validator` skill
 
 **Handle validation result**:
 - **If validation PASSED**: Continue with template validation
@@ -65,9 +61,9 @@ If prerequisites are not met:
 - Troubleshooting "template not compatible" in playbook-executor
 
 **Do NOT use when**:
-- Validating AAP MCP connectivity → Use `mcp-aap-validator` skill
-- Creating new job templates → Use `job-template-creator` skill
-- Executing playbooks → Use `playbook-executor` skill
+- Validating AAP MCP connectivity → Use `/mcp-aap-validator` skill
+- Creating new job templates → Use `/job-template-creator` skill
+- Executing playbooks → Use `/playbook-executor` skill
 
 ## Remediation Template Requirements
 
@@ -82,6 +78,11 @@ This skill validates against the requirements documented in [playbook-executor](
 | **Playbook** | Template has playbook path | `playbook` field present, non-empty |
 | **Credentials** | Machine credential (SSH) configured | `summary_fields.credentials` or `credentials` has at least one credential |
 | **Privilege Escalation** | Required for package updates | `become_enabled` is true |
+| **Ask Job Type on Launch** | Required for dry-run and run modes | `ask_job_type_on_launch` is true |
+
+**Why Ask Job Type on Launch**: playbook-executor uses the same template for dry-run (`job_type: "check"`) and actual execution (`job_type: "run"`). Without `ask_job_type_on_launch: true`, the template is locked to one mode and you would need separate templates for check vs run.
+
+**Example**: Template with `job_type: "check"` (default) and `ask_job_type_on_launch: true` allows launching as check for dry-run or run for execution.
 
 ### Recommended (Warnings if Missing)
 
@@ -89,6 +90,7 @@ This skill validates against the requirements documented in [playbook-executor](
 |-------------|-------------|------------|
 | **Ask Variables on Launch** | Enables dynamic CVE targeting | `ask_variables_on_launch` is true |
 | **Ask Limit on Launch** | Enables host targeting at launch | `ask_limit_on_launch` is true |
+| **Ask Inventory on Launch** | Enables inventory override at launch | `ask_inventory_on_launch` is true |
 
 ### Optional Context Checks
 
@@ -103,7 +105,7 @@ This skill validates against the requirements documented in [playbook-executor](
 
 ### Phase 0: Validate AAP MCP Prerequisites
 
-**Action**: Invoke the [mcp-aap-validator](../mcp-aap-validator/SKILL.md) skill
+**Action**: Execute the `/mcp-aap-validator` skill
 
 **Note**: Can skip if validation was performed earlier in this session and succeeded.
 
@@ -162,6 +164,7 @@ required_checks.append(("Privilege Escalation", template.get("become_enabled") =
 creds = template.get("summary_fields", {}).get("credentials") or template.get("credentials") or []
 has_creds = (isinstance(creds, list) and len(creds) > 0) or (isinstance(creds, dict) and creds)
 required_checks.append(("Credentials", has_creds))
+required_checks.append(("Ask Job Type on Launch", template.get("ask_job_type_on_launch") == True))
 ```
 
 **Note**: If the AAP MCP response structure differs, adapt the field paths. Common AAP API response structures:
@@ -179,6 +182,7 @@ required_checks.append(("Credentials", has_creds))
 recommended_checks = []
 recommended_checks.append(("Ask Variables on Launch", template.get("ask_variables_on_launch") == True))
 recommended_checks.append(("Ask Limit on Launch", template.get("ask_limit_on_launch") == True))
+recommended_checks.append(("Ask Inventory on Launch", template.get("ask_inventory_on_launch") == True))
 ```
 
 ### Phase 4: Optional Context Verification
@@ -225,12 +229,14 @@ recommended_checks.append(("Ask Limit on Launch", template.get("ask_limit_on_lau
 | Playbook | ✓/✗ | {playbook_path} |
 | Credentials | ✓/✗ | {count} credential(s) configured |
 | Privilege Escalation | ✓/✗ | become_enabled: {value} |
+| Ask Job Type on Launch | ✓/✗ | Required for dry-run + run modes |
 
 ## Recommended Checks
 | Requirement | Status | Details |
 |-------------|--------|---------|
 | Ask Variables on Launch | ✓/⚠ | {value} |
 | Ask Limit on Launch | ✓/⚠ | {value} |
+| Ask Inventory on Launch | ✓/⚠ | {value} |
 
 ## Context Verification
 | Check | Status | Details |
@@ -243,12 +249,12 @@ recommended_checks.append(("Ask Limit on Launch", template.get("ask_limit_on_lau
 
 {If PASSED}: Template is ready for remediation playbook execution.
 {If WARNINGS}: Template works but consider enabling ask_variables_on_launch and ask_limit_on_launch for flexibility.
-{If FAILED}: Fix required checks before using with playbook-executor. See job-template-creator for setup guidance.
+{If FAILED}: Fix required checks before using with playbook-executor. See job-template-creator for setup guidance. If Ask Job Type on Launch fails: Enable "Prompt on Launch" for Job Type in AAP Web UI → Templates → [Template] → Edit → Options.
 ```
 
 ### Pass/Fail Determination
 
-- **PASSED**: All 5 required checks pass
+- **PASSED**: All 6 required checks pass
 - **PASSED WITH WARNINGS**: All required pass, one or more recommended fail
 - **FAILED**: One or more required checks fail
 
@@ -308,6 +314,7 @@ recommended_checks.append(("Ask Limit on Launch", template.get("ask_limit_on_lau
 |-------------|--------|---------|
 | Ask Variables on Launch | ✓ | true |
 | Ask Limit on Launch | ✓ | true |
+| Ask Inventory on Launch | ✓ | true |
 
 ## Overall Result
 ✓ PASSED
@@ -315,7 +322,38 @@ recommended_checks.append(("Ask Limit on Launch", template.get("ask_limit_on_lau
 Template is ready for remediation playbook execution.
 ```
 
-### Example 2: Template Fails - Missing Privilege Escalation
+### Example 2: Template Fails - Missing Ask Job Type on Launch
+
+**User Request**: "Validate template 20 for remediation"
+
+**Skill Response**:
+
+```
+# Job Template Remediation Validation Report
+
+**Template**: CVE Remediation (ID: 20)
+**Validated**: 2025-02-25
+
+## Required Checks
+| Requirement | Status | Details |
+|-------------|--------|---------|
+| Inventory | ✓ | 1 - Production Inventory |
+| Project | ✓ | 6 - Remediation Playbooks |
+| Playbook | ✓ | playbooks/remediation/remediation-template.yml |
+| Credentials | ✓ | 1 credential(s) configured |
+| Privilege Escalation | ✓ | become_enabled: true |
+| Ask Job Type on Launch | ✗ | ask_job_type_on_launch: false |
+
+## Overall Result
+✗ FAILED
+
+Fix required: Enable "Prompt on Launch" for Job Type.
+playbook-executor needs the same template for dry-run (job_type: "check") and actual execution (job_type: "run"). Without this, you would need separate templates for each mode.
+
+To fix: AAP Web UI → Templates → [Template] → Edit → Options → ✓ Prompt on Launch → Job Type
+```
+
+### Example 3: Template Fails - Missing Privilege Escalation
 
 **User Request**: "Check if template 15 works for remediation"
 
@@ -345,7 +383,7 @@ Remediation playbooks require sudo/root for package updates and system changes.
 To fix: AAP Web UI → Templates → [Template] → Edit → Options → ✓ Enable Privilege Escalation
 ```
 
-### Example 3: Invoked by Playbook-Executor
+### Example 4: Invoked by Playbook-Executor
 
 **Context**: playbook-executor filters templates and may invoke this skill to validate user-selected template before execution.
 

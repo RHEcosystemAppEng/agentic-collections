@@ -68,9 +68,9 @@ While you could use the underlying MCP servers (`lightspeed-mcp`, AAP MCP server
 
 **Workflow Abstraction**
 - Complex multi-tool workflows wrapped in single skill invocations
-- Agent orchestration sequences skills automatically (validation → context → remediation → verification)
+- Orchestration skills sequence other skills automatically (validation → context → remediation → verification)
 - Eliminates cognitive load of remembering workflow steps
-- Example: `remediator` agent coordinates 5 skills across 6 steps instead of requiring 15+ individual MCP tool calls
+- Example: `remediation` skill coordinates 6 skills across 6 steps instead of requiring 15+ individual MCP tool calls
 
 **Progressive Documentation Loading**
 - Skills load Red Hat documentation on-demand based on task requirements
@@ -120,7 +120,7 @@ While you could use the underlying MCP servers (`lightspeed-mcp`, AAP MCP server
 
 ---
 
-**Bottom Line**: The agentic collection transforms raw MCP tools into a reliable, safe, and user-friendly SRE automation platform. Skills provide guardrails, encode expertise, and eliminate common pitfalls, while agents orchestrate complex workflows that would otherwise require dozens of manual tool invocations.
+**Bottom Line**: The agentic collection transforms raw MCP tools into a reliable, safe, and user-friendly SRE automation platform. Skills provide guardrails, encode expertise, and eliminate common pitfalls, while orchestration skills coordinate complex workflows that would otherwise require dozens of manual tool invocations.
 
 ## Quick Start
 
@@ -162,9 +162,23 @@ claude plugin list --json | jq '[.[] | select(.id | contains("redhat"))]'
 
 ## Skills
 
-The pack provides 12 specialized skills for common SRE operations:
+The pack provides 13 skills for common SRE operations, including one orchestration skill for end-to-end remediation:
 
-### 1. **fleet-inventory** - System Discovery and Fleet Management
+### 1. **remediation** - End-to-End CVE Remediation (Orchestration)
+Orchestrates 6 specialized skills for complete CVE remediation workflows.
+
+**Use when:**
+- "Remediate CVE-2024-1234 on production systems"
+- "Create and execute a remediation playbook for CVE-X"
+- "Patch these CVEs on all web servers"
+
+**What it does:**
+- Validates CVE and gathers system context
+- Generates Ansible playbook
+- Executes via AAP (with user confirmation)
+- Verifies remediation success
+
+### 2. **fleet-inventory** - System Discovery and Fleet Management
 Query and display Red Hat Lightspeed managed system inventory.
 
 **Use when:**
@@ -178,7 +192,7 @@ Query and display Red Hat Lightspeed managed system inventory.
 - Shows system health and check-in status
 - Identifies stale systems
 
-### 2. **cve-impact** - CVE Discovery and Risk Assessment
+### 3. **cve-impact** - CVE Discovery and Risk Assessment
 Analyze CVE impact across the fleet without immediate remediation.
 
 **Use when:**
@@ -192,7 +206,7 @@ Analyze CVE impact across the fleet without immediate remediation.
 - Shows affected system counts
 - Provides priority recommendations
 
-### 3. **cve-validation** - CVE Verification
+### 4. **cve-validation** - CVE Verification
 Validate CVE existence and remediation availability.
 
 **Use when:**
@@ -205,7 +219,7 @@ Validate CVE existence and remediation availability.
 - Checks remediation availability
 - Returns CVE metadata and severity
 
-### 4. **system-context** - System Information Gathering
+### 5. **system-context** - System Information Gathering
 Collect detailed system information from Red Hat Lightspeed.
 
 **Use when:**
@@ -219,7 +233,7 @@ Collect detailed system information from Red Hat Lightspeed.
 - Displays configuration data
 - Maps CVE-to-system relationships
 
-### 5. **playbook-generator** - Ansible Playbook Creation
+### 6. **playbook-generator** - Ansible Playbook Creation
 Generate Ansible remediation playbooks following Red Hat best practices.
 
 **Use when:**
@@ -232,7 +246,7 @@ Generate Ansible remediation playbooks following Red Hat best practices.
 - Includes error handling and rollback steps
 - Follows Red Hat standards
 
-### 6. **playbook-executor** - AAP Playbook Execution
+### 7. **playbook-executor** - AAP Playbook Execution
 Execute Ansible playbooks via AAP (Ansible Automation Platform) with dry-run capabilities, real-time monitoring, and comprehensive reporting.
 
 **Use when:**
@@ -247,7 +261,7 @@ Execute Ansible playbooks via AAP (Ansible Automation Platform) with dry-run cap
 
 **Note**: This skill requires separate configuration (not included by default in this collection). For AAP-based playbook execution, use the `job-template-creator` skill to create job templates in AAP instead.
 
-### 7. **remediation-verifier** - Remediation Verification
+### 8. **remediation-verifier** - Remediation Verification
 Verify that CVE remediations were successfully applied.
 
 **Use when:**
@@ -259,7 +273,7 @@ Verify that CVE remediations were successfully applied.
 - Verifies package updates
 - Confirms remediation success
 
-### 8. **mcp-lightspeed-validator** - Lightspeed MCP Server Validation
+### 9. **mcp-lightspeed-validator** - Lightspeed MCP Server Validation
 Validate Red Hat Lightspeed MCP server configuration and connectivity.
 
 **Use when:**
@@ -274,7 +288,7 @@ Validate Red Hat Lightspeed MCP server configuration and connectivity.
 - Tests server connectivity and tool availability
 - Reports validation status (PASSED/PARTIAL/FAILED)
 
-### 9. **mcp-aap-validator** - AAP MCP Server Validation
+### 10. **mcp-aap-validator** - AAP MCP Server Validation
 Validate AAP (Ansible Automation Platform) MCP server configuration and connectivity.
 
 **Use when:**
@@ -289,7 +303,7 @@ Validate AAP (Ansible Automation Platform) MCP server configuration and connecti
 - Tests server connectivity and authentication
 - Reports validation status (PASSED/PARTIAL/FAILED)
 
-### 10. **execution-summary** - Workflow Execution Report
+### 11. **execution-summary** - Workflow Execution Report
 Generate concise execution reports for audit and learning purposes.
 
 **Use when:**
@@ -304,7 +318,7 @@ Generate concise execution reports for audit and learning purposes.
 - Formats in machine-readable format
 - Provides audit trail for workflows
 
-### 11. **job-template-creator** - AAP Job Template Creation
+### 12. **job-template-creator** - AAP Job Template Creation
 Create AAP job templates for executing Ansible playbooks through Ansible Automation Platform.
 
 **Use when:**
@@ -318,7 +332,7 @@ Create AAP job templates for executing Ansible playbooks through Ansible Automat
 - Verifies template creation
 - Prepares for AAP-based playbook execution
 
-### 12. **job-template-remediation-validator** - AAP Job Template Remediation Validation
+### 13. **job-template-remediation-validator** - AAP Job Template Remediation Validation
 Verify an AAP job template meets requirements for executing CVE remediation playbooks.
 
 **Use when:**
@@ -332,11 +346,11 @@ Verify an AAP job template meets requirements for executing CVE remediation play
 - Verifies project and inventory exist
 - Reports PASSED / PASSED WITH WARNINGS / FAILED
 
-## Agent
+## Orchestration Skill
 
-### **remediator** - End-to-End CVE Remediation Orchestration
+### **remediation** - End-to-End CVE Remediation
 
-The remediator agent orchestrates the CVE-related skills to provide complete CVE remediation workflows.
+The remediation skill orchestrates 6 specialized skills to provide complete CVE remediation workflows.
 
 **Use when:**
 - "Remediate CVE-2024-1234 on system abc-123"
@@ -344,11 +358,12 @@ The remediator agent orchestrates the CVE-related skills to provide complete CVE
 - "Patch these 5 CVEs on all production servers"
 
 **Workflow:**
-1. **Validate** (cve-validation skill)
-2. **Gather Context** (system-context skill)
-3. **Generate Playbook** (playbook-generator skill)
-4. **Execute** (playbook-executor skill)
-5. **Verify** (remediation-verifier skill)
+1. **Impact** (cve-impact skill, if needed)
+2. **Validate** (cve-validation skill)
+3. **Gather Context** (system-context skill)
+4. **Generate Playbook** (playbook-generator skill)
+5. **Execute** (playbook-executor skill, with user confirmation)
+6. **Verify** (remediation-verifier skill)
 
 **Capabilities:**
 - Single CVE on single system
@@ -357,7 +372,7 @@ The remediator agent orchestrates the CVE-related skills to provide complete CVE
 - Automated job tracking and reporting
 - Partial failure handling
 
-## Skills vs Agent Decision Guide
+## Skills Decision Guide
 
 | User Request | Tool to Use | Reason |
 |--------------|-------------|--------|
@@ -369,11 +384,11 @@ The remediator agent orchestrates the CVE-related skills to provide complete CVE
 | "Create job template" | **job-template-creator skill** | AAP template setup |
 | "Validate template for remediation" | **job-template-remediation-validator skill** | Template compatibility check |
 | "Generate execution summary" | **execution-summary skill** | Audit trail reporting |
-| "Remediate CVE-2024-1234" | **remediator agent** | Multi-step workflow |
-| "Create playbook for CVE-X" | **remediator agent** | Orchestration needed |
+| "Remediate CVE-2024-1234" | **remediation skill** | Multi-step workflow |
+| "Create playbook for CVE-X" | **remediation skill** | Orchestration needed |
 | "Was CVE-Y patched?" | **remediation-verifier skill** | Standalone check |
 
-**General Rule**: Skills for information gathering and validation, agent for remediation actions.
+**General Rule**: Use individual skills for information gathering and validation; use the remediation skill for end-to-end remediation actions.
 
 ## Documentation
 
@@ -435,7 +450,7 @@ User: "What are the critical CVEs affecting these systems?"
 → cve-impact skill analyzes vulnerabilities
 
 User: "Remediate CVE-2024-1234 on all RHEL 8 production systems"
-→ remediator agent orchestrates end-to-end remediation
+→ remediation skill orchestrates end-to-end remediation
 ```
 
 ### Workflow 2: Emergency CVE Patching
@@ -443,7 +458,7 @@ User: "Remediate CVE-2024-1234 on all RHEL 8 production systems"
 ```
 User: "URGENT: CVE-2024-CRITICAL has CVSS 9.8 - create emergency
       remediation playbooks for all production systems"
-→ remediator agent:
+→ remediation skill:
   1. Validates CVE (cve-validation skill)
   2. Lists production systems (system-context skill)
   3. Generates playbook (playbook-generator skill)
@@ -456,7 +471,7 @@ User: "URGENT: CVE-2024-CRITICAL has CVSS 9.8 - create emergency
 ```
 User: "Create and execute remediation playbooks for CVE-X, CVE-Y, CVE-Z
       on systems server-01, server-02, server-03"
-→ remediator agent:
+→ remediation skill:
   1. Validates all CVEs
   2. Gathers system context
   3. Generates consolidated playbook
@@ -587,9 +602,8 @@ rh-sre/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata
 ├── .mcp.json                    # MCP server configurations
-├── agents/
-│   └── remediator.md            # Orchestration agent
 ├── skills/
+│   ├── remediation/SKILL.md     # Orchestration skill (end-to-end CVE remediation)
 │   ├── fleet-inventory/SKILL.md
 │   ├── cve-impact/SKILL.md
 │   ├── cve-validation/SKILL.md
@@ -610,7 +624,7 @@ rh-sre/
 
 ### Key Patterns
 - **Skills encapsulate tools** - Never call MCP tools directly
-- **Agents orchestrate skills** - Complex workflows delegate to skills
+- **Orchestration skills invoke other skills** - Complex workflows delegate to specialized skills
 - **Progressive disclosure** - Load docs incrementally
 - **Environment-based secrets** - No hardcoded credentials
 
@@ -618,7 +632,7 @@ rh-sre/
 
 See main repository [CLAUDE.md](../CLAUDE.md) for:
 - Adding new skills
-- Creating agents
+- Creating orchestration skills
 - Integrating MCP servers
 - Documentation best practices
 

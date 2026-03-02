@@ -18,7 +18,7 @@
       },
       "source": "./rh-sre",
       "category": "sre",
-      "agents": "./agents/remediator.md",
+      "agents": [],
       "skills": "./skills"
     },
     {

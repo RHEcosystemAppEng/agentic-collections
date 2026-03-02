@@ -14,7 +14,7 @@ description: |
 
 This skill gathers comprehensive system inventory and deployment context for CVE-affected systems, enabling informed remediation strategy decisions.
 
-**Integration with Remediator Agent**: The sre-agents:remediator agent (invoked) orchestrates this skill as part of its Step 3 (Gather Context) workflow. For standalone system analysis, you can invoke this skill directly.
+**Integration with Remediation Skill**: The `/remediation` skill orchestrates this skill as part of its Step 3 (Gather Context) workflow. For standalone system analysis, you can invoke this skill directly.
 
 ## When to Use This Skill
 
@@ -25,12 +25,12 @@ This skill gathers comprehensive system inventory and deployment context for CVE
 - Classify systems by environment (dev/staging/prod)
 - Gather context before remediation planning
 
-**Use the sre-agents:remediator agent when you need**:
+**Use the `/remediation` skill when you need**:
 - End-to-end CVE remediation workflow
 - Integrated analysis → context → playbook → execution
 - Automated remediation strategy determination
 
-**How they work together**: The sre-agents:remediator agent (invoked) uses this skill's output to determine remediation strategy (batch vs individual, Kubernetes pod eviction requirements, maintenance window needs, etc.).
+**How they work together**: The `/remediation` skill uses this skill's output to determine remediation strategy (batch vs individual, Kubernetes pod eviction requirements, maintenance window needs, etc.).
 
 ## Workflow
 
@@ -493,7 +493,7 @@ To improve system classification:
 - **playbook-generator**: Consumes context to generate appropriate remediation playbook
 - **remediation-verifier**: Uses system context to verify remediation on correct systems
 
-**Orchestration Example** (from sre-agents:remediator agent - invoked):
+**Orchestration Example** (from `/remediation` skill):
 1. Agent invokes cve-impact → Gets risk level
 2. Agent invokes system-context skill → Gets deployment architecture
 3. Agent determines strategy: "Staging-first deployment recommended"

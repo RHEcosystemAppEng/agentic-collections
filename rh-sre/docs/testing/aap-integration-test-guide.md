@@ -6,7 +6,7 @@ sources:
     date_accessed: 2024-01-20
 tags: [testing, aap-integration, workflow-verification, remediation-testing]
 semantic_keywords: [aap integration testing, workflow verification, remediation test]
-use_cases: [remediator, playbook-executor]
+use_cases: [remediation, playbook-executor]
 related_docs: [aap-job-execution.md, playbook-integration-aap.md]
 last_updated: 2024-01-20
 ---
@@ -401,7 +401,7 @@ Would you like to:
 **Objective**: Test complete CVE remediation from analysis to verification.
 
 **Steps**:
-1. **Invoke remediator agent** with a known CVE
+1. **Invoke remediation skill** with a known CVE
 2. **Impact Analysis**: Review CVE risk assessment
 3. **CVE Validation**: Confirm CVE is valid and has remediation
 4. **System Context**: Review affected systems and strategy
@@ -444,7 +444,7 @@ User: "Remediate CVE-YYYY-NNNNN on my test systems"
 **Objective**: Test batch remediation of multiple CVEs.
 
 **Steps**:
-1. Invoke remediator agent with 2-3 CVEs
+1. Invoke remediation skill with 2-3 CVEs
 2. Verify agent handles batch processing
 3. Confirm single consolidated playbook generated
 4. Execute remediation

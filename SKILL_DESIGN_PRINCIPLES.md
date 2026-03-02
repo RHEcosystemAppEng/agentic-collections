@@ -86,6 +86,7 @@ Delegate to skills, not raw MCP tools.
 
 **✅ Complete Example:**
 ```yaml
+---
 description: |
   Analyze CVE impact without remediation.
 
@@ -94,7 +95,10 @@ description: |
   - "Show CVEs affecting systems"
   - User mentions "CVEs", "vulnerabilities"
 
-  NOT for remediation (use remediator agent instead).
+  NOT for remediation actions (use remediation skill instead).
+model: inherit        # Root: Runtime configuration required before skill execution
+color: blue           # Root: UX - IDE sidebar/terminal theme
+---
 ```
 
 **Rationale**: Minimizes token usage at initialization; prevents skill misuse.
@@ -105,7 +109,53 @@ description: |
 
 Every skill MUST include complete Dependencies section.
 
-**Required Structure:**
+**Standard Color Values** (Cursor, Claude Code):
+
+| Color | Use Case |
+|-------|----------|
+| blue, cyan | Analysis, read-only |
+| green | Success, deployment |
+| yellow | Caution, validation |
+| red | Critical, security, remediation |
+| magenta | Creative, generation |
+
+## 4. Skill-to-Skill Invocation Standard
+
+**Standard format**: Use the slash format `/skill-name` when one skill or agent invokes another.
+
+```markdown
+**How to invoke**: Execute the `/mcp-lightspeed-validator` skill
+**Action**: Execute the `/mcp-aap-validator` skill
+```
+
+**❌ Avoid** - Skill tool format (inconsistent):
+```markdown
+Use the Skill tool:
+  skill: "mcp-lightspeed-validator"
+```
+
+**✅ Use** - Slash format (consistent across rh-sre):
+```markdown
+Execute the `/mcp-lightspeed-validator` skill
+Invoke the `/playbook-executor` skill
+```
+
+**Applies to**:
+- Skill → skill (remediation invokes `/cve-validation`, `/playbook-generator`, etc.)
+- Skill → skill prerequisites (cve-validation invokes `/mcp-lightspeed-validator`)
+- Skill → skill delegation (playbook-generator delegates to `/playbook-executor`)
+
+**Rationale**: Single format across agent and skill invocations improves consistency and reduces confusion.
+
+## 5. Dependencies Declaration
+
+Every skill MUST include a **Dependencies** section listing:
+- **Skills**: Other skills this skill may invoke
+- **MCP Tools**: Specific tools from MCP servers
+- **MCP Servers**: Required MCP server names
+- **Documentation**: Reference docs for context
+
+**Required Format**:
 ```markdown
 ## Dependencies
 
@@ -126,9 +176,7 @@ Every skill MUST include complete Dependencies section.
 
 **Rationale**: Makes dependencies explicit for debugging and troubleshooting.
 
----
-
-### 5. Human-in-the-Loop Requirements
+## 6. Human-in-the-Loop Requirements
 
 Skills performing critical operations MUST require explicit confirmation.
 
@@ -158,9 +206,15 @@ Skills performing critical operations MUST require explicit confirmation.
 
 **Rationale**: Prevents unintended automation; maintains user control; reduces accidental data loss.
 
----
+**When to Use**:
+- Playbook execution (ansible-mcp-server)
+- System modifications (package updates, config changes)
+- Multi-system operations (batch remediation)
+- Data deletion or irreversible actions
 
-### 6. Mandatory Skill Sections
+## 7. Mandatory Skill Sections
+
+Every skill MUST include these sections in order:
 
 **Required Section Order:**
 1. YAML frontmatter
@@ -219,7 +273,7 @@ See Principle #7 for details.
 
 ---
 
-### 7. MCP Server Availability Verification
+## 8. MCP Server Availability Verification
 
 Prerequisites MUST include verification and human notification protocol.
 

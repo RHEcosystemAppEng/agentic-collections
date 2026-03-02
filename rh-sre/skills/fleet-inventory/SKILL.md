@@ -1,7 +1,7 @@
 ---
 name: fleet-inventory
 description: |
-  Query and display Red Hat Lightspeed managed system inventory. Use this skill for information-gathering requests about the fleet, registered systems, or inventory queries. This skill focuses on discovery and listing only - for remediation actions, transition to the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent).
+  Query and display Red Hat Lightspeed managed system inventory. Use this skill for information-gathering requests about the fleet, registered systems, or inventory queries. This skill focuses on discovery and listing only - for remediation actions, transition to the `/remediation` skill.
 
   **When to use this skill**:
   - "Show the managed fleet"
@@ -10,7 +10,7 @@ description: |
   - "How many RHEL 8 systems do we have?"
   - "Show me production systems"
 
-  **When NOT to use this skill** (use sre-agents:remediator agent instead):
+  **When NOT to use this skill** (use `/remediation` skill instead):
   - "Remediate CVE-X on these systems"
   - "Create a playbook for..."
   - "Patch system Y"
@@ -38,7 +38,7 @@ This skill queries Red Hat Lightspeed to retrieve and display information about 
 
 ### Prerequisite Validation
 
-**CRITICAL**: Before executing any operations, invoke the [mcp-lightspeed-validator](../mcp-lightspeed-validator/SKILL.md) skill to verify MCP server availability.
+**CRITICAL**: Before executing any operations, execute the `/mcp-lightspeed-validator` skill to verify MCP server availability.
 
 See **Step 0** in the Workflow section below for implementation details.
 
@@ -54,27 +54,23 @@ See **Step 0** in the Workflow section below for implementation details.
 - Count systems matching criteria
 - Verify system registration status
 
-**Use the sre-agents:remediator agent when you need**:
+**Use the `/remediation` skill when you need**:
 - Remediate vulnerabilities on systems
 - Generate or execute playbooks
 - Perform infrastructure changes
 - End-to-end CVE remediation workflows
 
-**How they work together**: Use this skill for discovery ("What systems are affected?"), then transition to the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent) for action ("Remediate those systems").
+**How they work together**: Use this skill for discovery ("What systems are affected?"), then transition to the `/remediation` skill for action ("Remediate those systems").
 
 ## Workflow
 
 ### Step 0: Validate Lightspeed MCP Prerequisites
 
-**Action**: Invoke the [mcp-lightspeed-validator](../mcp-lightspeed-validator/SKILL.md) skill
+**Action**: Execute the `/mcp-lightspeed-validator` skill
 
 **Note**: Can skip if validation was performed earlier in this session and succeeded. See [Validation Freshness Policy](../mcp-lightspeed-validator/SKILL.md#validation-freshness-policy).
 
-**How to invoke**:
-```
-Use the Skill tool:
-  skill: "mcp-lightspeed-validator"
-```
+**How to invoke**: Execute the `/mcp-lightspeed-validator` skill
 
 **Handle validation result**:
 - **If validation PASSED**: Continue to Step 1
@@ -273,7 +269,7 @@ get_cve_systems(
 ```
 Status: "Vulnerable"
 → CVE affects this system, patch not applied
-→ Action: Suggest remediation via sre-agents:remediator agent
+→ Action: Suggest remediation via `/remediation` skill
 
 Status: "Patched"
 → CVE previously affected, now remediated
@@ -322,13 +318,13 @@ Retrieved from Red Hat Lightspeed on YYYY-MM-DDTHH:MM:SSZ
 
 ### Step 5: Offer Remediation Transition
 
-When appropriate, suggest transitioning to the sre-agents:remediator agent:
+When appropriate, suggest transitioning to the `/remediation` skill:
 
 ```markdown
 ## Next Steps
 
 **For CVE Remediation**:
-If you need to remediate vulnerabilities on any of these systems, I can help using the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent):
+If you need to remediate vulnerabilities on any of these systems, I can help using the `/remediation` skill:
 
 Examples:
 - "Remediate CVE-2024-1234 on web-server-01"
@@ -370,7 +366,7 @@ Examples:
 - `system-context` - Get detailed system configuration for specific hosts
   - Use after: Fleet discovery identifies systems needing deeper investigation
 
-- `sre-agents:remediator` (agent) - Transition to remediation workflows after discovery (invoke the `sre-agents:remediator` agent)
+- `/remediation` (skill) - Transition to remediation workflows after discovery
   - Use after: "Show affected systems" → "Remediate those systems"
 
 ### Reference Documentation
@@ -395,7 +391,7 @@ CVSS 8.1, Critical severity, affects httpd package
     ↓
 User: "Remediate CVE-2024-1234 on all production systems"
     ↓
-sre-agents:remediator agent (action - invoke the `sre-agents:remediator` agent)
+`/remediation` skill (action)
     ↓
 Playbook generated and executed
 ```
@@ -478,7 +474,7 @@ Retrieved from Red Hat Lightspeed on 2024-01-20T10:30:00Z
 
 ## Next Steps
 
-**To remediate these systems**, use the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent):
+**To remediate these systems**, use the `/remediation` skill:
 - Single system: "Remediate CVE-2024-1234 on web-server-01"
 - Batch production: "Remediate CVE-2024-1234 on all production systems"
 - All vulnerable: "Create playbook for CVE-2024-1234 affecting these 12 systems"
@@ -621,9 +617,9 @@ Error: Unable to retrieve system inventory from Red Hat Lightspeed
    - Check .mcp.json has lightspeed-mcp entry
    - Verify container is running: podman ps | grep insights
 
-2. Check credentials:
-   - echo $LIGHTSPEED_CLIENT_ID
-   - echo $LIGHTSPEED_CLIENT_SECRET
+2. Check credentials (never echo values—report presence/absence only):
+   - test -n "$LIGHTSPEED_CLIENT_ID" && echo "LIGHTSPEED_CLIENT_ID: set" || echo "LIGHTSPEED_CLIENT_ID: not set"
+   - test -n "$LIGHTSPEED_CLIENT_SECRET" && echo "LIGHTSPEED_CLIENT_SECRET: set" || echo "LIGHTSPEED_CLIENT_SECRET: not set"
    - Verify credentials at https://console.redhat.com/settings/service-accounts
 
 3. Test connection manually:
@@ -673,7 +669,7 @@ The following systems have not checked in recently (> 7 days):
 1. **Start broad, then filter** - Retrieve full inventory first, then apply user-requested filters
 2. **Group by meaningful categories** - Environment, RHEL version, tier/function for clarity
 3. **Highlight stale systems** - Warn users about systems with potentially outdated vulnerability data
-4. **Offer remediation transitions** - Always suggest next steps using sre-agents:remediator agent (the `sre-agents:remediator` agent)
+4. **Offer remediation transitions** - Always suggest next steps using `/remediation` skill
 5. **Use clear formatting** - Tables for detailed lists, summaries for high-level overviews
 6. **Include percentages** - Help users understand fleet composition at a glance
 7. **Show last check-in times** - Indicate data freshness and system health
@@ -701,7 +697,7 @@ Response: CVSS 8.1, Critical severity
   ↓
 User: "Remediate CVE-2024-1234 on all affected systems"
   ↓
-sre-agents:remediator agent (orchestrates remediation - invoke the `sre-agents:remediator` agent)
+`/remediation` skill (orchestrates remediation)
   ↓
 Complete: Playbook generated and executed
 ```
@@ -722,7 +718,7 @@ Response: 3 critical CVEs
   ↓
 User: "Create remediation plan"
   ↓
-sre-agents:remediator agent (multi-CVE workflow - invoke the `sre-agents:remediator` agent)
+`/remediation` skill (multi-CVE workflow)
 ```
 
 **Information-First Principle**:
@@ -730,7 +726,7 @@ sre-agents:remediator agent (multi-CVE workflow - invoke the `sre-agents:remedia
 Always follow this sequence:
 1. What systems do we have? (fleet-inventory)
 2. What are they vulnerable to? (cve-impact)
-3. How do we fix it? (sre-agents:remediator agent via the `sre-agents:remediator` agent)
+3. How do we fix it? (`/remediation` skill)
 
 This ensures informed decisions before taking remediation actions.
 ```

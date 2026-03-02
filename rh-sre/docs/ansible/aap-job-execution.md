@@ -10,7 +10,7 @@ sources:
     date_accessed: 2024-01-20
 tags: [aap, job-execution, playbook, dry-run, check-mode]
 semantic_keywords: [aap job execution, ansible check mode, dry-run remediation, job template requirements, aap url structure]
-use_cases: [playbook-executor, remediator]
+use_cases: [playbook-executor, remediation]
 related_docs: [playbook-integration-aap.md, cve-remediation-templates.md]
 last_updated: 2024-01-20
 ---

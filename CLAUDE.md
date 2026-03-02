@@ -26,9 +26,7 @@ Each pack follows this structure:
 ├── .claude-plugin/      # Claude Code plugin metadata
 │   └── plugin.json      # Name, version, description, author, license
 ├── .mcp.json           # MCP server configurations (uses env vars for credentials)
-├── agents/             # Multi-step workflow orchestrators
-│   └── <agent>.md      # Agent definition with YAML frontmatter
-├── skills/             # Specialized task executors
+├── skills/             # Specialized task executors (including orchestration skills)
 │   └── <skill>/
 │       └── SKILL.md    # Skill definition with YAML frontmatter
 └── docs/               # AI-optimized knowledge base (rh-sre only currently)
@@ -39,7 +37,7 @@ Each pack follows this structure:
 
 ## Working with Agentic Collections
 
-### Skills vs Agents
+### Skills
 
 **Skills** (`skills/<skill-name>/SKILL.md`):
 - Single-purpose task executors
@@ -48,14 +46,7 @@ Each pack follows this structure:
 - Structure: YAML frontmatter + implementation guide
 - Example: `cve-impact` (CVE risk assessment), `playbook-generator` (Ansible generation)
 
-**Agents** (`agents/<agent>.md`):
-- Multi-step workflow orchestrators
-- Delegate to multiple skills in sequence
-- Invoked via the `Task` tool with `subagent_type`
-- Structure: YAML frontmatter + workflow definition
-- Example: `remediator` (orchestrates 5 skills for end-to-end CVE remediation)
-
-**Key Pattern**: Agents orchestrate skills; skills encapsulate tools. Never call MCP tools directly - always go through skills.
+**Key Pattern**: Skills encapsulate tools; orchestration skills invoke other skills. Never call MCP tools directly - always go through skills. For end-to-end CVE remediation, use the `/remediation` skill which orchestrates 6 specialized skills.
 
 ## Skill and Agent Requirements
 
@@ -151,7 +142,6 @@ last_updated: YYYY-MM-DD
 
 ### Files
 - Skills: `skills/<skill-name>/SKILL.md` (uppercase SKILL.md)
-- Agents: `agents/<agent-name>.md` (lowercase, no folder)
 - Docs: Lowercase with dashes, categorized by directory
 
 ## Development Workflow
@@ -163,8 +153,7 @@ last_updated: YYYY-MM-DD
 3. Create `skills/` directory
 4. Optional: Add `.claude-plugin/plugin.json` for Claude Code
 5. Optional: Add `.mcp.json` for MCP server integrations
-6. Optional: Add `agents/` for multi-step workflows
-7. Update main `README.md` table with link
+6. Update main `README.md` table with link
 
 ### Adding a Skill
 
@@ -184,15 +173,6 @@ last_updated: YYYY-MM-DD
 
 **Collection-Specific Standards:**
 - **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
-
-### Adding an Agent
-
-1. Create `agents/<agent-name>.md`
-2. Follow skill requirements in [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) (agents use same structure)
-3. Define YAML frontmatter (name, description, model, tools)
-4. Document workflow that orchestrates multiple skills
-5. Provide clear examples of when to use agent vs individual skills
-6. Test with `Task` tool invocation
 
 ### Adding Documentation (rh-sre pattern)
 
@@ -221,7 +201,7 @@ last_updated: YYYY-MM-DD
 
 The `rh-sre` pack is the most complete implementation, demonstrating:
 - Full skill orchestration (10 skills)
-- Agent-based workflows (remediator agent)
+- Orchestration skills (remediation skill orchestrates 6 skills)
 - AI-optimized documentation system
 - MCP server integration
 - Red Hat Lightspeed platform integration
@@ -245,7 +225,7 @@ When creating new collections, follow the pattern that best matches your needs:
 
 ### Core Architecture
 1. **Skills encapsulate tools** - Never call MCP tools directly; always invoke skills
-2. **Agents orchestrate skills** - Complex workflows delegate to specialized skills
+2. **Orchestration skills invoke other skills** - Complex workflows delegate to specialized skills
 3. **agentskills.io compliance** - All skills follow the official specification
 4. **Progressive disclosure** - Load docs incrementally based on task needs
 

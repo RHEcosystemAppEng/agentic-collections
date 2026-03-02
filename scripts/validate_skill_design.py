@@ -36,7 +36,7 @@ CRITICAL_SKILL_KEYWORDS = [
     "executor",
     "playbook-executor",
     "job-template-creator",
-    "remediator",
+    "remediation",
 ]
 
 # Required sections (DP6) - Prerequisites is optional
