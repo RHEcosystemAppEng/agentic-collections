@@ -200,8 +200,8 @@ Skills performing critical operations MUST require explicit confirmation.
 2. **Typed Confirmation**
    - Ask: "Type exact resource name to confirm: <name>"
    - Verify exact match, cancel if mismatch
-   - Ask: "Type 'DELETE' to proceed"
-   - Only proceed on exact match
+  - Ask: "Type 'DELETE' to proceed"
+  - Only proceed on exact match
 ```
 
 **Rationale**: Prevents unintended automation; maintains user control; reduces accidental data loss.

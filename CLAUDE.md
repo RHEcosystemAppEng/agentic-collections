@@ -174,6 +174,15 @@ last_updated: YYYY-MM-DD
 **Collection-Specific Standards:**
 - **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
 
+### Adding an Agent
+
+1. Create `agents/<agent-name>.md`
+2. Follow skill requirements in [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) (agents use same structure)
+3. Define YAML frontmatter (name, description, model, tools)
+4. Document workflow that orchestrates multiple skills
+5. Provide clear examples of when to use agent vs individual skills
+6. Test with `Task` tool invocation
+
 ### Adding Documentation (rh-sre pattern)
 
 1. Create doc in appropriate category: `docs/{rhel,ansible,openshift,insights,references}/`
@@ -225,7 +234,7 @@ When creating new collections, follow the pattern that best matches your needs:
 
 ### Core Architecture
 1. **Skills encapsulate tools** - Never call MCP tools directly; always invoke skills
-2. **Orchestration skills invoke other skills** - Complex workflows delegate to specialized skills
+2. **Orchestration skills invoke other skills** - Complex workflows delegate to specialized skills; agents orchestrate skills
 3. **agentskills.io compliance** - All skills follow the official specification
 4. **Progressive disclosure** - Load docs incrementally based on task needs
 
