@@ -12,7 +12,7 @@ Read this reference when presenting plans for user validation.
 ```
 ## Remediation: CVE-XXXX-YYYY
 
-**Planned tasks** (in order):
+**Planned tasks** (in order—use this exact order for TodoWrite/task lists; display order must match execution order):
 1. Validate MCP (Lightspeed, AAP)
 2. Impact analysis (assess CVE risk)
 3. CVE validation (remediatable gate)

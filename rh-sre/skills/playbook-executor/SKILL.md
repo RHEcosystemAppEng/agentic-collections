@@ -1,15 +1,11 @@
 ---
 name: playbook-executor
 description: |
-  **CRITICAL**: This skill must be used for Ansible playbook execution via AAP. DO NOT use raw MCP tools directly.
+  **CRITICAL**: Use for Ansible playbook execution via AAP. DO NOT call AAP MCP tools directly.
 
-  Execute Ansible remediation playbooks through AAP (Ansible Automation Platform) with comprehensive job management, dry-run capabilities, and detailed reporting. Use this skill after generating a playbook to execute it on production systems with proper validation and monitoring.
+  Execute remediation playbooks with job management, dry-run, and reporting. Use after playbook-generator.
 
-  This skill orchestrates AAP MCP tools (job_templates_launch_retrieve, jobs_retrieve, jobs_stdout_retrieve, jobs_job_events_list, jobs_job_host_summaries_list) to provide production-grade playbook execution with dry-run testing, real-time progress monitoring, and comprehensive reporting.
-
-  **IMPORTANT**: ALWAYS use this skill instead of calling AAP MCP tools directly.
-
-  **Git Flow**: When the template's playbook path differs from the generated playbook, you MUST perform Git Flow (commit, push, sync) BEFORE launching any job. Do NOT launch without updating the playbook in the repo first—AAP executes from synced content.
+  **Git Flow**: If template playbook path ≠ generated playbook, perform Git Flow (commit, push, sync) BEFORE launch.
 ---
 
 # AAP Playbook Executor Skill

@@ -486,16 +486,3 @@ To improve system classification:
 6. **Consider batch size** - Balance speed vs risk (5-10 systems per batch recommended)
 7. **Plan for rollback** - Always have a backup strategy (snapshots, maintenance windows)
 8. **Use pagination for large fleets** - If get_cve_systems returns 100+ systems, use limit/offset parameters
-
-## Integration with Other Skills
-
-- **cve-impact**: Provides CVE severity to inform criticality assessment
-- **playbook-generator**: Consumes context to generate appropriate remediation playbook
-- **remediation-verifier**: Uses system context to verify remediation on correct systems
-
-**Orchestration Example** (from `/remediation` skill):
-1. Agent invokes cve-impact → Gets risk level
-2. Agent invokes system-context skill → Gets deployment architecture
-3. Agent determines strategy: "Staging-first deployment recommended"
-4. Agent invokes playbook-generator with environment context → Gets environment-aware playbook
-5. Agent provides execution guidance → User deploys safely

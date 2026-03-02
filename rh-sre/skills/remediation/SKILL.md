@@ -67,6 +67,8 @@ Execute skills in this order. **MANDATORY**: Use actual Skill tool invocations, 
 
 **Action**: Present the planned task list using **Part A** of [references/01-remediation-plan-template.md](references/01-remediation-plan-template.md). Show the 7 tasks (validate MCP → impact → validate CVE → context → playbook → execute → verify) and ask "Proceed with this plan?"
 
+**Task list ordering** (CRITICAL): If using TodoWrite or task list UI, create tasks **in workflow order** (Step 0, 1, 2, 3, 4, 5, 6). Do NOT create in completion order or random order—display order must match execution order.
+
 **Wait for explicit user response** ("yes" or "proceed") before invoking Step 0. If "abort" → stop.
 
 ### Step 0: Validate MCP Prerequisites
