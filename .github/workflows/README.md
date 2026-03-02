@@ -347,8 +347,8 @@ dos2unix scripts/validate-skills.sh
 
 If the validator reports errors for valid skills:
 1. Review the validation logic in `scripts/validate-skills.sh`
-2. Check if your skill follows CLAUDE.md design principles exactly
-3. Review SKILL_CHECKLIST.md for specific formatting requirements
+2. Check if your skill follows SKILL_DESIGN_PRINCIPLES.md requirements exactly
+3. Verify agentskills.io specification compliance
 4. Open an issue if the validator has a bug
 
 ## Maintenance

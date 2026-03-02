@@ -4,8 +4,8 @@
 # Universal skill validation for all agentic collections
 #
 # Validates skills against:
-# - SKILL_CHECKLIST.md (Tier 1: agentskills.io specification)
-# - SKILL_CHECKLIST.md (Tier 2: Repository design principles)
+# - Tier 1: agentskills.io specification (via run-skill-linter.sh)
+# - Tier 2: Repository design principles (SKILL_DESIGN_PRINCIPLES.md)
 #
 # Usage:
 #   ./scripts/validate-skills.sh [path]           # Validate specific skill or collection
@@ -649,7 +649,7 @@ main() {
 
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo -e "${BLUE}Universal Skill Validator${NC}"
-    echo "Validates skills against SKILL_CHECKLIST.md"
+    echo "Validates skills against SKILL_DESIGN_PRINCIPLES.md"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     # Determine target paths

@@ -144,7 +144,7 @@ printf "${BOLD}%-42s%s${NC}\n" "Metric" "Count"
 echo "────────────────────────────────────────────────────────────────"
 printf "%-42s${BLUE}%s${NC}\n" "Total Skills:" "$TOTAL_SKILLS"
 printf "✅ %-39s${GREEN}%s${NC}\n" "Passed:" "$PASSED_SKILLS"
-printf "⚠️  %-40s${YELLOW}%s${NC}\n" "Passed with Warnings:" "$WARNED_SKILLS"
+printf "⚠️ %-40s${YELLOW}%s${NC}\n" "Passed with Warnings:" "$WARNED_SKILLS"
 printf "❌ %-39s${RED}%s${NC}\n" "Failed:" "$FAILED_SKILLS"
 echo ""
 

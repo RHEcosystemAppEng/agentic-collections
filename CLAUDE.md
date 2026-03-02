@@ -59,22 +59,24 @@ Each pack follows this structure:
 
 ## Skill and Agent Requirements
 
-<<<<<<< Updated upstream
-See [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for the complete design principles, templates, and rationale. Validate compliance with `make validate-skill-design`.
-=======
-**CRITICAL:** EVERY SKILL and AGENT must be created and validated against [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md).
-
-**No exceptions.** All skills must comply with:
-- **Tier 1:** agentskills.io specification compliance (MANDATORY)
-- **Tier 2:** Repository design principles and standards (MANDATORY)
+**CRITICAL:** EVERY SKILL and AGENT must comply with:
+- **Tier 1:** agentskills.io specification (AUTOMATED via linter)
+- **Tier 2:** Repository design principles (MANUAL review)
 
 **Before committing any skill:**
-1. Review [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) completely
-2. Ensure all mandatory requirements are met
-3. Validate using: `./scripts/validate-skills.sh path/to/skill/`
 
-See SKILL_CHECKLIST.md for complete requirements, examples, and validation criteria.
->>>>>>> Stashed changes
+1. **Run automated validation (Tier 1):**
+   ```bash
+   ./scripts/run-skill-linter.sh skills/skill-name/
+   ```
+
+2. **Manual review (Tier 2):**
+   - Review [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for complete requirements
+   - Use appropriate template (general or collection-specific)
+   - Verify all design principles are followed
+
+**Documentation:**
+- [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) - Complete design principles, templates, and rationale
 
 ### MCP Server Integration
 
@@ -167,27 +169,26 @@ last_updated: YYYY-MM-DD
 ### Adding a Skill
 
 1. Create `skills/<skill-name>/SKILL.md`
-<<<<<<< Updated upstream
-2. Define YAML frontmatter with root-level fields (name, description, model, color) and optional `metadata` for custom fields (author, priority, etc.). See [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for the 2026 Agentic Skills structure.
-3. Document workflow with MCP tool references
-4. Include concrete examples
+2. Define YAML frontmatter with mandatory fields:
+   - `name`, `description` (agentskills.io spec)
+   - `model` (inherit|sonnet|haiku), `color` (cyan|green|blue|yellow|red) - Repository requirement
+   - Optional: `metadata` for custom fields (author, priority, version)
+3. Follow [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for:
+   - Section structure and ordering
+   - Prerequisites with verification
+   - Workflow with precise parameters
+   - Dependencies declaration
+4. Include concrete examples and complete error handling
 5. Test with `Skill` tool invocation
+6. Validate with `./scripts/run-skill-linter.sh skills/<skill-name>/`
 
 **Collection-Specific Standards:**
 - **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
-=======
-2. Follow requirements in [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md)
-3. Define YAML frontmatter (name, description, model)
-4. Document Prerequisites, When to Use, Workflow, and Dependencies sections
-5. Include concrete examples and error handling
-6. Test with `Skill` tool invocation
-7. Validate with `./scripts/validate-skills.sh skills/<skill-name>/`
->>>>>>> Stashed changes
 
 ### Adding an Agent
 
 1. Create `agents/<agent-name>.md`
-2. Follow skill requirements in [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) (agents use same structure)
+2. Follow skill requirements in [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) (agents use same structure)
 3. Define YAML frontmatter (name, description, model, tools)
 4. Document workflow that orchestrates multiple skills
 5. Provide clear examples of when to use agent vs individual skills
@@ -258,4 +259,6 @@ When creating new collections, follow the pattern that best matches your needs:
 9. **Production-ready examples** - No toy code, include error handling
 10. **Persona-focused design** - Each collection serves specific user roles
 
-**See [SKILL_CHECKLIST.md](./SKILL_CHECKLIST.md) for complete skill requirements, design principles, and validation criteria.**
+**Validation:**
+- Design principles and requirements: [SKILL_DESIGN_PRINCIPLES.md](./SKILL_DESIGN_PRINCIPLES.md)
+- Automated linter (Tier 1): `./scripts/run-skill-linter.sh`
