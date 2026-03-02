@@ -61,14 +61,15 @@ pass "SKILL.md exists"
 # 3. Extract frontmatter
 CONTENT=$(cat "$SKILL_FILE")
 
-# Check for frontmatter delimiters
-if ! echo "$CONTENT" | head -1 | grep -q '^---$'; then
+# Check for frontmatter delimiters (read from file to avoid broken pipe with set -o pipefail)
+FIRST_LINE=$(head -1 "$SKILL_FILE")
+if [ "$FIRST_LINE" != "---" ]; then
   fail "Missing frontmatter opening delimiter (---)"
   exit 2
 fi
 
-# Find closing delimiter (skip first line)
-CLOSING_LINE=$(echo "$CONTENT" | tail -n +2 | grep -n '^---$' | head -1 | cut -d: -f1)
+# Find closing delimiter (skip first line) - use awk to avoid broken pipe (head -1 exits early)
+CLOSING_LINE=$(awk 'NR>1 && /^---$/{print NR-1; exit}' "$SKILL_FILE")
 if [ -z "$CLOSING_LINE" ]; then
   fail "Missing frontmatter closing delimiter (---)"
   exit 2
@@ -172,7 +173,7 @@ if [ -n "$TOOLS" ]; then
 fi
 # FAIL if YAML multi-line array detected (allowed-tools:\n  - item)
 if echo "$FRONTMATTER" | grep -q '^allowed-tools:$'; then
-  NEXT_LINE=$(echo "$FRONTMATTER" | grep -A1 '^allowed-tools:$' | tail -1)
+  NEXT_LINE=$(echo "$FRONTMATTER" | grep -A1 '^allowed-tools:$' | sed -n '2p')
   if echo "$NEXT_LINE" | grep -qE '^[[:space:]]*-[[:space:]]'; then
     fail "allowed-tools must be space-delimited, not YAML array"
   fi
@@ -215,15 +216,15 @@ fi
 # 10. Content analysis - strip fenced code blocks for checks that need prose-only content
 CONTENT_NO_FENCES=$(awk '/^```/{skip=!skip; next} !skip{print}' "$SKILL_FILE")
 
-# 10a. Check for ASCII art outside fenced code blocks (WARN)
-if echo "$CONTENT_NO_FENCES" | grep -qE '[─│┌┐└┘├┤┬┴┼╭╮╯╰═║╔╗╚╝╠╣╦╩╬↑↓←→↔⇒⇐⇔▲▼◄►]{3,}'; then
+# 10a. Check for ASCII art outside fenced code blocks (WARN) - grep (no -q) reads full input to avoid broken pipe
+if grep -E '[─│┌┐└┘├┤┬┴┼╭╮╯╰═║╔╗╚╝╠╣╦╩╬↑↓←→↔⇒⇐⇔▲▼◄►]{3,}' <<< "$CONTENT_NO_FENCES" > /dev/null; then
   warn "ASCII art detected outside code blocks - use plain lists or tables"
 else
   pass "No ASCII art outside code blocks"
 fi
 
 # 10b. Check for persona statements outside fenced code blocks (FAIL)
-if echo "$CONTENT_NO_FENCES" | grep -qiE '^[[:space:]]*You are (a|an|the) '; then
+if grep -iE '^[[:space:]]*You are (a|an|the) ' <<< "$CONTENT_NO_FENCES" > /dev/null; then
   fail "Persona statement detected ('You are a/an/the...') - use Audience/Goal framing"
 else
   pass "No persona statements"
