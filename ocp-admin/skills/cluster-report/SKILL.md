@@ -2,13 +2,16 @@
 name: cluster-report
 description: |
   Generate a consolidated health report across multiple OpenShift clusters.
+  Verifies each kubeconfig context is a genuine OpenShift cluster before
+  reporting. Non-OpenShift contexts are skipped by default.
   Collects node resources (CPU, memory, GPUs), namespace counts, and pod
-  status from all kubeconfig contexts into a single comparison view.
+  status into a single comparison view.
   Use when:
   - "Show me a report across all clusters"
   - "Compare cluster health"
   - "Multi-cluster status overview"
   - "How are my clusters doing?"
+  - "Include all clusters including non-OpenShift" (override default filter)
   NOT for single-cluster deep-dives or troubleshooting specific pods.
 model: inherit
 color: cyan
@@ -26,6 +29,7 @@ Generate a unified health and resource report across multiple OpenShift/Kubernet
 
 **Required MCP Tools** (all from `openshift` server):
 - `configuration_contexts_list`
+- `resources_get`
 - `nodes_top`
 - `resources_list`
 - `namespaces_list`
@@ -59,11 +63,77 @@ Generate a unified health and resource report across multiple OpenShift/Kubernet
 
 Check that `KUBECONFIG` is set. **Never expose the path or contents** — only confirm it is set. If not set, stop and instruct the user to `export KUBECONFIG=/path/to/kubeconfig`.
 
-### Step 1: Discover Available Clusters
+### Step 1: Discover and Verify Clusters
+
+#### Step 1a: List Contexts
 
 **MCP Tool**: `configuration_contexts_list`
 
-Present the discovered clusters (name and server URL) to the user and ask which to include.
+Collect all context names and server URLs. Do NOT present results to the user yet.
+
+#### Step 1b: Verify OpenShift Clusters
+
+For **each** context discovered in Step 1a, probe for the OpenShift `ClusterVersion` resource:
+
+**MCP Tool**: `resources_get`
+
+| Parameter | Value |
+|---|---|
+| `apiVersion` | `config.openshift.io/v1` |
+| `kind` | `ClusterVersion` |
+| `name` | `version` |
+| `context` | `<context-name>` |
+
+**Classification rules**:
+
+| Probe Result | Classification | Default Behavior |
+|---|---|---|
+| Success (resource returned) | **OpenShift** — extract version from `.status.desired.version` | Include |
+| 403 Forbidden | **OpenShift (unverified)** — API group exists, RBAC restricts access | Include (version shown as "unknown") |
+| 404 / resource not found | **Non-OpenShift** (vanilla Kubernetes or other distribution) | Exclude |
+| Timeout / connection refused / 401 | **Unreachable** | Always exclude |
+
+**Performance**: Issue all `resources_get` calls in parallel (one per context) since they are independent.
+
+#### Step 1c: Present Verification Results
+
+Present a categorized summary to the user:
+
+```markdown
+## Cluster Discovery Results
+
+### OpenShift Clusters (will be included in report)
+
+| Context | Server | OpenShift Version |
+|---------|--------|-------------------|
+| prod-us | https://api.prod-us.example.com:6443 | 4.16.3 |
+| staging | https://api.staging.example.com:6443 | 4.15.12 |
+
+### Non-OpenShift Clusters (excluded by default)
+
+| Context | Server | Reason |
+|---------|--------|--------|
+| dev-k8s | https://dev-k8s.example.com:6443 | No ClusterVersion resource (vanilla Kubernetes) |
+
+### Unreachable Clusters (excluded)
+
+| Context | Server | Error |
+|---------|--------|-------|
+| old-cluster | https://old.example.com:6443 | Connection refused |
+
+**Proceeding with 2 OpenShift clusters.** To include non-OpenShift clusters, say "include all clusters".
+```
+
+**Presentation rules**:
+- Omit any section that has no entries (e.g., skip "Non-OpenShift" section if all contexts are OpenShift).
+- If ALL contexts are OpenShift, simplify to: "All N contexts are verified OpenShift clusters."
+- If ALL contexts are non-OpenShift, inform the user: "No OpenShift clusters found. To include non-OpenShift clusters, say 'include all clusters'."
+
+**User override handling**:
+
+If the user responds with "include all clusters", "include non-OpenShift", "report on all clusters", or any clear intent to include non-OpenShift contexts, add them back into the selected set. Unreachable clusters are always excluded.
+
+If the user's **original prompt** (before the skill started) already contains phrases like "all clusters", "including non-OpenShift", or "all contexts", pre-select the override and present verification results as: "Including all clusters as requested."
 
 **WAIT**: Do not proceed until user confirms cluster selection.
 
@@ -110,6 +180,8 @@ Write the manifest to `/tmp/cluster-report-manifest.json` with `$file` reference
     "<context-name>": {
       "context": "<context-name>",
       "server": "<server-url>",
+      "cluster_type": "openshift",
+      "openshift_version": "4.16.3",
       "nodes_top": {"$file": "/tmp/cluster-report/<ctx>-nodes_top.txt"} or null,
       "nodes_list": {"$file": "/tmp/cluster-report/<ctx>-nodes_list.txt"} or null,
       "projects": {"$file": "/tmp/cluster-report/<ctx>-projects.txt"} or null,
@@ -120,6 +192,10 @@ Write the manifest to `/tmp/cluster-report-manifest.json` with `$file` reference
   }
 }
 ```
+
+**Manifest fields from verification**:
+- `cluster_type`: `"openshift"` or `"kubernetes"`. Determined during Step 1b verification.
+- `openshift_version`: The OpenShift version string (e.g., `"4.16.3"`) or `null` for non-OpenShift clusters.
 
 Fields may also be inlined as raw text strings or set to `null` for failed/unavailable data.
 
@@ -147,17 +223,17 @@ Render the structured JSON output as markdown using this template:
 
 ## Cluster Overview
 
-| Cluster | Nodes | CPU (used/total) | Memory (used/total) | GPUs | Projects | Pods (Running/Total) |
-|---------|-------|-------------------|---------------------|------|----------|---------------------|
-| prod-us | 12    | 48/96 cores (50%) | 192/384 GiB (50%)   | 8    | 45       | 312/320             |
-| dev-eu  | 4     | 8/32 cores (25%)  | 32/128 GiB (25%)    | 0    | 12       | 87/92               |
-| **Total** | **16** | **56/128 cores (44%)** | **224/512 GiB (44%)** | **8** | **57** | **399/412** |
+| Cluster | Version | Nodes | CPU (used/total) | Memory (used/total) | GPUs | Projects | Pods (Running/Total) |
+|---------|---------|-------|-------------------|---------------------|------|----------|---------------------|
+| prod-us | OCP 4.16.3 | 12 | 48/96 cores (50%) | 192/384 GiB (50%) | 8    | 45       | 312/320             |
+| dev-eu  | OCP 4.15.12 | 4  | 8/32 cores (25%)  | 32/128 GiB (25%)  | 0    | 12       | 87/92               |
+| **Total** | | **16** | **56/128 cores (44%)** | **224/512 GiB (44%)** | **8** | **57** | **399/412** |
 
 ---
 
 ## Per-Cluster Details
 
-### <cluster> (<server>)
+### <cluster> (<server>) — OpenShift <version>
 
 #### Node Resources
 
@@ -207,7 +283,7 @@ Would you like to:
 - `openshift` — with multi-cluster support enabled
 
 ### Required MCP Tools
-- `configuration_contexts_list`, `nodes_top`, `resources_list`, `namespaces_list`, `projects_list`, `pods_list`
+- `configuration_contexts_list`, `resources_get`, `nodes_top`, `resources_list`, `namespaces_list`, `projects_list`, `pods_list`
 
 ### Helper Scripts
 - [`ocp-admin/scripts/cluster-report/assemble.py`](../../scripts/cluster-report/assemble.py)
@@ -224,6 +300,12 @@ Would you like to:
 
 | Error | Behavior |
 |---|---|
+| ClusterVersion probe succeeds | Classify as OpenShift, include by default |
+| ClusterVersion probe 404/not found | Classify as non-OpenShift, exclude by default |
+| ClusterVersion probe 403 Forbidden | Classify as OpenShift (unverified), include by default with version "unknown" |
+| ClusterVersion probe timeout/unreachable | Classify as unreachable, always exclude |
+| All contexts are non-OpenShift | Inform user, suggest "include all clusters" override |
+| User overrides to include non-OpenShift | Proceed normally; `projects_list` may fail (use `namespaces_list` fallback) |
 | Cluster unreachable | Skip, continue with remaining clusters |
 | Metrics Server missing | Set `nodes_top` to null, show N/A for CPU/memory usage |
 | Auth expired (401) | Skip cluster, suggest `oc login <server-url>` |
@@ -232,16 +314,35 @@ Would you like to:
 
 ## Examples
 
-### Multi-Cluster Report
+### Multi-Cluster Report (Default: OpenShift Only)
 
 **User**: "Show me a report across all clusters"
 
 **Execution**:
 1. Validate KUBECONFIG — OK
-2. `configuration_contexts_list()` discovers: prod-us, dev-eu
-3. User confirms all clusters
-4. Collect `nodes_top`, `resources_list` (Nodes), `projects_list`, `pods_list` for each context
-5. Write manifest to `/tmp/cluster-report-manifest.json`
-6. Run `assemble.py --aggregate` pipeline
-7. Render structured JSON as markdown report
-8. Flag attention items (e.g., "prod-us: 3 pods in Failed state")
+2. `configuration_contexts_list()` discovers: prod-us, dev-eu, dev-k8s
+3. Verify each context with `resources_get(apiVersion="config.openshift.io/v1", kind="ClusterVersion", name="version", context=<ctx>)`
+4. Results: prod-us (OCP 4.16.3), dev-eu (OCP 4.15.12), dev-k8s (non-OpenShift)
+5. Present: "2 OpenShift clusters found. dev-k8s excluded (non-OpenShift). Include all?"
+6. User confirms default selection
+7. Collect data for prod-us and dev-eu only
+8. Write manifest with `cluster_type` and `openshift_version` fields
+9. Run `assemble.py --aggregate` pipeline
+10. Render report with OpenShift version column
+11. Flag attention items
+
+### Multi-Cluster Report (Include All)
+
+**User**: "Report on all my clusters including non-OpenShift"
+
+**Execution**:
+1. Validate KUBECONFIG — OK
+2. `configuration_contexts_list()` discovers: prod-us, dev-eu, dev-k8s
+3. Verify each context (same as above)
+4. Results: prod-us (OCP 4.16.3), dev-eu (OCP 4.15.12), dev-k8s (non-OpenShift)
+5. User's initial message indicates "include all" — present verification results and confirm
+6. User confirms all clusters including dev-k8s
+7. Collect data for all three clusters (`projects_list` fails on dev-k8s, falls back to `namespaces_list`)
+8. Write manifest; dev-k8s has `cluster_type: "kubernetes"`, `openshift_version: null`
+9. Run pipeline, render report
+10. dev-k8s shown as "K8s" in version column
