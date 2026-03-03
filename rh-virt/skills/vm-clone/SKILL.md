@@ -39,69 +39,21 @@ Clone existing virtual machines in OpenShift Virtualization, creating new VMs wi
 
 ### Prerequisite Verification
 
-**Before executing, verify MCP server availability:**
+**Before executing:**
+1. Verify `openshift-virtualization` in `.mcp.json`, `KUBECONFIG` set (never expose value)
+2. Optional: Verify RBAC permissions for VirtualMachine, PVC/DataVolume creation
 
-1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `.mcp.json`
-   - If missing → Report to user with setup instructions
-
-2. **Check Environment Variables**
-   - Verify `KUBECONFIG` is set (check presence only, never expose value)
-   - If missing → Report to user
-
-3. **Check RBAC Permissions** (optional verification)
-   - Verify ServiceAccount can create VirtualMachine resources
-   - Verify ServiceAccount can create PVC/DataVolume resources
-
-**Human Notification Protocol:**
-
-When prerequisites fail:
-
+**When prerequisites fail:**
 ```
 ❌ Cannot execute vm-clone: MCP server 'openshift-virtualization' is not available
 
-📋 Setup Instructions:
-1. Add openshift-virtualization to .mcp.json:
-   {
-     "mcpServers": {
-       "openshift-virtualization": {
-         "command": "podman",
-         "args": [
-           "run",
-           "--rm",
-           "-i",
-           "--network=host",
-           "--userns=keep-id:uid=65532,gid=65532",
-           "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-           "--entrypoint", "/app/kubernetes-mcp-server",
-           "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-           "--kubeconfig", "/kubeconfig",
-           "--toolsets", "core,kubevirt"
-         ],
-         "env": {
-           "KUBECONFIG": "${KUBECONFIG}"
-         }
-       }
-     }
-   }
+Setup: Add openshift-virtualization to .mcp.json (see https://github.com/openshift/openshift-mcp-server)
+Set KUBECONFIG environment variable, restart Claude Code
 
-2. Set KUBECONFIG environment variable:
-   export KUBECONFIG="/path/to/your/kubeconfig"
-
-3. Restart Claude Code to reload MCP servers
-
-🔗 Documentation: https://github.com/openshift/openshift-mcp-server
-
-❓ How would you like to proceed?
-Options:
-- "setup" - Help configure the MCP server now
-- "skip" - Skip this skill
-- "abort" - Stop workflow
-
-Please respond with your choice.
+Options: "setup" (configure now), "skip" (skip skill), "abort" (stop workflow)
 ```
 
-⚠️ **SECURITY**: Never display actual KUBECONFIG path or credential values in output.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 
@@ -171,194 +123,54 @@ If user doesn't provide all information, ask for missing details.
 }
 ```
 
-**If VM already exists:**
-```markdown
-❌ Target VM Name Already Exists
-
-**VM**: `<target-vm-name>` already exists in namespace `<target-namespace>`
-
-**Options:**
-1. Choose a different name for the clone
-2. Delete the existing VM first (use vm-delete skill)
-3. Cancel cloning operation
-
-What would you like to do?
-```
-
-**Wait for user decision.**
+**If VM exists**: Offer options (choose different name, delete existing VM, cancel), wait for decision
 
 **1.3: Discover Source VM Storage**
 
-**MCP Tool**: `resources_list` (from openshift-virtualization)
-
-**Parameters for DataVolumes**:
-```json
-{
-  "apiVersion": "cdi.kubevirt.io/v1beta1",
-  "kind": "DataVolume",
-  "namespace": "<source-namespace>",
-  "labelSelector": "vm.kubevirt.io/name=<source-vm-name>"
-}
-```
-
-**Parameters for PVCs** (if DataVolumes not found):
-```json
-{
-  "apiVersion": "v1",
-  "kind": "PersistentVolumeClaim",
-  "namespace": "<source-namespace>"
-}
-```
-
-**Parse results:**
-- Extract storage resource names referenced by source VM
-- Calculate total storage size
-- Determine if storage uses DataSources or container disks
+Use `resources_list` for DataVolumes (labelSelector: vm.kubevirt.io/name) or PVCs if not found
+Parse: Extract storage names, calculate size, determine DataSources vs container disks
 
 ### Step 2: Ask User for Cloning Strategy
 
-**Present storage cloning options to user:**
+**Present storage cloning options:**
 
 ```markdown
 ## VM Cloning - Storage Strategy
 
 **Source VM**: `<source-vm-name>` (namespace: `<source-namespace>`)
+**Source Storage**: <source-disk> (<size>)
 
-### Storage Configuration
+**Select cloning strategy:**
 
-**Source VM Storage:**
-- DataVolume/PVC: `<source-disk>` (50Gi)
-- Total Storage: 50Gi
+1. **Clone Storage** - Full copy, independent storage (~5-10 min, <size> new allocation)
+2. **Reference Existing** - ⚠️ Shared disk (dangerous, both VMs access same storage)
+3. **New Empty Storage** - Fresh disk, no data copied (<size> new allocation)
+4. **Cancel** - Abort operation
 
----
-
-### Cloning Options
-
-**How should storage be cloned?**
-
-**Option 1: Clone Storage** (full copy)
-- Creates new DataVolume/PVC for target VM
-- Clones all data from source storage
-- Target VM has independent storage
-- Storage required: 50Gi (new allocation)
-- Time: ~5-10 minutes (depends on size)
-- Use case: Independent test/dev environments
-
-**Option 2: Reference Existing Storage** (shared storage - not recommended)
-- Target VM references same PVC as source
-- No storage cloning
-- ⚠️ Both VMs share the same disk (dangerous!)
-- Storage required: 0Gi (no new allocation)
-- Use case: Only if you know what you're doing
-
-**Option 3: Create New Empty Storage** (fresh disk)
-- Creates new empty DataVolume/PVC for target VM
-- Does NOT clone data from source
-- Target VM starts with clean disk
-- Storage required: 50Gi (new allocation)
-- Use case: Creating VMs from templates without data
-
-**Option 4: Cancel**
-- No cloning performed
-
----
-
-**Select storage strategy** (1, 2, 3, or 4):
+**Select option (1-4):**
 ```
 
-**Wait for user to select option 1, 2, 3, or 4.**
+**Wait for user selection (1-4).**
 
-**Handle user response:**
-- If "4" or "cancel" → Cancel operation, stop workflow
-- If "1" → Proceed with storage cloning (clone_storage=true)
-- If "2" → Proceed with shared storage (share_storage=true) + warn user
-- If "3" → Proceed with new empty storage (new_storage=true)
+**Handle response**: "4"/cancel → stop; "1" → clone_storage=true; "2" → warn + share_storage=true; "3" → new_storage=true
 
-**If user selects Option 2 (shared storage), issue warning:**
-```markdown
-⚠️ WARNING: Shared Storage is Dangerous
-
-You selected to share storage between source and target VMs.
-
-**Risks:**
-- Both VMs writing to the same disk will cause **data corruption**
-- Only safe if source VM is stopped and will remain stopped
-- Not recommended for production use
-
-**Recommendation**: Use Option 1 (Clone Storage) instead for independent VMs.
-
-**Proceed with shared storage anyway? (yes/cancel)**
-```
-
-Wait for explicit "yes" to continue with shared storage.
+**Option 2 warning**: `⚠️ Shared Storage Dangerous - Both VMs share disk, data corruption risk. Only safe if source stopped. Use Option 1 instead. Proceed anyway? (yes/cancel)` Wait for explicit "yes".
 
 ### Step 3: Present Clone Configuration for Confirmation
 
-**After determining cloning strategy, present complete configuration:**
+**Present configuration summary:**
 
 ```markdown
 ## VM Clone Configuration - Review
 
-**Please review the clone configuration:**
+**Source**: `<source-vm-name>` (<source-namespace>) - <instance-type>, <cpu> vCPU, <memory>
+**Target**: `<target-vm-name>` (<target-namespace>) - Same config, starts Stopped
+**Storage**: <strategy-description> - <size> <allocation-details>
 
-### Source VM
-- **Name**: `<source-vm-name>`
-- **Namespace**: `<source-namespace>`
-- **Instance Type**: <instance-type>
-- **vCPU**: <cpu>, **Memory**: <memory>
-- **Storage**: <storage-size>
-- **Status**: <current-status>
+**Resource Impact**: <cpu> vCPU, <memory> RAM, <storage> disk
 
-### Target VM (Clone)
-- **Name**: `<target-vm-name>`
-- **Namespace**: `<target-namespace>`
-- **Instance Type**: <instance-type> (copied from source)
-- **vCPU**: <cpu>, **Memory**: <memory> (copied from source)
-- **Storage**: <storage-strategy-description>
-- **Initial Status**: Stopped (will not auto-start)
-
-### Storage Strategy
-<if clone_storage=true>
-- **Strategy**: Clone Storage (full copy)
-- **New Storage**: 50Gi DataVolume/PVC will be created
-- **Clone Time**: ~5-10 minutes
-- **Storage Class**: <storage-class> (from source)
-</if>
-
-<if share_storage=true>
-- **Strategy**: Shared Storage ⚠️
-- **WARNING**: Both VMs will share the same disk
-- **Ensure source VM is stopped** to avoid data corruption
-</if>
-
-<if new_storage=true>
-- **Strategy**: New Empty Storage
-- **New Storage**: 50Gi empty DataVolume/PVC will be created
-- **No data cloned** from source
-</if>
-
-### Resource Impact
-- **CPU**: <cpu> vCPUs consumed
-- **Memory**: <memory> RAM consumed
-- **Storage**: <new-storage-size> (if applicable)
-
-### What Will Be Copied
-- ✓ Instance type and preference
-- ✓ vCPU and memory configuration
-- ✓ Network configuration
-- ✓ Tolerations and affinity rules
-- ✓ Cloud-init configuration (if any)
-<if clone_storage=true>
-- ✓ Disk data (full clone)
-</if>
-
-### What Will NOT Be Copied
-- ✗ VM running state (clone starts stopped)
-- ✗ IP addresses (new IPs assigned)
-- ✗ Hostname (uses target VM name)
-- ✗ MAC addresses (new MACs generated)
-
----
+**What changes**: IP addresses, hostname, MAC addresses, firmware UUID
+**What's preserved**: Instance type, vCPU/memory, network config, cloud-init
 
 **Proceed with VM cloning? (yes/no)**
 ```
@@ -378,144 +190,30 @@ VM cloning cancelled by user. No resources were created.
 
 ### Step 4: Execute VM Cloning
 
-**ONLY PROCEED AFTER**:
-- ✓ Step 1: Source VM validated, target name available
-- ✓ Step 2: User selected storage strategy
-- ✓ Step 3: User confirmed clone configuration
+**ONLY PROCEED AFTER**: Source VM validated, target name available, user selected storage strategy, user confirmed configuration
 
 **4.1: Prepare Cloned VM Specification**
 
-**From the source VM resource obtained in Step 1.1**, create a modified spec:
+Modify source VM spec:
+1. Change metadata: `name` → target-vm-name, `namespace` → target-namespace; remove `uid`, `resourceVersion`, `creationTimestamp`, `status`
+2. Update storage: clone_storage → new DataVolume with source PVC; share_storage → keep PVC refs; new_storage → empty DataVolume
+3. Set `runStrategy: Halted` (starts stopped)
+4. Generate new firmware UUIDs (`domain.firmware.uuid`, `domain.firmware.serial`)
+5. Preserve: instance type, tolerations, network config, cloud-init
 
-1. **Change metadata**:
-   - `metadata.name` → `<target-vm-name>`
-   - `metadata.namespace` → `<target-namespace>`
-   - Remove `metadata.uid`, `metadata.resourceVersion`, `metadata.creationTimestamp`
-   - Remove status section entirely
+**4.2: Create Storage Resources**
 
-2. **Update storage references**:
-   - If `clone_storage=true`: Create new DataVolume with source as sourceRef
-   - If `share_storage=true`: Keep existing PVC references (no changes)
-   - If `new_storage=true`: Create new empty DataVolume
-
-3. **Update runStrategy**:
-   - Set to `Halted` (clone starts stopped)
-
-4. **Generate new firmware UUIDs**:
-   - Generate new `spec.template.spec.domain.firmware.uuid`
-   - Generate new `spec.template.spec.domain.firmware.serial`
-
-5. **Preserve from source**:
-   - Instance type and preference
-   - Tolerations
-   - Network configuration
-   - Cloud-init (if any)
-
-**4.2: Create Storage Resources (if clone_storage=true or new_storage=true)**
-
-**If cloning storage:**
-
-**MCP Tool**: `resources_create_or_update` (from openshift-virtualization)
-
-**Create DataVolume that clones from source:**
-```yaml
-apiVersion: cdi.kubevirt.io/v1beta1
-kind: DataVolume
-metadata:
-  name: <target-vm-name>-rootdisk
-  namespace: <target-namespace>
-spec:
-  source:
-    pvc:
-      name: <source-pvc-name>
-      namespace: <source-namespace>
-  storage:
-    resources:
-      requests:
-        storage: <size-from-source>
-    storageClassName: <storage-class-from-source>
-```
-
-**If creating new empty storage:**
-
-**MCP Tool**: `resources_create_or_update` (from openshift-virtualization)
-
-**Create empty DataVolume:**
-```yaml
-apiVersion: cdi.kubevirt.io/v1beta1
-kind: DataVolume
-metadata:
-  name: <target-vm-name>-rootdisk
-  namespace: <target-namespace>
-spec:
-  source:
-    blank: {}
-  storage:
-    resources:
-      requests:
-        storage: <size-from-source>
-    storageClassName: <storage-class-from-source>
-```
-
-**Report progress:**
-```markdown
-📦 Creating storage for cloned VM...
-<if clone_storage=true>
-⏳ Cloning storage (this may take 5-10 minutes)...
-</if>
-<if new_storage=true>
-✓ Creating new empty storage...
-</if>
-```
+**Clone storage** - Use `resources_create_or_update` with DataVolume (source.pvc from source, storage from source class/size)
+**New empty storage** - Use `resources_create_or_update` with DataVolume (source.blank, storage from source class/size)
 
 **4.3: Create Cloned VirtualMachine**
 
-**MCP Tool**: `resources_create_or_update` (from openshift-virtualization)
+Use `resources_create_or_update` with prepared spec from 4.1
+**Error handling**: Creation fails → report error, rollback storage; permission denied → RBAC error; namespace missing → namespace error
 
-**Parameters**: Use the prepared VM spec from Step 4.1
+**4.4: Monitor Storage Cloning Progress**
 
-**Expected Output**: VirtualMachine created successfully
-
-**Error Handling**:
-- If creation fails → Report error, rollback storage if created
-- If permission denied → Report RBAC error
-- If namespace doesn't exist → Report namespace error
-
-**Report progress:**
-```markdown
-🖥️ Creating cloned VirtualMachine...
-✓ VirtualMachine `<target-vm-name>` created in namespace `<target-namespace>`
-```
-
-**4.4: Monitor Storage Cloning Progress (if clone_storage=true)**
-
-**If storage is being cloned, monitor DataVolume status:**
-
-**MCP Tool**: `resources_get` (from openshift-virtualization)
-
-**Parameters**:
-```json
-{
-  "apiVersion": "cdi.kubevirt.io/v1beta1",
-  "kind": "DataVolume",
-  "namespace": "<target-namespace>",
-  "name": "<target-vm-name>-rootdisk"
-}
-```
-
-**Check `status.phase`:**
-- `Pending` → Still cloning
-- `Succeeded` → Clone complete
-- `Failed` → Clone failed
-
-**Report progress every 30 seconds:**
-```markdown
-⏳ Storage cloning in progress...
-   Phase: <phase>
-   Progress: <progress-percentage-if-available>
-```
-
-**Wait up to 15 minutes for cloning to complete.**
+Use `resources_get` on DataVolume, check `status.phase` (Pending/Succeeded/Failed), report every 30s, wait up to 15 min
 
 ### Step 5: Report Cloning Results
 
@@ -524,300 +222,85 @@ spec:
 ```markdown
 ## ✓ VM Cloned Successfully
 
-**Source VM**: `<source-vm-name>` (namespace: `<source-namespace>`)
-**Target VM**: `<target-vm-name>` (namespace: `<target-namespace>`)
-
-### Cloned VM Details
-- **Name**: `<target-vm-name>`
-- **Namespace**: `<target-namespace>`
-- **Instance Type**: <instance-type>
-- **vCPU**: <cpu>, **Memory**: <memory>
-- **Storage**: <storage-size>
-- **Status**: Stopped (ready to start)
+**Source**: `<source-vm-name>` (<source-namespace>)
+**Target**: `<target-vm-name>` (<target-namespace>) - Status: Stopped (ready to start)
+**Config**: <instance-type>, <cpu> vCPU, <memory>, <storage-size>
 
 <if clone_storage=true>
-### Storage Cloning
-- ✓ Storage cloned successfully
-- ✓ DataVolume: `<target-vm-name>-rootdisk` (50Gi)
-- ✓ Clone completed in <time-elapsed>
-- ✓ Target VM has independent storage
+**Storage**: ✓ Cloned in <time> - Independent storage, changes won't affect source
 </if>
-
 <if new_storage=true>
-### Storage Creation
-- ✓ New empty storage created
-- ✓ DataVolume: `<target-vm-name>-rootdisk` (50Gi)
-- ℹ️ Storage is empty (no data from source)
+**Storage**: ✓ New empty storage created - OS installation may be required
 </if>
-
 <if share_storage=true>
-### Storage Configuration
-- ⚠️ Shared storage configured
-- ⚠️ Both VMs share PVC: `<source-pvc-name>`
-- ⚠️ **Keep source VM stopped to avoid data corruption**
+**Storage**: ⚠️ Shared PVC `<source-pvc>` - Keep source VM stopped to avoid data corruption
 </if>
 
----
-
-### Next Steps
-
-**To start the cloned VM:**
-```
-"Start VM <target-vm-name> in namespace <target-namespace>"
-```
-
-**To view VM details:**
-```
-"Get details of VM <target-vm-name>"
-```
-
-**To access the VM console:**
-- VNC Console: OpenShift Console → Virtualization → VirtualMachines → `<target-vm-name>` → Console
-- Serial Console: `virtctl console <target-vm-name> -n <target-namespace>`
-
-### Important Notes
-
-<if clone_storage=true>
-- ✓ The cloned VM has **independent storage** from the source
-- ✓ Changes to the clone will **not affect** the source VM
-- ✓ You can safely start and modify both VMs
-</if>
-
-<if share_storage=true>
-- ⚠️ **CRITICAL**: Both VMs share the same disk
-- ⚠️ **Never run both VMs simultaneously** - data corruption will occur
-- ⚠️ Only start one VM at a time
-- ℹ️ Recommended: Convert to cloned storage using vm-snapshot or manual PVC cloning
-</if>
-
-<if new_storage=true>
-- ℹ️ The clone has **empty storage** (no data from source)
-- ℹ️ OS installation or configuration may be required
-- ℹ️ Useful for creating fresh VMs from a template configuration
-</if>
-
-### Configuration Differences
-- **Hostname**: Will use `<target-vm-name>` (different from source)
-- **IP Address**: New IP will be assigned (different from source)
-- **MAC Address**: New MAC addresses generated (different from source)
-- **Firmware UUID**: New UUID generated (different from source)
-
----
-
-**To verify the clone:**
-```
-"List VMs in namespace <target-namespace>"
-```
-
-Both source and target VMs should appear in the inventory.
+**Next**: Start with `"Start VM <target-vm-name> in namespace <target-namespace>"`
 ```
 
 **On cloning failure:**
 
-**OPTIONAL**: If cloning operation fails, consult documentation for common cloning failure scenarios.
-
 **Document Consultation** (OPTIONAL - when cloning fails):
-1. **Action**: Read [storage-errors.md](../../docs/troubleshooting/storage-errors.md) using the Read tool to understand VM cloning failure scenarios, storage provisioning issues, and DataVolume cloning errors
-2. **Output to user**: "I consulted [storage-errors.md](../../docs/troubleshooting/storage-errors.md) to understand potential causes for the cloning failure."
-
-**When to consult**:
-- Storage cloning fails (DataVolume provisioning errors)
-- VM creation fails during cloning workflow
-- PVC clone not supported errors
-- Storage class issues during cloning
-
-**When NOT to consult**:
-- Simple "VM already exists" errors (clear cause)
-- RBAC permission errors (clear cause)
-- Namespace not found errors (clear cause)
+- **When to consult**: Storage cloning fails, VM creation fails, PVC clone not supported, storage class issues
+- **When NOT to consult**: VM already exists, RBAC errors, namespace not found (clear causes)
+- **Action**: Read [storage-errors.md](../../docs/troubleshooting/storage-errors.md) for VM cloning failures, storage provisioning, DataVolume errors
+- **Output to user**: "I consulted [storage-errors.md](../../docs/troubleshooting/storage-errors.md) to understand potential causes."
 
 ```markdown
 ## ❌ VM Cloning Failed
 
 **Error**: <error-message>
+**Source**: `<source-vm-name>` (<source-namespace>) → **Target**: `<target-vm-name>` (<target-namespace>)
 
-**Source VM**: `<source-vm-name>` (namespace: `<source-namespace>`)
-**Target VM**: `<target-vm-name>` (namespace: `<target-namespace>`)
+**Common Causes**:
+- Insufficient storage quota - Namespace lacks storage capacity
+- Insufficient RBAC permissions - ServiceAccount lacks create permissions
+- Storage class not available - Target namespace cannot access storage class
+- PVC clone not supported - Storage class doesn't support cloning
+- Source VM still running - Some storage backends require source VM stopped
 
-**Common Causes:**
-- **Insufficient storage quota** - Namespace lacks storage capacity for clone
-- **Insufficient RBAC permissions** - ServiceAccount lacks create permissions
-- **Storage class not available** - Target namespace cannot access storage class
-- **PVC clone not supported** - Storage class doesn't support cloning
-- **Source VM still running** - Some storage backends require source VM to be stopped
+**Troubleshooting** (see [storage-errors.md](../../docs/troubleshooting/storage-errors.md)):
+1. Check storage quota: `resources_list` for ResourceQuota in target namespace
+2. Check permissions: `resources_list` to verify RBAC (note: `oc auth can-i` has no MCP equivalent)
+3. Check storage class: `resources_get` for StorageClass config, `resources_list` for available classes
+4. Check source VM status: vm-inventory skill `"Show status of VM <source-vm-name>"`
+5. Check DataVolume status: `resources_get` for DataVolume phase and status
 
-**Troubleshooting Steps:**
+**Partial Resources** (may need cleanup):
+- VirtualMachine: `<target-vm-name>`
+- DataVolume: `<target-vm-name>-rootdisk`
 
-Consult [storage-errors.md](../../docs/troubleshooting/storage-errors.md) for MCP-first diagnostic procedures:
-
-1. **Check storage quota:**
-
-   See "ErrorDataVolumeNotReady - Insufficient Storage Quota" section
-   - Use `resources_list` to check ResourceQuota in target namespace
-
-2. **Check permissions:**
-
-   Use `resources_list` with appropriate apiVersion/kind to verify RBAC permissions
-   (Note: `oc auth can-i` has no direct MCP equivalent - use CLI if needed)
-
-3. **Check storage class:**
-
-   See "DataVolume Cloning Failures" section
-   - Use `resources_get` to check StorageClass configuration
-   - Use `resources_list` to list available storage classes
-
-4. **Check if source VM is stopped:**
-
-   Use vm-inventory skill: "Show status of VM <source-vm-name>"
-
-5. **Check DataVolume status** (if storage cloning):
-
-   See "DataVolume Cloning Failures" section
-   - Use `resources_get` to check DataVolume status and phase
-
-**Partial Resources Created:**
-<if any resources were created>
-Some resources may have been created before the failure:
-- VirtualMachine: `<target-vm-name>` (may need cleanup)
-- DataVolume: `<target-vm-name>-rootdisk` (may need cleanup)
-
-To clean up partial resources:
-```
-"Delete VM <target-vm-name> in namespace <target-namespace>"
-```
-</if>
+**Cleanup**: `"Delete VM <target-vm-name> in namespace <target-namespace>"`
 
 Would you like help troubleshooting this error?
 ```
 
 ## Advanced Features
 
-### Batch Cloning (Multiple Copies)
-
+### Batch Cloning
 **User request:** "Create 3 copies of template-vm named web-01, web-02, web-03"
-
-**Workflow:**
-1. Execute Step 1 (validate source VM once)
-2. Generate target names: web-01, web-02, web-03
-3. Check all target names for availability
-4. Present combined cloning scope for all copies
-5. Ask for storage strategy (applies to all clones)
-6. Confirm batch operation
-7. Execute cloning for each VM sequentially
-
-**Batch confirmation:**
-```markdown
-## Batch VM Cloning - Review
-
-**Source VM**: `template-vm`
-
-**Target VMs**:
-1. `web-01` (namespace: `production`)
-2. `web-02` (namespace: `production`)
-3. `web-03` (namespace: `production`)
-
-**Storage Strategy**: Clone Storage (full copy for each)
-
-**Total Resource Impact**:
-- **VMs**: 3 new VMs
-- **Storage**: 150Gi (3 × 50Gi)
-- **vCPUs**: 12 total (3 × 4)
-- **Memory**: 24Gi total (3 × 8Gi)
-
-**Estimated Time**: ~20-30 minutes (clones created sequentially)
-
-Proceed with batch cloning? (yes/no)
-```
+**Workflow**: Validate source once, generate/check target names, present combined scope, ask storage strategy, confirm, execute sequentially
+**Batch confirmation**: Show source, targets list, strategy, total impact (VMs, storage, vCPU, memory), estimated time
 
 ### Cross-Namespace Cloning
+**User request:** "Clone production-vm from production to staging namespace"
+**Note**: Storage cloned across namespaces, network policies/quotas may differ, RBAC required in both namespaces
 
-**User request:** "Clone production-vm from production namespace to staging namespace"
-
-**Workflow:**
-- Source namespace: `production`
-- Target namespace: `staging`
-- Storage cloning may require cross-namespace PVC access
-- Present warning if namespaces have different quotas/policies
-
-**Cross-namespace note:**
-```markdown
-ℹ️ **Cross-Namespace Cloning**
-
-**Source**: `production` namespace
-**Target**: `staging` namespace
-
-**Considerations**:
-- Storage will be cloned from `production` to `staging`
-- Network policies may differ between namespaces
-- Resource quotas may differ between namespaces
-- RBAC permissions required in both namespaces
-
-Verify that the `staging` namespace has sufficient resources.
-```
-
-### Clone with Modifications
-
-**Future enhancement: Allow users to modify clone configuration:**
-
-```
-"Clone database-vm to test-db with 8Gi memory instead of 16Gi"
-```
-
-Modifications could include:
-- Instance type/size
-- Storage size
-- Network configuration
-- Cloud-init customization
+### Clone with Modifications (Future)
+Allow modifications during clone: instance type/size, storage size, network config, cloud-init customization
 
 ## Common Issues
 
-### Issue 1: Target VM Name Already Exists
+**Issue 1: Target VM Name Already Exists** - Choose different name, delete existing VM (if safe), use vm-inventory to check
 
-**Error**: "VirtualMachine 'web-clone' already exists in namespace 'dev'"
+**Issue 2: Insufficient Storage Quota** - Check quotas, request increase, use shared storage (if appropriate), delete unused PVCs
 
-**Solution:**
-1. Choose a different target name
-2. Delete existing VM with same name (if safe to do so)
-3. Use vm-inventory to check existing VMs
+**Issue 3: Storage Class Not Accessible** - Verify storage class exists in target namespace, check cross-namespace cloning support, use different storage class, contact admin
 
-### Issue 2: Insufficient Storage Quota
+**Issue 4: PVC Clone Not Supported** - Storage class doesn't support CSI volume cloning; use "new empty storage" option, snapshot and restore, or check storage class capabilities
 
-**Error**: "Namespace quota exceeded"
-
-**Solution:**
-- Check namespace resource quotas
-- Request quota increase from cluster admin
-- Use shared storage option (if appropriate)
-- Delete unused PVCs to free quota
-
-### Issue 3: Storage Class Not Accessible
-
-**Error**: "StorageClass 'xyz' not found or not accessible"
-
-**Solution:**
-- Verify storage class exists in target namespace
-- Check if storage class allows cross-namespace cloning
-- Use different storage class for target
-- Contact cluster admin for access
-
-### Issue 4: PVC Clone Not Supported
-
-**Error**: "Storage backend does not support PVC cloning"
-
-**Solution:**
-- Some storage classes don't support CSI volume cloning
-- Use "new empty storage" option instead
-- Manually snapshot and restore (alternative approach)
-- Check storage class capabilities
-
-### Issue 5: Source VM Running During Clone
-
-**Error**: "Cannot clone from running VM with this storage backend"
-
-**Solution:**
-- Stop source VM before cloning
-- Use snapshot-based cloning instead
-- Check storage backend requirements
+**Issue 5: Source VM Running During Clone** - Stop source VM first, use snapshot-based cloning, check storage backend requirements
 
 ## Dependencies
 
@@ -897,102 +380,23 @@ Modifications could include:
 ```
 User: "Clone web-server to web-server-test in namespace dev"
 
-Agent: [Invokes /vm-clone skill]
-       [Step 1: Validation]
-       [Calls resources_get for source VM]
-       [Checks target name availability]
-       [Discovers source storage: 50Gi]
+Agent: [Validates source VM web-server (production), checks target name availability]
+       [Discovers 50Gi storage, presents storage options]
+       "Select storage strategy (1-4):"
 
-## VM Cloning - Storage Strategy
+User: "1"
 
-Source VM: `web-server` (namespace: `production`)
-
-Storage Configuration:
-- DataVolume/PVC: `web-server-rootdisk` (50Gi)
-
-Select storage strategy (1, 2, 3, or 4):
-
-User: "1"  (Clone Storage)
-
-Agent: [Step 3: Present configuration]
-
-## VM Clone Configuration - Review
-
-Source VM:
-- Name: `web-server`
-- Namespace: `production`
-- Instance Type: u1.medium
-- vCPU: 2, Memory: 4Gi
-- Storage: 50Gi
-
-Target VM (Clone):
-- Name: `web-server-test`
-- Namespace: `dev`
-- Instance Type: u1.medium (copied)
-- vCPU: 2, Memory: 4Gi (copied)
-- Storage: Clone Storage (50Gi new allocation)
-
-Storage Strategy:
-- Strategy: Clone Storage (full copy)
-- New Storage: 50Gi DataVolume/PVC
-- Clone Time: ~5-10 minutes
-
-Resource Impact:
-- CPU: 2 vCPUs consumed
-- Memory: 4Gi RAM consumed
-- Storage: 50Gi
-
-Proceed with VM cloning? (yes/no)
+Agent: [Shows: Source web-server (u1.medium, 2 vCPU, 4Gi) → Target web-server-test (dev, 50Gi clone)]
+       "Proceed with VM cloning? (yes/no)"
 
 User: "yes"
 
-Agent: [Step 4: Execute cloning]
-       [Creates DataVolume with PVC clone source]
-
-📦 Creating storage for cloned VM...
-⏳ Cloning storage (this may take 5-10 minutes)...
-
-       [Creates VirtualMachine]
-
-🖥️ Creating cloned VirtualMachine...
-✓ VirtualMachine `web-server-test` created in namespace `dev`
-
-       [Monitors DataVolume status]
-
-⏳ Storage cloning in progress...
-   Phase: CloneInProgress
-   Progress: 45%
-
-⏳ Storage cloning in progress...
-   Phase: Succeeded
-
-       [Step 5: Report results]
-
-## ✓ VM Cloned Successfully
-
-Source VM: `web-server` (namespace: `production`)
-Target VM: `web-server-test` (namespace: `dev`)
-
-Cloned VM Details:
-- Name: `web-server-test`
-- Namespace: `dev`
-- Instance Type: u1.medium
-- vCPU: 2, Memory: 4Gi
-- Storage: 50Gi
-- Status: Stopped (ready to start)
-
-Storage Cloning:
-- ✓ Storage cloned successfully
-- ✓ DataVolume: `web-server-test-rootdisk` (50Gi)
-- ✓ Clone completed in 7m23s
-- ✓ Target VM has independent storage
-
-Next Steps:
-
-To start the cloned VM:
-```
-"Start VM web-server-test in namespace dev"
-```
+Agent: "📦 Creating storage... ⏳ Cloning (5-10 min)..."
+       "✓ VirtualMachine web-server-test created in dev"
+       "⏳ Storage cloning... Succeeded"
+       "✓ VM Cloned Successfully - Source: web-server (production), Target: web-server-test (dev)"
+       "Storage: ✓ Cloned in 7m23s - Independent storage"
+       "Next: Start VM web-server-test in namespace dev"
 ```
 
 ### Example 2: Clone with New Empty Storage
@@ -1000,94 +404,35 @@ To start the cloned VM:
 ```
 User: "Clone template-vm to app-01 with empty storage"
 
-Agent: [Invokes /vm-clone skill]
-       [Validation complete]
-       [Step 2: Storage strategy]
+Agent: [Validation complete, presents options]
+       "Select storage strategy (1-4):"
 
-Select storage strategy (1, 2, 3, or 4):
+User: "3"
 
-User: "3"  (Create New Empty Storage)
-
-Agent: [Presents configuration]
-
-Storage Strategy:
-- Strategy: New Empty Storage
-- New Storage: 30Gi empty DataVolume/PVC
-- No data cloned from source
-
-Proceed with VM cloning? (yes/no)
+Agent: "Proceed with VM cloning? (yes/no)"
 
 User: "yes"
 
-Agent: [Creates empty DataVolume and VM]
-
-## ✓ VM Cloned Successfully
-
-Storage Creation:
-- ✓ New empty storage created
-- ✓ DataVolume: `app-01-rootdisk` (30Gi)
-- ℹ️ Storage is empty (no data from source)
-
-Important Notes:
-- ℹ️ The clone has empty storage (no data from source)
-- ℹ️ OS installation or configuration may be required
+Agent: "✓ VM Cloned Successfully"
+       "Storage: ✓ New empty storage created - OS installation may be required"
 ```
 
 ### Example 3: Batch Cloning
 
 ```
-User: "Create 3 copies of template-vm named web-01, web-02, web-03 in production namespace"
+User: "Create 3 copies of template-vm named web-01, web-02, web-03 in production"
 
-Agent: [Invokes /vm-clone skill]
-       [Validates source VM]
-       [Generates target names]
-       [Checks all names for availability]
-
-## Batch VM Cloning - Review
-
-Source VM: `template-vm`
-
-Target VMs:
-1. `web-01` (namespace: `production`)
-2. `web-02` (namespace: `production`)
-3. `web-03` (namespace: `production`)
-
-Storage Strategy: Clone Storage (full copy for each)
-
-Total Resource Impact:
-- VMs: 3 new VMs
-- Storage: 90Gi (3 × 30Gi)
-- vCPUs: 6 total (3 × 2)
-- Memory: 12Gi total (3 × 4Gi)
-
-Estimated Time: ~20-30 minutes
-
-Proceed with batch cloning? (yes/no)
+Agent: [Validates source, checks all names, presents batch review]
+       "Source: template-vm, Targets: 3 VMs (web-01, web-02, web-03)"
+       "Total Impact: 90Gi, 6 vCPU, 12Gi, ~20-30 min"
+       "Proceed? (yes/no)"
 
 User: "yes"
 
-Agent: [Clones VMs sequentially]
-
-📦 Cloning VM 1 of 3: web-01...
-✓ web-01 created and storage cloning in progress
-
-📦 Cloning VM 2 of 3: web-02...
-✓ web-02 created and storage cloning in progress
-
-📦 Cloning VM 3 of 3: web-03...
-✓ web-03 created and storage cloning in progress
-
-## ✓ Batch Cloning Completed
-
-Successfully cloned 3 VMs from `template-vm`:
-- ✓ web-01 (production)
-- ✓ web-02 (production)
-- ✓ web-03 (production)
-
-Total resources created:
-- 3 VirtualMachines
-- 90Gi storage
-- All VMs in Stopped state (ready to start)
+Agent: "📦 Cloning VM 1 of 3: web-01... ✓"
+       "📦 Cloning VM 2 of 3: web-02... ✓"
+       "📦 Cloning VM 3 of 3: web-03... ✓"
+       "✓ Batch Cloning Completed - 3 VMs, 90Gi storage, all Stopped"
 ```
 
 ### Example 4: Shared Storage Warning
@@ -1095,27 +440,15 @@ Total resources created:
 ```
 User: "Clone db-vm to db-test"
 
-Agent: [Validation complete]
+Agent: "Select storage strategy (1-4):"
 
-Select storage strategy (1, 2, 3, or 4):
+User: "2"
 
-User: "2"  (Reference Existing Storage)
-
-Agent: [Issues warning]
-
-⚠️ WARNING: Shared Storage is Dangerous
-
-You selected to share storage between source and target VMs.
-
-Risks:
-- Both VMs writing to the same disk will cause data corruption
-- Only safe if source VM is stopped and will remain stopped
-
-Recommendation: Use Option 1 (Clone Storage) instead.
-
-Proceed with shared storage anyway? (yes/cancel)
+Agent: "⚠️ WARNING: Shared Storage is Dangerous"
+       "Risks: Data corruption if both VMs run simultaneously"
+       "Proceed with shared storage anyway? (yes/cancel)"
 
 User: "cancel"
 
-Agent: VM cloning cancelled by user. No resources were created.
+Agent: "VM cloning cancelled. No resources created."
 ```

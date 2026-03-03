@@ -22,8 +22,9 @@ WARNED_SKILLS=0
 FAILED_SKILLS=0
 HAS_ERRORS=false
 
-# Storage for failed skills details
+# Storage for failed/warned skills details
 FAILED_DETAILS_FILE=$(mktemp)
+WARNED_DETAILS_FILE=$(mktemp)
 SUMMARY_FILE=$(mktemp)
 
 # Header
@@ -89,6 +90,11 @@ while IFS= read -r skill_file; do
       # Passed with warnings
       WARNED_SKILLS=$((WARNED_SKILLS + 1))
       echo -e "⚠️  ${YELLOW}${collection}/${skill_name}${NC} - PASSED WITH WARNINGS"
+
+      # Store warning details (only [WARN] lines for conciseness)
+      echo "" >> "$WARNED_DETAILS_FILE"
+      echo -e "${YELLOW}⚠️  ${collection}/${skill_name}${NC}" >> "$WARNED_DETAILS_FILE"
+      grep "\[WARN\]" "$LINTER_OUTPUT" >> "$WARNED_DETAILS_FILE"
     else
       # Clean pass
       PASSED_SKILLS=$((PASSED_SKILLS + 1))
@@ -136,6 +142,16 @@ if [ "$FAILED_SKILLS" -gt 0 ]; then
   echo ""
 fi
 
+# Show detailed warnings if any
+if [ "$WARNED_SKILLS" -gt 0 ]; then
+  echo ""
+  echo -e "${YELLOW}${BOLD}DETAILED WARNING REPORT${NC}"
+  echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  cat "$WARNED_DETAILS_FILE"
+  echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo ""
+fi
+
 # Summary Table
 echo ""
 echo -e "${BOLD}VALIDATION SUMMARY${NC}"
@@ -145,7 +161,7 @@ printf "${BOLD}%-42s%s${NC}\n" "Metric" "Count"
 echo "────────────────────────────────────────────────────────────────"
 printf "%-42s${BLUE}%s${NC}\n" "Total Skills:" "$TOTAL_SKILLS"
 printf "✅ %-39s${GREEN}%s${NC}\n" "Passed:" "$PASSED_SKILLS"
-printf "⚠️ %-40s${YELLOW}%s${NC}\n" "Passed with Warnings:" "$WARNED_SKILLS"
+printf "⚠️ %-39s${YELLOW}%s${NC}\n" "Passed with Warnings:" "$WARNED_SKILLS"
 printf "❌ %-39s${RED}%s${NC}\n" "Failed:" "$FAILED_SKILLS"
 echo ""
 
@@ -177,7 +193,7 @@ if [ "$FAILED_SKILLS" -gt 0 ]; then
 fi
 
 # Cleanup
-rm -f "$FAILED_DETAILS_FILE" "$SUMMARY_FILE"
+rm -f "$FAILED_DETAILS_FILE" "$WARNED_DETAILS_FILE" "$SUMMARY_FILE"
 
 # Save exit code for workflow
 echo "$EXIT_STATUS" > /tmp/skill-linter-exit-code
