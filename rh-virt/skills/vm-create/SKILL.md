@@ -44,63 +44,13 @@ Create virtual machines in OpenShift Virtualization using the `vm_create` tool f
 
 ### Prerequisite Verification
 
-**Before executing, verify MCP server availability:**
+**Before executing:**
+1. Check `openshift-virtualization` exists in `mcps.json` → If missing, report setup instructions
+2. Verify `KUBECONFIG` is set (check presence only, never expose value) → If missing, report to user
 
-1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `mcps.json`
-   - If missing → Report to user with setup instructions
+**Human Notification Protocol:** `❌ Cannot execute vm-create: MCP server 'openshift-virtualization' not available. Setup: Add to mcps.json, set KUBECONFIG env var, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
-2. **Check Environment Variables**
-   - Verify `KUBECONFIG` is set (check presence only, never expose value)
-   - If missing → Report to user
-
-**Human Notification Protocol (when prerequisites fail):**
-
-```
-❌ Cannot execute vm-create: MCP server 'openshift-virtualization' is not available
-
-📋 Setup Instructions:
-1. Add openshift-virtualization to mcps.json:
-   {
-     "mcpServers": {
-       "openshift-virtualization": {
-         "command": "podman",
-         "args": [
-           "run",
-           "--rm",
-           "-i",
-           "--network=host",
-           "--userns=keep-id:uid=65532,gid=65532",
-           "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-           "--entrypoint", "/app/kubernetes-mcp-server",
-           "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-           "--kubeconfig", "/kubeconfig",
-           "--toolsets", "core,kubevirt"
-         ],
-         "env": {
-           "KUBECONFIG": "${KUBECONFIG}"
-         }
-       }
-     }
-   }
-
-2. Set KUBECONFIG environment variable:
-   export KUBECONFIG="/path/to/your/kubeconfig"
-
-3. Restart Claude Code to reload MCP servers
-
-🔗 Documentation: https://github.com/openshift/openshift-mcp-server
-
-❓ How would you like to proceed?
-Options:
-- "setup" - Help configure the MCP server now
-- "skip" - Skip this skill
-- "abort" - Stop workflow
-
-Please respond with your choice.
-```
-
-⚠️ **SECURITY**: Never display actual KUBECONFIG path or credential values.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 

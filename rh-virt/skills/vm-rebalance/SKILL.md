@@ -47,32 +47,13 @@ Orchestrate VM migrations across OpenShift cluster nodes for load balancing, mai
 ### Prerequisite Verification
 
 **Before executing:**
+1. Check `openshift-virtualization` exists in `mcps.json` → If missing, report setup
+2. Verify `KUBECONFIG` is set (presence only, never expose value) → If missing, report
+3. For live migration: Check PVC access mode is ReadWriteMany (RWX) via `resources_get`
 
-1. **Check MCP Server** - Verify `openshift-virtualization` exists in `mcps.json`
-2. **Check Environment** - Verify `KUBECONFIG` is set (check presence only, never expose value)
-3. **Check Capability** (for live migration):
-   - Use `resources_get` to check PVC access mode is ReadWriteMany (RWX)
-   - Verify VM has running VirtualMachineInstance
+**Human Notification Protocol:** `❌ Cannot execute vm-rebalance: MCP server not available. Setup: Add to mcps.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
-**Human Notification Protocol:**
-
-When prerequisites fail:
-
-```
-❌ Cannot execute vm-rebalance: MCP server 'openshift-virtualization' is not available
-
-📋 Setup Instructions:
-1. Add openshift-virtualization to mcps.json
-2. Set KUBECONFIG environment variable
-3. Ensure ServiceAccount has required permissions
-4. Restart Claude Code to reload MCP servers
-
-🔗 Documentation: https://github.com/openshift/openshift-mcp-server
-
-Options: "setup" | "skip" | "abort"
-```
-
-⚠️ **SECURITY**: Never display actual KUBECONFIG path or credential values in output.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 
