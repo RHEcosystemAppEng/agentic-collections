@@ -42,7 +42,7 @@ Permanently delete virtual machine snapshots in OpenShift Virtualization. Deleti
 **Before executing, verify MCP server availability:**
 
 1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `.mcp.json`
+   - Verify `openshift-virtualization` exists in `mcps.json`
    - If missing → Report to user with setup instructions
 
 2. **Check Environment Variables**

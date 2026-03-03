@@ -5,7 +5,7 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  install                       - Install Python dependencies (requires uv)"
-	@echo "  validate                      - Validate pack structure (plugin.json, .mcp.json, frontmatter)"
+	@echo "  validate                      - Validate pack structure (plugin.json, mcps.json, frontmatter)"
 	@echo "  validate-skill-design         - Validate all skills (use PACK=rh-sre for a specific pack)"
 	@echo "  validate-skill-design-changed - Validate only changed skills (staged + unstaged, for local dev)"
 	@echo "  generate    - Generate docs/data.json"

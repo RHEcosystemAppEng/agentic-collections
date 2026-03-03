@@ -11,7 +11,7 @@ useDefault = true
 # Custom rules for project-specific patterns
 [[rules]]
 id = "mcp-hardcoded-credentials"
-description = "Hardcoded credentials in .mcp.json files (must use ${ENV_VAR} pattern)"
+description = "Hardcoded credentials in mcps.json files (must use ${ENV_VAR} pattern)"
 regex = '''["'](?:LIGHTSPEED_CLIENT_ID|LIGHTSPEED_CLIENT_SECRET|API_KEY|SECRET|TOKEN|PASSWORD)["']\s*:\s*["'][^"']{8,}["']'''
 path = '''\.mcp\.json$'''
 tags = ["mcp", "credentials"]

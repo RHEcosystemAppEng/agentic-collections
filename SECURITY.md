@@ -48,7 +48,7 @@ const apiKey = "ghp_1234567890abcdefghij";
 const apiKey = process.env.GITHUB_TOKEN;
 ```
 
-### .mcp.json Requirements
+### mcps.json Requirements
 
 **MCP Configuration Rule** (per [CLAUDE.md line 125](CLAUDE.md#L125)):
 
@@ -109,7 +109,7 @@ Gitleaks scans for:
 - **Database URLs**: Connection strings with embedded passwords
 - **JWT Tokens**: eyJ... format tokens
 - **Generic Secrets**: password, api_key, secret, token assignments
-- **MCP Hardcoded Values**: `.mcp.json` files without ${VAR} pattern
+- **MCP Hardcoded Values**: `mcps.json` files without ${VAR} pattern
 
 ### Manual Scanning
 
@@ -335,7 +335,7 @@ After an incident:
 
 - **Repository Guidelines**: [CLAUDE.md](CLAUDE.md) - Line 125 documents MCP credential requirements
 - **.gitignore**: Pre-configured to exclude common secret files (.env, *.key, *.pem)
-- **MCP Example**: [rh-sre/.mcp.json](rh-sre/.mcp.json) - Reference implementation with ${VAR} pattern
+- **MCP Example**: [rh-sre/mcps.json](rh-sre/mcps.json) - Reference implementation with ${VAR} pattern
 - **Gitleaks Configuration**: [.gitleaks.toml](.gitleaks.toml) - Project-specific rules
 
 ### External Resources

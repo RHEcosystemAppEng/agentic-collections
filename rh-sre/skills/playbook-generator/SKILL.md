@@ -361,7 +361,7 @@ Proceeding with standard playbook (without pod eviction). Add pod eviction manua
 This skill uses:
 - `remediations__create_vuln_playbook` (from lightspeed-mcp) - Generate playbook from Red Hat Lightspeed. Returns YAML **as is**—do not modify.
 
-All MCP tools are provided by the lightspeed-mcp server configured in `.mcp.json`.
+All MCP tools are provided by the lightspeed-mcp server configured in `mcps.json`.
 
 ## Integration with Other Skills
 

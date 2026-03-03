@@ -60,6 +60,13 @@ async function init() {
         // Setup search
         document.getElementById('searchInput').addEventListener('input', handleSearch);
 
+        // Setup install banner copy button
+        const installCopyBtn = document.getElementById('install-copy-btn');
+        const installCommand = document.getElementById('install-command');
+        if (installCopyBtn && installCommand) {
+            installCopyBtn.addEventListener('click', () => copyToClipboard(installCommand.textContent, installCopyBtn));
+        }
+
         // Setup modal close handlers
         setupModals();
 
@@ -418,6 +425,15 @@ function toggleSection(sectionId) {
     section.classList.toggle('collapsed');
 }
 
+function toggleInstallCallout() {
+    const callout = document.getElementById('install-callout');
+    const toggle = callout?.querySelector('.install-callout-toggle');
+    const body = document.getElementById('install-callout-body');
+    if (!callout || !toggle || !body) return;
+    callout.classList.toggle('collapsed');
+    toggle.setAttribute('aria-expanded', callout.classList.contains('collapsed') ? 'false' : 'true');
+}
+
 /**
  * Show pack details modal (XSS-safe)
  */
@@ -542,7 +558,7 @@ function showPackDetails(packName) {
     const body = document.createElement('div');
     body.className = 'modal-body';
 
-    // Installation section
+    // Installation section (Lola package manager)
     const installSection = document.createElement('div');
     installSection.className = 'modal-section';
 
@@ -551,48 +567,53 @@ function showPackDetails(packName) {
     installHeader.textContent = 'INSTALLATION';
     installSection.appendChild(installHeader);
 
-    // Claude installation
-    const claudeLabel = document.createElement('div');
-    claudeLabel.className = 'modal-section-label';
-    claudeLabel.textContent = 'Claude Code:';
-    claudeLabel.style.marginTop = '1rem';
-    installSection.appendChild(claudeLabel);
+    const lolaNote = document.createElement('div');
+    lolaNote.style.color = 'var(--text-muted)';
+    lolaNote.style.fontSize = '0.85rem';
+    lolaNote.style.marginBottom = '0.75rem';
+    lolaNote.textContent = 'Lola. Applies to current folder only.';
+    installSection.appendChild(lolaNote);
 
-    const claudeCodeWrapper = document.createElement('div');
-    claudeCodeWrapper.className = 'install-code-wrapper';
+    const moduleName = pack.name;
 
-    const claudePre = document.createElement('pre');
-    const claudeCode = document.createElement('code');
-    // Get plugin name from plugin.json or use pack name as fallback
-    const pluginName = pack.plugin.name || pack.name;
-    claudeCode.textContent = `claude plugin marketplace remove redhat-agentic-collections
-claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
-claude plugin install ${pluginName}`;
-    claudePre.appendChild(claudeCode);
-    claudeCodeWrapper.appendChild(claudePre);
+    const codeWrapper = document.createElement('div');
+    codeWrapper.className = 'install-code-wrapper';
 
-    const claudeCopyBtn = document.createElement('button');
-    claudeCopyBtn.className = 'copy-button';
-    claudeCopyBtn.textContent = 'Copy';
-    claudeCopyBtn.onclick = () => copyToClipboard(claudeCode.textContent, claudeCopyBtn);
-    claudeCodeWrapper.appendChild(claudeCopyBtn);
+    const installPre = document.createElement('pre');
+    const installCode = document.createElement('code');
+    installCode.textContent = `lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola install -f ${moduleName}`;
+    installPre.appendChild(installCode);
+    codeWrapper.appendChild(installPre);
 
-    installSection.appendChild(claudeCodeWrapper);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-button';
+    copyBtn.textContent = 'Copy';
+    copyBtn.onclick = () => copyToClipboard(installCode.textContent, copyBtn);
+    codeWrapper.appendChild(copyBtn);
 
-    // Cursor installation
-    const cursorLabel = document.createElement('div');
-    cursorLabel.className = 'modal-section-label';
-    cursorLabel.textContent = 'Cursor:';
-    cursorLabel.style.marginTop = '1.5rem';
-    installSection.appendChild(cursorLabel);
+    installSection.appendChild(codeWrapper);
 
-    const cursorNote = document.createElement('div');
-    cursorNote.style.color = 'var(--text-muted)';
-    cursorNote.style.fontSize = '0.9rem';
-    cursorNote.style.fontStyle = 'italic';
-    cursorNote.style.marginTop = '0.5rem';
-    cursorNote.textContent = 'Coming soon - Cursor support is planned for future releases';
-    installSection.appendChild(cursorNote);
+    const optNote = document.createElement('div');
+    optNote.style.color = 'var(--text-muted)';
+    optNote.style.fontSize = '0.8rem';
+    optNote.style.marginTop = '0.5rem';
+    optNote.textContent = 'Add -a claude-code or -a cursor to target one assistant.';
+    installSection.appendChild(optNote);
+
+    const lolaLink = document.createElement('div');
+    lolaLink.style.marginTop = '0.5rem';
+    lolaLink.style.fontSize = '0.85rem';
+    const lolaAnchor = document.createElement('a');
+    lolaAnchor.href = 'https://github.com/RedHatProductSecurity/lola';
+    lolaAnchor.target = '_blank';
+    lolaAnchor.textContent = 'Lola →';
+    lolaAnchor.style.color = 'var(--primary)';
+    lolaAnchor.style.textDecoration = 'none';
+    lolaAnchor.onmouseover = () => { lolaAnchor.style.textDecoration = 'underline'; };
+    lolaAnchor.onmouseout = () => { lolaAnchor.style.textDecoration = 'none'; };
+    lolaLink.appendChild(lolaAnchor);
+    installSection.appendChild(lolaLink);
 
     body.appendChild(installSection);
 
@@ -961,7 +982,7 @@ function showMCPDetails(serverName, packName) {
     headerTop.appendChild(titleGroup);
     header.appendChild(headerTop);
 
-    // Description from .mcp.json or pack name
+    // Description from mcps.json or pack name
     const desc = document.createElement('div');
     desc.className = 'modal-description';
     if (server.description) {

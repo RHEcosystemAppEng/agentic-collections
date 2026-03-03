@@ -17,7 +17,7 @@
 - [ ] New agent
 - [ ] New pack
 - [ ] Update existing skill / agent
-- [ ] MCP server config (`.mcp.json`)
+- [ ] MCP server config (`mcps.json`)
 - [ ] Docs / README
 - [ ] CI / tooling
 

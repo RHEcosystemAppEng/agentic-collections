@@ -124,7 +124,7 @@ metadata:                # Optional: Custom fields (2026 Agentic Skills standard
 **Before executing, verify MCP server availability:**
 
 1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `.mcp.json`
+   - Verify `openshift-virtualization` exists in `mcps.json`
    - If missing → Report to user with setup instructions
 
 2. **Check Environment Variables**
@@ -143,7 +143,7 @@ When prerequisites fail:
 ❌ Cannot execute <skill-name>: MCP server 'openshift-virtualization' is not available
 
 📋 Setup Instructions:
-1. Add openshift-virtualization to .mcp.json
+1. Add openshift-virtualization to mcps.json
 2. Set KUBECONFIG environment variable: export KUBECONFIG="/path/to/kubeconfig"
 3. Restart Claude Code to reload MCP servers
 

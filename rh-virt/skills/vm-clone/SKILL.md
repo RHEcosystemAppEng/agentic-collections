@@ -40,18 +40,10 @@ Clone existing virtual machines in OpenShift Virtualization, creating new VMs wi
 ### Prerequisite Verification
 
 **Before executing:**
-1. Verify `openshift-virtualization` in `.mcp.json`, `KUBECONFIG` set (never expose value)
+1. Verify `openshift-virtualization` in `mcps.json`, `KUBECONFIG` set (never expose value)
 2. Optional: Verify RBAC permissions for VirtualMachine, PVC/DataVolume creation
 
-**When prerequisites fail:**
-```
-❌ Cannot execute vm-clone: MCP server 'openshift-virtualization' is not available
-
-Setup: Add openshift-virtualization to .mcp.json (see https://github.com/openshift/openshift-mcp-server)
-Set KUBECONFIG environment variable, restart Claude Code
-
-Options: "setup" (configure now), "skip" (skip skill), "abort" (stop workflow)
-```
+**Human Notification Protocol:** `❌ Cannot execute vm-clone: MCP server 'openshift-virtualization' is not available. Setup: Add to mcps.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
 ⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 

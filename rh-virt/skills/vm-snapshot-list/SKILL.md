@@ -41,7 +41,7 @@ List virtual machine snapshots in OpenShift Virtualization. This read-only skill
 **Before executing, verify MCP server availability:**
 
 1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `.mcp.json`
+   - Verify `openshift-virtualization` exists in `mcps.json`
    - If missing → Report to user with setup instructions
 
 2. **Check Environment Variables**
@@ -56,7 +56,7 @@ When prerequisites fail:
 ❌ Cannot execute vm-snapshot-list: MCP server 'openshift-virtualization' is not available
 
 📋 Setup Instructions:
-1. Add openshift-virtualization to .mcp.json
+1. Add openshift-virtualization to mcps.json
 2. Set KUBECONFIG environment variable
 3. Restart Claude Code to reload MCP servers
 

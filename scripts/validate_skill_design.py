@@ -3,6 +3,7 @@
 Validate skills against SKILL_DESIGN_PRINCIPLES.md.
 
 Design principles checked:
+  DP0: Pack layout (Lola format) - mcps.json only, error if .mcp.json exists
   DP1: Document Consultation - correct format (Action: Read, Output to user)
   DP2: Parameter order - Document Consultation before MCP Tool/Parameters
   DP3: Conciseness - description length, "Use when" examples
@@ -17,6 +18,7 @@ Cannot validate: runtime behavior (AI actually reading docs), parameter correctn
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -67,6 +69,40 @@ CREDENTIAL_EXPOSURE_PATTERN = re.compile(
 
 # Anti-pattern context: if echo $VAR appears near these, it may be documenting the wrong way
 ANTI_PATTERN_MARKERS = ["WRONG", "NEVER", "❌", "don't", "do not", "exposes credentials"]
+
+# Pack layout (Lola format)
+MCP_FILENAME = "mcps.json"
+MCP_DEPRECATED = ".mcp.json"
+
+
+def validate_pack_layout(pack_dir: Path) -> list[str]:
+    """
+    DP0: Pack layout (Lola format).
+    Error if .mcp.json exists; validate mcps.json structure if present.
+    """
+    errors = []
+    deprecated = pack_dir / MCP_DEPRECATED
+    mcp_file = pack_dir / MCP_FILENAME
+
+    if deprecated.exists():
+        errors.append(
+            f"DP0: deprecated {MCP_DEPRECATED} found; rename to {MCP_FILENAME}"
+        )
+        return errors
+
+    if not mcp_file.exists():
+        return errors
+
+    try:
+        data = json.loads(mcp_file.read_text(encoding="utf-8"))
+        if "mcpServers" not in data:
+            errors.append(f"DP0: {MCP_FILENAME} missing 'mcpServers' key")
+        elif not isinstance(data.get("mcpServers"), dict):
+            errors.append(f"DP0: {MCP_FILENAME} 'mcpServers' must be an object")
+    except Exception as e:
+        errors.append(f"DP0: Invalid {MCP_FILENAME}: {e}")
+
+    return errors
 
 
 @dataclass
@@ -395,15 +431,37 @@ def main() -> int:
             if (pack_path / "skills").exists():
                 skill_files.extend((pack_path / "skills").glob("*/SKILL.md"))
 
+    all_errors: list[tuple[Path, str]] = []
+    all_warnings: list[tuple[Path, str]] = []
+
+    # Collect pack dirs for layout validation (all pack dirs from args, plus from skill paths)
+    pack_dirs: set[Path] = set()
+    for p in args.paths:
+        path = Path(p)
+        if path.is_dir() and path.exists():
+            pack_dirs.add(path)
+    for sf in skill_files:
+        if sf.parent.parent.name == "skills":
+            pack_dirs.add(sf.parent.parent.parent)
+
+    # DP0: Pack layout (Lola format)
+    for pack_dir in sorted(pack_dirs):
+        if pack_dir.exists():
+            layout_errors = validate_pack_layout(pack_dir)
+            for err in layout_errors:
+                all_errors.append((pack_dir, err))
+
     if not skill_files:
+        if all_errors:
+            print("❌ Pack layout validation failed:")
+            for path, err in all_errors:
+                print(f"  • {path}: {err}")
+            return 1
         print("No SKILL.md files found to validate.")
         return 0
 
     print("🔍 Validating skills against Design Principles...")
     print()
-
-    all_errors: list[tuple[Path, str]] = []
-    all_warnings: list[tuple[Path, str]] = []
 
     for skill_path in sorted(skill_files):
         result = validate_skill(skill_path)
@@ -424,7 +482,15 @@ def main() -> int:
         else:
             print(f"  {rel_path}: ✓")
 
-    print()
+    # Report pack layout errors first if any
+    if all_errors and any(e.startswith("DP0:") for _, e in all_errors):
+        layout_errs = [(p, e) for p, e in all_errors if e.startswith("DP0:")]
+        print()
+        print("Pack layout (Lola format):")
+        for path, err in layout_errs:
+            rel = path.relative_to(Path.cwd()) if path.is_relative_to(Path.cwd()) else path
+            print(f"  {rel}: ❌ {err}")
+        print()
 
     if all_errors or (args.warnings_as_errors and all_warnings):
         print("❌ Validation failed")

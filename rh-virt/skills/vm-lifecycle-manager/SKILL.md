@@ -37,11 +37,10 @@ Control virtual machine power state in OpenShift Virtualization using the `vm_li
 ### Prerequisite Verification
 
 **Before executing:**
-
-1. Check `openshift-virtualization` exists in `.mcp.json` → If missing, report setup
+1. Check `openshift-virtualization` exists in `mcps.json` → If missing, report setup
 2. Verify `KUBECONFIG` is set (presence only, never expose value) → If missing, report
 
-**Human Notification Protocol:** `❌ Cannot execute vm-lifecycle-manager: MCP server not available. Setup: Add to .mcp.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
+**Human Notification Protocol:** `❌ Cannot execute vm-lifecycle-manager: MCP server not available. Setup: Add to mcps.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
 ⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 

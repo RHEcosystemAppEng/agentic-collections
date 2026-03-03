@@ -51,9 +51,14 @@ def validate_plugin_json(pack_dir: str) -> List[str]:
     return errors
 
 
+MCP_FILENAME = "mcps.json"
+MCP_DEPRECATED = ".mcp.json"
+
+
 def validate_mcp_json(pack_dir: str) -> List[str]:
     """
-    Validate .mcp.json structure.
+    Validate mcps.json structure.
+    Errors if deprecated .mcp.json exists (must be renamed to mcps.json).
 
     Args:
         pack_dir: Pack directory name
@@ -62,10 +67,18 @@ def validate_mcp_json(pack_dir: str) -> List[str]:
         List of error messages (empty if valid)
     """
     errors = []
-    mcp_path = Path(pack_dir) / '.mcp.json'
+    pack_path = Path(pack_dir)
+    deprecated_path = pack_path / MCP_DEPRECATED
+    mcp_path = pack_path / MCP_FILENAME
+
+    if deprecated_path.exists():
+        errors.append(
+            f"{pack_dir}: deprecated {MCP_DEPRECATED} found; rename to {MCP_FILENAME}"
+        )
+        return errors
 
     if not mcp_path.exists():
-        # .mcp.json is optional
+        # mcps.json is optional
         return errors
 
     try:
@@ -74,14 +87,14 @@ def validate_mcp_json(pack_dir: str) -> List[str]:
 
         # Check for mcpServers key
         if 'mcpServers' not in data:
-            errors.append(f"{pack_dir}: .mcp.json missing 'mcpServers' key")
+            errors.append(f"{pack_dir}: {MCP_FILENAME} missing 'mcpServers' key")
         elif not isinstance(data['mcpServers'], dict):
-            errors.append(f"{pack_dir}: .mcp.json 'mcpServers' must be an object")
+            errors.append(f"{pack_dir}: {MCP_FILENAME} 'mcpServers' must be an object")
 
     except json.JSONDecodeError as e:
-        errors.append(f"{pack_dir}: Invalid JSON in .mcp.json: {e}")
+        errors.append(f"{pack_dir}: Invalid JSON in {MCP_FILENAME}: {e}")
     except Exception as e:
-        errors.append(f"{pack_dir}: Error reading .mcp.json: {e}")
+        errors.append(f"{pack_dir}: Error reading {MCP_FILENAME}: {e}")
 
     return errors
 
@@ -197,7 +210,7 @@ def validate_pack(pack_dir: str) -> List[str]:
     # Validate plugin.json
     errors.extend(validate_plugin_json(pack_dir))
 
-    # Validate .mcp.json
+    # Validate mcps.json
     errors.extend(validate_mcp_json(pack_dir))
 
     # Validate skills

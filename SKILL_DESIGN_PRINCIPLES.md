@@ -2,7 +2,7 @@
 
 Repository-specific design principles for creating skills and agents in agentic collections. Referenced from [CLAUDE.md](CLAUDE.md).
 
-**Scope**: Tier 2 requirements - repository enhancements beyond base agentskills.io specification (Tier 1 validated by linter).
+**Scope**: Tier 2 requirements - repository enhancements beyond base agentskills.io specification (Tier 1 validated by linter). Packs follow the Lola module format; see [CLAUDE.md](CLAUDE.md) for layout.
 
 ---
 
@@ -302,7 +302,7 @@ test -n "$API_SECRET" && echo "✓ API_SECRET is set" || echo "✗ Not set"
 **Environment Variables:** `VAR` - What it controls
 
 **Verification Steps:**
-1. Check `server-name` in `.mcp.json`
+1. Check `server-name` in `mcps.json`
 2. Verify `VAR` is set (without exposing value)
 3. If missing → Human Notification Protocol
 

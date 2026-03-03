@@ -157,7 +157,7 @@ The workflow will:
 
 **Repository structure validation (`make validate`):**
 - ✅ Collection directory structure and naming conventions
-- ✅ Required files presence (README.md, .mcp.json, etc.)
+- ✅ Required files presence (README.md, mcps.json, etc.)
 - ✅ Plugin metadata completeness
 - ✅ MCP server configurations
 
@@ -199,7 +199,7 @@ The workflow will fail and provide:
 3. Reference to SKILL_DESIGN_PRINCIPLES.md
 
 **Common validation errors**:
-- Missing required collection files (README.md, .mcp.json)
+- Missing required collection files (README.md, mcps.json)
 - Invalid MCP server configuration syntax
 - Skills not following design principles (see SKILL_DESIGN_PRINCIPLES.md)
 - Missing documentation in collections

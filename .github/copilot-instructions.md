@@ -24,7 +24,7 @@ agentic-collections/
 <pack>/
 ├── README.md
 ├── .claude-plugin/plugin.json   # Optional: name, version, description, author, license
-├── .mcp.json                    # MCP server configs — credentials via env vars ONLY
+├── mcps.json                    # MCP server configs — credentials via env vars ONLY
 ├── agents/<agent>.md            # Workflow orchestrators (YAML frontmatter required)
 └── skills/<skill-name>/SKILL.md # Task executors (YAML frontmatter required)
 ```
@@ -45,7 +45,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 | `make test` | validate + generate + verify checks |
 | `make serve` | Local site at http://localhost:8000 |
 
-**CI runs `make install && make validate` on every PR.** Always run `make validate` after editing skills, agents, or `.mcp.json` files to catch errors before pushing.
+**CI runs `make install && make validate` on every PR.** Always run `make validate` after editing skills, agents, or `mcps.json` files to catch errors before pushing.
 
 Packs known to the validator are listed in `scripts/validate_structure.py` (`PACK_DIRS`). Add new packs there when creating them.
 
@@ -72,7 +72,7 @@ metadata:
 
 Same YAML frontmatter requirement (`name` + `description`). Agents orchestrate skills; they do not call MCP tools directly.
 
-### `.mcp.json`
+### `mcps.json`
 
 ```json
 {
@@ -103,7 +103,7 @@ Same YAML frontmatter requirement (`name` + `description`). Agents orchestrate s
 ## Adding a New Pack
 
 1. Create `<pack-name>/` directory with `README.md`.
-2. Add `skills/` and optionally `agents/`, `.mcp.json`, `.claude-plugin/plugin.json`.
+2. Add `skills/` and optionally `agents/`, `mcps.json`, `.claude-plugin/plugin.json`.
 3. Add the new pack name to `PACK_DIRS` in `scripts/validate_structure.py`.
 4. Run `make validate && make generate` to regenerate docs locally for testing; do **not** commit `docs/data.json` (it is generated during deployment).
 
@@ -127,7 +127,7 @@ See `rh-virt/SKILL_TEMPLATE.md` for the canonical skill template and `rh-sre` as
 | Error | Cause | Fix |
 |---|---|---|
 | `Missing YAML frontmatter` | SKILL.md or agent .md missing `---` block | Add frontmatter with `name` and `description` |
-| `Invalid JSON in .mcp.json` | Syntax error or comments in JSON | JSON does not support comments; remove them |
+| `Invalid JSON in mcps.json` | Syntax error or comments in JSON | JSON does not support comments; remove them |
 | `Pack directory does not exist` | New pack not listed in validator | Add to `PACK_DIRS` in `scripts/validate_structure.py` |
 | `uv: command not found` | uv not installed | `curl -LsSf https://astral.sh/uv/install.sh | sh` |
 | Gitleaks blocks commit | Credential-like value in file | Use `${ENV_VAR}` references instead of literal values |

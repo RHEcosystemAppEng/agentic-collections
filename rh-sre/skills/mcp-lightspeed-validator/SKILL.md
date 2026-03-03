@@ -32,7 +32,7 @@ When the tool call fails, include:
 - **Expired credentials**: Red Hat Console tokens may have expired
 - **Server not running**: MCP server/container may be stopped
 - **Network**: Firewall or proxy blocking console.redhat.com
-- **Configuration**: .mcp.json misconfigured or server not registered
+- **Configuration**: mcps.json misconfigured or server not registered
 
 **Troubleshooting:**
 1. Verify env vars: LIGHTSPEED_CLIENT_ID, LIGHTSPEED_CLIENT_SECRET (never echo values)

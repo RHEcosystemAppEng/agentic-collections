@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-Parse .mcp.json files and extract MCP server configurations.
+Parse mcps.json files and extract MCP server configurations.
 """
 
 import json
+import sys
 import re
 from pathlib import Path
 from typing import Dict, List, Any
 
 # List of agentic packs to parse
 PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt']
+
+MCP_FILENAME = "mcps.json"
+MCP_DEPRECATED = ".mcp.json"
 
 
 def extract_env_vars(env_dict: Dict[str, str]) -> List[str]:
@@ -62,8 +66,9 @@ def extract_header_env_vars(headers: Dict[str, str]) -> List[str]:
 
 def parse_mcp_file(pack_dir: str) -> List[Dict[str, Any]]:
     """
-    Parse .mcp.json file from a pack directory.
+    Parse mcps.json file from a pack directory.
     Supports both command-based and HTTP-based MCP servers.
+    Errors if deprecated .mcp.json exists (must be renamed to mcps.json).
 
     Args:
         pack_dir: Name of the pack directory
@@ -71,7 +76,13 @@ def parse_mcp_file(pack_dir: str) -> List[Dict[str, Any]]:
     Returns:
         List of MCP server configurations
     """
-    mcp_file = Path(pack_dir) / '.mcp.json'
+    pack_path = Path(pack_dir)
+    deprecated_path = pack_path / MCP_DEPRECATED
+    mcp_file = pack_path / MCP_FILENAME
+
+    if deprecated_path.exists():
+        print(f"Error: {pack_dir}/{MCP_DEPRECATED} is deprecated; rename to {MCP_FILENAME}", file=sys.stderr)
+        sys.exit(1)
 
     if not mcp_file.exists():
         return []
@@ -153,7 +164,7 @@ def load_custom_mcp_data() -> Dict[str, Any]:
 def generate_mcp_data() -> List[Dict[str, Any]]:
     """
     Generate MCP server data for all agentic packs.
-    Merges data from .mcp.json files with custom data from docs/mcp.json.
+    Merges data from mcps.json files with custom data from docs/mcp.json.
 
     Returns:
         List of MCP server dictionaries

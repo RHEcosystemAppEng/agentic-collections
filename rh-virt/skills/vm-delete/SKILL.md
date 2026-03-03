@@ -42,12 +42,11 @@ Permanently delete virtual machines and their associated resources (storage, Dat
 ### Prerequisite Verification
 
 **Before executing:**
-
-1. Check `openshift-virtualization` exists in `.mcp.json` → If missing, report setup
+1. Check `openshift-virtualization` exists in `mcps.json` → If missing, report setup
 2. Verify `KUBECONFIG` is set (presence only, never expose value) → If missing, report
 3. Check RBAC permissions (optional) → Verify delete permissions for VirtualMachine and PVC
 
-**Human Notification Protocol:** `❌ Cannot execute vm-delete: MCP server not available. Setup: Add to .mcp.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
+**Human Notification Protocol:** `❌ Cannot execute vm-delete: MCP server not available. Setup: Add to mcps.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
 ⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 

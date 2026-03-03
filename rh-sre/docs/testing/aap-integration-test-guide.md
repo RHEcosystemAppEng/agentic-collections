@@ -41,7 +41,7 @@ This guide provides a comprehensive testing plan for the AAP MCP integration, co
    - SSH access configured with credentials in AAP
 
 4. **MCP Configuration**:
-   - `rh-sre/.mcp.json` configured with AAP MCP servers
+   - `rh-sre/mcps.json` configured with AAP MCP servers
    - `lightspeed-mcp` configured and working
    - All environment variables set
 

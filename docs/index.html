@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agentic Skills packs</title>
-    <link rel="stylesheet" href="styles.css?v=20">
+    <link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
     <header>
@@ -43,6 +43,21 @@
             <input type="search" id="searchInput" placeholder="Search collections, skills, agents, MCP servers...">
         </div>
     </header>
+
+    <div class="install-callout collapsed" id="install-callout">
+        <div class="install-callout-toggle" onclick="toggleInstallCallout()" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); toggleInstallCallout(); }" role="button" tabindex="0" aria-expanded="false" aria-controls="install-callout-body" title="Click to expand installation instructions">
+            <span class="install-callout-arrow">▶</span>
+            <span class="install-callout-label">Install with <a href="https://github.com/RedHatProductSecurity/lola" target="_blank" onclick="event.stopPropagation()">Lola</a></span>
+            <a href="https://github.com/RHEcosystemAppEng/agentic-collections#installation-lola-package-manager" target="_blank" class="install-callout-link" onclick="event.stopPropagation()">Full instructions →</a>
+        </div>
+        <div class="install-callout-body" id="install-callout-body">
+            <div class="install-callout-command">
+                <pre><code id="install-command">lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml</code></pre>
+                <button type="button" class="copy-button" id="install-copy-btn" aria-label="Copy command">Copy</button>
+            </div>
+            <p class="install-callout-note">Then <code>lola install -f &lt;module&gt;</code> — applies to current folder only.</p>
+        </div>
+    </div>
 
     <main>
         <!-- Section 1: Agentic Packs -->
@@ -87,6 +102,6 @@
         <div class="modal-content" id="mcp-details"></div>
     </div>
 
-    <script src="app.js?v=21"></script>
+    <script src="app.js?v=23"></script>
 </body>
 </html>

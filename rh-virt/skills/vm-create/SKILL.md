@@ -42,20 +42,13 @@ Create virtual machines in OpenShift Virtualization using the `vm_create` tool f
 
 ### Prerequisite Verification
 
-**Before executing, verify MCP server availability:**
-
-1. Check `openshift-virtualization` exists in `.mcp.json` → If missing, report setup instructions
+**Before executing:**
+1. Check `openshift-virtualization` exists in `mcps.json` → If missing, report setup instructions
 2. Verify `KUBECONFIG` is set (check presence only, never expose value) → If missing, report to user
 
-**Human Notification Protocol (when prerequisites fail):**
+**Human Notification Protocol:** `❌ Cannot execute vm-create: MCP server 'openshift-virtualization' not available. Setup: Add to mcps.json, set KUBECONFIG env var, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
-```
-❌ Cannot execute vm-create: MCP server 'openshift-virtualization' not available
-📋 Setup: Add to .mcp.json, set KUBECONFIG env var, restart Claude Code
-🔗 Docs: https://github.com/openshift/openshift-mcp-server
-```
-
-⚠️ **SECURITY**: Never display actual KUBECONFIG path or credential values.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 
