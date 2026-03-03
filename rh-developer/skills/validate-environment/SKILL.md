@@ -2,6 +2,8 @@
 name: validate-environment
 description: |
   Check and report the status of required tools and environment for rh-developer skills. Validates tool installation (oc, helm, podman, git, skopeo, etc.), cluster connectivity, and permissions. Use this skill before running other deployment skills to ensure prerequisites are met. Triggers on /validate-environment command or when user asks to check their environment setup.
+model: inherit
+color: cyan
 metadata:
   user_invocable: "true"
 ---
@@ -10,27 +12,22 @@ metadata:
 
 Check that required tools and environment are properly configured.
 
+## When to Use This Skill
+
+- User wants to verify their environment before running deployment skills
+- User encounters tool-related errors and needs a diagnostic check
+- First-time setup or after environment changes to confirm readiness
+
 ## Critical: Human-in-the-Loop Requirements
 
-See [Human-in-the-Loop Requirements](../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
+See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
 **Key Rules:**
 1. WAIT for user to select validation scope before running checks
 2. Present results clearly and ask if user wants to proceed with fixes
 3. Never auto-fix issues without user approval
 
-## Trigger
-
-- User types `/validate-environment`
-- User asks "check my environment", "what tools do I need", "am I ready to deploy"
-
-## Input Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `TARGET` | What to validate: `all`, `openshift`, `rhel`, `containers` | `all` |
-
-## Execution Flow
+## Workflow
 
 ### Step 1: Determine Validation Scope
 
@@ -66,7 +63,7 @@ check_tool() {
 
 **Tools to check:** git, curl, jq, oc, helm, podman, docker, skopeo, ssh
 
-> **See [docs/prerequisites.md](../docs/prerequisites.md)** for the complete tool requirements by skill, check commands, and installation instructions.
+> **See [docs/prerequisites.md](../../docs/prerequisites.md)** for the complete tool requirements by skill, check commands, and installation instructions.
 
 ### Step 3: Check OpenShift Connectivity (if TARGET includes openshift)
 
@@ -186,7 +183,7 @@ Select an option or describe what you'd like to do:
 
 This tool is required for [skill-names].
 
-See [docs/prerequisites.md](../docs/prerequisites.md) for installation commands by OS.
+See [docs/prerequisites.md](../../docs/prerequisites.md) for installation commands by OS.
 ```
 
 ### Cluster Connection Failed
@@ -221,16 +218,15 @@ Options:
 
 ---
 
-## Output Variables
+## Dependencies
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `TOOLS_OK` | List of installed tools | `git,curl,oc,helm` |
-| `TOOLS_MISSING` | List of missing tools | `skopeo` |
-| `CLUSTER_CONNECTED` | OpenShift connectivity | `true` / `false` |
-| `READY_FOR_SKILLS` | Skills that can run | `/deploy,/s2i-build` |
+### Required MCP Servers
+- None required (uses Bash to check tool availability and cluster connectivity)
 
-## Reference Documentation
+### Related Skills
+- `/containerize-deploy` - End-to-end deployment workflow (validate environment first)
+- `/s2i-build` - S2I build requiring oc and cluster access
+- `/deploy` - Deployment requiring oc and cluster access
 
-For detailed guidance, see:
-- [docs/prerequisites.md](../docs/prerequisites.md) - Comprehensive tool requirements by skill, installation commands, cluster access verification
+### Reference Documentation
+- [docs/prerequisites.md](../../docs/prerequisites.md) - Comprehensive tool requirements by skill, installation commands, cluster access verification

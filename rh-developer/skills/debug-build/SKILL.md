@@ -2,6 +2,8 @@
 name: debug-build
 description: |
   Diagnose OpenShift build failures including S2I builds, Docker/Podman builds, and BuildConfig issues. Automates multi-step diagnosis: BuildConfig validation, build pod logs, registry authentication, and source repository access. Use this skill when builds fail, hang, or produce unexpected results. Triggers on /debug-build command or phrases like "build failed", "S2I error", "can't pull builder image", "can't push to registry", "build timeout".
+model: inherit
+color: cyan
 metadata:
   user_invocable: "true"
 ---
@@ -17,39 +19,13 @@ Before running this skill:
 2. User has access to the target namespace
 3. Build or BuildConfig name is known (or can be identified from recent builds)
 
+## When to Use This Skill
+
+Use this skill when OpenShift builds fail, hang, or produce unexpected results. It diagnoses S2I builds, Docker/Podman builds, and BuildConfig issues by analyzing build pod logs, registry authentication, and source repository access.
+
 ## Critical: Human-in-the-Loop Requirements
 
 See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing diagnostic actions
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present findings clearly** and ask if user wants deeper analysis
-4. **Never auto-execute** remediation actions without user approval
-
-If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
-
-## Critical: Prefer MCP Tools
-
-**IMPORTANT:** Prefer MCP tools over CLI commands for better integration and user experience:
-1. **Search for MCP tools first** - Use `ToolSearch` to load OpenShift MCP tools (e.g., `+openshift pods_get`) before diagnostic actions
-2. **Use MCP when available** - Prefer `pods_get`, `pods_log`, `events_list`, `resources_get` over `oc`/`kubectl` commands
-
-## Trigger
-
-- User types `/debug-build`
-- User says "build failed", "S2I error", "build won't complete"
-- User says "can't pull builder image", "can't push to registry"
-- User says "build timeout", "build stuck", "assemble failed"
-- After `/s2i-build` reports a failure
-
-## Input Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `BUILD_NAME` | Name of specific build to debug | Latest failed build |
-| `BUILDCONFIG_NAME` | BuildConfig to analyze | Auto-detect |
-| `NAMESPACE` | Target namespace | Current namespace |
 
 ## Workflow
 
@@ -71,7 +47,7 @@ Which build would you like me to debug?
 Select an option or enter a build name:
 ```
 
-**WAIT for user response.** Do NOT proceed until user identifies the target build.
+**WAIT for user confirmation before proceeding.**
 
 If user selects "List failed builds":
 Use kubernetes MCP `resources_list` for builds, filter by Failed phase:
@@ -320,74 +296,19 @@ Select an option:
 
 ## Build Failure Categories
 
-### Common S2I Build Failures
-
-| Phase | Failure Type | Key Indicators | Common Fix |
-|-------|--------------|----------------|------------|
-| **fetch-source** | Auth failure | 401/403 in logs | Add/fix source secret |
-| **fetch-source** | Repo not found | 404 in logs | Check git URL |
-| **pull-builder** | Image not found | ImagePullBackOff | Import builder image |
-| **pull-builder** | Auth failure | unauthorized | Add pull secret |
-| **assemble** | Dependency error | npm ERR, pip error | Fix package.json/requirements |
-| **assemble** | Build script fail | Non-zero exit | Check application code |
-| **assemble** | Out of memory | OOMKilled | Increase build resources |
-| **push** | Registry auth | unauthorized | Check push secret |
-| **push** | Registry full | quota exceeded | Clean up old images |
-
-### Python S2I Specific Issues
-
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| Wrong entry point | "No module named app" | Set APP_MODULE or rename to app.py |
-| Missing gunicorn | "gunicorn: command not found" | Add gunicorn to requirements.txt |
-| Version mismatch | Import errors | Match Python version to builder |
-
-See [docs/python-s2i-entrypoints.md](../../docs/python-s2i-entrypoints.md) for detailed Python guidance.
-
-### Node.js S2I Specific Issues
-
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| Build script missing | "npm run build" fails | Add build script or set NPM_RUN |
-| Node version mismatch | Syntax errors | Match engines.node in package.json |
-| Private npm registry | 401 Unauthorized | Configure .npmrc or NPM_MIRROR |
-
-## MCP Tools Used
-
-| Tool | Purpose |
-|------|---------|
-| `resources_list` | List builds, find failed builds |
-| `resources_get` | Get Build spec, BuildConfig details |
-| `pod_logs` | Get build pod logs |
-| `events_list` | Get build events |
-| `resources_list` | Check secrets, imagestreams |
-| `get_file_contents` (github) | Verify source repository access |
-
-## Output Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `BUILD_NAME` | Debugged build name | `myapp-1` |
-| `BUILDCONFIG_NAME` | Associated BuildConfig | `myapp` |
-| `BUILD_NAMESPACE` | Namespace | `my-project` |
-| `FAILURE_PHASE` | Phase where build failed | `assemble` |
-| `FAILURE_CATEGORY` | Categorized failure type | `DependencyError` |
-| `ROOT_CAUSE` | Identified root cause | `npm package not found` |
+For S2I build phase failures, common error patterns (Node.js, Python, Java), and troubleshooting decision trees, see [docs/debugging-patterns.md](../../docs/debugging-patterns.md).
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift` (kubernetes MCP server)
-- `github` (optional, for source repository verification)
+- `openshift` - Kubernetes/OpenShift resource access for builds, BuildConfigs, and build pod logs
 
 ### Related Skills
 - `/s2i-build` - To retry build after fixing issues
 - `/debug-pod` - To debug the builder pod directly
-- `/detect-project` - To re-analyze project and builder image selection
+- `/deploy` - To deploy after a successful build
 
-## Reference Documentation
-
-For detailed guidance, see:
+### Reference Documentation
 - [docs/builder-images.md](../../docs/builder-images.md) - S2I builder image selection, version mapping
 - [docs/python-s2i-entrypoints.md](../../docs/python-s2i-entrypoints.md) - Python APP_MODULE configuration
 - [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns

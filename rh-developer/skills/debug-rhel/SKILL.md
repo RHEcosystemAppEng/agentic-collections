@@ -2,6 +2,8 @@
 name: debug-rhel
 description: |
   Diagnose RHEL system issues including systemd service failures, SELinux denials, firewall blocking, and system resource problems. Automates multi-step diagnosis: journalctl log analysis, SELinux denial detection (ausearch), firewall rule inspection, and systemd unit status. Use this skill when applications fail on standalone RHEL/Fedora/CentOS hosts deployed via /rhel-deploy. Triggers on /debug-rhel command or phrases like "service won't start on RHEL", "SELinux blocking", "systemd failed", "firewall blocking".
+model: inherit
+color: cyan
 metadata:
   user_invocable: "true"
 ---
@@ -33,33 +35,13 @@ Diagnose RHEL system issues by automatically gathering systemd status, journal l
 
 See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing diagnostic commands
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present findings clearly** and ask if user wants deeper analysis
-4. **Never auto-execute** remediation commands without user approval
-
-If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
-
 ## Note: SSH/Bash Required
 
 This skill operates on **remote RHEL hosts** via SSH, not local MCP servers. Unlike OpenShift/Podman skills, direct Bash commands with SSH are the correct approach here since MCP servers run locally and cannot access remote systems.
 
-## Trigger
+## When to Use This Skill
 
-- User types `/debug-rhel`
-- User says "service won't start on RHEL", "systemd failed"
-- User says "SELinux blocking", "AVC denied"
-- User says "firewall blocking", "can't access port"
-- User says "permission denied on RHEL"
-- After `/rhel-deploy` reports a failure
-
-## Input Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `RHEL_HOST` | SSH target (user@host) | From session state |
-| `SERVICE_NAME` | systemd service to debug | Auto-detect |
+Use `/debug-rhel` when applications fail on standalone RHEL, Fedora, or CentOS hosts. This skill automates multi-step diagnosis of systemd service failures, SELinux denials, firewall blocking, and system resource problems via SSH.
 
 ## Workflow
 
@@ -455,82 +437,18 @@ Select an option:
 
 **WAIT for user to select next action.**
 
-## Common RHEL Issues
-
-### systemd Service Issues
-
-| Issue | Symptom | Diagnosis | Fix |
-|-------|---------|-----------|-----|
-| Unit not found | "not-found" load state | Service file missing | Create or install unit file |
-| Exit code 1 | "failed" status | Application error | Check application logs |
-| Exit code 126 | Permission issue | Cannot execute | Check ExecStart path/perms |
-| Exit code 127 | Command not found | Binary missing | Install dependency |
-| Exit code 203 | Exec format error | Wrong architecture | Rebuild for target arch |
-| Exit code 217 | User not found | Bad User= directive | Create user or fix unit |
-
-### SELinux Common Denials
-
-| Denial Type | Symptom | Common Fix |
-|-------------|---------|------------|
-| Port binding | Cannot bind to port | `semanage port -a -t http_port_t -p tcp [port]` |
-| File read | Cannot read config | `semanage fcontext` + `restorecon` |
-| File write | Cannot write data | `semanage fcontext` + `restorecon` |
-| Network connect | Cannot connect out | `setsebool -P httpd_can_network_connect on` |
-| Container | Podman issues | `setsebool -P container_manage_cgroup on` |
-
-See [docs/selinux-troubleshooting.md](../../docs/selinux-troubleshooting.md) for detailed guidance.
-
-### Firewall Issues
-
-| Issue | Symptom | Fix |
-|-------|---------|-----|
-| Port not open | Connection refused from outside | `firewall-cmd --add-port=[port]/tcp` |
-| Service not enabled | Standard service blocked | `firewall-cmd --add-service=[service]` |
-| Zone mismatch | Rules in wrong zone | Check active zone, add to correct zone |
-| Rich rule blocking | Specific traffic blocked | Review/remove rich rules |
-
-## MCP Tools Used
-
-This skill primarily uses Bash (SSH commands) since it operates on remote RHEL hosts.
-
-**Optional Lightspeed MCP tools** (used in Phase 7 if `lightspeed-mcp` is available):
-
-| Tool | Purpose |
-|------|---------|
-| `find_host_by_name` | Look up the target system in Red Hat Insights inventory |
-| `get_system_cves` | Get CVEs affecting the specific system |
-| `get_active_rules` | Get advisor configuration recommendations |
-| `get_rule_by_text_search` | Search advisor recommendations by error text from logs |
-
-## Output Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `RHEL_HOST` | Target host | `user@192.168.1.100` |
-| `SERVICE_NAME` | Debugged service | `myapp.service` |
-| `SERVICE_STATUS` | Current status | `failed` |
-| `SELINUX_DENIALS` | AVC denial count | `3` |
-| `FIREWALL_BLOCKING` | Port blocked | `true` / `false` |
-| `ROOT_CAUSE` | Identified root cause | `SELinux port binding denied` |
-| `INSIGHTS_SYSTEM_ID` | Insights system ID (if registered) | `abc-def-123` |
-| `CVE_COUNT` | Number of CVEs affecting system | `3` |
+For common RHEL issues (systemd exit codes, SELinux denials, firewall), see [debugging-patterns.md](../../docs/debugging-patterns.md) and [selinux-troubleshooting.md](../../docs/selinux-troubleshooting.md).
 
 ## Dependencies
 
-### Required Tools
-- SSH client with key-based authentication
-- sudo access on target host
-
-### Optional MCP Servers
-- `lightspeed-mcp` - Red Hat Insights vulnerability, advisor, and inventory data (Phase 7)
+### Required MCP Servers
+- `lightspeed-mcp` (optional) - Red Hat Insights CVE and advisor checks in Phase 7
 
 ### Related Skills
-- `/rhel-deploy` - To redeploy after fixing issues
-- `/debug-container` - To debug Podman containers on the host
+- `/rhel-deploy` - redeploy after fixing issues
+- `/debug-container` - debug Podman containers on the host
 
-## Reference Documentation
-
-For detailed guidance, see:
+### Reference Documentation
 - [docs/selinux-troubleshooting.md](../../docs/selinux-troubleshooting.md) - SELinux denial analysis
 - [docs/rhel-deployment.md](../../docs/rhel-deployment.md) - RHEL deployment patterns
 - [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns

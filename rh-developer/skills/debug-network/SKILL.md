@@ -2,6 +2,8 @@
 name: debug-network
 description: |
   Diagnose OpenShift service connectivity issues including DNS resolution, service endpoints, route ingress, and network policies. Automates multi-step diagnosis: service endpoint verification, pod selector matching, route status, and network policy analysis. Use this skill when services can't communicate, routes return 503/502 errors, or external access fails. Triggers on /debug-network command or phrases like "can't reach service", "route returning 503", "pods can't communicate", "no endpoints".
+model: inherit
+color: cyan
 metadata:
   user_invocable: "true"
 ---
@@ -17,39 +19,13 @@ Before running this skill:
 2. User has access to the target namespace
 3. Service, Route, or application name is known
 
+## When to Use This Skill
+
+Use this skill when services cannot communicate, routes return 503/502 errors, or external access fails. It automates checking service endpoints, pod selector matching, route status, and network policy analysis to pinpoint connectivity issues.
+
 ## Critical: Human-in-the-Loop Requirements
 
 See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing diagnostic actions
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present findings clearly** and ask if user wants deeper analysis
-4. **Never auto-execute** remediation actions without user approval
-
-If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
-
-## Critical: Prefer MCP Tools
-
-**IMPORTANT:** Prefer MCP tools over CLI commands for better integration and user experience:
-1. **Search for MCP tools first** - Use `ToolSearch` to load OpenShift MCP tools (e.g., `+openshift pods_get`) before diagnostic actions
-2. **Use MCP when available** - Prefer `pods_get`, `pods_log`, `events_list`, `resources_get` over `oc`/`kubectl` commands
-
-## Trigger
-
-- User types `/debug-network`
-- User says "can't reach service", "service not working"
-- User says "route returning 503", "502 Bad Gateway"
-- User says "pods can't communicate", "network timeout"
-- User says "no endpoints", "service has no backends"
-
-## Input Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `SERVICE_NAME` | Service to debug | Auto-detect |
-| `ROUTE_NAME` | Route to debug | Same as service |
-| `NAMESPACE` | Target namespace | Current namespace |
 
 ## Workflow
 
@@ -339,66 +315,17 @@ Select an option:
 
 ## Common Connectivity Issues
 
-### Service Issues
-
-| Issue | Symptom | Diagnosis | Fix |
-|-------|---------|-----------|-----|
-| No endpoints | Connection refused | Empty endpoints list | Fix selector or pod labels |
-| Selector mismatch | Some pods missing | Compare selector to labels | Update selector or labels |
-| Wrong port | Connection refused | Check targetPort | Update service port mapping |
-| Pod not ready | Intermittent failures | Readiness probe failing | Fix application or probe |
-
-### Route Issues
-
-| Issue | Symptom | Diagnosis | Fix |
-|-------|---------|-----------|-----|
-| 503 Service Unavailable | No healthy backends | Check endpoints | Ensure pods are ready |
-| 502 Bad Gateway | Backend connection error | Pod crash or wrong port | Debug pod or fix port |
-| 404 Not Found | Route not admitted | Check route status | Fix hostname conflict |
-| TLS errors | Certificate issues | Check TLS config | Update certificates |
-| Host not found | DNS issue | Check route host | Verify wildcard DNS |
-
-### Network Policy Issues
-
-| Issue | Symptom | Diagnosis | Fix |
-|-------|---------|-----------|-----|
-| Ingress blocked | Connection timeout | Check policy rules | Add ingress rule |
-| Egress blocked | Can't reach external | Check egress rules | Add egress rule |
-| Cross-namespace blocked | Namespace isolation | Check namespaceSelector | Add namespace rule |
-| Port blocked | Specific port fails | Check port rules | Add port to policy |
-
-## MCP Tools Used
-
-| Tool | Purpose |
-|------|---------|
-| `resources_get` | Get Service, Route, NetworkPolicy details |
-| `resources_list` | List services, endpoints, pods, policies |
-| `pod_list` | Check pod status and labels |
-| `events_list` | Get route/service events |
-
-## Output Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SERVICE_NAME` | Debugged service | `myapp` |
-| `SERVICE_NAMESPACE` | Namespace | `my-project` |
-| `HAS_ENDPOINTS` | Endpoints exist | `true` / `false` |
-| `ENDPOINTS_READY` | Ready endpoint count | `2` |
-| `ROUTE_ADMITTED` | Route status | `true` / `false` |
-| `NETWORK_POLICY_BLOCKING` | Policy blocking traffic | `true` / `false` |
-| `ROOT_CAUSE` | Identified root cause | `Selector mismatch` |
+For detailed diagnosis and fix tables covering service, route, and network policy issues, see [docs/debugging-patterns.md](../../docs/debugging-patterns.md).
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift` (kubernetes MCP server)
+- `openshift` - Kubernetes/OpenShift resource access for services, routes, endpoints, and network policies
 
 ### Related Skills
 - `/debug-pod` - To debug specific backend pods
 - `/deploy` - To fix and redeploy the service
 
-## Reference Documentation
-
-For detailed guidance, see:
+### Reference Documentation
 - [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns
 - [docs/prerequisites.md](../../docs/prerequisites.md) - Required tools (oc), cluster access verification
