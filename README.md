@@ -174,6 +174,12 @@ Add the server configuration to `<pack>/.mcp.json`:
 - ❌ Never hardcode API keys, tokens, or secrets
 - ✅ Set appropriate security isolation level
 
+**Platform Notes (Linux vs macOS):**
+
+On **Linux**, you may want to add `--userns=keep-id:uid=65532,gid=65532` to the Podman `args` for proper UID/GID mapping inside the container. This ensures the container process runs with the correct non-root user identity.
+
+On **macOS**, this flag is **not supported** because Podman runs inside a Linux VM where user namespace mapping behaves differently. Omit it on macOS or the container will fail to start.
+
 ### Step 2: Add Custom Metadata (Optional)
 
 To display repository links and tool descriptions on the documentation site, add an entry to `docs/mcp.json`:

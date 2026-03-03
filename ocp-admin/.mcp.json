@@ -7,7 +7,6 @@
         "--rm",
         "-i",
         "--network=host",
-        "--userns=keep-id:uid=65532,gid=65532",
         "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
         "--entrypoint", "/app/kubernetes-mcp-server",
         "quay.io/ecosystem-appeng/openshift-mcp-server:latest",

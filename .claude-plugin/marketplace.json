@@ -45,6 +45,18 @@
       "source": "./rh-virt",
       "category": "virtualization",
       "skills": "./skills"
+    },
+    {
+      "name": "ocp-admin",
+      "description": "Red Hat OpenShift Administration Agentic Skills Collection",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "source": "./ocp-admin",
+      "category": "openshift",
+      "skills": "./skills"
     }
   ]
 }

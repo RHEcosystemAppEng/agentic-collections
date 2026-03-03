@@ -45,6 +45,8 @@ A Claude Code plugin for building and deploying applications on Red Hat platform
 - **github** - Repository browsing and code analysis
 - **lightspeed** - Red Hat Insights data (vulnerability, advisor, inventory, planning) — optional
 
+> **Linux users**: For tighter container security, you can add `"--userns=keep-id:uid=65532,gid=65532"` to the openshift MCP server `args` in `.mcp.json`. This maps the container process to a non-root UID. **Do not use this flag on macOS** — Podman runs inside a VM there and the flag will cause startup failures.
+
 ## Supported Languages
 
 Node.js, Python, Java, Go, Ruby, .NET, PHP, Perl
