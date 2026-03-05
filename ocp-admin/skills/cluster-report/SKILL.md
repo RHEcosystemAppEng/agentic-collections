@@ -38,6 +38,8 @@ Generate a unified health and resource report across multiple OpenShift/Kubernet
 
 **Required Environment Variables**: `KUBECONFIG` — must contain at least one cluster context. Two or more recommended for comparison.
 
+**Multi-Cluster Setup**: For large-scale deployments using service account tokens instead of interactive `oc login`, see [multi-cluster-auth.md](../../docs/multi-cluster-auth.md) and the [build-kubeconfig.sh](../../scripts/cluster-report/build-kubeconfig.sh) helper script.
+
 **Helper Scripts** (Python 3, stdlib only — treat as black boxes):
 - [`assemble.py`](../../scripts/cluster-report/assemble.py) — resolves `$file` references into complete raw data JSON
 - [`aggregate.py`](../../scripts/cluster-report/aggregate.py) — aggregates raw data into structured report JSON
@@ -345,7 +347,7 @@ Would you like to:
 | User overrides to include non-OpenShift | Proceed normally; `projects_list` may fail (use `namespaces_list` fallback) |
 | Cluster unreachable | Skip, continue with remaining clusters |
 | Metrics Server missing | Set `nodes_top` to null, show N/A for CPU/memory usage |
-| Auth expired (401) | Skip cluster, suggest `oc login <server-url>` |
+| Auth expired (401) | Skip cluster, suggest: re-run `build-kubeconfig.sh --build --verify` or `oc login <server-url>` |
 | No GPUs found | Display 0 (not an error) |
 | Empty cluster | Report with all zeros (valid data) |
 
