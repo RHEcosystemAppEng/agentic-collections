@@ -57,6 +57,18 @@
       "source": "./ocp-admin",
       "category": "openshift",
       "skills": "./skills"
+    },
+    {
+      "name": "rh-ai-engineer",
+      "description": "AI/ML Model Deployment and Management on Red Hat OpenShift AI",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "source": "./rh-ai-engineer",
+      "category": "ai-engineering",
+      "skills": "./skills"
     }
   ]
 }
