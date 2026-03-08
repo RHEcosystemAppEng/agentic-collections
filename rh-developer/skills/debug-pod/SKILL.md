@@ -2,6 +2,8 @@
 name: debug-pod
 description: |
   Diagnose pod failures on OpenShift including CrashLoopBackOff, ImagePullBackOff, OOMKilled, and pending pods. Automates multi-step diagnosis: pod status, events, logs (current + previous), and resource constraint analysis. Use this skill when pods are not running, restarting frequently, or stuck in non-ready states. Triggers on /debug-pod command or phrases like "my pod is crashing", "pod won't start", "CrashLoopBackOff", "ImagePullBackOff", "OOMKilled".
+model: inherit
+color: cyan
 metadata:
   user_invocable: "true"
 ---
@@ -17,38 +19,13 @@ Before running this skill:
 2. User has access to the target namespace
 3. Pod or deployment name is known (or can be identified from recent deployments)
 
+## When to Use This Skill
+
+Use this skill when pods are not running, restarting frequently, or stuck in non-ready states such as CrashLoopBackOff, ImagePullBackOff, OOMKilled, or Pending. It automates gathering pod status, events, logs, and resource constraints to identify the root cause.
+
 ## Critical: Human-in-the-Loop Requirements
 
 See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing diagnostic actions
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present findings clearly** and ask if user wants deeper analysis
-4. **Never auto-execute** remediation actions without user approval
-
-If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
-
-## Critical: Prefer MCP Tools
-
-**IMPORTANT:** Prefer MCP tools over CLI commands for better integration and user experience:
-1. **Search for MCP tools first** - Use `ToolSearch` to load OpenShift MCP tools (e.g., `+openshift pods_get`) before diagnostic actions
-2. **Use MCP when available** - Prefer `pods_get`, `pods_log`, `events_list`, `resources_get` over `oc`/`kubectl` commands
-
-## Trigger
-
-- User types `/debug-pod`
-- User says "my pod is crashing", "pod won't start", "CrashLoopBackOff"
-- User says "ImagePullBackOff", "OOMKilled", "pod stuck pending"
-- User says "container terminated", "pod restarting"
-
-## Input Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `POD_NAME` | Name of pod to debug | Auto-detect from failed deployment |
-| `NAMESPACE` | Target namespace | Current namespace |
-| `CONTAINER` | Specific container (for multi-container pods) | All containers |
 
 ## Workflow
 
@@ -70,7 +47,7 @@ Which pod would you like me to debug?
 Select an option or enter a pod name:
 ```
 
-**WAIT for user response.** Do NOT proceed until user identifies the target pod.
+**WAIT for user confirmation before proceeding.**
 
 If user selects "List failing pods":
 Use kubernetes MCP `pod_list` with namespace, then filter to show pods NOT in Running/Succeeded state:
@@ -87,7 +64,7 @@ Use kubernetes MCP `pod_list` with namespace, then filter to show pods NOT in Ru
 Which pod would you like me to debug?
 ```
 
-**WAIT for user to select a pod.**
+**WAIT for user confirmation before proceeding.**
 
 ### Step 2: Get Pod Status Overview
 
@@ -264,65 +241,20 @@ Would you like me to:
 Select an option:
 ```
 
-**WAIT for user to select next action.**
+**WAIT for user confirmation before proceeding.**
 
-## Error Patterns Reference
-
-### Common Pod Failure Categories
-
-| Status | Likely Cause | Key Indicators |
-|--------|--------------|----------------|
-| **CrashLoopBackOff** | Application crash | Non-zero exit code, error in logs |
-| **ImagePullBackOff** | Image access issue | Unauthorized, not found, registry timeout |
-| **Pending** | Scheduling issue | Insufficient resources, node selector, taints |
-| **OOMKilled** | Memory exhaustion | Exit code 137, memory limit reached |
-| **CreateContainerError** | Container config issue | Invalid command, missing secrets/configmaps |
-| **Init:Error** | Init container failed | Check init container logs |
-
-### Exit Code Reference
-
-| Exit Code | Meaning | Common Cause |
-|-----------|---------|--------------|
-| 0 | Success | Normal termination |
-| 1 | General error | Application error, exception |
-| 126 | Permission denied | Cannot execute entrypoint |
-| 127 | Command not found | Invalid entrypoint/command |
-| 137 | SIGKILL (OOM) | Memory limit exceeded |
-| 139 | SIGSEGV | Segmentation fault |
-| 143 | SIGTERM | Graceful shutdown |
-
-## MCP Tools Used
-
-| Tool | Purpose |
-|------|---------|
-| `pod_list` | List pods, find failing pods |
-| `resources_get` | Get pod spec, container status, node info |
-| `events_list` | Get pod events for scheduling/pull/mount errors |
-| `pod_logs` | Get current and previous container logs |
-| `resources_list` | Check related resources (secrets, configmaps, PVCs) |
-
-## Output Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `POD_NAME` | Debugged pod name | `myapp-5d4f7b8c9-x2k4l` |
-| `POD_NAMESPACE` | Pod namespace | `my-project` |
-| `FAILURE_CATEGORY` | Categorized failure type | `OOMKilled`, `ImagePull`, `Scheduling` |
-| `ROOT_CAUSE` | Identified root cause | `Memory limit 512Mi too low for Java app` |
-| `REMEDIATION` | Suggested fix | `Increase memory limit to 1Gi` |
+For pod failure categories and exit code reference, see [debugging-patterns.md](../../docs/debugging-patterns.md).
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift` (kubernetes MCP server)
+- `openshift` - Kubernetes/OpenShift resource access for pod status, events, and logs
 
 ### Related Skills
 - `/debug-build` - If pod failure is due to bad image from build
 - `/debug-network` - If pod is running but service connectivity fails
 - `/deploy` - To redeploy after fixing issues
 
-## Reference Documentation
-
-For detailed guidance, see:
+### Reference Documentation
 - [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns and troubleshooting trees
 - [docs/prerequisites.md](../../docs/prerequisites.md) - Required tools (oc), cluster access verification

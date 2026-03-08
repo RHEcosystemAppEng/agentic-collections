@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "openshift": {
+      "command": "podman",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
+        "--entrypoint", "/app/kubernetes-mcp-server",
+        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
+        "--kubeconfig", "/kubeconfig",
+        "--read-only",
+        "--toolsets", "core,config"
+      ],
+      "env": {
+        "KUBECONFIG": "${KUBECONFIG}"
+      },
+      "description": "Red Hat OpenShift MCP server for multi-cluster administration and reporting",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    }
+  }
+}

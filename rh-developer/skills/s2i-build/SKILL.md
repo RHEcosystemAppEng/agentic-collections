@@ -2,6 +2,10 @@
 name: s2i-build
 description: |
   Create BuildConfig and ImageStream resources on OpenShift and trigger a Source-to-Image (S2I) build. Use this skill after /detect-project to build container images from source code on the cluster. Handles namespace verification, resource creation with user confirmation, build monitoring with log streaming, and failure recovery. Triggers on /s2i-build command. Run before /deploy.
+model: inherit
+color: green
+metadata:
+   user_invocable: "true"
 ---
 
 # /s2i-build Skill
@@ -15,17 +19,13 @@ Before running this skill, ensure:
 2. Target namespace/project exists or can be created
 3. Git repository URL is available (or will use binary build)
 
+## When to Use This Skill
+
+Use this skill after `/detect-project` to build container images from source code on OpenShift using Source-to-Image. It creates BuildConfig and ImageStream resources, triggers the build, and monitors progress with log streaming.
+
 ## Critical: Human-in-the-Loop Requirements
 
-See [Human-in-the-Loop Requirements](../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing any actions
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present options clearly** (yes/no/modify) and wait for response
-4. **Never auto-execute** resource creation, builds, or deployments
-
-If the user says "no" or wants modifications, address their concerns before proceeding.
+See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
 ## Workflow
 
@@ -45,9 +45,7 @@ Is this the correct cluster and namespace for the build?
 - no - Let me switch context
 ```
 
-**WAIT for user confirmation before proceeding.** Do NOT continue to Step 2 until user confirms.
-
-If user says "no", wait for them to switch context and tell you to continue.
+**WAIT for user confirmation before proceeding.**
 
 ### Step 2: Gather Build Information
 
@@ -93,9 +91,7 @@ Your application uses `[PYTHON_ENTRY_FILE]` as entry point, but `gunicorn` is no
 3. **Continue anyway** - Proceed (build will likely fail)
 ```
 
-**WAIT for user to resolve the issue before proceeding.**
-
-**WAIT for user confirmation before proceeding.** Do NOT continue until user explicitly confirms these values or provides corrections.
+**WAIT for user confirmation before proceeding.**
 
 **To detect Git URL:**
 - Read `.git/config` and extract `[remote "origin"]` url
@@ -118,7 +114,7 @@ Namespace `[namespace]` does not exist.
 Would you like me to create it? (yes/no)
 ```
 
-**WAIT for user confirmation.** Only create the namespace if user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 If creating namespace, use `resources_create_or_update`:
 ```yaml
@@ -154,11 +150,7 @@ spec:
 **Proceed with creating this ImageStream?** (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT create the ImageStream until user explicitly says "yes".
-
-- If user says "yes" → Use kubernetes MCP `resources_create_or_update` to apply
-- If user says "no" → Ask what they would like to change
-- If user wants modifications → Update the YAML and show again for confirmation
+**WAIT for user confirmation before proceeding.**
 
 ### Step 5: Create BuildConfig
 
@@ -265,11 +257,7 @@ spec:
 **Proceed with creating this BuildConfig?** (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT create the BuildConfig until user explicitly says "yes".
-
-- If user says "yes" → Use kubernetes MCP `resources_create_or_update` to apply
-- If user says "no" → Ask what they would like to change
-- If user wants modifications → Update the YAML and show again for confirmation
+**WAIT for user confirmation before proceeding.**
 
 ### Step 6: Start Build
 
@@ -288,10 +276,7 @@ Resources created successfully!
 (You can also trigger builds later with: oc start-build [app-name])
 ```
 
-**WAIT for user confirmation.** Do NOT start the build until user explicitly says "yes".
-
-- If user says "yes" → Create a Build resource as shown below
-- If user says "no" → Complete this step and inform user how to start build manually later
+**WAIT for user confirmation before proceeding.**
 
 If yes, create a Build resource:
 ```yaml
@@ -390,48 +375,17 @@ What would you like to do?
 - If user selects "Debug Build" → Invoke `/debug-build` skill with build name
 - After debugging → Offer to retry build
 
-## MCP Tools Used
+## Dependencies
 
-| Tool | Purpose |
-|------|---------|
-| `resources_list` | Check namespaces, existing ImageStreams/BuildConfigs |
-| `resources_get` | Get specific resource details |
-| `resources_create_or_update` | Create ImageStream, BuildConfig, Build |
-| `pod_logs` | Stream build logs (builds run as pods) |
-| `pod_list` | Find builder pod |
-| `events_list` | Check for build events/errors |
+### Required MCP Servers
+- `openshift` - Kubernetes/OpenShift resource access for BuildConfigs, ImageStreams, and build monitoring
 
-## Required Inputs
+### Related Skills
+- `/debug-build` - Build failures (source access, dependencies, registry issues)
+- `/deploy` - After successful build, to deploy the image
 
-| Input | Auto-detected | Must Confirm |
-|-------|---------------|--------------|
-| App name | Yes (from detect-project) | Yes |
-| Git URL | Yes (from .git/config) | Yes |
-| Git branch | Yes (default: main) | Optional |
-| S2I image | Yes (from detect-project) | Yes |
-| Namespace | Yes (from kubeconfig) | Yes |
-
-## Output
-
-On success, these values are available for `/deploy`:
-
-| Variable | Value |
-|----------|-------|
-| `IMAGE_REF` | `image-registry.openshift-image-registry.svc:5000/[ns]/[app]:latest` |
-| `IMAGESTREAM_TAG` | `[app]:latest` |
-| `BUILD_NAME` | `[app]-1` |
-
-## Related Skills
-
-| Skill | Use When |
-|-------|----------|
-| `/debug-build` | Build failures (source access, dependencies, registry issues) |
-| `/deploy` | After successful build, to deploy the image |
-
-## Reference Documentation
-
-For detailed guidance, see:
-- [docs/builder-images.md](../docs/builder-images.md) - S2I builder image selection, version mapping
-- [docs/python-s2i-entrypoints.md](../docs/python-s2i-entrypoints.md) - Python APP_MODULE configuration, entry point troubleshooting
-- [docs/debugging-patterns.md](../docs/debugging-patterns.md) - Common build error patterns and troubleshooting
-- [docs/prerequisites.md](../docs/prerequisites.md) - Required tools (oc)
+### Reference Documentation
+- [docs/builder-images.md](../../docs/builder-images.md) - S2I builder image selection, version mapping
+- [docs/python-s2i-entrypoints.md](../../docs/python-s2i-entrypoints.md) - Python APP_MODULE configuration, entry point troubleshooting
+- [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common build error patterns and troubleshooting
+- [docs/prerequisites.md](../../docs/prerequisites.md) - Required tools (oc)

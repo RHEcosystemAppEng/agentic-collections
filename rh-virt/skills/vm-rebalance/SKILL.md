@@ -19,9 +19,9 @@ color: yellow
 
 # /vm-rebalance Skill
 
-Orchestrate virtual machine migrations across OpenShift cluster nodes for load balancing, maintenance, and resource optimization. Supports manual and automatic rebalancing modes with both live migration (zero downtime) and cold migration (brief downtime) strategies.
+Orchestrate VM migrations across OpenShift cluster nodes for load balancing, maintenance, and resource optimization. Supports manual and automatic rebalancing with live migration (zero downtime) and cold migration (brief downtime) strategies.
 
-**Implementation**: Uses KubeVirt's VirtualMachineInstanceMigration API for live migrations and node affinity for cold migrations, following official KubeVirt patterns.
+**Implementation**: Uses KubeVirt's VirtualMachineInstanceMigration API for live migrations and node affinity for cold migrations.
 
 ## Prerequisites
 
@@ -48,38 +48,21 @@ Orchestrate virtual machine migrations across OpenShift cluster nodes for load b
 
 **Before executing:**
 
-1. **Check MCP Server** - Verify `openshift-virtualization` exists in `.mcp.json`
-2. **Check Environment** - Verify `KUBECONFIG` is set (check presence only, never expose value)
-3. **Check Capability** (for live migration):
-   - Use `resources_get` to check PVC access mode is ReadWriteMany (RWX)
-   - Verify VM has running VirtualMachineInstance
+1. Check `openshift-virtualization` exists in `.mcp.json` → If missing, report setup
+2. Verify `KUBECONFIG` is set (presence only, never expose value) → If missing, report
+3. For live migration: Check PVC access mode is ReadWriteMany (RWX) via `resources_get`
 
-**If Prerequisites Fail:**
+**Human Notification Protocol:** `❌ Cannot execute vm-rebalance: MCP server not available. Setup: Add to .mcp.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
-```
-❌ Cannot execute vm-rebalance: MCP server 'openshift-virtualization' is not available
-
-📋 Setup Instructions:
-1. Add openshift-virtualization to .mcp.json
-2. Set KUBECONFIG environment variable
-3. Ensure ServiceAccount has required permissions
-4. Restart Claude Code to reload MCP servers
-
-🔗 Documentation: https://github.com/openshift/openshift-mcp-server
-
-Options: "setup" | "skip" | "abort"
-```
-
-⚠️ **SECURITY**: Never display KUBECONFIG path or credential values in output.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 
 **Trigger when:**
-- User explicitly invokes `/vm-rebalance` command
-- User requests moving specific VM(s) to specific node(s)
-- User wants to drain a node for maintenance
+- User explicitly invokes `/vm-rebalance`
+- User requests moving VM(s) to specific node(s)
+- User wants to drain node for maintenance
 - User requests load balancing or resource optimization
-- User wants to redistribute VMs across cluster
 
 **User phrases:**
 - "Move VM database-01 to worker-03"
@@ -89,24 +72,18 @@ Options: "setup" | "skip" | "abort"
 - "Automatically rebalance the cluster"
 
 **Do NOT use when:**
-- Creating VMs → Use `/vm-create`
-- Start/stop only → Use `/vm-lifecycle-manager`
-- Cloning VMs → Use `/vm-clone`
-- Deleting VMs → Use `/vm-delete`
+- Creating VMs → `/vm-create`
+- Start/stop only → `/vm-lifecycle-manager`
+- Cloning VMs → `/vm-clone`
+- Deleting VMs → `/vm-delete`
 
 ## Workflow
 
 ### Step 1: Determine Rebalancing Mode
 
-**Analyze user request:**
+**Manual Mode**: User specifies VM name(s) and target node(s). Example: "Move VM database-01 to worker-03"
 
-**Manual Mode Indicators:**
-- User specifies VM name(s) and target node(s)
-- Examples: "Move VM database-01 to worker-03", "Migrate web-server to worker-05"
-
-**Automatic Mode Indicators:**
-- User requests AI-driven rebalancing with high-level goal
-- Examples: "Rebalance VMs based on CPU", "Automatically optimize cluster load"
+**Automatic Mode**: User requests AI-driven rebalancing. Example: "Rebalance VMs based on CPU"
 
 ### Step 2: Load Strategy File and Execute
 
@@ -115,8 +92,7 @@ Options: "setup" | "skip" | "abort"
 **Document Consultation** (REQUIRED - Execute FIRST):
 1. Read [REBALANCE_MANUAL.md](./REBALANCE_MANUAL.md) using Read tool
 2. Output: "I consulted [REBALANCE_MANUAL.md](rh-virt/skills/vm-rebalance/REBALANCE_MANUAL.md) to understand the manual migration workflow."
-
-**Then execute**: Follow workflow in REBALANCE_MANUAL.md
+3. **Then execute**: Follow workflow in REBALANCE_MANUAL.md
 
 ---
 
@@ -125,179 +101,100 @@ Options: "setup" | "skip" | "abort"
 **Document Consultation** (REQUIRED - Execute FIRST):
 1. Read [REBALANCE_AUTOMATIC.md](./REBALANCE_AUTOMATIC.md) using Read tool
 2. Output: "I consulted [REBALANCE_AUTOMATIC.md](rh-virt/skills/vm-rebalance/REBALANCE_AUTOMATIC.md) to understand the automatic rebalancing workflow."
-
-**Then execute**: Follow workflow in REBALANCE_AUTOMATIC.md
+3. **Then execute**: Follow workflow in REBALANCE_AUTOMATIC.md
 
 ## Common Validation Logic
 
-**This validation is shared by ALL migration strategies.**
-
-Before executing any VM migration, perform these validations for each VM:
+**Shared by ALL migration strategies. Execute before any VM migration:**
 
 ### Validation 1: Verify VM Exists
 
-**MCP Tool**: `resources_get` (from openshift-virtualization)
+**MCP Tool**: `resources_get` (apiVersion="kubevirt.io/v1", kind="VirtualMachine", name=`<vm>`, namespace=`<ns>`)
 
-**Parameters**:
-- `apiVersion`: "kubevirt.io/v1"
-- `kind`: "VirtualMachine"
-- `name`: "<vm-name>"
-- `namespace`: "<namespace>"
+**Extract**: `spec.template.spec.volumes[].persistentVolumeClaim.claimName`, `status.ready`
 
-**Extract**:
-- `spec.template.spec.volumes[].persistentVolumeClaim.claimName` - PVC names
-- `status.ready` - VM ready state
-
-**Error Handling**:
-- VM not found → "VM '<vm-name>' does not exist in namespace '<namespace>'. Use '/vm-inventory' to see available VMs."
-- Namespace not found → "Namespace '<namespace>' does not exist. Verify namespace name."
-- Permission denied → "Insufficient permissions. ServiceAccount needs 'get' permission for VirtualMachine resources."
+**Errors**: VM not found → Use vm-inventory | Namespace not found → Verify name | Permission denied → Check RBAC
 
 ### Validation 2: Check Current VM Location
 
-**MCP Tool**: `resources_get` (from openshift-virtualization)
+**MCP Tool** (if VM running): `resources_get` (apiVersion="kubevirt.io/v1", kind="VirtualMachineInstance", name=`<vm>`, namespace=`<ns>`)
 
-**Parameters** (only if VM is running):
-- `apiVersion`: "kubevirt.io/v1"
-- `kind`: "VirtualMachineInstance"
-- `name`: "<vm-name>"
-- `namespace`: "<namespace>"
+**Extract**: `status.nodeName`, `status.phase`
 
-**Extract**:
-- `status.nodeName` - Current node
-- `status.phase` - Current phase
-
-**Validation**:
-- If already on target node → "VM '<vm-name>' is already on '<target-node>'. No migration needed."
+**Validation**: If already on target → "VM already on target node. No migration needed."
 
 ### Validation 3: Validate Storage Compatibility
 
-**MCP Tool**: `resources_get` (from openshift-virtualization)
+**MCP Tool**: `resources_get` (apiVersion="v1", kind="PersistentVolumeClaim", name=`<pvc>`, namespace=`<ns>`)
 
-**Parameters**:
-- `apiVersion`: "v1"
-- `kind`: "PersistentVolumeClaim"
-- `name`: "<pvc-name>"
-- `namespace`: "<namespace>"
+**Extract**: `spec.accessModes`
+- ReadWriteMany (RWX) → Live migration supported
+- ReadWriteOnce (RWO) → Live migration NOT supported
 
-**Extract**:
-- `spec.accessModes` - Contains "ReadWriteMany" (RWX) → Live migration supported
-- Only "ReadWriteOnce" (RWO) → Live migration NOT supported
-
-**Error Handling for live migration**:
-- If RWO → "Cannot perform live migration. VM uses ReadWriteOnce (RWO) storage. Use cold migration instead (brief downtime ~30-60s)."
-- If VM not running → "Cannot perform live migration. VM is not running. Use cold migration or start VM first."
-
-**Reference**: See [references/live-migration-best-practices.md](./references/live-migration-best-practices.md) for complete storage requirements.
-
-### Validation 4: Verify Target Node Exists
-
-**MCP Tool**: `resources_list` (from openshift-virtualization)
-
-**Parameters**:
-- `apiVersion`: "v1"
-- `kind`: "Node"
-
-**Validation**:
-- Verify target node exists in list
-- Check `status.conditions[]` shows Ready=True
-- Check node is schedulable (not cordoned)
-
-**Error Handling**:
-- Not found → "Target node '<target-node>' does not exist."
-- Not Ready → "Target node '<target-node>' is not Ready. Choose different target."
-- Cordoned → "Target node '<target-node>' is cordoned (SchedulingDisabled). Choose different target or uncordon node."
-
-**Reference**: See [../../docs/troubleshooting/scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) for scheduling issues.
-
-## Node Selection for Automatic Rebalancing
-
-**Applies to Automatic Mode only. Manual Mode uses user-specified nodes.**
-
-### Suitable Node Criteria
-
-**Use `resources_list` with apiVersion="v1", kind="Node"**
-
-Filter nodes where ALL conditions are true:
-1. `metadata.labels["kubevirt.io/schedulable"] == "true"` (official KubeVirt marker)
-2. `status.capacity["devices.kubevirt.io/kvm"]` > "0" (KVM devices available)
-3. No `node-role.kubernetes.io/control-plane` or `node-role.kubernetes.io/master` label (worker nodes only)
-
-**If no nodes found**: "No suitable nodes found. Check OpenShift Virtualization operator status and node hardware virtualization support."
-
-**Note**: Ignore cluster-specific custom taints (e.g., `node-purpose=virtualization`). Always use official KubeVirt labels.
-
-## Common Migration Types
-
-### Live Migration
-- **Zero downtime** - VM stays running
-- **Brief network pause** (<1 second) during cutover
-- **Requires**: ReadWriteMany (RWX) storage
-- **Process**: Memory transferred while VM runs
-- **Use when**: Minimal disruption required
+**Error for live migration**: If RWO → "Cannot live migrate. Use cold migration (brief downtime ~30-60s)."
 
 **Reference**: [references/live-migration-best-practices.md](./references/live-migration-best-practices.md)
 
-### Cold Migration
-- **Brief downtime** (~30-60 seconds)
-- **Works with any storage** (RWO or RWX)
-- **Process**: Stop VM → Update placement → Start on target
-- **Use when**: Live migration not supported or acceptable downtime
+### Validation 4: Verify Target Node Exists
 
-**Reference**: See REBALANCE_MANUAL.md for cold migration workflow
+**MCP Tool**: `resources_list` (apiVersion="v1", kind="Node")
+
+**Validation**: Verify target exists, `status.conditions[]` shows Ready=True, not cordoned
+
+**Errors**: Not found → "Node doesn't exist" | Not Ready → "Choose different target" | Cordoned → "Uncordon or choose different target"
+
+**Reference**: [../../docs/troubleshooting/scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md)
+
+## Node Selection for Automatic Rebalancing
+
+**Applies to Automatic Mode only.**
+
+**Use** `resources_list` **(apiVersion="v1", kind="Node")**
+
+Filter where ALL true:
+1. `metadata.labels["kubevirt.io/schedulable"] == "true"`
+2. `status.capacity["devices.kubevirt.io/kvm"]` > "0"
+3. No `node-role.kubernetes.io/control-plane` or `node-role.kubernetes.io/master` label
+
+**If no nodes**: "No suitable nodes. Check OpenShift Virtualization operator and hardware virtualization support."
+
+**Note**: Ignore custom taints. Use official KubeVirt labels.
+
+## Common Migration Types
+
+**Live Migration**: Zero downtime, <1s pause during cutover. Requires RWX storage. Memory transferred while VM runs.
+
+**Cold Migration**: Brief downtime (~30-60s). Works with any storage. Stop VM → Update placement → Start on target.
+
+**Reference**: [references/live-migration-best-practices.md](./references/live-migration-best-practices.md)
 
 ## Common Plan Visualization
 
-**All rebalancing strategies MUST use this standardized format when presenting plans to users.**
-
-This ensures consistent, clear communication across Manual and Automatic modes.
+**ALL strategies MUST use this standardized format for consistency.**
 
 ### Information Relevance Principle
 
-**Show only what matters to the user's decision:**
-
-- **Include**: Deviations from defaults, user-specified criteria, or non-obvious context
-- **Exclude**: Standard procedures, default settings, or information already visible in tables
-
-**Examples**:
-- ✅ Show node criteria IF user specified constraints ("only nodes with SSD")
-- ❌ Don't show default criteria when using standard behavior
-- ✅ Show analysis IF it reveals critical context (e.g., all VMs on one node)
-- ❌ Don't repeat what's visible in the tables
-
-**Apply this principle throughout the plan**: Only explain what's non-obvious, non-standard, or specifically requested.
+Show only what matters:
+- ✅ Include: Deviations from defaults, user-specified criteria, non-obvious context
+- ❌ Exclude: Standard procedures, default settings, info already visible in tables
 
 ### Standard Plan Format
 
-**Present rebalancing plans using these two tables:**
-
-#### Table 1: VM Rebalance Plan
-
-Shows what will happen to each VM:
+**Table 1: VM Rebalance Plan**
 
 ```markdown
 ## 📋 VM Rebalance Plan
 
 | VM | Instance Type | Current Node | → | New Node | Type | Downtime | Notes |
 |----|---------------|--------------|---|----------|------|----------|-------|
-| vm-name-1 | u1.xlarge | worker-01 | → | worker-03 | Live | <1s pause | ContainerDisk - easy migration |
-| vm-name-2 | u1.2xmedium | worker-01 | → | worker-02 | Cold | ~40s | RWO storage |
-| vm-name-3 | u1.medium | worker-02 | - | *stays* | - | - | Already balanced |
+| vm-1 | u1.xlarge | worker-01 | → | worker-03 | Live | <1s pause | ContainerDisk |
+| vm-2 | u1.2xmedium | worker-01 | → | worker-02 | Cold | ~40s | RWO storage |
+| vm-3 | u1.medium | worker-02 | - | *stays* | - | - | Already balanced |
 ```
 
-**Column Definitions:**
-- **VM**: VM name
-- **Instance Type**: Instance type (e.g., u1.xlarge, u1.2xmedium)
-- **Current Node**: Node where VM is currently running
-- **→**: Visual indicator of movement
-- **New Node**: Target node (or "*stays*" if no migration needed)
-- **Type**: Migration type (Live, Cold, or "-" for no migration)
-- **Downtime**: Expected downtime (<1s pause for live, ~30-60s for cold, "-" for no migration)
-- **Notes**: Brief explanation (storage type, constraints, reason for staying, etc.)
+**Column Definitions**: VM name | Instance type | Current node | Movement indicator | Target node (or *stays*) | Migration type (Live/Cold/-) | Downtime (<1s/~30-60s/-) | Brief explanation
 
-#### Table 2: Node State Before → After
-
-Shows cluster-wide impact:
+**Table 2: Node State Before → After**
 
 ```markdown
 ## 📊 Node State: Before → After
@@ -309,247 +206,170 @@ Shows cluster-wide impact:
 | worker-03 | 3 | 38% | 51% | → | 4 | 55% | 63% | ← Receiving VMs |
 ```
 
-**Column Definitions:**
-- **Node**: Node name
-- **VMs Now**: Current number of VMs on this node
-- **CPU Now**: Current CPU utilization percentage
-- **Memory Now**: Current memory utilization percentage
-- **→**: Visual indicator of change
-- **VMs After**: Number of VMs after rebalancing
-- **CPU After**: Estimated CPU utilization after rebalancing
-- **Memory After**: Estimated memory utilization after rebalancing
-- **Change**: Brief description of what's happening (e.g., "✓ Reduced load", "← Receiving VMs", "✓ Balanced")
+**CRITICAL - Capacity Calculation Method:**
 
-### Additional Plan Context
+CPU/Memory percentages MUST be calculated based on **allocated capacity**, not actual runtime usage:
 
-After the two tables, include:
+**CPU Percentage Calculation**:
+1. Get node total CPU capacity from `resources_get` Node → `status.capacity.cpu` (e.g., "32" = 32 vCPUs)
+2. For each VM on node, get allocated vCPUs from VMI → `spec.domain.cpu.sockets × spec.domain.cpu.cores × spec.domain.cpu.threads`
+3. Sum all VM vCPUs on the node
+4. Calculate: (Sum of VM vCPUs / Node CPU capacity) × 100
 
-**Key Improvement:**
+**Memory Percentage Calculation**:
+1. Get node total memory capacity from `resources_get` Node → `status.capacity.memory` (e.g., "128Gi")
+2. For each VM on node, get allocated memory from VMI → `spec.domain.memory.guest`
+3. Sum all VM memory allocations on the node (convert to same units)
+4. Calculate: (Sum of VM memory / Node memory capacity) × 100
+
+**Example**: Node with 32 vCPUs hosting VMs with 2+4+8+4+2 = 20 vCPUs → CPU = 62.5% (20/32), NOT the actual runtime usage which might be 0% if VMs are idle.
+
+**Rationale**: Shows **capacity planning** (how much is reserved) rather than runtime utilization, which is more useful for rebalancing decisions.
+
+**Overcommit Detection and Warning**:
+
+If any node's CPU or Memory percentage **exceeds 100%** after rebalancing:
+
 ```markdown
-**Key Improvement:** [Brief description of main benefit]
-Example: "Distribution from 1 node to 4 nodes hosting VMs"
-Example: "CPU variance reduced from 22% to 4% (81% improvement)"
+⚠️ **OVERCOMMIT WARNING**
+
+**Node(s) will be overcommitted after this rebalance:**
+- **worker-02**: CPU 125% (40 vCPUs allocated / 32 vCPUs capacity) - **25% overcommit**
+- **worker-03**: Memory 110% (88Gi allocated / 80Gi capacity) - **10% overcommit**
+
+**Impact:**
+- **CPU overcommit**: VMs may experience CPU throttling and reduced performance when all VMs are active simultaneously
+- **Memory overcommit**: Risk of VM eviction or OOM (Out of Memory) if total memory demand exceeds node capacity
+
+**Recommendations:**
+- Consider distributing VMs across more nodes to avoid overcommit
+- Review VM instance types to ensure they match actual workload requirements
+- Monitor node resource usage closely after rebalancing
+
+**Proceed with overcommit?** (yes/cancel)
 ```
 
-**Rebalance Summary (for batch operations):**
+**When NOT to warn**: If percentages ≤ 100%, overcommit is not present. Omit this warning section.
+
+**After tables, include:**
+
+**Key Improvement**: `"Distribution from 1 node to 4 nodes hosting VMs"` or `"CPU variance reduced from 22% to 4% (81% improvement)"`
+
+**Rebalance Summary** (batch operations):
 ```markdown
-**Rebalance Summary:**
-- **Total VMs to Rebalance**: 5
-- **Live**: 4 (zero downtime)
-- **Cold**: 1 (brief downtime)
-- **VMs Staying**: 2 (nodeAffinity constraints)
-- **Total Downtime**: ~40s cumulative (cold only)
-- **Estimated Duration**: 1-2 minutes (parallel execution)
+- Total VMs: 5 | Live: 4 | Cold: 1 | Staying: 2
+- Total Downtime: ~40s | Duration: 1-2min (parallel)
 ```
 
-**Execution Mode:**
-```markdown
-**Execution Mode**: **Parallel** (all VMs rebalance simultaneously)
-- Default to parallel execution for time efficiency
-- Only use sequential if user explicitly requests it or cluster constraints require it
-```
+**Execution Mode**: `**Parallel** (default) - all VMs rebalance simultaneously` OR `**Sequential** (user requested)`
 
-**CRITICAL GUIDELINES:**
-1. **Execution Default**: Parallel execution UNLESS user specifies sequential
-2. **Risk Assessment**: ONLY include if there's a genuine risk users must understand (e.g., network saturation, resource exhaustion). Skip this section for normal rebalancing operations.
-
-### Terminology Standards
-
-**CRITICAL**: Use consistent terminology across all modes:
-
-- ✅ **"VM Rebalance Plan"** - Correct term for this skill
-- ❌ **"VM Migration Plan"** - Do NOT use (reserved for future migration skill)
-- ✅ **"Rebalancing"** - Correct term for the overall operation
-- ✅ **"Live/Cold migration"** - Correct for describing the method
-- ✅ **"Current Node" / "New Node"** - Clear directional language
-- ✅ **"VMs Now" / "VMs After"** - Clear temporal language
-
-### When to Use This Format
-
-**Manual Mode**: Use when presenting plan for user confirmation (Step 3)
-**Automatic Mode**: Use when presenting generated plan for user approval (Step 3)
-
-**Reference**: Both REBALANCE_MANUAL.md and REBALANCE_AUTOMATIC.md must follow this format.
+**Terminology Standards**:
+- ✅ "VM Rebalance Plan", "Rebalancing", "Live/Cold migration", "Current Node/New Node", "VMs Now/VMs After"
+- ❌ "VM Migration Plan" (reserved for future migration skill)
 
 ## Common Error Handling
 
-**All migration strategies use this error handling logic.**
-
 ### Error 1: Live Migration Fails - Storage Not RWX
-
-**Symptom**: "Cannot live migrate VM: PVC access mode is ReadWriteOnce"
-
-**Cause**: Live migration requires RWX storage. VMs with RWO cannot be live migrated.
-
-**Solution**:
-1. Use cold migration (works with RWO)
-2. Or convert PVC to RWX storage class (requires data migration)
-
+**Symptom**: "Cannot live migrate: PVC access mode is ReadWriteOnce"
+**Solution**: Use cold migration OR convert PVC to RWX
 **Reference**: [../../docs/troubleshooting/storage-errors.md](../../docs/troubleshooting/storage-errors.md)
 
-### Error 2: VM Stuck in ErrorUnschedulable After Cold Migration
-
-**Symptom**: "VM cannot be scheduled on target node: ErrorUnschedulable"
-
-**Cause**: Target node has insufficient resources, taints, or scheduling constraints.
-
-**Solution**:
-1. Check node capacity using `nodes_top` MCP tool
-2. Verify node has no blocking taints using `resources_get` for Node
-3. Add tolerations to VM if node has taints
-4. Choose different target node
-5. Remove nodeSelector to allow scheduler flexibility
-
+### Error 2: VM Stuck ErrorUnschedulable After Cold Migration
+**Symptom**: "VM cannot be scheduled: ErrorUnschedulable"
+**Solution**: Check node capacity (`nodes_top`), verify no blocking taints (`resources_get` Node), add tolerations, choose different target, remove nodeSelector
 **Reference**: [../../docs/troubleshooting/scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md)
 
 ### Error 3: Live Migration Times Out
-
-**Symptom**: "Migration exceeded timeout: 150 seconds per GiB"
-
-**Cause**: Large VM memory or high dirty page rate preventing convergence.
-
-**Solution**:
-1. Retry migration (may succeed on second attempt)
-2. Reduce VM workload during migration
-3. Use cold migration (guaranteed to complete)
-4. Increase timeout in HyperConverged CR (see performance-tuning reference)
-
+**Symptom**: "Migration exceeded timeout: 150s per GiB"
+**Solution**: Retry migration, reduce VM workload, use cold migration, increase timeout in HyperConverged CR
 **Reference**: [references/performance-tuning.md](./references/performance-tuning.md)
 
 ### Error 4: Migration Rejected - Cluster Limit Reached
-
-**Symptom**: "Migration rejected: cluster migration limit reached (5 concurrent)"
-
-**Cause**: KubeVirt limits concurrent migrations (default: 5 cluster-wide, 2 per node).
-
-**Solution**:
-1. Wait for ongoing migrations to complete (monitor with `resources_list` for VirtualMachineInstanceMigration)
-2. Retry migration
-3. For batch operations, migrate sequentially
-4. Increase cluster limit in HyperConverged CR (if network allows)
-
+**Symptom**: "Migration rejected: cluster limit reached (5 concurrent)"
+**Solution**: Wait for migrations to complete (`resources_list` VirtualMachineInstanceMigration), retry, migrate sequentially, increase limit
 **Reference**: [references/performance-tuning.md](./references/performance-tuning.md)
 
 ### Error 5: RBAC Permission Denied
-
 **Symptom**: "Forbidden: User cannot create VirtualMachineInstanceMigration"
+**Solution**: Verify RBAC permissions (`create` on VirtualMachineInstanceMigration, `update` on VirtualMachine), contact admin
 
-**Cause**: ServiceAccount lacks RBAC permissions.
-
-**Solution**:
-1. Verify KUBECONFIG has appropriate permissions
-2. Required: `create` on VirtualMachineInstanceMigration, `update` on VirtualMachine
-3. Contact cluster admin to grant permissions
-
-### Error 6: Network Saturation During Concurrent Migrations
-
-**Symptom**: Multiple migrations slow or fail; high network utilization
-
-**Cause**: Too many concurrent migrations saturating network bandwidth.
-
-**Solution**:
-1. Reduce concurrent migrations in HyperConverged CR
-2. Set bandwidth limit per migration
-3. Use dedicated migration network
-
+### Error 6: Network Saturation
+**Symptom**: Multiple migrations slow/fail, high network utilization
+**Solution**: Reduce concurrent migrations, set bandwidth limit, use dedicated migration network
 **Reference**: [references/performance-tuning.md](./references/performance-tuning.md)
 
 ### Error 7: Resource Version Conflict During Cold Migration
-
-**Symptom**: "Apply failed with 1 conflict: conflict with 'kubernetes-mcp-server' using kubevirt.io/v1: .spec.runStrategy"
-
-**Cause**: Using stale VM resourceVersion when updating nodeAffinity after `vm_lifecycle` operation.
-
-**Solution**:
-After `vm_lifecycle` stop, re-read VM using `resources_get` before updating nodeAffinity. This gets fresh resourceVersion.
-
-**Workflow**: Stop VM → Wait for completion → Re-read VM → Update nodeAffinity → Start VM
-
+**Symptom**: "Apply failed: conflict with 'kubernetes-mcp-server' using .spec.runStrategy"
+**Solution**: After `vm_lifecycle` stop, re-read VM using `resources_get` before updating nodeAffinity (gets fresh resourceVersion)
+**Workflow**: Stop → Wait → Re-read → Update nodeAffinity → Start
 **Reference**: [REBALANCE_MANUAL.md - Sub-step 4b.2.5](./REBALANCE_MANUAL.md)
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift-virtualization` - OpenShift MCP server with KubeVirt toolset
-  - Source: https://github.com/openshift/openshift-mcp-server
+- `openshift-virtualization` - OpenShift MCP server (https://github.com/openshift/openshift-mcp-server)
 
 ### Required MCP Tools
-
-- `resources_list` - List cluster resources (VMs, nodes, PVCs, migrations)
-- `resources_get` - Get resource details (VM specs, VMI status, PVC access modes)
-- `resources_create_or_update` - Create migrations, update VM nodeAffinity
-- `vm_lifecycle` - Start/stop VMs for cold migration
-- `nodes_top` - Monitor node resource usage
-- `pods_top` - Monitor VM resource consumption
-- `nodes_stats_summary` - Detailed node statistics
-
-**Source**: https://github.com/openshift/openshift-mcp-server
+- `resources_list`, `resources_get`, `resources_create_or_update`, `vm_lifecycle`, `nodes_top`, `pods_top`, `nodes_stats_summary`
 
 ### Related Skills
-
-- `vm-inventory` - List VMs and check placement before migration
-- `vm-lifecycle-manager` - Simple start/stop without migration
-- `vm-create` - Create VMs with initial placement preferences
-- `vm-snapshot-create` - Backup VMs before risky migrations
+- `vm-inventory` - List VMs and check placement
+- `vm-lifecycle-manager` - Simple start/stop
+- `vm-create` - Create VMs with placement
+- `vm-snapshot-create` - Backup before risky migrations
 
 ### Reference Documentation
 
 **Skill Strategy Files**:
-- [REBALANCE_MANUAL.md](./REBALANCE_MANUAL.md) - User-driven migration workflow
-- [REBALANCE_AUTOMATIC.md](./REBALANCE_AUTOMATIC.md) - AI-driven rebalancing workflow
+- [REBALANCE_MANUAL.md](./REBALANCE_MANUAL.md) - User-driven migration
+- [REBALANCE_AUTOMATIC.md](./REBALANCE_AUTOMATIC.md) - AI-driven rebalancing
 
 **Performance and Best Practices**:
-- [references/live-migration-best-practices.md](./references/live-migration-best-practices.md) - Configuration, requirements, dedicated networks
-- [references/performance-tuning.md](./references/performance-tuning.md) - Right-sizing, overcommit, bandwidth tuning
-- [references/anti-patterns.md](./references/anti-patterns.md) - Common mistakes to avoid
-- [references/production-considerations.md](./references/production-considerations.md) - HA strategies, capacity planning, security
+- [references/live-migration-best-practices.md](./references/live-migration-best-practices.md) - Configuration, requirements, networks
+- [references/performance-tuning.md](./references/performance-tuning.md) - Right-sizing, overcommit, bandwidth
+- [references/anti-patterns.md](./references/anti-patterns.md) - Common mistakes
+- [references/production-considerations.md](./references/production-considerations.md) - HA, capacity, security
 
 **Troubleshooting**:
-- [../../docs/troubleshooting/INDEX.md](../../docs/troubleshooting/INDEX.md) - Master troubleshooting index
-- [../../docs/troubleshooting/scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable, taints, resources
-- [../../docs/troubleshooting/storage-errors.md](../../docs/troubleshooting/storage-errors.md) - PVC access mode issues
-- [../../docs/troubleshooting/lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM start/stop failures
+- [../../docs/troubleshooting/INDEX.md](../../docs/troubleshooting/INDEX.md) - Master index
+- [../../docs/troubleshooting/scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable, taints
+- [../../docs/troubleshooting/storage-errors.md](../../docs/troubleshooting/storage-errors.md) - PVC access modes
+- [../../docs/troubleshooting/lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM start/stop
 
-**Official Red Hat Documentation**:
-- [OpenShift Virtualization - Live Migration](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt-live-migration)
-- [OpenShift Virtualization - Node Placement](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt-node-placement)
-
-**Upstream KubeVirt Documentation**:
-- [Live Migration - KubeVirt User Guide](https://kubevirt.io/user-guide/compute/live_migration/)
-- [Node Assignment - KubeVirt User Guide](https://kubevirt.io/user-guide/compute/node_assignment/)
+**Official Documentation**:
+- [OpenShift Virt - Live Migration](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt-live-migration)
+- [OpenShift Virt - Node Placement](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt-node-placement)
+- [KubeVirt - Live Migration](https://kubevirt.io/user-guide/compute/live_migration/)
+- [KubeVirt - Node Assignment](https://kubevirt.io/user-guide/compute/node_assignment/)
 - [VirtualMachineInstanceMigration API](https://kubevirt.io/api-reference/main/definitions.html#_v1_virtualmachineinstancemigration)
 
 ## Critical: Human-in-the-Loop Requirements
 
-**IMPORTANT**: This skill performs VM migrations affecting workload placement and availability. You MUST:
+**IMPORTANT**: This skill performs VM migrations affecting placement and availability. You MUST:
 
 1. **Before Initiating Migration**
    - Present complete rebalance plan (VM, nodes, type, impact)
-   - Clearly explain downtime (live = <1s pause, cold = 30-60s)
+   - Explain downtime (live = <1s pause, cold = 30-60s)
    - Show current vs target placement
    - Ask: "Confirm this migration?"
-   - Wait for explicit user confirmation
+   - Wait for explicit confirmation
 
 2. **Never Auto-Execute**
    - **NEVER migrate without confirmation**
    - **NEVER assume live vs cold** - ask or infer from storage
    - **NEVER skip impact explanation**
-   - **NEVER proceed if validation fails** - report issues first
+   - **NEVER proceed if validation fails**
 
 3. **For Batch Operations**
-   - Present all VMs to be migrated
+   - Present all VMs to migrate
    - Show total impact (e.g., "3 VMs, 2 live + 1 cold")
    - Confirm entire batch before starting
    - Report progress for each
    - Stop on first failure
 
-**Why This Matters**:
-- **Live Migration**: Brief pause, bandwidth usage, performance impact during transfer
-- **Cold Migration**: Service downtime, dropped connections, application interruption
-- **Wrong Node**: Performance degradation or scheduling conflicts
-- **Batch**: Can saturate network or exhaust resources
+**Why**: Live migration (brief pause, bandwidth, performance impact), Cold migration (downtime, dropped connections), Wrong node (performance degradation), Batch (network saturation)
 
-**Rationale**: Prevents unintended disruption; maintains user control over placement and availability.
+**Rationale**: Prevents unintended disruption; maintains user control.
 
 ## Security Considerations
 
@@ -558,23 +378,14 @@ After `vm_lifecycle` stop, re-read VM using `resources_get` before updating node
 - **Storage Security**: Data remains encrypted if using encrypted storage classes
 - **Network Isolation**: Migrations respect NetworkPolicies
 - **Audit Trail**: All operations logged in Kubernetes API audit logs
-- **KUBECONFIG Security**: Credentials never exposed in output
-- **Resource Quotas**: Respects namespace quotas and limits
+- **KUBECONFIG Security**: Credentials never exposed
+- **Resource Quotas**: Respects namespace quotas
 - **Tenant Isolation**: Cannot migrate across namespaces without RBAC
 
 ---
 
-**Strategy Implementation Status**:
-- ✅ **REBALANCE_MANUAL.md** - Fully implemented
-- ✅ **REBALANCE_AUTOMATIC.md** - Fully implemented
+**Strategy Implementation**: ✅ REBALANCE_MANUAL.md | ✅ REBALANCE_AUTOMATIC.md
 
-**Reference Documentation Status**:
-- ✅ **live-migration-best-practices.md** - Complete
-- ✅ **performance-tuning.md** - Complete
-- ✅ **anti-patterns.md** - Complete
-- ✅ **production-considerations.md** - Complete
+**Reference Documentation**: ✅ live-migration-best-practices.md | ✅ performance-tuning.md | ✅ anti-patterns.md | ✅ production-considerations.md
 
----
-
-**Last Updated**: 2026-02-24
-**OpenShift Virtualization Versions**: 4.17, 4.18, 4.19, 4.20
+**Last Updated**: 2026-02-24 | **OpenShift Virtualization**: 4.17, 4.18, 4.19, 4.20

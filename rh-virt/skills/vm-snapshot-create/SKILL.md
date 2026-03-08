@@ -1,14 +1,14 @@
 ---
 name: vm-snapshot-create
 description: |
-  Create virtual machine snapshots for backup and recovery with comprehensive storage backend analysis.
+  Create virtual machine snapshots for backup and recovery.
 
   Use when:
   - "Create a snapshot of VM [name]"
   - "Backup VM [name] before upgrade"
   - "Take a snapshot of [vm]"
 
-  Analyzes storage capabilities, guest agent status, and consistency guarantees before creating snapshots.
+  Validates storage class snapshot support, CSI driver capabilities, and guest agent status before snapshot creation.
 
   NOT for VM cloning (use vm-clone to create independent copies).
 

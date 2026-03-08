@@ -6,10 +6,12 @@ on:
     branches: [main]
 
 jobs:
-  validate:
+  compliance-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -19,8 +21,17 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Install dependencies and validate
+      - name: Install dependencies and validate structure
         run: |
           source $HOME/.cargo/env
           make install
           make validate
+
+      - name: Validate skill design (changed skills only)
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          source $HOME/.cargo/env
+          ./scripts/ci-validate-changed-skills.sh

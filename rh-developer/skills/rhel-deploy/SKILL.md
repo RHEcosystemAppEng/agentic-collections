@@ -2,6 +2,10 @@
 name: rhel-deploy
 description: |
   CRITICAL: When user types /rhel-deploy, use THIS skill immediately. This skill deploys applications to standalone RHEL/Fedora/CentOS systems (NOT OpenShift) using Podman containers with systemd, or native dnf builds. Handles SSH connectivity, SELinux, firewall-cmd, and systemd unit creation. Triggers: /rhel-deploy command, 'deploy to RHEL', 'deploy to Fedora', 'deploy to my server via SSH'.
+model: inherit
+color: yellow
+metadata:
+   user_invocable: "true"
 ---
 
 # /rhel-deploy Skill
@@ -31,47 +35,21 @@ Deploy applications to standalone RHEL systems using Podman containers or native
 3. For container deployments: Podman installed on target
 4. For native deployments: Required development tools available via dnf
 
+## When to Use This Skill
+
+Use `/rhel-deploy` when deploying applications to standalone RHEL, Fedora, or CentOS systems via SSH. This skill handles Podman container or native dnf deployments with systemd service management, SELinux, and firewall configuration.
+
 ## Critical: Human-in-the-Loop Requirements
 
-See [Human-in-the-Loop Requirements](../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each phase. You MUST:
-1. **Wait for user confirmation** before executing any actions
-2. **Do NOT proceed** to the next phase until the user explicitly approves
-3. **Present options clearly** (yes/no/modify) and wait for response
-4. **Never auto-execute** SSH commands, file transfers, or service creation
-
-If the user says "no" or wants modifications, address their concerns before proceeding.
+See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
 ## Workflow
 
 ### Phase 0: Introduction
 
-```markdown
-# Deploy to RHEL Host
+Present the workflow overview: Connect → Analyze → Strategy → Build/Deploy → Verify. Describe Container (Podman + systemd) vs Native (dnf + systemd) strategies. Ask: **Ready to begin?** (yes/no)
 
-I'll help you deploy your application to a RHEL system.
-
-**What this workflow does:**
-1. **Connect** - Establish SSH connection to your RHEL host
-2. **Analyze** - Check target system capabilities (Podman, SELinux, firewall)
-3. **Build** - Build container image or prepare native deployment
-4. **Deploy** - Configure systemd service and networking
-5. **Verify** - Ensure application is running and accessible
-
-**Deployment Strategies:**
-- **Container (Podman)** - Run your app in a container managed by systemd
-- **Native** - Install and run your app directly on the host
-
-**What I need from you:**
-- SSH access to the target RHEL host (user@host)
-- sudo privileges on the target host
-- Your application source code
-
-**Ready to begin?** (yes/no)
-```
-
-Wait for user confirmation before proceeding.
+**WAIT for user confirmation before proceeding.**
 
 ### Phase 1: SSH Connection
 
@@ -96,14 +74,10 @@ Example: `user@192.168.1.100` or `deploy@myserver.example.com`
 **Connection verification:**
 
 ```bash
-# Test SSH connection
 ssh -o BatchMode=yes -o ConnectTimeout=10 [user]@[host] "echo 'Connection successful'"
-
-# If connection fails, provide troubleshooting:
-# - Check host is reachable: ping [host]
-# - Verify SSH key is configured
-# - Check firewall allows SSH (port 22)
 ```
+
+If connection fails, troubleshoot: host reachability, SSH key configuration, firewall port 22.
 
 Store `RHEL_HOST`, `RHEL_USER`, `RHEL_PORT` in session state.
 
@@ -114,46 +88,26 @@ Store `RHEL_HOST`, `RHEL_USER`, `RHEL_PORT` in session state.
 
 Checking capabilities of [host]...
 
-**System Information:**
 | Setting | Value |
 |---------|-------|
 | OS | [cat /etc/redhat-release] |
 | Kernel | [uname -r] |
 | Architecture | [uname -m] |
-
-**Container Runtime:**
-| Setting | Status |
-|---------|--------|
 | Podman | [Installed v4.x / Not installed] |
-| Container Storage | [/var/lib/containers] |
-
-**System Services:**
-| Setting | Status |
-|---------|--------|
 | SELinux | [Enforcing / Permissive / Disabled] |
 | Firewall | [Active / Inactive] |
-| systemd | Running |
 
 Is this the correct target host? (yes/no)
 ```
 
-**WAIT for user confirmation before proceeding.** Do NOT continue to Phase 3 until user confirms.
-
-If user says "no", ask what needs to be changed or allow them to specify a different host.
+**WAIT for user confirmation before proceeding.**
 
 **Commands to gather information:**
 
 ```bash
-# RHEL version
 ssh [target] "cat /etc/redhat-release"
-
-# Podman check
 ssh [target] "podman --version 2>/dev/null || echo 'Not installed'"
-
-# SELinux status
 ssh [target] "getenforce"
-
-# Firewall status
 ssh [target] "firewall-cmd --state 2>/dev/null || echo 'Not running'"
 ```
 
@@ -188,14 +142,6 @@ Append to Phase 2 output:
 
 These are informational warnings only — they do not block deployment.
 
-**MCP tools used:**
-
-| Tool | Purpose |
-|------|---------|
-| `find_host_by_name` | Look up target system in Red Hat Insights |
-| `get_system_cves` | Check CVEs on target system |
-| `get_rhel_lifecycle` | Verify RHEL version support status |
-
 ### Phase 3: Strategy Selection
 
 ```markdown
@@ -215,7 +161,7 @@ Based on your project ([language]/[framework]) and target capabilities:
 2. Native - Deploy directly on host
 ```
 
-**WAIT for user to select a strategy.** Do NOT proceed until user makes a choice.
+**WAIT for user confirmation before proceeding.**
 
 **If Podman not installed and user selects Container:**
 ```markdown
@@ -228,7 +174,7 @@ sudo dnf install -y podman
 Proceed with Podman installation? (yes/no)
 ```
 
-**WAIT for user confirmation.** Only install Podman if user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 Store `DEPLOYMENT_STRATEGY` in session state.
 
@@ -250,7 +196,7 @@ Store `DEPLOYMENT_STRATEGY` in session state.
 Which approach would you prefer?
 ```
 
-**WAIT for user to select an option.** Do NOT proceed until user makes a choice.
+**WAIT for user confirmation before proceeding.**
 
 **For options 1 and 2 (building an image):**
 
@@ -268,26 +214,14 @@ Use the `BUILDER_IMAGE` output from `/recommend-image` as the base image in the 
 
 **For build on target:**
 ```bash
-# Transfer source
+# Transfer source and build
 rsync -avz --exclude node_modules --exclude .git ./ [target]:/tmp/[app-name]-build/
-
-# If no Containerfile exists, create one with recommended base image
-ssh [target] "test -f /tmp/[app-name]-build/Containerfile -o -f /tmp/[app-name]-build/Dockerfile" || \
-ssh [target] "cat > /tmp/[app-name]-build/Containerfile << 'EOF'
-FROM [BUILDER_IMAGE]
-# Containerfile generated using /recommend-image
-WORKDIR /app
-COPY . .
-# Add language-specific build and run commands
-EOF"
-
-# Build on target
+# If no Containerfile exists, generate one using BUILDER_IMAGE from /recommend-image
 ssh [target] "cd /tmp/[app-name]-build && podman build -t [app-name]:latest ."
 ```
 
 **For existing image:**
 ```bash
-# Pull image on target
 ssh [target] "podman pull [image-reference]"
 ```
 
@@ -306,16 +240,12 @@ ssh [target] "podman pull [image-reference]"
 | Environment | [list env vars] |
 | Run Mode | [rootless / rootful] |
 
-**SELinux Volume Labels:** Use `:z` for shared volumes, `:Z` for private volumes. See [docs/rhel-deployment.md](../docs/rhel-deployment.md) for SELinux configuration details.
+**SELinux Volume Labels:** Use `:z` for shared volumes, `:Z` for private volumes. See [docs/rhel-deployment.md](../../docs/rhel-deployment.md) for SELinux configuration details.
 
 Proceed with this configuration? (yes/modify/cancel)
 ```
 
-**WAIT for user confirmation.** Do NOT proceed until user explicitly approves.
-
-- If user says "yes" → Continue to systemd unit creation
-- If user says "modify" → Ask what they would like to change
-- If user says "cancel" → Stop and preserve current state
+**WAIT for user confirmation before proceeding.**
 
 ### Phase 4a-3: Systemd Unit Creation
 
@@ -342,10 +272,7 @@ Creating systemd unit for Podman container.
 Proceed with creating this service? (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT create the systemd unit until user explicitly says "yes".
-
-- If user says "yes" → Read the appropriate template, substitute variables, and create the service
-- If user says "no" → Ask what they would like to change
+**WAIT for user confirmation before proceeding.**
 
 **Steps to execute:**
 
@@ -355,17 +282,9 @@ Proceed with creating this service? (yes/no)
 4. Enable and start the service
 
 ```bash
-# For rootful:
-ssh [target] "sudo tee /etc/systemd/system/[app-name].service" < [generated-unit-file]
-ssh [target] "sudo systemctl daemon-reload"
-ssh [target] "sudo systemctl enable --now [app-name]"
-
-# For rootless:
-ssh [target] "mkdir -p ~/.config/systemd/user"
-ssh [target] "tee ~/.config/systemd/user/[app-name].service" < [generated-unit-file]
-ssh [target] "systemctl --user daemon-reload"
-ssh [target] "systemctl --user enable --now [app-name]"
-ssh [target] "loginctl enable-linger [user]"  # Keep user services running
+# Rootful: transfer to /etc/systemd/system/, daemon-reload, enable --now
+# Rootless: transfer to ~/.config/systemd/user/, daemon-reload, enable --now, enable-linger
+ssh [target] "sudo systemctl daemon-reload && sudo systemctl enable --now [app-name]"
 ```
 
 ### Phase 4a-4: Firewall Configuration
@@ -390,10 +309,7 @@ sudo firewall-cmd --list-ports
 Proceed with firewall configuration? (yes/skip)
 ```
 
-**WAIT for user confirmation.** Do NOT modify firewall until user explicitly responds.
-
-- If user says "yes" → Configure firewall
-- If user says "skip" → Skip firewall configuration and continue
+**WAIT for user confirmation before proceeding.**
 
 ---
 
@@ -406,7 +322,7 @@ Proceed with firewall configuration? (yes/skip)
 
 **Runtime packages for [language]:**
 
-See [docs/rhel-deployment.md](../docs/rhel-deployment.md) for the complete runtime package mapping by language and RHEL version (Node.js, Python, Java, Go, Ruby, PHP).
+See [docs/rhel-deployment.md](../../docs/rhel-deployment.md) for the complete runtime package mapping by language and RHEL version (Node.js, Python, Java, Go, Ruby, PHP).
 
 **Commands to execute:**
 ```bash
@@ -416,7 +332,7 @@ ssh [target] "sudo dnf install -y [packages]"
 Proceed with installation? (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT install packages until user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 ### Phase 4b-2: Application Deployment
 
@@ -433,21 +349,11 @@ Proceed with installation? (yes/no)
 5. Configure SELinux context
 
 ```bash
-# Create directory
 ssh [target] "sudo mkdir -p /opt/[app-name]"
-
-# Transfer files
-rsync -avz --exclude node_modules --exclude .git --exclude __pycache__ \
-    ./ [target]:/tmp/[app-name]-deploy/
+rsync -avz --exclude node_modules --exclude .git --exclude __pycache__ ./ [target]:/tmp/[app-name]-deploy/
 ssh [target] "sudo cp -r /tmp/[app-name]-deploy/* /opt/[app-name]/"
-
-# Install dependencies (example for Node.js)
-ssh [target] "cd /opt/[app-name] && npm install --production"
-
-# Set permissions
+ssh [target] "cd /opt/[app-name] && npm install --production"  # language-specific
 ssh [target] "sudo chown -R [service-user]:[service-user] /opt/[app-name]"
-
-# SELinux context
 ssh [target] "sudo semanage fcontext -a -t bin_t '/opt/[app-name](/.*)?'"
 ssh [target] "sudo restorecon -Rv /opt/[app-name]"
 ```
@@ -455,7 +361,7 @@ ssh [target] "sudo restorecon -Rv /opt/[app-name]"
 Proceed with deployment? (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT transfer files or deploy until user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 ### Phase 4b-3: Native Systemd Unit
 
@@ -473,7 +379,7 @@ Proceed with deployment? (yes/no)
 | `${PORT}` | [container-port] | Application listen port |
 | `${START_COMMAND}` | [see below] | Language-specific start command |
 
-**Start commands by language:** See [docs/rhel-deployment.md](../docs/rhel-deployment.md) for language-specific systemd unit templates (Node.js, Python, Java, Go).
+**Start commands by language:** See [docs/rhel-deployment.md](../../docs/rhel-deployment.md) for language-specific systemd unit templates (Node.js, Python, Java, Go).
 
 **Target location:** `/etc/systemd/system/[app-name].service`
 
@@ -482,7 +388,7 @@ Proceed with deployment? (yes/no)
 Proceed with creating this service? (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT create the systemd unit until user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 **Steps to execute:**
 
@@ -506,8 +412,6 @@ Same as container path - open required port with firewall-cmd.
 
 Your application is now running on [host].
 
----
-
 **Application Summary:**
 | Setting | Value |
 |---------|-------|
@@ -516,51 +420,17 @@ Your application is now running on [host].
 | Strategy | [Container/Native] |
 | Service | [app-name].service |
 
----
-
 **Access URLs:**
 | Type | URL |
 |------|-----|
 | HTTP | http://[host]:[port] |
 | SSH | ssh [user]@[host] |
 
----
-
-**Service Status:**
-```
-[systemctl status output]
-```
-
----
+**Service Status:** [systemctl status output]
 
 **Quick Commands:**
 
-```bash
-# View logs
-sudo journalctl -u [app-name] -f
-
-# Restart service
-sudo systemctl restart [app-name]
-
-# Stop service
-sudo systemctl stop [app-name]
-
-# Check status
-sudo systemctl status [app-name]
-
-# View container logs (if container deployment)
-podman logs -f [app-name]
-
-# Remove deployment
-sudo systemctl disable --now [app-name]
-sudo rm /etc/systemd/system/[app-name].service
-# For container: podman rm [app-name]
-# For native: sudo rm -rf /opt/[app-name]
-```
-
----
-
-Your application is live!
+Show quick commands for: view logs (journalctl), restart/stop/status (systemctl), container logs (if container), and removal steps.
 ```
 
 ### Phase 5a: Handle Deployment Failure
@@ -572,33 +442,19 @@ If the service fails to start or is not accessible:
 
 The service did not start successfully.
 
-**Service Status:**
-```
-[systemctl status output showing failure]
-```
+**Service Status:** [systemctl status output showing failure]
 
 **Recent Errors:**
 | Time | Error |
 |------|-------|
 | [time] | [error from journalctl] |
 
----
-
 **Would you like me to diagnose the issue?**
-
-1. **Debug RHEL** (`/debug-rhel`) - Full system diagnosis
-   - Analyzes systemd status, journal logs, SELinux denials, firewall rules
-   - Identifies root cause and suggests remediation
-
-2. **Debug Container** (`/debug-container`) - If using container deployment
-   - Analyzes container state, logs, exit codes
-
-3. **View full logs** - Show complete journalctl output
-
+1. **Debug RHEL** (`/debug-rhel`) - Full system diagnosis (systemd, journal, SELinux, firewall)
+2. **Debug Container** (`/debug-container`) - Container state, logs, exit codes
+3. **View full logs** - Complete journalctl output
 4. **Check SELinux** - Quick SELinux denial check
-
 5. **Check firewall** - Quick firewall port check
-
 6. **Stop and clean up**
 
 Select an option:
@@ -610,34 +466,17 @@ Select an option:
 - If user selects "Debug Container" → Invoke `/debug-container` skill
 - After debugging → Offer to retry deployment
 
-## Delegated Skills
+## Dependencies
 
-This skill delegates to other skills when needed:
+### Required MCP Servers
+- `lightspeed-mcp` (optional) - Red Hat Insights pre-deploy checks
 
-| Scenario | Delegated Skill | Purpose |
-|----------|-----------------|---------|
-| Building container image (no Containerfile) | `/recommend-image` | Get optimal UBI base image for the detected language/framework |
+### Related Skills
+- `/debug-rhel` - systemd failures, SELinux denials, firewall blocking
+- `/debug-container` - Container startup issues on RHEL host
 
-When delegating to `/recommend-image`:
-1. Provide detected `LANGUAGE`, `FRAMEWORK`, and `VERSION` from project analysis
-2. Receive back: `BUILDER_IMAGE`, `IMAGE_VARIANT`, `SELECTION_RATIONALE`
-3. Use `BUILDER_IMAGE` as the FROM image in generated Containerfile
-
-## Related Skills
-
-| Skill | Use When |
-|-------|----------|
-| `/debug-rhel` | systemd failures, SELinux denials, firewall blocking, Insights CVE/advisor analysis |
-| `/debug-container` | Container startup issues on RHEL host |
-
-## Optional MCP Servers
-
-- `lightspeed-mcp` - Red Hat Insights vulnerability and planning data (Phase 2b)
-
-## Reference Documentation
-
-For detailed guidance, see:
-- [docs/rhel-deployment.md](../docs/rhel-deployment.md) - Comprehensive RHEL deployment reference: systemd unit templates, SELinux configuration, firewall commands, runtime package mapping
-- [docs/selinux-troubleshooting.md](../docs/selinux-troubleshooting.md) - SELinux denial analysis and fixes
-- [docs/debugging-patterns.md](../docs/debugging-patterns.md) - Common error patterns and troubleshooting
-- [docs/prerequisites.md](../docs/prerequisites.md) - Required tools (ssh, podman)
+### Reference Documentation
+- [docs/rhel-deployment.md](../../docs/rhel-deployment.md) - Systemd templates, SELinux, firewall, runtime packages
+- [docs/selinux-troubleshooting.md](../../docs/selinux-troubleshooting.md) - SELinux denial analysis and fixes
+- [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns and troubleshooting
+- [docs/prerequisites.md](../../docs/prerequisites.md) - Required tools (ssh, podman)

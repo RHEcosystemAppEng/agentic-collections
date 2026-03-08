@@ -1,7 +1,9 @@
 ---
 name: vm-delete
 description: |
-  Permanently delete virtual machines and their associated resources from OpenShift Virtualization. Use this skill when users request:
+  Permanently delete virtual machines and their associated resources from OpenShift Virtualization.
+
+  Use when:
   - "Delete VM [name]"
   - "Remove virtual machine [name]"
   - "Destroy VM [name]"
@@ -27,7 +29,9 @@ Permanently delete virtual machines and their associated resources (storage, Dat
 - `resources_get` (from openshift-virtualization) - Verify VM exists and get details
 - `resources_delete` (from openshift-virtualization) - Delete Kubernetes resources
 - `resources_list` (from openshift-virtualization) - List dependent resources (PVCs, DataVolumes)
+- `resources_create_or_update` (from openshift-virtualization) - Update resources (e.g., remove finalizers)
 - `vm_lifecycle` (from openshift-virtualization) - Stop running VMs before deletion
+- `pods_list_in_namespace` (from openshift-virtualization) - List pods for diagnostics
 
 **Required Environment Variables**:
 - `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
@@ -36,1240 +40,364 @@ Permanently delete virtual machines and their associated resources (storage, Dat
 - OpenShift cluster (>= 4.19)
 - OpenShift Virtualization operator installed
 - ServiceAccount with RBAC permissions to delete VirtualMachine and PVC resources
-- Target VM must exist
 
 ### Prerequisite Verification
 
-**Before executing, verify MCP server availability:**
+**Before executing:**
 
-1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `.mcp.json`
-   - If missing → Report to user with setup instructions
+1. Check `openshift-virtualization` exists in `.mcp.json` → If missing, report setup
+2. Verify `KUBECONFIG` is set (presence only, never expose value) → If missing, report
+3. Check RBAC permissions (optional) → Verify delete permissions for VirtualMachine and PVC
 
-2. **Check Environment Variables**
-   - Verify `KUBECONFIG` is set (check presence only, never expose value)
-   - If missing → Report to user
+**Human Notification Protocol:** `❌ Cannot execute vm-delete: MCP server not available. Setup: Add to .mcp.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
-3. **Check RBAC Permissions** (optional verification)
-   - Verify ServiceAccount can delete VirtualMachine resources
-   - Verify ServiceAccount can delete PVC/DataVolume resources
-
-**Human Notification Protocol:**
-
-When prerequisites fail:
-
-```
-❌ Cannot execute vm-delete: MCP server 'openshift-virtualization' is not available
-
-📋 Setup Instructions:
-1. Add openshift-virtualization to .mcp.json:
-   {
-     "mcpServers": {
-       "openshift-virtualization": {
-         "command": "podman",
-         "args": [
-           "run",
-           "--rm",
-           "-i",
-           "--network=host",
-           "--userns=keep-id:uid=65532,gid=65532",
-           "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-           "--entrypoint", "/app/kubernetes-mcp-server",
-           "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-           "--kubeconfig", "/kubeconfig",
-           "--toolsets", "core,kubevirt"
-         ],
-         "env": {
-           "KUBECONFIG": "${KUBECONFIG}"
-         }
-       }
-     }
-   }
-
-2. Set KUBECONFIG environment variable:
-   export KUBECONFIG="/path/to/your/kubeconfig"
-
-3. Restart Claude Code to reload MCP servers
-
-🔗 Documentation: https://github.com/openshift/openshift-mcp-server
-
-❓ How would you like to proceed?
-Options:
-- "setup" - Help configure the MCP server now
-- "skip" - Skip this skill
-- "abort" - Stop workflow
-
-Please respond with your choice.
-```
-
-⚠️ **SECURITY**: Never display actual KUBECONFIG path or credential values in output.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 
-**Trigger this skill when:**
+**Trigger when:**
 - User explicitly invokes `/vm-delete` command
 - User requests permanent VM deletion
 - User wants to clean up test/development VMs
-- User needs to free cluster resources by removing VMs
+- User needs to free cluster resources
 - User wants to decommission VMs
 
-**User phrases that trigger this skill:**
+**User phrases:**
 - "Delete VM test-vm in namespace dev"
-- "Remove the virtual machine web-server"
+- "Remove virtual machine web-server"
 - "Destroy VM old-database"
-- "Clean up all VMs in namespace test"
-- "/vm-delete" (explicit command)
+- "/vm-delete"
 
-**Do NOT use this skill when:**
-- User wants to stop a VM temporarily → Use `/vm-lifecycle-manager` skill instead
-- User wants to create a VM → Use `/vm-create` skill instead
-- User wants to view VMs → Use `/vm-inventory` skill instead
-- User wants to pause or suspend VM → Use lifecycle management (not deletion)
+**Do NOT use when:**
+- Stop VM temporarily → `/vm-lifecycle-manager`
+- Create VM → `/vm-create`
+- View VMs → `/vm-inventory`
 
 ## Workflow
 
-### Step 1: Gather VM Information and Validate
+### Step 1: Gather and Validate
 
-**CRITICAL**: This step MUST complete BEFORE asking for user confirmation.
+**CRITICAL**: Complete ALL validation BEFORE user confirmation.
 
-**Required Information from User:**
-1. **VM Name** - Name of the virtual machine to delete
-2. **Namespace** - OpenShift namespace where VM exists
-
-If user doesn't provide namespace, ask for it explicitly.
-
-**Pre-Deletion Validation (Execute ALL checks):**
+**Required from user:** VM Name, Namespace
 
 **1.1: Verify VM Exists**
 
-**MCP Tool**: `resources_get` (from openshift-virtualization)
+**MCP Tool**: `resources_get` (apiVersion="kubevirt.io/v1", kind="VirtualMachine", namespace=`<ns>`, name=`<vm>`)
 
-**Parameters**:
-```json
-{
-  "apiVersion": "kubevirt.io/v1",
-  "kind": "VirtualMachine",
-  "namespace": "<namespace>",  // User-provided
-  "name": "<vm-name>"          // User-provided
-}
-```
-
-**Expected Output**: VirtualMachine resource with metadata, spec, and status
-
-**Error Handling**:
-- If VM not found → Report error to user, suggest checking VM name/namespace with vm-inventory skill
-- If permission denied → Report RBAC error
+**Errors:**
+- Not found → Report error, suggest vm-inventory
+- Permission denied → Report RBAC error
 
 **1.2: Check Protection Label**
 
-**From the VM resource returned in step 1.1**, check `metadata.labels` for `protected: "true"`.
+Check `metadata.labels` for `protected: "true"`.
 
-**If protected label exists:**
-```markdown
-❌ Cannot Delete Protected VM
+**If protected:** Report: `❌ Cannot Delete Protected VM. VM has protected label. Remove: oc label vm <vm> -n <ns> protected-. Operation cancelled.` **STOP workflow.**
 
-**VM**: `<vm-name>` (namespace: `<namespace>`)
+**1.3: Check Running State**
 
-**Protection Status**: This VM has the `protected: "true"` label.
+Check `status.printableStatus` (Running/Starting/Migrating = running, Stopped/Halted = stopped).
 
-**Reason**: Protected VMs cannot be deleted to prevent accidental removal of critical infrastructure.
+**If running:** Report: `⚠️ VM Running. Must stop before deletion. Options: stop-and-delete / cancel` **Wait for response.**
 
-**To delete this VM:**
-1. Remove the protection label first:
-   ```
-   oc label vm <vm-name> -n <namespace> protected-
-   ```
-2. Then retry deletion
+**1.4: Stop VM (if applicable)**
 
-**Alternative**: Use vm-inventory skill to verify this is the correct VM.
+**ONLY if user chose "stop-and-delete".**
 
-Operation cancelled.
-```
+**MCP Tool**: `vm_lifecycle` (namespace=`<ns>`, name=`<vm>`, action="stop")
 
-**STOP workflow** - Do not proceed with deletion.
+Report: `⏸️ Stopping VM... Wait 10-30s.` **Wait 10s**, verify stopped.
 
-**1.3: Check VM Running State**
+**1.5: Discover Storage**
 
-**From the VM resource returned in step 1.1**, check `status.printableStatus` or `status.ready`.
+**MCP Tool**: `resources_list`
 
-**Running States**: "Running", "Starting", "Migrating"
-**Stopped States**: "Stopped", "Halted", "Terminated"
+**DataVolumes**: apiVersion="cdi.kubevirt.io/v1beta1", kind="DataVolume", namespace=`<ns>`, labelSelector="vm.kubevirt.io/name=`<vm>`"
 
-**If VM is running:**
-```markdown
-⚠️ VM is Currently Running
+**PVCs** (if no DVs): apiVersion="v1", kind="PersistentVolumeClaim", namespace=`<ns>`, labelSelector="vm.kubevirt.io/name=`<vm>`"
 
-**VM**: `<vm-name>` (namespace: `<namespace>`)
-**Status**: Running
+Parse: Extract names, calculate total storage size.
 
-**Safety Requirement**: VMs must be stopped before deletion to ensure graceful shutdown.
+### Step 2: Present Scope and Get Options
 
-**Options:**
-1. "stop-and-delete" - Stop the VM first, then proceed with deletion
-2. "cancel" - Cancel deletion operation
-
-How would you like to proceed?
-```
-
-**Wait for user response.**
-
-- If "stop-and-delete" → Continue to Step 1.4
-- If "cancel" → Stop workflow, cancel operation
-
-**1.4: Stop Running VM (if applicable)**
-
-**ONLY execute if user chose "stop-and-delete" in step 1.3.**
-
-**MCP Tool**: `vm_lifecycle` (from openshift-virtualization)
-
-**Parameters**:
-```json
-{
-  "namespace": "<namespace>",
-  "name": "<vm-name>",
-  "action": "stop"
-}
-```
-
-**Expected Output**: VM runStrategy changed to "Halted", VM stopping
-
-**Report to user**:
-```markdown
-⏸️ Stopping VM before deletion...
-
-VM `<vm-name>` is being stopped gracefully.
-
-Wait 10-30 seconds for VM to fully stop, then deletion will proceed.
-```
-
-**Wait 10 seconds**, then verify VM is stopped by checking status again.
-
-**1.5: Discover Dependent Resources**
-
-**Find DataVolumes and PVCs associated with this VM.**
-
-**MCP Tool**: `resources_list` (from openshift-virtualization)
-
-**Parameters for DataVolumes**:
-```json
-{
-  "apiVersion": "cdi.kubevirt.io/v1beta1",
-  "kind": "DataVolume",
-  "namespace": "<namespace>",
-  "labelSelector": "vm.kubevirt.io/name=<vm-name>"
-}
-```
-
-**Parameters for PVCs** (if DataVolumes not found):
-```json
-{
-  "apiVersion": "v1",
-  "kind": "PersistentVolumeClaim",
-  "namespace": "<namespace>",
-  "labelSelector": "vm.kubevirt.io/name=<vm-name>"
-}
-```
-
-**Expected Output**: List of DataVolumes or PVCs owned by this VM
-
-**Parse results**:
-- Extract resource names
-- Calculate total storage size (sum of all PVC sizes)
-- Store list for deletion scope presentation
-
-**If no storage found**: VM uses ephemeral storage or container disks (no persistent storage to delete)
-
-### Step 2: Present Deletion Scope and Get Deletion Options
-
-**After completing ALL validation in Step 1**, present the complete deletion scope to user.
-
-**Display deletion scope:**
+Display deletion scope in this format:
 
 ```markdown
 ## ⚠️ VM Deletion - Review Scope
 
-**Virtual Machine**: `<vm-name>`
-**Namespace**: `<namespace>`
-**Current Status**: <Stopped|Running> (stopped in step 1.4 if was running)
+**VM**: `<vm>` | **Namespace**: `<ns>` | **Status**: <Stopped/Running>
 
-### Resources Found
-
-**VirtualMachine Resource:**
-- VM: `<vm-name>`
-- Age: <age>
-- vCPU: <cpu>, Memory: <memory>
-
-**Persistent Storage:** (if found)
-- DataVolume: `<dv-name>` (30Gi)
-- PVC: `<pvc-name>` (30Gi)
-- **Total Storage**: 30Gi
-
-**OR** (if no storage found)
-
-**Persistent Storage:**
-- None (VM uses ephemeral/container disk storage)
-
----
+**Resources**: VM `<vm>` (Age: <age>, vCPU: <cpu>, Memory: <mem>)
+**Storage**: DataVolume `<dv>` (30Gi), PVC `<pvc>` (30Gi) - Total: 30Gi
+OR **Storage**: None (ephemeral)
 
 ### Deletion Options
+**1: VM Only** - Preserves storage for reuse
+**2: VM + Storage** ← Recommended (test/dev) - Frees storage
+**3: Cancel**
 
-**What should be deleted?**
-
-**Option 1: VM Only** (preserve storage)
-- Deletes: VirtualMachine resource
-- Preserves: DataVolumes and PVCs for potential reuse
-- Use case: Recreating VM with same storage later
-
-**Option 2: VM + Storage** (complete cleanup) ← Recommended for test/dev VMs
-- Deletes: VirtualMachine resource
-- Deletes: All DataVolumes and PVCs
-- Frees: 30Gi cluster storage
-- Use case: Permanently removing VM and reclaiming resources
-
-**Option 3: Cancel**
-- No resources deleted
-- VM remains in cluster
-
----
-
-**Select deletion option** (1, 2, or 3):
+Select (1, 2, or 3):
 ```
 
-**Wait for user to select option 1, 2, or 3.**
-
-**Handle user response:**
-- If "3" or "cancel" → Cancel operation, stop workflow
-- If "1" → Proceed to Step 3 with delete_storage=false
-- If "2" → Proceed to Step 3 with delete_storage=true
+**Wait for selection.** Handle: 3→Cancel, 1→delete_storage=false, 2→delete_storage=true
 
 ### Step 3: Typed Confirmation (MANDATORY)
 
-**CRITICAL**: User MUST type the exact VM name to proceed.
+**CRITICAL**: User MUST type exact VM name.
 
-**Present typed confirmation prompt:**
+Display typed confirmation prompt (adjust based on delete_storage flag):
 
 ```markdown
 ## 🔴 PERMANENT DELETION - Typed Confirmation Required
 
-**This action CANNOT be undone.**
+**CANNOT BE UNDONE**
 
-### What will be deleted:
+**Will delete**:
+✗ VirtualMachine: `<vm>` (namespace: `<ns>`)
+[If delete_storage=true, show:]
+✗ DataVolume: `<dv>` | ✗ PVC: `<pvc>` | ✗ All data lost
+[If delete_storage=false, show:]
+✓ Storage PRESERVED
 
-✗ VirtualMachine: `<vm-name>` (namespace: `<namespace>`)
-<if delete_storage=true>
-✗ DataVolume: `<dv-name>` (30Gi)
-✗ PVC: `<pvc-name>` (30Gi)
-✗ **All VM data will be lost permanently**
-</if>
-
-<if delete_storage=false>
-✓ Storage PRESERVED: DataVolumes and PVCs will remain for reuse
-</if>
-
----
-
-**⚠️ IMPORTANT**: This deletion is permanent. Deleted resources cannot be recovered.
-
-**To confirm deletion, type the VM name exactly as shown:**
-
-Type `<vm-name>` to confirm: _____
+Type `<vm>` to confirm: _____
 ```
-
-**Wait for user to type the VM name.**
 
 **Validation:**
-- Compare user input with VM name (case-sensitive, exact match)
-- **If match**: Proceed to Step 4
-- **If mismatch**: Cancel operation
+- Match → Continue to Step 4 (Execute Deletion)
+- Mismatch → Report: `❌ Confirmation Failed. You typed: <input>. Expected: <vm>. Cancelled.` **STOP.**
 
-**On mismatch:**
-```markdown
-❌ Confirmation Failed
+### Step 4: Execute Deletion
 
-**You typed**: `<user-input>`
-**Expected**: `<vm-name>`
+**ONLY AFTER**: ✓ Validation ✓ Option selected ✓ Typed name confirmed
 
-**Names do not match.** Deletion cancelled for safety.
+**4.1: Delete VM**
 
-To retry, use:
-```
-"Delete VM <vm-name> in namespace <namespace>"
-```
+**MCP Tool**: `resources_delete` (apiVersion="kubevirt.io/v1", kind="VirtualMachine", namespace=`<ns>`, name=`<vm>`)
 
-Operation cancelled. No resources were deleted.
-```
+**Errors:** Fails → Report, don't delete storage; Not found → Continue
 
-**STOP workflow** - Do not proceed with deletion.
+Report: `🗑️ Deleting VM... ✓ Deleted`
 
-### Step 4: Final Confirmation Before Execution
+**4.2: Delete Storage (if delete_storage=true)**
 
-**After typed verification succeeds**, ask for final explicit confirmation.
+**For each DataVolume:**
+**MCP Tool**: `resources_delete` (apiVersion="cdi.kubevirt.io/v1beta1", kind="DataVolume", namespace=`<ns>`, name=`<dv>`)
 
-```markdown
-## ✓ Typed Verification Passed
+**For each PVC:**
+**MCP Tool**: `resources_delete` (apiVersion="v1", kind="PersistentVolumeClaim", namespace=`<ns>`, name=`<pvc>`)
 
-**Confirmation received for VM**: `<vm-name>`
+**Errors:** Report which failed, continue with others
 
-### Ready to Delete:
+Report: `🗑️ Deleting storage... ✓ DV deleted (storage freed) ✓ PVC deleted`
 
-<if delete_storage=true>
-- VirtualMachine: `<vm-name>`
-- DataVolume: `<dv-name>` (30Gi)
-- PVC: `<pvc-name>` (30Gi)
+### Step 5: Report Results
 
-**Impact**: VM and all associated data will be permanently deleted. 30Gi storage will be freed.
-</if>
-
-<if delete_storage=false>
-- VirtualMachine: `<vm-name>` (storage preserved)
-
-**Impact**: VM will be deleted. DataVolumes and PVCs will remain for potential reuse.
-</if>
-
----
-
-**Proceed with permanent deletion?**
-- Type "yes" to execute deletion
-- Type "cancel" to abort
-
-Your choice: _____
-```
-
-**Wait for user response.**
-
-**Handle response:**
-- If "yes" → Proceed to Step 5 (execute deletion)
-- If "cancel", "no", "wait", or anything else → Cancel operation
-
-**On cancellation:**
-```markdown
-Operation cancelled by user. No resources were deleted.
-
-VM `<vm-name>` remains in namespace `<namespace>`.
-```
-
-**STOP workflow**.
-
-### Step 5: Execute Deletion
-
-**ONLY PROCEED AFTER**:
-- ✓ Step 1: Validation complete
-- ✓ Step 2: User selected deletion option
-- ✓ Step 3: User typed VM name correctly
-- ✓ Step 4: User confirmed "yes"
-
-**5.1: Delete VirtualMachine Resource**
-
-**MCP Tool**: `resources_delete` (from openshift-virtualization)
-
-**Parameters**:
-```json
-{
-  "apiVersion": "kubevirt.io/v1",
-  "kind": "VirtualMachine",
-  "namespace": "<namespace>",
-  "name": "<vm-name>"
-}
-```
-
-**Expected Output**: VirtualMachine deleted successfully
-
-**Error Handling**:
-- If deletion fails → Report error, do not proceed with storage deletion
-- If permission denied → Report RBAC error
-- If VM not found → May have been deleted externally, continue anyway
-
-**Report progress:**
-```markdown
-🗑️ Deleting VirtualMachine resource...
-✓ VirtualMachine `<vm-name>` deleted
-```
-
-**5.2: Delete Storage (if delete_storage=true)**
-
-**ONLY execute if user selected Option 2 in Step 2.**
-
-**For each DataVolume found in Step 1.5:**
-
-**MCP Tool**: `resources_delete` (from openshift-virtualization)
-
-**Parameters**:
-```json
-{
-  "apiVersion": "cdi.kubevirt.io/v1beta1",
-  "kind": "DataVolume",
-  "namespace": "<namespace>",
-  "name": "<datavolume-name>"
-}
-```
-
-**For each PVC found in Step 1.5** (if DataVolumes not used):
-
-**MCP Tool**: `resources_delete` (from openshift-virtualization)
-
-**Parameters**:
-```json
-{
-  "apiVersion": "v1",
-  "kind": "PersistentVolumeClaim",
-  "namespace": "<namespace>",
-  "name": "<pvc-name>"
-}
-```
-
-**Expected Output**: Storage resources deleted successfully
-
-**Error Handling**:
-- If deletion fails → Report which resources failed, continue with others
-- If permission denied → Report RBAC error for specific resource
-
-**Report progress for each deletion:**
-```markdown
-🗑️ Deleting storage resources...
-✓ DataVolume `<dv-name>` deleted (30Gi freed)
-✓ PVC `<pvc-name>` deleted
-```
-
-### Step 6: Report Deletion Results
-
-**On successful deletion:**
-
-**If delete_storage=true (complete cleanup):**
-```markdown
-## ✓ VM Deleted Successfully (Complete Cleanup)
-
-**Deleted Resources:**
-- ✓ VirtualMachine: `<vm-name>` (namespace: `<namespace>`)
-- ✓ DataVolume: `<dv-name>`
-- ✓ PVC: `<pvc-name>`
-
-**Storage Freed**: 30Gi
-
-**Impact:**
-- VM and all associated data permanently removed
-- Cluster resources freed
-- VM cannot be recovered
-
-**To verify deletion:**
-```
-"List VMs in namespace <namespace>"
-```
-
-The VM should no longer appear in the inventory.
-```
-
-**If delete_storage=false (storage preserved):**
-```markdown
-## ✓ VM Deleted Successfully (Storage Preserved)
-
-**Deleted Resources:**
-- ✓ VirtualMachine: `<vm-name>` (namespace: `<namespace>`)
-
-**Preserved Resources:**
-- ✓ DataVolume: `<dv-name>` (30Gi) - Available for reuse
-- ✓ PVC: `<pvc-name>` (30Gi) - Available for reuse
-
-**Impact:**
-- VM removed from cluster
-- Storage remains available for attaching to new VMs
-- Data preserved on PVCs
-
-**To reuse storage:**
-Create a new VM and reference the existing DataVolume or PVC.
-
-**To delete storage later:**
-```
-oc delete datavolume <dv-name> -n <namespace>
-oc delete pvc <pvc-name> -n <namespace>
-```
-```
-
-**On partial failure (VM deleted but storage deletion failed):**
-
-**OPTIONAL**: If storage deletion fails, consult documentation for storage-related deletion issues.
-
-**Document Consultation** (OPTIONAL - when storage deletion fails):
-1. **Action**: Read [storage-errors.md](../../docs/troubleshooting/storage-errors.md) using the Read tool to understand storage deletion issues and PVC cleanup strategies
-2. **Output to user**: "I consulted [storage-errors.md](../../docs/troubleshooting/storage-errors.md) to understand the storage deletion failure."
+**Success (with storage):**
 
 ```markdown
-## ⚠️ Partial Deletion Completed
-
-**Successfully Deleted:**
-- ✓ VirtualMachine: `<vm-name>`
-
-**Failed to Delete:**
-- ✗ DataVolume: `<dv-name>` - Error: <error-message>
-- ✗ PVC: `<pvc-name>` - Error: <error-message>
-
-**Storage remains in cluster.** You may need to delete these resources manually:
-
-```
-oc delete datavolume <dv-name> -n <namespace>
-oc delete pvc <pvc-name> -n <namespace>
+## ✓ VM Deleted (Complete Cleanup)
+**Deleted**: VM + DataVolume + PVC | **Freed**: <size>
+**Impact**: Permanent removal. Cannot recover.
+**Verify**: "List VMs in namespace <ns>" - VM should not appear
 ```
 
-**Possible causes:**
-- Insufficient RBAC permissions to delete PVCs
-- PVC in use by another resource
-- Storage class retention policy
+**Success (storage preserved):**
 
-Would you like help troubleshooting the storage deletion failure?
+```markdown
+## ✓ VM Deleted (Storage Preserved)
+**Deleted**: VM | **Preserved**: DataVolume + PVC (<size>)
+**Reuse**: Create new VM with existing DV/PVC
+**Delete later**: `oc delete datavolume <dv> -n <ns>`
 ```
 
-**On complete failure (VM deletion failed):**
+**Partial failure (storage failed):**
 
-**OPTIONAL**: If deletion operation fails, consult documentation for common deletion failure scenarios.
+**OPTIONAL**: Read [storage-errors.md](../../docs/troubleshooting/storage-errors.md) for PVC cleanup. Output: "Consulted storage-errors.md for failure."
 
-**Document Consultation** (OPTIONAL - when deletion fails):
-1. **Action**: Read [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) using the Read tool to understand VM deletion failure scenarios, finalizer issues, and stuck Terminating states
-2. **Output to user**: "I consulted [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) to understand potential causes for the deletion failure."
+```markdown
+## ⚠️ Partial Deletion
+**Deleted**: VM | **Failed**: DV/PVC (error: <error>)
+**Action**: Manual cleanup: `oc delete datavolume <dv> -n <ns>`
+```
 
-**When to consult**:
-- VM deletion fails with finalizer errors
-- VM stuck in Terminating state
-- Storage deletion fails (PVC/DataVolume errors)
-- Unexpected error messages from resources_delete tool
+**Complete failure:**
 
-**When NOT to consult**:
-- Simple "VM not found" errors (clear cause)
-- RBAC permission errors (clear cause)
-- Namespace doesn't exist (clear cause)
+**OPTIONAL**: Read [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) for deletion failures. Output: "Consulted lifecycle-errors.md for failure causes."
 
 ```markdown
 ## ❌ VM Deletion Failed
-
-**Error**: <error-message-from-tool>
-
-**VM**: `<vm-name>` (namespace: `<namespace>`)
-
-**Common Causes:**
-- **Insufficient RBAC permissions** - ServiceAccount lacks delete permission for VirtualMachines
-- **VM not found** - May have been deleted externally
-- **Finalizers blocking deletion** - VM has finalizers preventing deletion
-- **Resource in use** - VM or associated resources locked by another process
-
-**Troubleshooting Steps:**
-
-1. **Check permissions:**
-   ```
-   oc auth can-i delete virtualmachines -n <namespace>
-   ```
-
-2. **Verify VM exists:**
-   ```
-   "List VMs in namespace <namespace>"
-   ```
-
-3. **Check for finalizers:**
-
-   Consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) "VM Stuck in Terminating State" section for MCP-first diagnostic steps using `resources_get` to check finalizers.
-
-4. **Manual deletion (if needed):**
-
-   Use `resources_delete` MCP tool or consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) for proper deletion procedure.
-
-Would you like help troubleshooting this error?
-```
-
-## Advanced Features
-
-### Dry-Run Mode (Preview Deletion)
-
-Allow user to preview what would be deleted without actually deleting.
-
-**User request:** "Show me what would be deleted if I delete VM test-vm"
-
-**Workflow:**
-1. Execute Step 1 (validation and discovery)
-2. Execute Step 2 (present deletion scope)
-3. **Skip Steps 3-5** (no confirmation, no deletion)
-4. Report: "This is a preview. No resources were deleted."
-
-**Output:**
-```markdown
-## 🔍 Deletion Preview (Dry-Run)
-
-**If you delete VM** `test-vm` **(namespace:** `dev`**):**
-
-**Would be deleted (Option 1 - VM only):**
-- VirtualMachine: `test-vm`
-
-**Would be deleted (Option 2 - VM + storage):**
-- VirtualMachine: `test-vm`
-- DataVolume: `test-vm-disk` (30Gi)
-- PVC: `test-vm-disk` (30Gi)
-- **Storage freed**: 30Gi
-
-**Would be preserved:**
-- None (complete cleanup)
-
----
-
-**This is a preview only. No resources were deleted.**
-
-To execute deletion:
-```
-"Delete VM test-vm in namespace dev"
-```
-```
-
-### Batch Deletion (Multiple VMs)
-
-**User request:** "Delete VMs test-01, test-02, test-03 in namespace dev"
-
-**Workflow:**
-1. Execute Step 1 (validation) **for each VM**
-2. Present combined deletion scope for all VMs
-3. Require typed confirmation: "type 'DELETE-3-VMS' to confirm"
-4. Execute deletion for each VM sequentially
-
-**Typed confirmation for batch:**
-```markdown
-## 🔴 BATCH DELETION - Typed Confirmation Required
-
-**Deleting 3 VMs in namespace** `dev`**:**
-
-1. ✗ VirtualMachine: `test-01` + storage (30Gi)
-2. ✗ VirtualMachine: `test-02` + storage (30Gi)
-3. ✗ VirtualMachine: `test-03` + storage (30Gi)
-
-**Total Impact:**
-- 3 VMs permanently deleted
-- 90Gi storage freed
-- All VM data lost
-
-**To confirm batch deletion, type:** `DELETE-3-VMS`
-
-Type confirmation: _____
-```
-
-### Protected VM Label Check
-
-**Automatic protection enforcement:**
-
-If VM has label `protected: "true"`, **refuse deletion** in Step 1.2.
-
-**Example VM with protection:**
-```yaml
-metadata:
-  name: production-database
-  labels:
-    protected: "true"
-    env: production
-```
-
-**Skill response:**
-```markdown
-❌ Cannot Delete Protected VM
-
-**VM**: `production-database` has protection enabled.
-
-**To delete:**
-1. Remove protection: `oc label vm production-database protected- -n <namespace>`
-2. Retry deletion
-
-This safeguard prevents accidental deletion of critical infrastructure.
+**Error**: <error>
+**Troubleshooting**: Check permissions, verify VM exists, check finalizers (see lifecycle-errors.md)
 ```
 
 ## Common Issues
 
 ### Issue 1: VM Not Found
+**Error**: "VirtualMachine not found"
+**Solution**: Verify name/namespace with vm-inventory. Check spelling.
 
-**Error**: "VirtualMachine 'xyz' not found in namespace 'abc'"
-
-**Solution:**
-1. Verify VM name spelling
-2. Check namespace is correct
-3. List VMs in namespace: Use `/vm-inventory` skill
-4. VM may have already been deleted
-
-### Issue 2: Permission Denied
-
-**Error**: "Forbidden: User cannot delete VirtualMachines in namespace 'xyz'"
-
-**Solution:**
-- Verify KUBECONFIG has appropriate RBAC permissions
-- Required permissions: delete VirtualMachine, delete PVC, delete DataVolume
-- Contact cluster admin for permission grant
-- Check ServiceAccount role bindings:
-  ```
-  oc auth can-i delete virtualmachines -n <namespace>
-  oc auth can-i delete persistentvolumeclaims -n <namespace>
-  ```
+### Issue 2: RBAC Permissions
+**Error**: "Forbidden: Cannot delete VirtualMachines"
+**Solution**: Verify delete permissions for VirtualMachine and PVC. Contact admin. Check: `oc auth can-i delete virtualmachines -n <ns>`
 
 ### Issue 3: VM Has Finalizers
-
 **Error**: "VM deletion blocked by finalizers"
+**Solution**: Consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) "VM Stuck in Terminating" for MCP-first approach using `resources_get` to check finalizers, `resources_create_or_update` to remove if needed.
 
-**Solution:**
-- VMs with finalizers require finalizer removal before deletion
-- Consult [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) "VM Stuck in Terminating State" section for MCP-first approach:
-  - Use `resources_get` to check finalizers
-  - Use `resources_create_or_update` to remove finalizers (if needed)
-- Common finalizers: `kubevirt.io/virtualMachineControllerFinalize`
-- Wait for controllers to remove finalizers, or manually patch VM (advanced)
-
-### Issue 4: Storage Deletion Fails
-
+### Issue 4: Storage Deletion Failure
 **Error**: "PVC deletion failed: resource in use"
+**Solution**: Verify VM deleted first. Consult [storage-errors.md](../../docs/troubleshooting/storage-errors.md) for MCP-first diagnostics using `pods_list_in_namespace` to check mounts, `resources_get` for PVC status.
 
-**Solution:**
-1. Verify VM was deleted first (VMs must be deleted before storage)
-2. Consult [storage-errors.md](../../docs/troubleshooting/storage-errors.md) "Storage Deletion Failures" section for MCP-first diagnostics:
-   - Use `pods_list_in_namespace` to check if PVC is mounted by other resources
-   - Use `resources_get` to check PVC status
-3. Wait for VM pod termination (can take 30-60 seconds)
-4. Use `resources_delete` to delete PVC, or consult storage-errors.md for proper procedure
+### Issue 5: Confirmation Mismatch
+**Error**: "Names do not match"
+**Solution**: Type exact VM name (case-sensitive). Copy-paste from deletion scope. Retry.
 
-### Issue 5: User Typed Wrong VM Name
-
-**Error**: User typed "test-vm-01" instead of "test-vm"
-
-**Solution:**
-- **Skill automatically cancels** operation (Step 3 validation)
-- No resources deleted
-- User must retry with correct typed confirmation
-
-**Example:**
-```markdown
-❌ Confirmation Failed
-
-You typed: `test-vm-01`
-Expected: `test-vm`
-
-Names do not match. Deletion cancelled for safety.
-```
+### Issue 6: Protected VM
+**Error**: "VM has protected label"
+**Solution**: Remove: `oc label vm <vm> -n <ns> protected-`. Retry deletion.
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift-virtualization` - OpenShift MCP server with core and kubevirt toolsets
+- `openshift-virtualization` - OpenShift MCP with KubeVirt toolset (https://github.com/openshift/openshift-mcp-server)
 
 ### Required MCP Tools
-- `resources_get` (from openshift-virtualization) - Get VirtualMachine details and verify existence
-  - Parameters: apiVersion, kind, namespace, name
-  - Source: https://github.com/openshift/openshift-mcp-server/blob/main/pkg/toolsets/core/resources.go
-
-- `resources_delete` (from openshift-virtualization) - Delete Kubernetes resources
-  - Parameters: apiVersion, kind, namespace, name
-  - Source: https://github.com/openshift/openshift-mcp-server/blob/main/pkg/toolsets/core/resources.go
-
-- `resources_list` (from openshift-virtualization) - List dependent resources (DataVolumes, PVCs)
-  - Parameters: apiVersion, kind, namespace, labelSelector
-  - Source: https://github.com/openshift/openshift-mcp-server/blob/main/pkg/toolsets/core/resources.go
-
-- `vm_lifecycle` (from openshift-virtualization) - Stop running VMs before deletion
-  - Parameters: namespace, name, action
-  - Source: https://github.com/openshift/openshift-mcp-server/blob/main/pkg/toolsets/kubevirt/vm.go
+- `resources_get` - Get VM (apiVersion, kind, namespace, name)
+- `resources_delete` - Delete resources (apiVersion, kind, namespace, name)
+- `resources_list` - List resources (apiVersion, kind, namespace, labelSelector)
+- `resources_create_or_update` - Update resources (resource JSON) - for finalizer removal
+- `vm_lifecycle` - VM lifecycle (namespace, name, action: stop)
+- `pods_list_in_namespace` - List pods (namespace) - for PVC mount diagnostics
 
 ### Related Skills
-- `vm-inventory` - Verify VM exists and get details before deletion
-- `vm-lifecycle-manager` - Stop running VMs before deletion (used internally by vm-delete)
-- `vm-create` - Create VMs after cleanup operations
+- `vm-lifecycle-manager` - Stop VMs | `vm-inventory` - List VMs | `vm-create` - Create VMs | `vm-clone` - Clone VMs
 
 ### Reference Documentation
-- [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM deletion failure scenarios, finalizer issues, and stuck Terminating states (optionally consulted when deletion operations fail)
-- [storage-errors.md](../../docs/troubleshooting/storage-errors.md) - Storage deletion strategies and PVC cleanup procedures (optionally consulted when storage deletion fails)
-- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
-- [OpenShift Virtualization Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
-- [KubeVirt VirtualMachine API](https://kubevirt.io/api-reference/)
-- [Kubernetes Finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)
-- [PVC Deletion](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#delete)
-- [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
+- [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - Deletion failures, finalizers, stuck Terminating (consulted on deletion failure)
+- [storage-errors.md](../../docs/troubleshooting/storage-errors.md) - Storage deletion, PVC cleanup (consulted on storage failure)
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Full error index
+- [OpenShift Virt Docs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index)
+- [KubeVirt API](https://kubevirt.io/api-reference/)
+- [K8s Finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/)
 
 ## Critical: Human-in-the-Loop Requirements
 
-**CRITICAL: This skill performs IRREVERSIBLE operations.** You MUST:
+**CRITICAL: IRREVERSIBLE operations.** You MUST:
 
-1. **Pre-Deletion Validation** (Execute FIRST, before asking for confirmation)
-   - Verify VM exists using `resources_get`
+1. **Pre-Deletion Validation** (Execute FIRST)
+   - Verify VM exists (`resources_get`)
    - Check VM running state
-   - Discover dependent resources (DataVolumes, PVCs)
-   - Check for protection labels (`protected: "true"`)
+   - Discover dependent resources
+   - Check protection labels (`protected: "true"`)
 
 2. **Safety Checks**
-   - **REFUSE deletion** if VM has label `protected: "true"`
-   - **REQUIRE VM to be stopped first** if currently running
-   - **List all resources** that will be deleted (VM, storage, DataVolumes)
+   - **REFUSE deletion** if protected label exists
+   - **REQUIRE VM stopped** if running
+   - **List all resources** to be deleted
 
-3. **Typed Confirmation Protocol** (MANDATORY)
+3. **Typed Confirmation (MANDATORY)**
    - Display complete deletion scope
-   - **Require user to type the exact VM name** to confirm
+   - **Require exact VM name** to confirm
    - Accept only exact match (case-sensitive)
-   - If name doesn't match → Cancel operation, do not proceed
+   - Mismatch → Cancel, don't proceed
+   - Match → Proceed directly to deletion
 
 4. **Deletion Options**
-   - Ask user what to delete:
-     - Option 1: VM only (preserve storage)
-     - Option 2: VM + storage (complete cleanup)
-     - Option 3: Cancel
-   - **NEVER assume** which option user wants
+   - Ask: VM only / VM+Storage / Cancel
+   - **NEVER assume** which option
 
-5. **Final Confirmation Before Each Deletion**
-   - After typed confirmation, show exactly what will be deleted
-   - Ask: "Proceed with permanent deletion? (yes/cancel)"
-   - Wait for explicit "yes"
+5. **Never Auto-Execute**
+   - NEVER delete without typed confirmation
+   - NEVER proceed if typed name mismatches
+   - NEVER skip typed verification
 
-6. **Never Auto-Execute**
-   - **NEVER delete without explicit typed confirmation**
-   - **NEVER proceed if user says "no", "wait", "cancel"**
-   - **NEVER skip the typed verification step**
-
-**Why This Matters:**
-- **Permanent**: Deleted VMs cannot be recovered
-- **Data Loss**: Storage deletion destroys all VM data
-- **Service Impact**: Deleting running VMs causes immediate service outage
-- **Accidental Deletion**: Typed verification prevents mistakes (typos, wrong VM name)
+**Why**: Permanent data loss, service impact, accidental deletion prevention
 
 ## Security Considerations
 
-- **RBAC Enforcement**: Deletion requires explicit RBAC permissions for VirtualMachine, PVC, and DataVolume resources
-- **Typed Verification**: Prevents accidental deletion through typos or wrong VM names
-- **Protection Labels**: `protected: "true"` label blocks deletion entirely
-- **Audit Trail**: All deletions logged in Kubernetes API audit logs
-- **Graceful Shutdown**: Running VMs stopped before deletion to ensure clean shutdown
-- **KUBECONFIG Security**: Credentials never exposed in output
-- **Namespace Isolation**: Can only delete VMs in namespaces where ServiceAccount has permissions
-- **No Force Delete**: Skill does not use `--force` or `--grace-period=0` flags
+- **RBAC**: Requires delete VirtualMachine, PVC, DataVolume
+- **Typed Verification**: Prevents accidental deletion
+- **Protection Labels**: `protected: "true"` blocks deletion
+- **Audit**: Kubernetes audit logs
+- **Graceful Shutdown**: Stops VMs before deletion
+- **KUBECONFIG**: Never exposed
+- **Namespace Isolation**: RBAC-enforced
+- **No Force Delete**: Never uses `--force` or `--grace-period=0`
 
 ## Example Usage
 
-### Example 1: Delete VM with Storage (Complete Cleanup)
+### Example 1: Complete Deletion (VM + Storage)
 
 ```
-User: "Delete VM test-vm in namespace dev"
-
-Agent: [Invokes /vm-delete skill]
-       [Step 1: Validation]
-       [Calls resources_get to verify VM exists]
-       [Checks protection label - none found]
-       [Checks VM status - Stopped]
-       [Calls resources_list to find DataVolumes/PVCs]
-       [Found: test-vm-disk DataVolume, 30Gi]
-
-## ⚠️ VM Deletion - Review Scope
-
-Virtual Machine: `test-vm`
-Namespace: `dev`
-Current Status: Stopped
-
-### Resources Found
-
-VirtualMachine Resource:
-- VM: `test-vm`
-- Age: 5 days
-- vCPU: 2, Memory: 4Gi
-
-Persistent Storage:
-- DataVolume: `test-vm-disk` (30Gi)
-- PVC: `test-vm-disk` (30Gi)
-- Total Storage: 30Gi
-
----
-
-### Deletion Options
-
-What should be deleted?
-
-Option 1: VM Only (preserve storage)
-- Deletes: VirtualMachine resource
-- Preserves: DataVolumes and PVCs for potential reuse
-
-Option 2: VM + Storage (complete cleanup) ← Recommended for test/dev VMs
-- Deletes: VirtualMachine resource
-- Deletes: All DataVolumes and PVCs
-- Frees: 30Gi cluster storage
-
-Option 3: Cancel
-- No resources deleted
-
-Select deletion option (1, 2, or 3):
-
-User: "2"
-
-Agent: [Step 2: User selected Option 2 - delete VM + storage]
-       [Step 3: Typed confirmation]
-
-## 🔴 PERMANENT DELETION - Typed Confirmation Required
-
-This action CANNOT be undone.
-
-### What will be deleted:
-
-✗ VirtualMachine: `test-vm` (namespace: `dev`)
-✗ DataVolume: `test-vm-disk` (30Gi)
-✗ PVC: `test-vm-disk` (30Gi)
-✗ All VM data will be lost permanently
-
----
-
-⚠️ IMPORTANT: This deletion is permanent. Deleted resources cannot be recovered.
-
-To confirm deletion, type the VM name exactly as shown:
-
-Type `test-vm` to confirm:
-
+User: "Delete test-vm in dev"
+Agent: [Validates ✓, discovers 30Gi storage]
+       [Shows deletion scope - see Step 2 format]
+User: "2" [VM+Storage]
+Agent: [Shows typed confirmation - see Step 3 format]
 User: "test-vm"
-
-Agent: [Step 3: Typed verification passed]
-       [Step 4: Final confirmation]
-
-## ✓ Typed Verification Passed
-
-Confirmation received for VM: `test-vm`
-
-### Ready to Delete:
-
-- VirtualMachine: `test-vm`
-- DataVolume: `test-vm-disk` (30Gi)
-- PVC: `test-vm-disk` (30Gi)
-
-Impact: VM and all associated data will be permanently deleted. 30Gi storage will be freed.
-
----
-
-Proceed with permanent deletion?
-- Type "yes" to execute deletion
-- Type "cancel" to abort
-
-Your choice:
-
-User: "yes"
-
-Agent: [Step 5: Execute deletion]
-       [Calls resources_delete for VirtualMachine]
-
-🗑️ Deleting VirtualMachine resource...
-✓ VirtualMachine `test-vm` deleted
-
-       [Calls resources_delete for DataVolume]
-
-🗑️ Deleting storage resources...
-✓ DataVolume `test-vm-disk` deleted (30Gi freed)
-✓ PVC `test-vm-disk` deleted
-
-       [Step 6: Report results]
-
-## ✓ VM Deleted Successfully (Complete Cleanup)
-
-Deleted Resources:
-- ✓ VirtualMachine: `test-vm` (namespace: `dev`)
-- ✓ DataVolume: `test-vm-disk`
-- ✓ PVC: `test-vm-disk`
-
-Storage Freed: 30Gi
-
-Impact:
-- VM and all associated data permanently removed
-- Cluster resources freed
-- VM cannot be recovered
-
-To verify deletion:
-```
-"List VMs in namespace dev"
+Agent: [Executes: VM ✓, DV ✓, PVC ✓]
+       [Shows success report - see Step 5 format]
+## ✓ VM Deleted (Complete Cleanup) | Freed: 30Gi
 ```
 
-The VM should no longer appear in the inventory.
-```
-
-### Example 2: Delete VM Only (Preserve Storage)
+### Example 2: VM Only (Preserve Storage)
 
 ```
-User: "Delete VM web-server but keep the storage"
-
-Agent: "Which namespace is the VM in?"
-
-User: "production"
-
-Agent: [Invokes /vm-delete skill]
-       [Step 1: Validation]
-       [VM exists, stopped, has storage]
-       [Step 2: Present deletion scope]
-
-## ⚠️ VM Deletion - Review Scope
-
-Virtual Machine: `web-server`
-Namespace: `production`
-
-[... deletion scope details ...]
-
-Select deletion option (1, 2, or 3):
-
-User: "1"
-
-Agent: [Step 3: Typed confirmation]
-
-## 🔴 PERMANENT DELETION - Typed Confirmation Required
-
-### What will be deleted:
-
-✗ VirtualMachine: `web-server` (namespace: `production`)
-
-✓ Storage PRESERVED: DataVolumes and PVCs will remain for reuse
-
-Type `web-server` to confirm:
-
+User: "Remove web-server but keep storage"
+Agent: [Validates, shows scope]
+User: "1" [VM only]
+Agent: [Typed confirmation]
 User: "web-server"
-
-Agent: [Typed verification passed]
-
-## ✓ Typed Verification Passed
-
-Ready to Delete:
-- VirtualMachine: `web-server` (storage preserved)
-
-Impact: VM will be deleted. DataVolumes and PVCs will remain for potential reuse.
-
-Proceed with permanent deletion? (yes/cancel):
-
-User: "yes"
-
-Agent: [Deletes VM only]
-
-## ✓ VM Deleted Successfully (Storage Preserved)
-
-Deleted Resources:
-- ✓ VirtualMachine: `web-server` (namespace: `production`)
-
-Preserved Resources:
-- ✓ DataVolume: `web-server-disk` (50Gi) - Available for reuse
-- ✓ PVC: `web-server-disk` (50Gi) - Available for reuse
-
-Impact:
-- VM removed from cluster
-- Storage remains available for attaching to new VMs
-- Data preserved on PVCs
+Agent: [Executes deletion]
+## ✓ VM Deleted (Storage Preserved) | Preserved: 50Gi
 ```
 
-### Example 3: Protected VM (Deletion Refused)
+### Example 3: Protected VM (Blocked)
 
 ```
-User: "Delete VM production-database in namespace production"
-
-Agent: [Invokes /vm-delete skill]
-       [Step 1: Validation]
-       [Calls resources_get]
-       [Checks protection label - found "protected: true"]
-
-❌ Cannot Delete Protected VM
-
-VM: `production-database` (namespace: `production`)
-
-Protection Status: This VM has the `protected: "true"` label.
-
-Reason: Protected VMs cannot be deleted to prevent accidental removal of critical infrastructure.
-
-To delete this VM:
-1. Remove the protection label first:
-   ```
-   oc label vm production-database -n production protected-
-   ```
-2. Then retry deletion
-
-Alternative: Use vm-inventory skill to verify this is the correct VM.
-
-Operation cancelled.
+User: "Delete production-db"
+Agent: [Validates: protected label found]
+❌ Cannot Delete Protected VM. Remove label: oc label vm production-db protected-
 ```
 
-### Example 4: Stop Running VM Before Deletion
+### Example 4: Running VM (Stop First)
 
 ```
-User: "Delete VM api-server in namespace production"
-
-Agent: [Invokes /vm-delete skill]
-       [Step 1: Validation]
-       [VM exists, RUNNING]
-       [Step 1.3: VM is running]
-
-⚠️ VM is Currently Running
-
-VM: `api-server` (namespace: `production`)
-Status: Running
-
-Safety Requirement: VMs must be stopped before deletion to ensure graceful shutdown.
-
-Options:
-1. "stop-and-delete" - Stop the VM first, then proceed with deletion
-2. "cancel" - Cancel deletion operation
-
-How would you like to proceed?
-
+User: "Delete api-server"
+Agent: [Validates: VM running]
+⚠️ VM Running. Options: stop-and-delete / cancel
 User: "stop-and-delete"
-
-Agent: [Step 1.4: Stop VM]
-       [Calls vm_lifecycle with action="stop"]
-
-⏸️ Stopping VM before deletion...
-
-VM `api-server` is being stopped gracefully.
-
-Wait 10-30 seconds for VM to fully stop, then deletion will proceed.
-
-       [Waits 10 seconds]
-       [Verifies VM stopped]
-       [Continues to Step 2: Present deletion scope]
-       [...rest of workflow...]
+Agent: [Stops VM, waits, continues with deletion]
 ```
 
-### Example 5: User Cancels at Typed Confirmation
+### Example 5: User Cancels
 
 ```
-User: "Delete VM test-vm in namespace dev"
-
-Agent: [Validation complete]
-       [User selects Option 2 - VM + storage]
-       [Step 3: Typed confirmation]
-
+User: "Delete test-vm"
+Agent: [Shows typed confirmation]
 Type `test-vm` to confirm:
-
-User: "wait, cancel this"
-
-Agent: ❌ Confirmation Failed
-
-You typed: `wait, cancel this`
-Expected: `test-vm`
-
-Names do not match. Deletion cancelled for safety.
-
-To retry, use:
-```
-"Delete VM test-vm in namespace dev"
-```
-
-Operation cancelled. No resources were deleted.
+User: "wait, cancel"
+❌ Confirmation Failed. You typed: wait, cancel. Expected: test-vm. Cancelled.
 ```
 
 ### Example 6: Dry-Run Preview
 
 ```
-User: "What would happen if I delete VM test-vm in dev?"
-
-Agent: [Invokes /vm-delete skill in dry-run mode]
-       [Step 1: Validation and discovery only]
-
-## 🔍 Deletion Preview (Dry-Run)
-
-If you delete VM `test-vm` (namespace: `dev`):
-
-Would be deleted (Option 1 - VM only):
-- VirtualMachine: `test-vm`
-
-Would be deleted (Option 2 - VM + storage):
-- VirtualMachine: `test-vm`
-- DataVolume: `test-vm-disk` (30Gi)
-- PVC: `test-vm-disk` (30Gi)
-- Storage freed: 30Gi
-
-Would be preserved:
-- None (complete cleanup)
-
----
-
-This is a preview only. No resources were deleted.
-
-To execute deletion:
+User: "What would be deleted if I delete test-vm?"
+Agent: [Execute Step 1-2 only, stop before confirmation]
+## 🔍 Deletion Preview
+**Would delete (Option 2)**: VM + DV + PVC (30Gi freed)
+This is preview only. No resources deleted.
 ```
-"Delete VM test-vm in namespace dev"
-```
-```
+
+## Advanced Features
+
+### Batch Deletion
+Delete multiple VMs with confirmation for each: `"Delete VMs test-01, test-02, test-03 in dev"` → Process each individually with full workflow. Use typed confirmation: `DELETE-3-VMS` for batch.
+
+### Dry-Run Mode
+Show deletion scope without executing: Execute Step 1-2, skip Steps 3-4. User request: "Show what would be deleted if I delete VM xyz"
+
+### Protected VM Label
+Automatic enforcement: If VM has `protected: "true"` label, refuse deletion in Step 1.2. Example YAML: `metadata.labels.protected: "true"`

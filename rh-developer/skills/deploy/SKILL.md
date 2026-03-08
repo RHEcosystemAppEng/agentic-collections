@@ -2,6 +2,10 @@
 name: deploy
 description: |
   Create Kubernetes Deployment, Service, and Route resources on OpenShift to deploy and expose an application. Use this skill after /s2i-build to make the built image accessible. Handles port detection, replica configuration, HTTPS route creation, rollout monitoring, and rollback on failure. Triggers on /deploy command when user wants to deploy a container image to OpenShift.
+model: inherit
+color: green
+metadata:
+  user_invocable: "true"
 ---
 
 # /deploy Skill
@@ -15,17 +19,13 @@ Before running this skill:
 2. Container image exists (from ImageStream or external registry)
 3. Target namespace exists
 
+## When to Use This Skill
+
+Use `/deploy` after building a container image (via `/s2i-build` or external registry) to create Deployment, Service, and Route resources on OpenShift. This skill handles port detection, replica configuration, rollout monitoring, and rollback on failure.
+
 ## Critical: Human-in-the-Loop Requirements
 
-See [Human-in-the-Loop Requirements](../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing any actions
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present options clearly** (yes/no/modify) and wait for response
-4. **Never auto-execute** resource creation or deployments
-
-If the user says "no" or wants modifications, address their concerns before proceeding.
+See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
 ## Workflow
 
@@ -51,7 +51,7 @@ If the user says "no" or wants modifications, address their concerns before proc
 Confirm these settings or tell me what to change.
 ```
 
-**WAIT for user confirmation before proceeding.** Do NOT continue until user explicitly confirms these settings or provides corrections.
+**WAIT for user confirmation before proceeding.**
 
 ### Step 2: Detect Container Port
 
@@ -77,7 +77,7 @@ Is this correct?
 - no - Specify the correct port
 ```
 
-**WAIT for user confirmation.** Do NOT proceed until user confirms the port or provides the correct value.
+**WAIT for user confirmation before proceeding.**
 
 If unable to detect:
 ```markdown
@@ -102,67 +102,14 @@ Show the Deployment manifest:
 ```markdown
 ## Step 1 of 3: Create Deployment
 
-A Deployment manages your application pods.
+Read `templates/deployment.yaml.template` and substitute `${APP_NAME}`, `${NAMESPACE}`, `${PORT}`, `${REPLICAS}` with session state values.
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: [app-name]
-  namespace: [namespace]
-  labels:
-    app: [app-name]
-    app.kubernetes.io/name: [app-name]
-  annotations:
-    image.openshift.io/triggers: |
-      [{"from":{"kind":"ImageStreamTag","name":"[app-name]:latest"},"fieldPath":"spec.template.spec.containers[0].image"}]
-spec:
-  replicas: [replicas]
-  selector:
-    matchLabels:
-      app: [app-name]
-  template:
-    metadata:
-      labels:
-        app: [app-name]
-    spec:
-      containers:
-        - name: [app-name]
-          image: image-registry.openshift-image-registry.svc:5000/[namespace]/[app-name]:latest
-          ports:
-            - containerPort: [port]
-              protocol: TCP
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: [port]
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /
-              port: [port]
-            initialDelaySeconds: 5
-            periodSeconds: 5
-```
-
-**This Deployment will:**
-- Run [replicas] replica(s) of your application
-- Use image from ImageStream: `[app-name]:latest`
-- Expose container port: [port]
-- Auto-update when new images are pushed
+Show the rendered YAML to user and confirm.
 
 **Proceed with creating this Deployment?** (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT create the Deployment until user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 - If user says "yes" → Use kubernetes MCP `resources_create_or_update` to apply
 - If user says "no" → Ask what they would like to change
@@ -173,35 +120,14 @@ spec:
 ```markdown
 ## Step 2 of 3: Create Service
 
-A Service provides internal load balancing to your pods.
+Read `templates/service.yaml.template` and substitute `${APP_NAME}`, `${NAMESPACE}`, `${PORT}`.
 
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: [app-name]
-  namespace: [namespace]
-  labels:
-    app: [app-name]
-spec:
-  selector:
-    app: [app-name]
-  ports:
-    - name: http
-      port: [port]
-      targetPort: [port]
-      protocol: TCP
-  type: ClusterIP
-```
-
-**This Service will:**
-- Create internal DNS: `[app-name].[namespace].svc.cluster.local`
-- Load balance traffic to pods on port [port]
+Show the rendered YAML to user and confirm.
 
 **Proceed with creating this Service?** (yes/no)
 ```
 
-**WAIT for user confirmation.** Do NOT create the Service until user explicitly says "yes".
+**WAIT for user confirmation before proceeding.**
 
 - If user says "yes" → Use kubernetes MCP `resources_create_or_update` to apply
 - If user says "no" → Ask what they would like to change
@@ -214,38 +140,14 @@ If user wants external exposure:
 ```markdown
 ## Step 3 of 3: Create Route
 
-A Route exposes your application externally with HTTPS.
+Read `templates/route.yaml.template` and substitute `${APP_NAME}`, `${NAMESPACE}`.
 
-```yaml
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: [app-name]
-  namespace: [namespace]
-  labels:
-    app: [app-name]
-spec:
-  to:
-    kind: Service
-    name: [app-name]
-    weight: 100
-  port:
-    targetPort: http
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
-```
-
-**This Route will:**
-- Expose app at: `https://[app-name]-[namespace].[cluster-domain]`
-- Enable TLS with edge termination
-- Redirect HTTP to HTTPS
+Show the rendered YAML to user and confirm.
 
 **Proceed with creating this Route?** (yes/no/skip)
 ```
 
-**WAIT for user confirmation.** Do NOT create the Route until user explicitly responds.
+**WAIT for user confirmation before proceeding.**
 
 - If user says "yes" → Use kubernetes MCP `resources_create_or_update` to apply
 - If user says "skip" → Skip Route creation and proceed to rollout monitoring
@@ -360,38 +262,16 @@ oc delete all -l app=[app-name] -n [namespace]
 Your application is now live!
 ```
 
-## MCP Tools Used
+## Dependencies
 
-| Tool | Purpose |
-|------|---------|
-| `resources_list` | Check existing deployments/services/routes |
-| `resources_get` | Get resource details, route host |
-| `resources_create_or_update` | Create Deployment, Service, Route |
-| `pod_list` | Check pod status during rollout |
-| `pod_logs` | Debug pod issues |
-| `events_list` | Check events for errors |
+### Required MCP Servers
+- `openshift` - cluster resource creation and management
 
-## Required Inputs
+### Related Skills
+- `/debug-pod` - Pod failures (CrashLoopBackOff, OOMKilled, ImagePullBackOff)
+- `/debug-network` - Service connectivity issues (no endpoints, 503 errors)
+- `/debug-build` - Build failures before deployment
 
-| Input | Auto-detected | Must Confirm |
-|-------|---------------|--------------|
-| App name | Yes (from build) | Yes |
-| Image | Yes (from ImageStream) | Yes |
-| Port | Yes (from project files) | Yes |
-| Replicas | Yes (default: 1) | Optional |
-| Create Route | Yes (default: yes) | Yes |
-| Namespace | Yes (from kubeconfig) | Yes |
-
-## Related Skills
-
-| Skill | Use When |
-|-------|----------|
-| `/debug-pod` | Pod failures (CrashLoopBackOff, OOMKilled, ImagePullBackOff) |
-| `/debug-network` | Service connectivity issues (no endpoints, 503 errors) |
-| `/debug-build` | Build failures before deployment |
-
-## Reference Documentation
-
-For detailed guidance, see:
-- [docs/prerequisites.md](../docs/prerequisites.md) - Required tools (oc), cluster access verification
-- [docs/debugging-patterns.md](../docs/debugging-patterns.md) - Common error patterns and troubleshooting
+### Reference Documentation
+- [docs/prerequisites.md](../../docs/prerequisites.md) - Required tools (oc), cluster access verification
+- [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns and troubleshooting

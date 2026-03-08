@@ -37,7 +37,7 @@ Tools: <tool1>, <tool2>,...
 Docs: <doc1>, <doc2>, ...
 **** EXECUTION SUMMARY END ****
 """
-Agent, skills and tools names must include the plugin name, as in remediation-agent:remediator. 
+Agent, skills and tools names must include the plugin name, as in sre-agents:remediation. 
 Doc names must include only the folder and the document name, omit everything before the docs/ folder. Example: docs/ansible/cve-remediation-templates.md
 ```
 

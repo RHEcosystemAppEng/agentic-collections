@@ -2,6 +2,8 @@
 name: debug-pipeline
 description: |
   Diagnose OpenShift Pipelines (Tekton) CI/CD failures including PipelineRun failures, TaskRun step errors, workspace/PVC binding issues, and authentication problems. Automates multi-step diagnosis: PipelineRun status, failed TaskRun analysis, step container logs, and related resource checks. Use this skill when pipelines fail, hang, or produce unexpected results. Triggers on /debug-pipeline command or phrases like "pipeline failed", "PipelineRun error", "TaskRun failed", "tekton error", "pipeline stuck", "pipeline timeout".
+model: inherit
+color: cyan
 metadata:
   user_invocable: "true"
 ---
@@ -18,24 +20,6 @@ Before running this skill:
 3. OpenShift Pipelines operator is installed on the cluster
 4. PipelineRun name is known (or can be identified from recent runs)
 
-## Critical: Human-in-the-Loop Requirements
-
-See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
-
-**IMPORTANT:** This skill requires explicit user confirmation at each step. You MUST:
-1. **Wait for user confirmation** before executing diagnostic actions
-2. **Do NOT proceed** to the next step until the user explicitly approves
-3. **Present findings clearly** and ask if user wants deeper analysis
-4. **Never auto-execute** remediation actions without user approval
-
-If the user says "no" or wants to focus on specific areas, address their concerns before proceeding.
-
-## Critical: Prefer MCP Tools
-
-**IMPORTANT:** Prefer MCP tools over CLI commands for better integration and user experience:
-1. **Search for MCP tools first** - Use `ToolSearch` to load OpenShift MCP tools (e.g., `+openshift resources_get`) before diagnostic actions
-2. **Use MCP when available** - Prefer `resources_get`, `resources_list`, `pod_logs`, `events_list` over `oc`/`kubectl` commands
-
 ### Tekton CRD Access via MCP
 
 Tekton resources are standard Kubernetes CRDs. Use the generic MCP tools with these parameters:
@@ -51,22 +35,13 @@ Tekton resources are standard Kubernetes CRDs. Use the generic MCP tools with th
 | TriggerTemplate | `TriggerTemplate` | `triggers.tekton.dev/v1beta1` |
 | TriggerBinding | `TriggerBinding` | `triggers.tekton.dev/v1beta1` |
 
-## Trigger
+## When to Use This Skill
 
-- User types `/debug-pipeline`
-- User says "pipeline failed", "PipelineRun failed", "PipelineRun error"
-- User says "TaskRun failed", "task step failed", "tekton error"
-- User says "pipeline stuck", "pipeline timeout", "pipeline hanging"
-- User says "CI/CD failed", "CI pipeline broken"
-- After a CI/CD pipeline reports a failure
+Use this skill when OpenShift Pipelines (Tekton) fail, hang, or produce unexpected results. It diagnoses PipelineRun failures, TaskRun step errors, workspace/PVC binding issues, and authentication problems by analyzing run status, step container logs, and related resources.
 
-## Input Parameters
+## Critical: Human-in-the-Loop Requirements
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `PIPELINERUN_NAME` | Name of specific PipelineRun to debug | Latest failed PipelineRun |
-| `PIPELINE_NAME` | Pipeline name to find runs for | Auto-detect |
-| `NAMESPACE` | Target namespace | Current namespace |
+See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
 ## Workflow
 
@@ -88,7 +63,7 @@ Which PipelineRun would you like me to debug?
 Select an option or enter a PipelineRun name:
 ```
 
-**WAIT for user response.** Do NOT proceed until user identifies the target PipelineRun.
+**WAIT for user confirmation before proceeding.**
 
 If user selects "List failed PipelineRuns":
 Use kubernetes MCP `resources_list` with kind `PipelineRun`, filter by Failed status:
@@ -313,75 +288,12 @@ Select an option:
 
 ## Pipeline Failure Reference
 
-### Failure Categories
-
-| Category | Failure Type | Key Indicators | Common Fix |
-|----------|--------------|----------------|------------|
-| **Authentication** | git-clone auth | `could not read Username`, `Permission denied (publickey)` | Add git secret to ServiceAccount |
-| **Authentication** | Image push | `unauthorized: access denied` | Add dockerconfigjson secret to ServiceAccount |
-| **Workspace** | PVC not bound | `persistentvolumeclaim "X" not found` | Create PVC or use emptyDir |
-| **Workspace** | Permission denied | `permission denied` in step logs | Check fsGroup, runAsUser, PVC access mode |
-| **Workspace** | Contention | Parallel tasks fail on RWO PVC | Use RWX PVC or separate workspaces |
-| **Timeout** | PipelineRun timeout | `PipelineRunTimeout` condition | Increase `spec.timeouts.pipeline` |
-| **Timeout** | TaskRun timeout | `TaskRunTimeout` condition | Increase `spec.timeouts.tasks` |
-| **Parameter** | Missing param | `missing required parameter` | Add param to PipelineRun spec |
-| **Task Step** | Build/test failure | Non-zero exit in step | Check step logs for specific error |
-| **Resource** | Pod scheduling | `FailedScheduling` event | Increase quotas or reduce step resource requests |
-| **Image** | Step image pull | `ImagePullBackOff` on step container | Fix step image reference or add pull secret |
-| **Pipeline** | Task not found | `task "X" not found` | Verify Task name, kind (Task vs ClusterTask), namespace |
-| **Trigger** | EventListener down | No PipelineRuns created | Check EventListener pod logs |
-| **Trigger** | Binding mismatch | Wrong params extracted | Fix TriggerBinding param paths in CEL expressions |
-
-### git-clone Task Failures
-
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| Private repo, no credentials | `could not read Username` | Add `kubernetes.io/basic-auth` secret annotated with `tekton.dev/git-0: https://github.com` to SA |
-| SSH key missing | `Permission denied (publickey)` | Add `kubernetes.io/ssh-auth` secret annotated with `tekton.dev/git-0: github.com` to SA |
-| Branch not found | `couldn't find remote ref` | Verify `revision` parameter |
-
-### buildah/kaniko Task Failures
-
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| Containerfile not found | `unable to open Containerfile/Dockerfile` | Check `DOCKERFILE` parameter path relative to workspace |
-| Base image pull | `unauthorized` or `not found` for FROM image | Fix base image ref or add pull secret |
-| Build context wrong | `file not found` during COPY/ADD | Fix `CONTEXT` parameter to correct subdirectory |
-
-### Image Push Failures
-
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| Registry auth | `unauthorized: access denied` | Add `kubernetes.io/dockerconfigjson` secret annotated with `tekton.dev/docker-0: <registry>` to SA |
-| Registry unreachable | `connection refused` / `no such host` | Check registry URL, network policies, egress rules |
-
-## MCP Tools Used
-
-| Tool | Purpose |
-|------|---------|
-| `resources_list` | List PipelineRuns, TaskRuns, PVCs, Secrets, Pipelines, Tasks |
-| `resources_get` | Get PipelineRun details, TaskRun details, Pipeline/Task definitions, ServiceAccount, EventListener |
-| `pod_logs` | Get TaskRun pod logs for failed step containers (use container name `step-<step-name>`) |
-| `pod_list` | Find TaskRun pods |
-| `events_list` | Get PipelineRun/TaskRun pod events for scheduling and binding errors |
-
-## Output Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `PIPELINERUN_NAME` | Debugged PipelineRun name | `build-and-deploy-run-abc123` |
-| `PIPELINE_NAME` | Associated Pipeline | `build-and-deploy` |
-| `PIPELINE_NAMESPACE` | Namespace | `my-project` |
-| `FAILED_TASKRUN` | Name of the failed TaskRun | `build-and-deploy-run-abc123-build-task` |
-| `FAILED_STEP` | Step that failed | `build-push` |
-| `FAILURE_CATEGORY` | Categorized failure type | `Authentication` |
-| `ROOT_CAUSE` | Identified root cause | `git-clone unauthorized - missing git secret on ServiceAccount` |
+For failure categories, error patterns, and troubleshooting decision trees, see [docs/debugging-patterns.md](../../docs/debugging-patterns.md) (sections: Pipeline/Tekton Failure Patterns, Common Tekton Error Messages).
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift` (kubernetes MCP server)
-- `github` (optional, for source repository verification)
+- `openshift` - Kubernetes/OpenShift resource access for PipelineRuns, TaskRuns, and Tekton CRDs
 
 ### Related Skills
 - `/debug-pod` - To debug TaskRun pods directly
@@ -389,8 +301,6 @@ Select an option:
 - `/debug-network` - If pipeline tasks fail due to network issues
 - `/validate-environment` - To verify OpenShift and pipeline operator setup
 
-## Reference Documentation
-
-For detailed guidance, see:
+### Reference Documentation
 - [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns and pipeline troubleshooting trees
 - [docs/prerequisites.md](../../docs/prerequisites.md) - Required tools (oc), cluster access verification

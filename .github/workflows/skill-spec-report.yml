@@ -1,0 +1,105 @@
+name: Skill Specification Report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      validate_all:
+        description: 'Validate all skills (true) or changed only (false)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  skill-linter:
+    # Skip draft PRs
+    if: github.event.pull_request.draft == false || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff comparison
+
+      - name: Make scripts executable
+        run: |
+          chmod +x .claude/skills/skill-linter/scripts/validate-skill.sh
+          chmod +x scripts/run-skill-linter.sh
+          chmod +x scripts/detect-changed-skills.sh
+
+      - name: Detect changed skills (PRs only)
+        if: github.event_name == 'pull_request'
+        id: detect
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          CHANGED_SKILLS=$(./scripts/detect-changed-skills.sh || true)
+          if [ -z "$CHANGED_SKILLS" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "skills=" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            # Convert to space-separated for script args
+            SKILLS_ARGS=$(echo "$CHANGED_SKILLS" | tr '\n' ' ')
+            echo "skills=$SKILLS_ARGS" >> $GITHUB_OUTPUT
+            echo "Changed skills detected:"
+            echo "$CHANGED_SKILLS"
+          fi
+
+      - name: Run Skill Specification Linter
+        id: linter
+        run: |
+          # Determine validation mode
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ "${{ steps.detect.outputs.changed }}" = "true" ]; then
+              echo "Running linter on changed skills only..."
+              ./scripts/run-skill-linter.sh ${{ steps.detect.outputs.skills }}
+            else
+              echo "ℹ️  No skills changed in this PR - skipping validation"
+              echo "0" > /tmp/skill-linter-exit-code
+              exit 0
+            fi
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.validate_all }}" = "true" ]; then
+              echo "Running linter on ALL skills (manual dispatch)..."
+              ./scripts/run-skill-linter.sh
+            else
+              echo "Running linter on changed skills only (manual dispatch)..."
+              CHANGED_SKILLS=$(./scripts/detect-changed-skills.sh || true)
+              if [ -n "$CHANGED_SKILLS" ]; then
+                ./scripts/run-skill-linter.sh $(echo "$CHANGED_SKILLS" | tr '\n' ' ')
+              else
+                echo "ℹ️  No skills changed - skipping validation"
+                echo "0" > /tmp/skill-linter-exit-code
+              fi
+            fi
+          else
+            # Push to main: validate ALL skills
+            echo "Running linter on ALL skills (push to main)..."
+            ./scripts/run-skill-linter.sh
+          fi
+        continue-on-error: true
+
+      - name: Check results
+        run: |
+          if [ -f /tmp/skill-linter-exit-code ]; then
+            EXIT_CODE=$(cat /tmp/skill-linter-exit-code)
+            if [ "$EXIT_CODE" -ne 0 ]; then
+              echo "❌ Skill linter detected errors - blocking PR merge"
+              exit 1
+            else
+              echo "✅ All skills passed or have warnings only"
+              exit 0
+            fi
+          else
+            echo "❌ Linter did not complete"
+            exit 1
+          fi

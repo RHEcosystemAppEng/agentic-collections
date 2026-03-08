@@ -1,7 +1,9 @@
 ---
 name: vm-lifecycle-manager
 description: |
-  Manage virtual machine lifecycle operations including start, stop, and restart. Use this skill when users request:
+  Manage virtual machine lifecycle operations including start, stop, and restart.
+
+  Use when:
   - "Start VM [name]"
   - "Stop the virtual machine [name]"
   - "Restart VM [name]"
@@ -17,7 +19,7 @@ color: blue
 
 # /vm-lifecycle-manager Skill
 
-Control virtual machine power state and lifecycle operations in OpenShift Virtualization using the `vm_lifecycle` tool from the openshift-virtualization MCP server.
+Control virtual machine power state in OpenShift Virtualization using the `vm_lifecycle` tool.
 
 ## Prerequisites
 
@@ -33,423 +35,156 @@ Control virtual machine power state and lifecycle operations in OpenShift Virtua
 - OpenShift cluster (>= 4.19)
 - OpenShift Virtualization operator installed
 - ServiceAccount with RBAC permissions to update VirtualMachine resources
-- Target VM must already exist
 
 ### Prerequisite Verification
 
-**Before executing, verify MCP server availability:**
+**Before executing:**
 
-1. **Check MCP Server Configuration**
-   - Verify `openshift-virtualization` exists in `.mcp.json`
-   - If missing → Report to user with setup instructions
+1. Check `openshift-virtualization` exists in `.mcp.json` → If missing, report setup
+2. Verify `KUBECONFIG` is set (presence only, never expose value) → If missing, report
 
-2. **Check Environment Variables**
-   - Verify `KUBECONFIG` is set (check presence only, never expose value)
-   - If missing → Report to user
+**Human Notification Protocol:** `❌ Cannot execute vm-lifecycle-manager: MCP server not available. Setup: Add to .mcp.json, set KUBECONFIG, restart Claude Code. Docs: https://github.com/openshift/openshift-mcp-server`
 
-3. **Verify VM Exists** (optional quick check)
-   - Confirm target VM exists in specified namespace
-   - If VM not found → Report error to user
-
-**Human Notification Protocol:**
-
-When prerequisites fail:
-
-```
-❌ Cannot execute vm-lifecycle-manager: MCP server 'openshift-virtualization' is not available
-
-📋 Setup Instructions:
-1. Add openshift-virtualization to .mcp.json:
-   {
-     "mcpServers": {
-       "openshift-virtualization": {
-         "command": "podman",
-         "args": [
-           "run",
-           "--rm",
-           "-i",
-           "--network=host",
-           "--userns=keep-id:uid=65532,gid=65532",
-           "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-           "--entrypoint", "/app/kubernetes-mcp-server",
-           "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-           "--kubeconfig", "/kubeconfig",
-           "--toolsets", "core,kubevirt"
-         ],
-         "env": {
-           "KUBECONFIG": "${KUBECONFIG}"
-         }
-       }
-     }
-   }
-
-2. Set KUBECONFIG environment variable:
-   export KUBECONFIG="/path/to/your/kubeconfig"
-
-3. Restart Claude Code to reload MCP servers
-
-🔗 Documentation: https://github.com/openshift/openshift-mcp-server
-
-❓ How would you like to proceed?
-Options:
-- "setup" - Help configure the MCP server now
-- "skip" - Skip this skill
-- "abort" - Stop workflow
-
-Please respond with your choice.
-```
-
-⚠️ **SECURITY**: Never display actual KUBECONFIG path or credential values in output.
+⚠️ **SECURITY**: Never display KUBECONFIG path or credential values.
 
 ## When to Use This Skill
 
-**Trigger this skill when:**
+**Trigger when:**
 - User explicitly invokes `/vm-lifecycle-manager` command
-- User requests starting a stopped/halted VM
-- User requests stopping a running VM
-- User requests restarting a VM (stop + start)
+- User requests starting/stopping/restarting a VM
 - User wants to change VM power state
 
-**User phrases that trigger this skill:**
+**User phrases:**
 - "Start VM web-server in namespace vms"
 - "Stop the database VM"
 - "Restart test-vm"
 - "Power on the VM called api-server"
 - "/vm-lifecycle-manager" (explicit command)
 
-**Do NOT use this skill when:**
-- User wants to create a new VM → Use `/vm-create` skill instead
-- User wants to list VMs → Use `/vm-inventory` skill instead
-- User wants to delete a VM → Different operation (not lifecycle management)
+**Do NOT use when:**
+- Create VM → `/vm-create`
+- List VMs → `/vm-inventory`
+- Delete VM → `/vm-delete`
 
 ## Workflow
 
-### Step 1: Gather Lifecycle Operation Details and Confirm
+### Step 1: Gather Parameters and Confirm
 
-**Collect information from user**, then present for confirmation before proceeding.
+**Required from user:** VM Name, Namespace, Action (start|stop|restart)
 
-**Required Parameters:**
-1. **VM Name** - Name of the virtual machine
-   - Example: "web-server", "database-01", "test-vm"
-
-2. **Namespace** - OpenShift namespace where VM exists
-   - Example: "vms", "production", "dev-environment"
-
-3. **Action** - Lifecycle operation to perform
-   - `start` - Power on the VM (sets runStrategy: Always)
-   - `stop` - Power off the VM (sets runStrategy: Halted)
-   - `restart` - Stop then start the VM (brief service interruption)
-
-**After gathering parameters, present operation for confirmation:**
+**Present for confirmation:**
 
 ```markdown
 ## VM Lifecycle Operation
 
-**Please review and confirm the lifecycle operation:**
-
 | Parameter | Value | Impact |
 |-----------|-------|--------|
-| VM Name | `web-server` | [from user input] |
-| Namespace | `vms` | [from user input] |
-| Action | `start` | VM will power on and consume cluster resources |
-| Current Status | `Stopped` | [if known] |
-| New Status | `Running` | After successful start |
+| VM Name | `<vm>` | from user |
+| Namespace | `<ns>` | from user |
+| Action | `<action>` | start: consumes resources / stop: graceful shutdown / restart: brief interruption (~1-2min) |
 
-**Impact of this operation:**
-- **start**: VM will consume CPU and memory resources, applications will start
-- **stop**: VM will shut down gracefully, running processes will terminate
-- **restart**: VM will stop and start again, causing brief service interruption (~1-2 minutes)
-
-**This operation will change the VM power state.**
-
-Confirm this action or tell me what to change.
-- yes - Proceed with lifecycle operation
-- no - Cancel operation
-- modify - Change parameters
+Confirm: yes/no
 ```
 
-**WAIT for user confirmation before proceeding to Step 2.** Do NOT continue until user explicitly confirms with "yes".
+**WAIT** for explicit "yes" before proceeding to Step 2.
 
-### Step 2: Execute the Lifecycle Operation
+### Step 2: Execute Lifecycle Operation
 
-**ONLY PROCEED AFTER USER CONFIRMATION IN STEP 1.**
+**ONLY AFTER user confirmation in Step 1.**
 
-**Use the openshift-virtualization MCP tool:**
+**For start or stop actions:**
 
-Call `vm_lifecycle` with the confirmed parameters from Step 1.
+**MCP Tool**: `vm_lifecycle` (namespace=`<ns>`, name=`<vm>`, action=`<start|stop>`)
 
-**MCP Tool**: `vm_lifecycle` (from openshift-virtualization)
+**For restart action (composite operation):**
 
-**Parameters** (based on user input from Step 1):
+**CRITICAL**: Implement restart as two separate operations to avoid resourceVersion conflicts:
 
-```json
-{
-  "namespace": "<namespace>",  // REQUIRED
-  "name": "<vm-name>",         // REQUIRED
-  "action": "<start|stop|restart>"  // REQUIRED
-}
-```
+1. **Stop VM**: `vm_lifecycle` (namespace=`<ns>`, name=`<vm>`, action="stop")
+2. **Verify stopped**: `resources_get` (apiVersion="kubevirt.io/v1", kind="VirtualMachine", namespace=`<ns>`, name=`<vm>`) → Check `status.printableStatus` == "Stopped"
+3. **Wait**: 5 seconds for VM to fully stop
+4. **Start VM**: `vm_lifecycle` (namespace=`<ns>`, name=`<vm>`, action="start")
+5. **Verify started**: `resources_get` → Check `status.printableStatus` == "Running"
 
-**Example tool invocation:**
-```json
-vm_lifecycle({
-  "namespace": "vms",
-  "name": "web-server",
-  "action": "start"
-})
-```
-
-**Expected Output:**
-- Success: VirtualMachine runStrategy updated, state transition initiated
-- Failure: Error message with reason (VM not found, permissions, already in desired state, etc.)
-
-**Error Handling:**
-- If VM not found: Report error, suggest checking VM name and namespace
-- If permission denied: Report RBAC error, suggest checking ServiceAccount permissions
-- If VM already in desired state: Inform user (e.g., "VM is already running")
-- If state transition fails: Report error with details
+**Errors:**
+- VM not found → Report, suggest vm-inventory
+- Permission denied → Report RBAC error
+- Already in desired state → Inform user
+- Stop fails during restart → Report, do not proceed to start
+- Start fails during restart → Report, VM is stopped
+- Transition fails → Report details
 
 ### Step 3: Report Operation Status
 
-**Present results to user in a clear, actionable format:**
-
-**On Success (start):**
+**On Success:**
 
 ```markdown
-## ✓ Virtual Machine Started Successfully
+## ✓ VM <Action> Successful
 
-**VM Details:**
-- **Name**: `web-server`
-- **Namespace**: `vms`
-- **Action**: start
-- **Previous Status**: Stopped
-- **Current Status**: Running
-- **RunStrategy**: Always (VM will auto-restart on crash)
+**VM**: `<vm>` | **Namespace**: `<ns>` | **Action**: <action> | **RunStrategy**: <Always|Halted>
 
-**Next Steps:**
+**Impact**:
+- **start**: Running, consuming resources (CPU/memory). Access: virtctl console or SSH. RunStrategy: Always (auto-restart on crash)
+- **stop**: Stopped, resources freed. State preserved. Start: "Start VM <vm>". RunStrategy: Halted (stays off)
+- **restart**: Running after stop+start. Brief interruption (~1-2min). Monitor app logs. RunStrategy: Always
 
-To check VM status:
-```
-"Show status of VM web-server"
-```
-
-To view VM details:
-```
-"Get details of web-server VM"
-```
-
-To access the VM:
-- Use virtctl console or SSH (depending on VM configuration)
-
-**Note**: The VM is now consuming cluster resources (CPU, memory).
-```
-
-**On Success (stop):**
-
-```markdown
-## ✓ Virtual Machine Stopped Successfully
-
-**VM Details:**
-- **Name**: `database-vm`
-- **Namespace**: `vms`
-- **Action**: stop
-- **Previous Status**: Running
-- **Current Status**: Stopped
-- **RunStrategy**: Halted (VM will remain off until started)
-
-**Impact:**
-- VM is no longer consuming cluster resources
-- All running processes have been terminated
-- VM state preserved (can be started again)
-
-**Next Steps:**
-
-To start the VM again:
-```
-"Start VM database-vm in namespace vms"
-```
-
-**Note**: The VM will remain stopped until explicitly started.
-```
-
-**On Success (restart):**
-
-```markdown
-## ✓ Virtual Machine Restarted Successfully
-
-**VM Details:**
-- **Name**: `test-vm`
-- **Namespace**: `vms`
-- **Action**: restart
-- **Status**: Running (after stop + start)
-- **RunStrategy**: Always
-
-**What happened:**
-1. VM was gracefully stopped
-2. VM was started again
-3. Applications inside the VM are now restarting
-
-**Expected behavior:**
-- Brief service interruption occurred (~1-2 minutes)
-- VM is now running with fresh state
-- Applications may take additional time to fully initialize
-
-**Note**: Monitor application logs to confirm services are healthy after restart.
+**Next**: "Show status of VM <vm>" or "List VMs in namespace <ns>"
 ```
 
 **On Failure:**
 
-**OPTIONAL**: If lifecycle operation fails, consult documentation for common failure scenarios.
+**OPTIONAL**: Read [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) for start/stop failures or [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) for ErrorUnschedulable. Output: "Consulted lifecycle-errors.md for failure."
 
-**Document Consultation** (OPTIONAL - when lifecycle operation fails):
-1. **Action**: Read relevant troubleshooting guides to understand VM lifecycle failure scenarios:
-   - [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - For start/stop failures, stuck transitions
-   - [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - For ErrorUnschedulable, resource constraints
-2. **Output to user**: "I consulted [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) and [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) to understand potential causes for the lifecycle operation failure."
-
-**When to consult**:
-- VM fails to start (may be ErrorUnschedulable, resource constraints)
-- VM fails to stop (may be stuck in transition, finalizers)
-- Unexpected error messages from vm_lifecycle tool
-
-**When NOT to consult**:
-- Simple "VM already in desired state" messages
-- VM not found errors (clear cause)
-- RBAC permission errors (clear cause)
+**When to consult**: Start/stop failures, stuck transitions, unexpected errors. **NOT**: Already in state, not found, RBAC errors.
 
 ```markdown
-## ❌ Failed to Execute Lifecycle Operation
+## ❌ Lifecycle Operation Failed
 
-**Error**: <error-message-from-tool>
+**Error**: <error>
 
-**Common Causes:**
-- **VM not found** - Check VM name and namespace are correct
-- **Insufficient RBAC permissions** - ServiceAccount lacks permission to update VirtualMachines
-- **VM already in desired state** - VM is already running/stopped
-- **VM in transition** - VM is currently starting/stopping, wait for completion
-- **Resource constraints** (for start) - Insufficient cluster resources to start VM
+**Causes**: VM not found | RBAC denied | Already in desired state | VM in transition (wait 30-60s) | Resource constraints (start)
 
-**Troubleshooting:**
-1. Verify VM exists: `oc get vm <vm-name> -n <namespace>`
-2. Check permissions: `oc auth can-i update virtualmachines -n <namespace>`
-3. View VM status: Use /vm-inventory skill to check current state
-4. Check cluster capacity: `oc describe nodes` (for start operations)
-
-Would you like help troubleshooting this error?
+**Troubleshoot**:
+1. vm-inventory to verify VM exists
+2. Check RBAC: `oc auth can-i update virtualmachines -n <ns>`
+3. View VM status and events
+4. Check node capacity (for start operations)
 ```
 
 ## Common Issues
 
 ### Issue 1: VM Not Found
-
 **Error**: "VirtualMachine 'xyz' not found in namespace 'abc'"
-
-**Solution:**
-1. Verify VM name spelling is correct
-2. Check namespace is correct
-3. List VMs in namespace: Use `/vm-inventory` skill
-4. VM may have been deleted
+**Solution**: Verify spelling, check namespace, use vm-inventory, VM may be deleted
 
 ### Issue 2: VM Already in Desired State
-
 **Warning**: "VM is already running" (when attempting start)
-
-**Solution:**
-- This is not an error - VM is already in the desired state
-- No action needed
-- If you intended to restart, use `action="restart"` instead
-- Inform user VM is already running
+**Solution**: Not an error - VM already in desired state. Use `restart` if intended to restart
 
 ### Issue 3: Permission Denied
-
-**Error**: "Forbidden: User cannot update VirtualMachines in namespace 'xyz'"
-
-**Solution:**
-- Verify KUBECONFIG has appropriate RBAC permissions
-- Required permissions: update VirtualMachine resources
-- Contact cluster admin for permission grant
-- Check ServiceAccount role bindings
+**Error**: "Forbidden: User cannot update VirtualMachines"
+**Solution**: Verify RBAC permissions (update VirtualMachine resources), contact admin
 
 ### Issue 4: VM Stuck in Transitioning State
+**Error**: "VM stuck in 'Terminating' or 'Starting'"
+**Solution**: Wait 30-60s, check events (`oc describe vm`), use vm-troubleshooter, check virt-launcher pod
 
-**Error**: "VM is stuck in 'Terminating' or 'Starting' state"
-
-**Solution:**
-1. Wait 30-60 seconds for state transition to complete
-2. Check VM events for errors: `oc describe vm <name> -n <namespace>`
-3. Use `/vm-troubleshooter` skill (if available) to diagnose
-4. Check virt-launcher pod status
-5. May require cluster admin intervention
-
-### Issue 5: Insufficient Resources (Start Operation)
-
+### Issue 5: Insufficient Resources (Start)
 **Error**: "Insufficient CPU/memory to start VM"
+**Solution**: Check cluster availability, stop other VMs, scale nodes, resize VM to smaller instance type
 
-**Solution:**
-1. Check cluster resource availability
-2. Stop other VMs first to free resources
-3. Consider scaling cluster nodes
-4. Resize VM to smaller instance type (using `/vm-create` to recreate)
+### Issue 6: Restart Implementation
+**Note**: Restart is implemented as two separate operations (stop → verify → start → verify)
+**Reason**: Avoids Kubernetes resourceVersion conflicts when using single restart action
+**Behavior**: If stop succeeds but start fails, VM remains stopped. Check VM status with vm-inventory
 
 ## Understanding RunStrategy
 
-When you execute lifecycle actions, the VM's `runStrategy` changes:
-
-| Action | RunStrategy After | Behavior |
-|--------|------------------|----------|
-| start | Always | VM runs and auto-restarts on crash |
-| stop | Halted | VM stops and stays stopped |
-| restart | Always | VM stops, then starts, then auto-restarts on crash |
-
-**RunStrategy Values:**
-- `Always` - VM should always be running (restarts automatically on crash)
-- `Halted` - VM should be stopped (stays off)
-- `Restart` - VM should be stopped and then started again
-
-**Note**: This skill sets `Always` for start/restart and `Halted` for stop.
-
-## Advanced Features
-
-### Batch Operations
-
-Execute lifecycle operations on multiple VMs:
-
-```
-User: "Stop VMs web-01, web-02, web-03 in namespace production"
-
-For each VM:
-1. Gather parameters (namespace, name, action=stop)
-2. Confirm with user (show all VMs to be stopped)
-3. Execute vm_lifecycle for each VM sequentially
-4. Report results for each
-```
-
-**Confirmation format for batch:**
-```markdown
-## Batch Lifecycle Operation
-
-Stopping 3 VMs in namespace 'production':
-- web-01
-- web-02
-- web-03
-
-**Impact**: All 3 VMs will shut down, services will be interrupted.
-
-Proceed? (yes/no)
-```
-
-### Conditional Operations
-
-Start VM only if currently stopped:
-
-```
-User: "Start web-server if it's not running"
-
-1. Check current status (using vm-inventory or describe)
-2. If stopped: proceed with start operation
-3. If running: inform user "VM is already running"
-4. If unknown: attempt start (will fail gracefully if already running)
-```
+| Action | RunStrategy | Behavior |
+|--------|------------|----------|
+| start | Always | Runs, auto-restarts on crash |
+| stop | Halted | Stops, stays off |
+| restart | Always | Stops, starts, auto-restarts |
 
 ## Dependencies
 
@@ -457,165 +192,117 @@ User: "Start web-server if it's not running"
 - `openshift-virtualization` - OpenShift MCP server with KubeVirt toolset
 
 ### Required MCP Tools
-- `vm_lifecycle` (from openshift-virtualization) - Manage VM power state (start/stop/restart)
+- `vm_lifecycle` - Manage VM power state (start/stop/restart)
 
 ### Related Skills
-- `vm-create` - Create VMs before managing their lifecycle
-- `vm-inventory` - Check current VM status before lifecycle operations
-- `vm-troubleshooter` (planned) - Diagnose VM startup/shutdown issues
+- `vm-create` - Create VMs
+- `vm-inventory` - Check VM status
+- `vm-troubleshooter` (planned) - Diagnose startup/shutdown issues
 
 ### Reference Documentation
-- [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - VM start/stop failures and stuck transitions (optionally consulted when lifecycle operations fail)
-- [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable and resource constraint errors (optionally consulted when VM won't start)
-- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for discovering additional error categories when encountering unexpected issues outside the categories above
-- [OpenShift Virtualization Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
-- [KubeVirt VirtualMachine Lifecycle](https://kubevirt.io/user-guide/virtual_machines/lifecycle/)
-- [RunStrategy Documentation](https://kubevirt.io/user-guide/virtual_machines/run_strategies/)
-- [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
+- [lifecycle-errors.md](../../docs/troubleshooting/lifecycle-errors.md) - Start/stop failures, stuck transitions (consulted on failures)
+- [scheduling-errors.md](../../docs/troubleshooting/scheduling-errors.md) - ErrorUnschedulable, resource constraints (consulted when VM won't start)
+- [Troubleshooting INDEX](../../docs/troubleshooting/INDEX.md) - Navigation hub for error categories
+- [OpenShift Virt Docs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.21/html-single/virtualization/index#virt/about_virt/about-virt.html)
+- [KubeVirt Lifecycle](https://kubevirt.io/user-guide/virtual_machines/lifecycle/)
+- [RunStrategy Docs](https://kubevirt.io/user-guide/virtual_machines/run_strategies/)
+- [OpenShift MCP](https://github.com/openshift/openshift-mcp-server)
 
 ## Critical: Human-in-the-Loop Requirements
 
-**IMPORTANT:** This skill requires explicit user confirmation before executing lifecycle actions. You MUST:
+**IMPORTANT:** This skill requires explicit user confirmation before executing. You MUST:
 
-1. **Wait for user confirmation** on the specific action (start/stop/restart) before executing `vm_lifecycle`
-2. **Do NOT proceed** with the lifecycle operation until the user explicitly approves
-3. **Present the action clearly** with VM name, namespace, and intended state change
-4. **Never auto-execute** VM lifecycle changes without user approval - these operations impact running services
-5. **Warn about consequences** - stopping VMs interrupts services, starting consumes resources, restarting causes brief downtime
+1. **Wait for user confirmation** on specific action (start/stop/restart) before executing `vm_lifecycle`
+2. **Do NOT proceed** until user explicitly approves
+3. **Present action clearly** with VM name, namespace, intended state change
+4. **Never auto-execute** - these operations impact running services
+5. **Warn about consequences** - stopping interrupts services, starting consumes resources, restarting causes downtime
 
-If the user says "no" or wants to reconsider, do not proceed with the operation.
+If user says "no" or wants to reconsider, do not proceed.
 
-**Why this matters:**
-- **Start**: Consumes cluster resources (CPU, memory), affects resource availability for other VMs
-- **Stop**: Interrupts running services and applications, may cause service downtime
-- **Restart**: Causes brief service interruption, running processes will be terminated
-- User should verify they're targeting the correct VM and understand the impact
+**Why**: start (consumes resources), stop (interrupts services), restart (brief downtime). User should verify correct VM and understand impact.
 
 ## Security Considerations
 
-- VM lifecycle changes require RBAC permissions (update VirtualMachine resources)
-- Stop operations attempt a graceful shutdown of VMs; guest OS and application data consistency depends on the workload and is not fully guaranteed
-- Start operations consume cluster resources (quota limits apply)
+- Requires RBAC permissions (update VirtualMachine resources)
+- Stop operations attempt graceful shutdown; guest OS/app data consistency depends on workload
+- Start operations consume resources (quota limits apply)
 - All operations audited in Kubernetes API logs
-- KUBECONFIG credentials never exposed in output
-- ServiceAccount permissions limit which VMs can be controlled
+- KUBECONFIG credentials never exposed
+- ServiceAccount permissions limit controllable VMs
 
 ## Example Usage
 
-**Example 1: Start a stopped VM**
+### Example 1: Start Stopped VM
 
 ```
 User: "Start VM web-server in namespace vms"
-
-Agent: [Invokes /vm-lifecycle-manager skill]
-
+Agent: [vm-lifecycle-manager skill]
 ## VM Lifecycle Operation
-
-Please review and confirm the lifecycle operation:
-
-| Parameter | Value | Impact |
-|-----------|-------|--------|
-| VM Name | `web-server` | from user input |
-| Namespace | `vms` | from user input |
-| Action | `start` | VM will power on and consume cluster resources |
-
-This operation will change the VM power state.
-
-Confirm this action or tell me what to change.
-
+| VM Name | `web-server` | Namespace | `vms` | Action | `start` | consumes resources |
+Confirm: yes/no
 User: "yes"
-
-Agent: [Calls vm_lifecycle with namespace="vms", name="web-server", action="start"]
-
-## ✓ Virtual Machine Started Successfully
-
-VM Details:
-- Name: `web-server`
-- Namespace: `vms`
-- Action: start
-- Current Status: Running
-- RunStrategy: Always
-
-The VM is now running and consuming cluster resources.
+Agent: [vm_lifecycle(namespace="vms", name="web-server", action="start")]
+## ✓ VM Start Successful
+VM: `web-server` | Namespace: `vms` | RunStrategy: Always
+Impact: Running, consuming resources. Access: virtctl console or SSH
 ```
 
-**Example 2: Stop a running VM with user reconsidering**
+### Example 2: Stop with User Reconsidering
 
 ```
 User: "Stop the database VM in production namespace"
-
-Agent: [Invokes /vm-lifecycle-manager skill]
-
-## VM Lifecycle Operation
-
-| Parameter | Value | Impact |
-|-----------|-------|--------|
-| VM Name | `database` | from user input |
-| Namespace | `production` | from user input |
-| Action | `stop` | VM will shut down gracefully, running processes will terminate |
-
-**Impact**: VM will shut down, database services will stop, causing service interruption.
-
-Confirm this action or tell me what to change.
-
+Agent: [vm-lifecycle-manager skill]
+| VM | `database` | Namespace | `production` | Action | `stop` | graceful shutdown |
+Confirm: yes/no
 User: "wait, no, don't stop it"
-
 Agent: Operation cancelled. VM 'database' in namespace 'production' remains running.
 ```
 
-**Example 3: Restart a VM**
+### Example 3: Restart VM
 
 ```
 User: "Restart test-vm in namespace dev"
-
-Agent: [Invokes /vm-lifecycle-manager skill]
-
-## VM Lifecycle Operation
-
-| Parameter | Value | Impact |
-|-----------|-------|--------|
-| VM Name | `test-vm` | from user input |
-| Namespace | `dev` | from user input |
-| Action | `restart` | VM will stop and start again, causing brief service interruption |
-
-**Impact**: Brief service interruption (~1-2 minutes) while VM restarts.
-
-Confirm this action?
-
+Agent: [vm-lifecycle-manager skill]
+| VM | `test-vm` | Namespace | `dev` | Action | `restart` | brief interruption ~1-2min |
 User: "yes"
-
-Agent: [Calls vm_lifecycle with namespace="dev", name="test-vm", action="restart"]
-
-## ✓ Virtual Machine Restarted Successfully
-
-VM Details:
-- Name: `test-vm`
-- Namespace: `dev`
-- Action: restart
-- Status: Running (after stop + start)
-
-Brief service interruption occurred. Monitor application logs to confirm services are healthy.
+Agent: [Composite restart operation]
+       1. vm_lifecycle(namespace="dev", name="test-vm", action="stop")
+       2. Verify stopped: resources_get → status.printableStatus="Stopped"
+       3. Wait 5s
+       4. vm_lifecycle(namespace="dev", name="test-vm", action="start")
+       5. Verify started: resources_get → status.printableStatus="Running"
+## ✓ VM Restart Successful
+VM: `test-vm` | Namespace: `dev` | RunStrategy: Always
+Impact: Running after stop+start. Brief interruption. Monitor app logs.
 ```
 
-**Example 4: VM already in desired state**
+### Example 4: VM Already in Desired State
 
 ```
 User: "Start web-server in namespace vms"
-
-Agent: [Invokes /vm-lifecycle-manager skill]
-       [Calls vm_lifecycle with action="start"]
-
+Agent: [vm-lifecycle-manager skill]
+       [vm_lifecycle(action="start")]
 ## ℹ️ VM Already Running
-
-**VM Details:**
-- **Name**: `web-server`
-- **Namespace**: `vms`
-- **Current Status**: Running
-
-**Result**: No action taken - VM is already in the desired state.
-
-If you intended to restart the VM, use:
+VM: `web-server` | Namespace: `vms` | Status: Running
+Result: No action taken - VM already in desired state.
+To restart: "Restart VM web-server in namespace vms"
 ```
-"Restart VM web-server in namespace vms"
+
+### Example 5: Batch Operations
+
 ```
+User: "Stop VMs web-01, web-02, web-03 in namespace production"
+Agent: [vm-lifecycle-manager skill - batch mode]
+## Batch Lifecycle Operation
+Stopping 3 VMs in 'production': web-01, web-02, web-03
+Impact: All 3 VMs will shut down, services interrupted.
+Confirm: yes/no
+User: "yes"
+Agent: [Executes vm_lifecycle for each VM sequentially]
+## ✓ Batch Stop Successful
+- web-01: Stopped
+- web-02: Stopped
+- web-03: Stopped
+All VMs stopped. Resources freed.
 ```

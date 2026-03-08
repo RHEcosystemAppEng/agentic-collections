@@ -25,25 +25,17 @@
     },
     "aap-mcp-job-management": {
       "type": "http",
-      "url": "https://${AAP_SERVER}/job_management/mcp",
+      "url": "https://${AAP_MCP_SERVER}/job_management/mcp",
       "headers": {
         "Authorization": "Bearer ${AAP_API_TOKEN}"
-      },
-      "env": {
-        "AAP_SERVER": "${AAP_SERVER}",
-        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
       },
       "description": "Ansible Automation Platform (AAP) job management MCP server for managing job templates, job executions, and workflows"
     },
     "aap-mcp-inventory-management": {
       "type": "http",
-      "url": "https://${AAP_SERVER}/inventory_management/mcp",
+      "url": "https://${AAP_MCP_SERVER}/inventory_management/mcp",
       "headers": {
         "Authorization": "Bearer ${AAP_API_TOKEN}"
-      },
-      "env": {
-        "AAP_SERVER": "${AAP_SERVER}",
-        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
       },
       "description": "Ansible Automation Platform (AAP) inventory management MCP server for managing inventories, hosts, and groups"
     }

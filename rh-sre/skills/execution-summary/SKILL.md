@@ -33,7 +33,7 @@ Do NOT use when:
 **What to extract**:
 
 1. **Agents invoked** - Look for agent invocations in the conversation
-   - Example: Agent `remediator` → `rh-sre:remediator`
+   - Example: Skill `remediation` (orchestration) → `rh-sre:remediation`
    - Include plugin prefix: `rh-sre:`
 
 2. **Skills invoked** - Look for Skill tool calls
@@ -98,8 +98,8 @@ Docs: <doc1>,<doc2>,...
 
 1. **Agent names**: Include plugin prefix
    - Format: `rh-sre:agent-name`
-   - Example: `rh-sre:remediator`
-   - Separate with commas (no spaces): `rh-sre:remediator,rh-sre:validator`
+   - Example: `rh-sre:remediation`
+   - Separate with commas (no spaces): `rh-sre:remediation,rh-sre:validator`
 
 2. **Skill names**: Include plugin prefix
    - Format: `rh-sre:skill-name`
@@ -132,8 +132,8 @@ Docs: <doc1>,<doc2>,...
 I've generated the execution summary for this workflow:
 
 **** EXECUTION SUMMARY START ****
-Agents: rh-sre:remediator
-Skills: rh-sre:fleet-inventory,rh-sre:cve-impact,rh-sre:playbook-generator,rh-sre:job-template-creator
+Agents: None
+Skills: rh-sre:remediation,rh-sre:fleet-inventory,rh-sre:cve-impact,rh-sre:playbook-generator,rh-sre:job-template-creator
 Tools: lightspeed-mcp:get_host_details,lightspeed-mcp:get_cve,aap-mcp-job-management:job_templates_list
 Docs: docs/ansible/cve-remediation-templates.md,docs/insights/vulnerability-logic.md,skills/fleet-inventory/SKILL.md
 **** EXECUTION SUMMARY END ****
@@ -188,8 +188,8 @@ This workflow used 2 skills, 1 MCP tool, and consulted 2 documentation files.
 **User Request**: "Remediate CVE-2024-1234 on production systems, then show execution summary"
 
 **Workflow executed**:
-1. Invoked `remediator` agent
-2. Agent delegated to: `cve-validation`, `cve-impact`, `system-context`, `playbook-generator`, `playbook-executor` skills
+1. Invoked `remediation` skill
+2. Remediation skill delegated to: `cve-validation`, `cve-impact`, `system-context`, `playbook-generator`, `playbook-executor` skills
 3. Called multiple MCP tools: `get_cve`, `get_cve_systems`, `get_host_details`, `create_vulnerability_playbook`, `execute_playbook`
 4. Read multiple docs: CVE scoring, Ansible templates, remediation verification
 
@@ -198,13 +198,13 @@ This workflow used 2 skills, 1 MCP tool, and consulted 2 documentation files.
 I've generated the execution summary for this workflow:
 
 **** EXECUTION SUMMARY START ****
-Agents: rh-sre:remediator
-Skills: rh-sre:cve-validation,rh-sre:cve-impact,rh-sre:system-context,rh-sre:playbook-generator,rh-sre:job-template-creator
+Agents: None
+Skills: rh-sre:remediation,rh-sre:cve-validation,rh-sre:cve-impact,rh-sre:system-context,rh-sre:playbook-generator,rh-sre:job-template-creator
 Tools: lightspeed-mcp:get_cve,lightspeed-mcp:get_cve_systems,lightspeed-mcp:get_host_details,lightspeed-mcp:create_vulnerability_playbook,aap-mcp-job-management:job_templates_launch_retrieve
 Docs: docs/references/cvss-scoring.md,docs/ansible/cve-remediation-templates.md,docs/insights/vulnerability-logic.md,skills/playbook-generator/SKILL.md
 **** EXECUTION SUMMARY END ****
 
-This comprehensive remediation workflow used 1 agent that orchestrated 5 skills, invoked 5 MCP tools, and consulted 4 documentation files.
+This comprehensive remediation workflow used the remediation skill that orchestrated 5 skills, invoked 5 MCP tools, and consulted 4 documentation files.
 ```
 
 ### Example 3: Validation Only Workflow
@@ -278,8 +278,8 @@ Would you like to start a workflow now?
 Include the resource with a note:
 ```
 **** EXECUTION SUMMARY START ****
-Agents: rh-sre:remediator
-Skills: rh-sre:fleet-inventory,unknown-plugin:custom-skill
+Agents: None
+Skills: rh-sre:remediation,rh-sre:fleet-inventory,unknown-plugin:custom-skill
 Tools: lightspeed-mcp:get_cve
 Docs: docs/ansible/playbook-templates.md
 **** EXECUTION SUMMARY END ****
@@ -310,7 +310,7 @@ Note: "unknown-plugin:custom-skill" origin unclear - verify plugin source.
 **Learning & Training**:
 - Show new users which resources solve specific problems
 - Demonstrate skill orchestration patterns
-- Illustrate agent delegation workflows
+- Illustrate skill orchestration workflows
 
 **Troubleshooting**:
 - Identify which tools were called before an error
@@ -326,10 +326,10 @@ Note: "unknown-plugin:custom-skill" origin unclear - verify plugin source.
 
 This skill complements other rh-sre skills:
 
-**After sre-agents:remediator agent**:
+**After `/remediation` skill**:
 ```
 User: "Remediate CVE-X"
-→ sre-agents:remediator agent executes full workflow (invoked)
+→ `/remediation` skill executes full workflow (invoked)
 User: "Generate execution summary"
 → execution-summary shows complete resource usage
 ```

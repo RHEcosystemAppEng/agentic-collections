@@ -1,5 +1,5 @@
 {
-  "name": "OpenShift Virtualization Agentic Collection",
+  "name": "rh-virt",
   "version": "1.0.0",
   "description": "Virtual machine management and automation for OpenShift Virtualization and KubeVirt workloads.",
   "author": {
