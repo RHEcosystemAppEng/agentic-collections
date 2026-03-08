@@ -59,6 +59,8 @@ oc get secret cluster-reporter-token -n cluster-reporter-system \
 
 Save this token securely. It grants read-only access to nodes, pods, namespaces, projects, cluster version, and metrics.
 
+> **AI Safety**: Never display token values in conversation output. Verify tokens are set, but never print or echo their contents.
+
 ### 3. Add to Inventory File
 
 Create or edit `~/.ocp-clusters/clusters.json`:
@@ -230,6 +232,7 @@ bash build-kubeconfig.sh --build --clusters ~/.ocp-clusters/clusters.json --veri
 4. **Minimum RBAC** — the ClusterRole grants read-only access only
 5. **Dedicated namespace** — the SA lives in `cluster-reporter-system`, not `kube-system`
 6. **Generated kubeconfig is ephemeral** — `/tmp/` is fine for session use; for persistent storage use `~/.kube/` with `chmod 600`
+7. **Never display tokens in AI conversations** — verify tokens are set but never print, echo, or expose their values in output
 
 ## Troubleshooting
 
