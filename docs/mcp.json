@@ -559,7 +559,7 @@
     "tier": "Official",
     "owner": "Red Hat",
     "type": "http",
-    "repository": "https://github.com/ansible/ansible-mcp-server",
+    "repository": "https://github.com/ansible/aap-mcp-server",
     "description": "Ansible Automation Platform (AAP) job management MCP server for managing job templates, workflows, and job execution",
     "tools": [
       {
@@ -645,7 +645,7 @@
     "tier": "Official",
     "owner": "Red Hat",
     "type": "http",
-    "repository": "https://github.com/ansible/ansible-mcp-server",
+    "repository": "https://github.com/ansible/aap-mcp-server",
     "description": "Ansible Automation Platform (AAP) inventory management MCP server for managing inventories, hosts, and groups",
     "tools": [
       {
