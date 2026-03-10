@@ -1,15 +1,10 @@
 {
   "mcpServers": {
     "openshift": {
-      "command": "podman",
+      "command": "bash",
       "args": [
-        "run", "--rm", "-i", "--network=host",
-        "--userns=keep-id:uid=65532,gid=65532",
-        "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-        "--entrypoint", "/app/kubernetes-mcp-server",
-        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-        "--kubeconfig", "/kubeconfig",
-        "--toolsets", "core,config,observability"
+        "-c",
+        "U=(); [ \"$(uname -s)\" = Linux ] && U=(--userns=keep-id:uid=65532,gid=65532); exec podman run \"${U[@]}\" --rm -i --network=host -v \"${KUBECONFIG}:/kubeconfig:ro,Z\" --entrypoint /app/kubernetes-mcp-server quay.io/ecosystem-appeng/openshift-mcp-server:latest --kubeconfig /kubeconfig --toolsets core,config,observability"
       ],
       "env": { "KUBECONFIG": "${KUBECONFIG}" },
       "description": "OpenShift MCP server for Kubernetes resource CRUD, pod management, logs, and events",
