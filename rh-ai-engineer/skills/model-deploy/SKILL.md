@@ -76,6 +76,55 @@ Collect the following from the user. Use defaults where sensible, but always con
 
 **WAIT for user to confirm or modify these settings.**
 
+### Step 1.5: Pre-flight Environment Validation
+
+**CRITICAL**: Run these checks BEFORE generating any YAML to avoid repeated deployment failures.
+
+**1. Check deployment mode support:**
+
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `"serving.knative.dev/v1"`, `kind`: `"Service"`, `namespace`: target namespace
+
+If Knative Services are not available (CRD not found or error) → auto-select **RawDeployment** mode and inform the user: "Knative Services are not available on this cluster. Switching to RawDeployment mode."
+
+**2. Check namespace resource constraints:**
+
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `"v1"`, `kind`: `"LimitRange"`, `namespace`: target namespace
+
+If a LimitRange exists:
+- **Action**: `resources_get` for each LimitRange to extract min/max/default values
+- Validate that planned resource requests fit within max limits
+- **Warning**: If LimitRange minimum CPU > 10m or minimum memory > 15Mi, KServe-injected sidecar containers (with hardcoded 10m CPU / 15Mi memory requests) will fail to schedule. Warn the user: "LimitRange minimums conflict with KServe sidecar containers. The LimitRange must be adjusted or removed before deployment can succeed."
+- Adjust planned resource requests/limits to fit within constraints
+- Present adjusted values to user
+
+**3. Discover GPU node taints:**
+
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `"v1"`, `kind`: `"Node"`, `labelSelector`: `"nvidia.com/gpu.present=true"`
+
+For each GPU node, extract taints. If custom taints exist (beyond standard Kubernetes taints like `node-role.kubernetes.io/*`):
+- Auto-generate matching tolerations for the InferenceService
+- Present discovered taints and proposed tolerations to user for confirmation
+- Common example: `ai-app=true:NoSchedule` requires toleration `{key: "ai-app", operator: "Equal", value: "true", effect: "NoSchedule"}`
+
+**4. Check existing deployments in namespace:**
+
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `"serving.kserve.io/v1beta1"`, `kind`: `"InferenceService"`, `namespace`: target namespace
+
+If similar InferenceServices exist, inspect their `storageUri`, runtime, and tolerations as a reference for proven-working configuration in this environment.
+
+**5. Validate model source accessibility:**
+
+If using `oci://` source:
+- Check namespace service account `imagePullSecrets` can access the registry
+- For `registry.redhat.io/rhelai1/*` images: these require RHEL AI subscription entitlements — verify pull secret has access or recommend switching to `hf://` (HuggingFace) source
+- **Default preference**: For public open-source models, prefer `hf://` sources (e.g., `hf://ibm-granite/granite-3.1-2b-instruct`) as they require no authentication
+
+**Present pre-flight results** in a summary table and note any adjustments made. **WAIT for user confirmation if significant changes were needed** (e.g., deployment mode switch, resource adjustments, tolerations added).
+
 ### Step 2: Determine Runtime
 
 **CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
@@ -143,7 +192,13 @@ Offer options: (1) Run `/nim-setup` now, (2) Switch to vLLM, (3) Abort. **WAIT f
 
 ### Step 6: Generate InferenceService YAML
 
-Generate the InferenceService manifest based on the selected runtime. Use values from Steps 1-3.
+Generate the InferenceService manifest based on the selected runtime. Use values from Steps 1-3 and environment data from Step 1.5.
+
+**Important defaults from pre-flight validation:**
+- **Deployment mode**: Use the mode determined in Step 1.5 (RawDeployment if Knative unavailable)
+- **Tolerations**: Include any GPU node tolerations discovered in Step 1.5
+- **Resources**: Ensure requests/limits fit within LimitRange constraints from Step 1.5
+- **storageUri**: Prefer `hf://` sources for public models (see [known-model-profiles.md](../../docs/references/known-model-profiles.md) for recommended sources). Only use `oci://` when the user explicitly provides an OCI URI and pull secret access is confirmed.
 
 **For vLLM:**
 
@@ -157,21 +212,22 @@ metadata:
     serving.kserve.io/deploymentMode: [Serverless|RawDeployment]
 spec:
   predictor:
+    tolerations: [gpu-node-tolerations-from-step-1.5]
     model:
       modelFormat:
         name: vLLM
       runtime: [serving-runtime-name]
-      storageUri: [model-source-uri]
+      storageUri: [model-source-uri]  # Prefer hf:// for public models
+      args:
+        - --max-model-len=[value-from-profile]
+        - --tensor-parallel-size=[gpu-count]
+        # Additional model-specific args from profile
       resources:
         limits:
           nvidia.com/gpu: [gpu-count]
         requests:
-          cpu: [cpu-request]
-          memory: [memory-request]
-    args:
-      - --max-model-len=[value-from-profile]
-      - --tensor-parallel-size=[gpu-count]
-      # Additional model-specific args from profile
+          cpu: [cpu-request]  # Must fit within LimitRange max
+          memory: [memory-request]  # Must fit within LimitRange max
 ```
 
 **For NVIDIA NIM:**
@@ -186,6 +242,7 @@ metadata:
     serving.kserve.io/deploymentMode: [Serverless|RawDeployment]
 spec:
   predictor:
+    tolerations: [gpu-node-tolerations-from-step-1.5]
     model:
       modelFormat:
         name: [nim-model-format]
@@ -214,6 +271,7 @@ metadata:
   namespace: [namespace]
 spec:
   predictor:
+    tolerations: [gpu-node-tolerations-from-step-1.5]
     model:
       modelFormat:
         name: caikit
@@ -223,6 +281,8 @@ spec:
         limits:
           nvidia.com/gpu: [gpu-count]
 ```
+
+**Note on `args` placement**: The `args` field MUST be inside `spec.predictor.model`, NOT under `spec.predictor` directly. Placing it at the wrong level causes a schema validation error.
 
 **Verify ServingRuntime exists** before generating YAML:
 
@@ -347,6 +407,50 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 3. Consider using a PVC with pre-downloaded model weights instead
 4. Check network connectivity between the pod and storage endpoint
 
+### Issue 6: LimitRange Conflicts with KServe Sidecars
+
+**Error**: Pod rejected with `minimum cpu usage per Container is 50m, but request is 10m` or `minimum memory usage per Container is 64Mi, but request is 15Mi`
+
+**Cause**: The namespace has a LimitRange with minimum resource constraints that exceed the hardcoded resource requests of KServe-injected sidecar containers (oauth-proxy, queue-proxy, or modelcar containers request 10m CPU / 15Mi memory). These sidecar resource values cannot be controlled through the InferenceService spec.
+
+**Solution:**
+1. Check LimitRange: `resources_list` for `LimitRange` in the namespace
+2. If LimitRange minimum CPU > 10m or minimum memory > 15Mi, the LimitRange must be adjusted
+3. Options: (a) Lower LimitRange minimums to accommodate sidecars (min CPU ≤ 10m, min memory ≤ 15Mi), (b) Remove the LimitRange entirely, (c) Deploy in a different namespace without restrictive LimitRanges
+4. **Prevention**: Step 1.5 pre-flight validation now checks for this conflict before deployment
+
+### Issue 7: GPU Node Taints Prevent Scheduling
+
+**Error**: Pod stuck in Pending with events showing `node(s) had untolerated taint {ai-app: true}` or similar custom taint messages, while also showing `Insufficient nvidia.com/gpu` on remaining nodes
+
+**Cause**: GPU nodes are tainted with custom taints (e.g., `ai-app=true:NoSchedule`) to reserve them for AI workloads. The InferenceService predictor pod does not have matching tolerations, so it cannot be scheduled on GPU nodes.
+
+**Solution:**
+1. Identify GPU node taints: `resources_get` for GPU nodes, check `.spec.taints`
+2. Add matching tolerations to the InferenceService predictor spec:
+   ```yaml
+   spec:
+     predictor:
+       tolerations:
+         - key: "ai-app"
+           operator: "Equal"
+           value: "true"
+           effect: "NoSchedule"
+   ```
+3. **Prevention**: Step 1.5 pre-flight validation now auto-discovers GPU node taints and generates tolerations
+
+### Issue 8: OCI Image Pull Unauthorized for RHEL AI Registry
+
+**Error**: Pod fails with `ErrImagePull` / `ImagePullBackOff` with message `unauthorized: access to the requested resource is not authorized` for `registry.redhat.io/rhelai1/*` images
+
+**Cause**: The `registry.redhat.io/rhelai1/*` OCI model images (used with `oci://` storageUri) require RHEL AI subscription entitlements. The cluster's pull secret or namespace pull secrets may not have the required entitlements, even if they have general `registry.redhat.io` access.
+
+**Solution:**
+1. Switch to HuggingFace source: use `hf://` storageUri instead (e.g., `hf://ibm-granite/granite-3.1-2b-instruct`). This is the recommended default for public models as it requires no authentication.
+2. If OCI source is required: verify RHEL AI entitlements are included in the pull secret by testing with `skopeo inspect` against the target image
+3. Create a namespace-scoped pull secret with valid RHEL AI credentials and link it to the default service account: `oc secrets link default <secret-name> --for=pull`
+4. **Prevention**: Step 1.5 pre-flight validation now checks model source accessibility and recommends `hf://` sources for public models
+
 ## Dependencies
 
 ### MCP Tools Used
@@ -381,6 +485,7 @@ See [skill-conventions.md](../../docs/references/skill-conventions.md) for gener
 
 **Skill-specific checkpoints:**
 - After gathering settings (Step 1): confirm configuration table
+- After pre-flight validation (Step 1.5): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
 - After runtime selection (Step 2): confirm runtime choice
 - Before creating InferenceService (Step 7): display full YAML, confirm
 - On deployment failure (Step 9): present diagnostic options, wait for user decision
