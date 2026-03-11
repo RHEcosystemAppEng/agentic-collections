@@ -41,10 +41,17 @@ Analyze AI model inference performance, GPU utilization, OpenShift cluster healt
 - `execute_promql` (from ai-observability) - Custom PromQL queries
 - `korrel8r_get_correlated` (from ai-observability) - Cross-domain signal correlation
 
+**Optional MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+
+**Optional MCP Tools** (from rhoai):
+- `list_data_science_projects` - Discover RHOAI projects for scope selection
+- `list_inference_services` - List deployed models with structured status for context
+- `get_inference_service` - Get InferenceService status for context
+
 **Optional MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
 **Optional MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Get InferenceService status for context
+- `resources_get` (from openshift) - Get raw resource details for context
 - `pods_list` (from openshift) - List predictor pods for correlation context
 
 **Required Environment Variables**:
@@ -93,6 +100,8 @@ Options: setup (show deployment guide) / abort
 If the intent is ambiguous, present the domain options and ask the user to choose.
 
 If the user specifies a model name, use `list_models` first to verify it exists and get the correct identifier. If the user does not specify a namespace, use `list_vllm_namespaces` or `list_openshift_namespaces` to discover available namespaces and present them.
+
+**Project context** (if `rhoai` MCP available): For "what's running" or "what's deployed" queries, use `list_data_science_projects` (from rhoai) to provide project-level overview. Use `list_inference_services` (from rhoai) per project to show deployed models with status.
 
 **WAIT for user to confirm scope before proceeding to analysis.**
 
@@ -388,7 +397,10 @@ Summarize key findings from the analysis session.
 | `search_metrics` | ai-observability | Metric discovery by pattern |
 | `execute_promql` | ai-observability | Custom PromQL queries |
 | `korrel8r_get_correlated` | ai-observability | Cross-domain signal correlation |
-| `resources_get` | openshift (optional) | InferenceService status for context |
+| `list_data_science_projects` | rhoai (optional) | Discover RHOAI projects for scope |
+| `list_inference_services` | rhoai (optional) | List deployed models with status |
+| `get_inference_service` | rhoai (optional) | InferenceService status for context |
+| `resources_get` | openshift (optional) | Raw resource details for context |
 | `pods_list` | openshift (optional) | Predictor pod list for correlation queries |
 
 ### Related Skills

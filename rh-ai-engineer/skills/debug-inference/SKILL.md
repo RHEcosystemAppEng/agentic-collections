@@ -22,11 +22,17 @@ Troubleshoot failed, stuck, or slow InferenceService deployments on Red Hat Open
 
 ## Prerequisites
 
+**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+
+**Required MCP Tools** (from rhoai):
+- `list_inference_services` - List deployed models with structured status data
+- `get_inference_service` - Get detailed deployment status (conditions, endpoint, ready state)
+- `get_model_endpoint` - Quick check if endpoint is available (early diagnostic)
+
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools**:
-- `resources_get` (from openshift) - Get InferenceService status, ServingRuntime, Account CR
-- `resources_list` (from openshift) - List InferenceServices in a namespace
+**Required MCP Tools** (from openshift):
+- `resources_get` (from openshift) - Get ServingRuntime, NIM Account CR details
 - `pods_list` (from openshift) - Find predictor/transformer pods
 - `pods_log` (from openshift) - Retrieve container logs
 - `events_list` (from openshift) - Check events for errors
@@ -65,11 +71,11 @@ See [skill-conventions.md](../../docs/references/skill-conventions.md) for prere
 
 If user says "list all" or is unsure:
 
-**MCP Tool**: `resources_list` (from openshift)
+**MCP Tool**: `list_inference_services` (from rhoai)
 
 **Parameters**:
-- `resource`: `"inferenceservices.serving.kserve.io"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
+- `verbosity`: `"standard"` - OPTIONAL
 
 Present InferenceServices with their status:
 
@@ -81,12 +87,19 @@ Present InferenceServices with their status:
 
 ### Step 2: Status Overview
 
-**MCP Tool**: `resources_get` (from openshift)
+**MCP Tool**: `get_inference_service` (from rhoai)
 
 **Parameters**:
-- `resource`: `"inferenceservices.serving.kserve.io"` - REQUIRED
-- `namespace`: user-specified namespace - REQUIRED
 - `name`: the InferenceService name - REQUIRED
+- `namespace`: user-specified namespace - REQUIRED
+- `verbosity`: `"full"` - REQUIRED
+
+**Early endpoint check:**
+
+**MCP Tool**: `get_model_endpoint` (from rhoai)
+- `name`: the InferenceService name, `namespace`: user-specified namespace
+
+An empty or error URL indicates deployment issues. Report endpoint availability status.
 
 Present status conditions:
 
@@ -321,8 +334,10 @@ Would you like me to:
 
 | Tool | Server | Purpose |
 |------|--------|---------|
-| `resources_get` | openshift | InferenceService status, ServingRuntime, Account CR |
-| `resources_list` | openshift | List InferenceServices |
+| `list_inference_services` | rhoai | List deployed models with structured status |
+| `get_inference_service` | rhoai | Detailed deployment status and conditions |
+| `get_model_endpoint` | rhoai | Quick endpoint availability check |
+| `resources_get` | openshift | ServingRuntime, NIM Account CR inspection |
 | `pods_list` | openshift | Find predictor pods |
 | `pods_log` | openshift | Container logs for diagnosis |
 | `events_list` | openshift | Scheduling, pull, and runtime events |

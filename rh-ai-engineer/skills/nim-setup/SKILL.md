@@ -23,11 +23,17 @@ Configure the NVIDIA NIM platform on OpenShift AI. This is a one-time setup that
 
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools**:
-- `resources_get` (from openshift) - Check operator installations and existing resources
-- `resources_list` (from openshift) - List resources in a namespace
-- `resources_create_or_update` (from openshift) - Create secrets, Account CR, ConfigMap
-- `events_list` (from openshift) - Check events for errors during setup
+**Required MCP Tools** (from openshift):
+- `resources_get` - Check operator installations and existing resources
+- `resources_list` - List resources in a namespace
+- `resources_create_or_update` - Create secrets, Account CR, ConfigMap
+- `events_list` - Check events for errors during setup
+
+**Optional MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+
+**Optional MCP Tools** (from rhoai):
+- `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
+- `list_serving_runtimes` - Verify NIM ServingRuntimes after setup
 
 **Optional MCP Server**: `ai-observability` (for `get_gpu_info` to verify GPU availability)
 
@@ -48,6 +54,16 @@ Configure the NVIDIA NIM platform on OpenShift AI. This is a one-time setup that
 See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## Workflow
+
+### Step 0: Validate Target Namespace (Optional)
+
+If the `rhoai` MCP server is available, validate that the target namespace is an RHOAI Data Science Project:
+
+**MCP Tool**: `list_data_science_projects` (from rhoai)
+
+If the namespace is not in the project list, warn: "Namespace `[namespace]` is not a Data Science Project. NIM setup may not work correctly. Consider creating a Data Science Project first."
+
+If `rhoai` MCP is not available, skip this check and proceed.
 
 ### Step 1: Verify GPU Operator and Node Feature Discovery
 
@@ -259,11 +275,14 @@ Check that the NIM platform is ready for model deployments.
 
 **Step 7b: Verify NIM ServingRuntimes**
 
-**MCP Tool**: `resources_list` (from openshift)
+**MCP Tool**: `list_serving_runtimes` (from rhoai) - preferred if rhoai MCP available
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
+- `include_templates`: `false`
+
+**Fallback MCP Tool**: `resources_list` (from openshift)
+- `resource`: `"servingruntimes.serving.kserve.io"`, `namespace`: user-specified namespace
 
 **Expected Output**: List of ServingRuntime objects including NIM runtimes
 
@@ -331,9 +350,11 @@ If `ai-observability` MCP server is available, use `get_gpu_info` to report clus
 | Tool | Server | Purpose |
 |------|--------|---------|
 | `resources_get` | openshift | Check operator CSVs, Account CR status |
-| `resources_list` | openshift | List NIM ServingRuntimes |
+| `resources_list` | openshift | List NIM ServingRuntimes (fallback) |
 | `resources_create_or_update` | openshift | Create secrets, Account CR, ConfigMap |
 | `events_list` | openshift | Troubleshoot Account CR issues |
+| `list_data_science_projects` | rhoai (optional) | Validate namespace is an RHOAI project |
+| `list_serving_runtimes` | rhoai (optional) | Verify NIM runtimes after setup |
 | `get_gpu_info` | ai-observability (optional) | GPU inventory check |
 
 ### Related Skills

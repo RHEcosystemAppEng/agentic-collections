@@ -22,12 +22,22 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 
 ## Prerequisites
 
+**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+
+**Required MCP Tools** (from rhoai):
+- `deploy_model` - Create InferenceService with high-level parameters (no YAML construction needed)
+- `list_inference_services` - List deployed models with structured status data
+- `get_inference_service` - Get detailed model deployment status (conditions, endpoint, ready state)
+- `get_model_endpoint` - Get inference endpoint URL directly
+- `list_serving_runtimes` - List available runtimes including platform templates with supported model formats
+- `list_data_science_projects` - Discover RHOAI projects for namespace validation
+- `list_data_connections` - Verify model storage access (S3 data connections)
+
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools**:
-- `resources_get` (from openshift) - Check InferenceService status, ServingRuntimes, Account CR
-- `resources_list` (from openshift) - List resources in a namespace
-- `resources_create_or_update` (from openshift) - Create InferenceService CR
+**Required MCP Tools** (from openshift):
+- `resources_get` (from openshift) - Check NIM Account CR, LimitRange, GPU node taints
+- `resources_list` (from openshift) - Check Knative availability, GPU nodes, existing deployments
 - `pod_list` (from openshift) - Check predictor pod status during rollout
 - `pod_logs` (from openshift) - Retrieve pod logs for debugging
 - `events_list` (from openshift) - Check events for errors
@@ -78,7 +88,20 @@ Collect the following from the user. Use defaults where sensible, but always con
 
 ### Step 1.5: Pre-flight Environment Validation
 
-**CRITICAL**: Run these checks BEFORE generating any YAML to avoid repeated deployment failures.
+**CRITICAL**: Run these checks BEFORE deploying to avoid repeated deployment failures.
+
+**0. Validate namespace is an RHOAI Data Science Project:**
+
+**MCP Tool**: `list_data_science_projects` (from rhoai)
+
+Verify the target namespace appears in the project list. If not found, warn: "Namespace `[namespace]` is not a Data Science Project. Model serving may not be configured. Create one via the OpenShift AI dashboard or proceed at your own risk."
+
+**0b. Check model storage access (if using S3 source):**
+
+**MCP Tool**: `list_data_connections` (from rhoai)
+- `namespace`: target namespace
+
+If model source is S3-based, verify a matching data connection exists. If not found, inform user: "No S3 data connection found in namespace. Create one via the OpenShift AI dashboard or provide model source as PVC or HuggingFace URI."
 
 **1. Check deployment mode support:**
 
@@ -111,8 +134,9 @@ For each GPU node, extract taints. If custom taints exist (beyond standard Kuber
 
 **4. Check existing deployments in namespace:**
 
-**MCP Tool**: `resources_list` (from openshift)
-- `apiVersion`: `"serving.kserve.io/v1beta1"`, `kind`: `"InferenceService"`, `namespace`: target namespace
+**MCP Tool**: `list_inference_services` (from rhoai)
+- `namespace`: target namespace
+- `verbosity`: `"standard"`
 
 If similar InferenceServices exist, inspect their `storageUri`, runtime, and tolerations as a reference for proven-working configuration in this environment.
 
@@ -190,130 +214,76 @@ Compare available GPUs against model requirements from Step 3:
 **If Account CR not found or not ready:**
 Offer options: (1) Run `/nim-setup` now, (2) Switch to vLLM, (3) Abort. **WAIT for user decision.**
 
-### Step 6: Generate InferenceService YAML
+### Step 6: Select ServingRuntime and Prepare Deployment Parameters
 
-Generate the InferenceService manifest based on the selected runtime. Use values from Steps 1-3 and environment data from Step 1.5.
+**Verify available ServingRuntimes:**
 
-**Important defaults from pre-flight validation:**
-- **Deployment mode**: Use the mode determined in Step 1.5 (RawDeployment if Knative unavailable)
-- **Tolerations**: Include any GPU node tolerations discovered in Step 1.5
-- **Resources**: Ensure requests/limits fit within LimitRange constraints from Step 1.5
-- **storageUri**: Prefer `hf://` sources for public models (see [known-model-profiles.md](../../docs/references/known-model-profiles.md) for recommended sources). Only use `oci://` when the user explicitly provides an OCI URI and pull secret access is confirmed.
-
-**For vLLM:**
-
-```yaml
-apiVersion: serving.kserve.io/v1beta1
-kind: InferenceService
-metadata:
-  name: [model-name]
-  namespace: [namespace]
-  annotations:
-    serving.kserve.io/deploymentMode: [Serverless|RawDeployment]
-spec:
-  predictor:
-    tolerations: [gpu-node-tolerations-from-step-1.5]
-    model:
-      modelFormat:
-        name: vLLM
-      runtime: [serving-runtime-name]
-      storageUri: [model-source-uri]  # Prefer hf:// for public models
-      args:
-        - --max-model-len=[value-from-profile]
-        - --tensor-parallel-size=[gpu-count]
-        # Additional model-specific args from profile
-      resources:
-        limits:
-          nvidia.com/gpu: [gpu-count]
-        requests:
-          cpu: [cpu-request]  # Must fit within LimitRange max
-          memory: [memory-request]  # Must fit within LimitRange max
-```
-
-**For NVIDIA NIM:**
-
-```yaml
-apiVersion: serving.kserve.io/v1beta1
-kind: InferenceService
-metadata:
-  name: [model-name]
-  namespace: [namespace]
-  annotations:
-    serving.kserve.io/deploymentMode: [Serverless|RawDeployment]
-spec:
-  predictor:
-    tolerations: [gpu-node-tolerations-from-step-1.5]
-    model:
-      modelFormat:
-        name: [nim-model-format]
-      runtime: [nim-serving-runtime-name]
-      resources:
-        limits:
-          nvidia.com/gpu: [gpu-count]
-        requests:
-          cpu: [cpu-request]
-          memory: [memory-request]
-    env:
-      - name: NGC_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: ngc-api-key
-            key: NGC_API_KEY
-```
-
-**For Caikit+TGIS:**
-
-```yaml
-apiVersion: serving.kserve.io/v1beta1
-kind: InferenceService
-metadata:
-  name: [model-name]
-  namespace: [namespace]
-spec:
-  predictor:
-    tolerations: [gpu-node-tolerations-from-step-1.5]
-    model:
-      modelFormat:
-        name: caikit
-      runtime: [caikit-tgis-runtime-name]
-      storageUri: [model-source-uri]
-      resources:
-        limits:
-          nvidia.com/gpu: [gpu-count]
-```
-
-**Note on `args` placement**: The `args` field MUST be inside `spec.predictor.model`, NOT under `spec.predictor` directly. Placing it at the wrong level causes a schema validation error.
-
-**Verify ServingRuntime exists** before generating YAML:
-
-**MCP Tool**: `resources_list` (from openshift)
+**MCP Tool**: `list_serving_runtimes` (from rhoai)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
 - `namespace`: target namespace - REQUIRED
+- `include_templates`: `true` - REQUIRED (shows both existing runtimes and platform templates)
 
-Use the list to populate the `runtime` field with the correct ServingRuntime name.
+The response shows existing runtimes and available templates with their supported model formats and `requires_instantiation` flag.
+
+If the needed runtime shows `requires_instantiation: true`, it must first be instantiated via `/serving-runtime-config` or the rhoai `create_serving_runtime` tool.
+
+Use the runtime list to select the correct `runtime` name for the deployment.
+
+**Prepare deployment parameters** from Steps 1-3 and environment data from Step 1.5:
+
+| Parameter | Value | Source |
+|-----------|-------|--------|
+| `name` | [model-deployment-name] | user input (DNS-compatible) |
+| `namespace` | [namespace] | user input |
+| `runtime` | [serving-runtime-name] | selected from `list_serving_runtimes` |
+| `model_format` | [vLLM/pytorch/onnx/caikit/etc.] | runtime selection |
+| `storage_uri` | [model-source-uri] | user input (prefer `hf://` for public models) |
+| `gpu_count` | [gpu-count] | from hardware profile (Step 3) |
+| `cpu_request` | [cpu] | from profile, adjusted for LimitRange |
+| `memory_request` | [memory] | from profile, adjusted for LimitRange |
+| `min_replicas` | [1] | default 1 (0 for scale-to-zero) |
+| `max_replicas` | [1] | default 1 |
+
+**Model sizing guide** for LLMs:
+- 7B models: 1x 24GB GPU (e.g., A10G) or 1x 16GB GPU with quantization
+- 13B models: 2x 24GB GPUs
+- 70B models: 4+ 80GB GPUs (A100/H100) or quantized on fewer GPUs
+
+**Scale-to-zero note**: Setting `min_replicas=0` saves resources but introduces cold start latency (30s-2min for model loading).
 
 ### Step 7: User Review and Confirmation
 
-**Display the complete InferenceService YAML** and a configuration summary table to the user.
+**Display the deployment parameters table** and a configuration summary to the user.
 
-**Ask**: "Proceed with creating this InferenceService? (yes/no/modify)"
+**Ask**: "Proceed with deploying this model? (yes/no/modify)"
 
 **WAIT for explicit confirmation.**
 
 - If **yes** -> Proceed to Step 8
 - If **no** -> Abort
-- If **modify** -> Ask what to change, regenerate YAML, return to this step
+- If **modify** -> Ask what to change, update parameters, return to this step
 
-### Step 8: Create InferenceService
+### Step 8: Deploy Model
 
-**MCP Tool**: `resources_create_or_update` (from openshift)
+**MCP Tool**: `deploy_model` (from rhoai)
 
 **Parameters**:
-- `resource`: full InferenceService manifest as JSON string - REQUIRED
-  - Example: `'{"apiVersion":"serving.kserve.io/v1beta1","kind":"InferenceService","metadata":{"name":"llama-3-8b","namespace":"my-ai-project","annotations":{"serving.kserve.io/deploymentMode":"Serverless"}},"spec":{...}}'`
+- `name`: deployment name (DNS-compatible) - REQUIRED
 - `namespace`: target namespace - REQUIRED
+- `runtime`: serving runtime name from Step 6 - REQUIRED
+- `model_format`: model format string (e.g., `"vLLM"`, `"pytorch"`, `"onnx"`) - REQUIRED
+- `storage_uri`: model location (e.g., `"hf://ibm-granite/granite-3.1-2b-instruct"`, `"s3://bucket/path"`, `"pvc://pvc-name/path"`) - REQUIRED
+- `display_name`: human-readable display name - OPTIONAL
+- `min_replicas`: minimum replicas (default: 1, 0 for scale-to-zero) - OPTIONAL
+- `max_replicas`: maximum replicas (default: 1) - OPTIONAL
+- `cpu_request`: CPU request per replica (default: `"1"`) - OPTIONAL
+- `cpu_limit`: CPU limit per replica (default: `"2"`) - OPTIONAL
+- `memory_request`: memory request per replica (default: `"4Gi"`) - OPTIONAL
+- `memory_limit`: memory limit per replica (default: `"8Gi"`) - OPTIONAL
+- `gpu_count`: number of GPUs per replica (default: 0) - OPTIONAL
+
+**Note**: For NIM deployments, ensure the NGC API key secret is referenced. If `deploy_model` does not support NIM-specific env vars, fall back to `resources_create_or_update` (from openshift) with a NIM InferenceService YAML that includes `spec.predictor.env` referencing the `ngc-api-key` secretKeyRef.
 
 **Error Handling**:
 - If namespace not found -> Report error, suggest creating namespace or using `/ds-project-setup`
@@ -325,8 +295,10 @@ Use the list to populate the `runtime` field with the correct ServingRuntime nam
 
 Poll InferenceService status until ready or timeout (10 minutes).
 
-**MCP Tool**: `resources_get` (from openshift)
-- `resource`: `"inferenceservices.serving.kserve.io"`, `namespace`, `name`
+**MCP Tool**: `get_inference_service` (from rhoai)
+- `name`: deployment name, `namespace`: target namespace, `verbosity`: `"full"`
+
+Check the Ready condition and status. Repeat every 15-30 seconds until Ready=True or timeout.
 
 **Check predictor pod status:**
 
@@ -339,7 +311,16 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 
 ### Step 10: Deployment Complete
 
-**Report success** showing: model name, runtime, namespace, GPUs, inference endpoint URL, API type (OpenAI-compatible REST), a curl quick-test command, and next steps (`/ai-observability`, `/model-monitor`, `/guardrails-config`).
+**Get endpoint URL:**
+
+**MCP Tool**: `get_model_endpoint` (from rhoai)
+- `name`: deployment name, `namespace`: target namespace
+
+**Report success** showing: model name, runtime, namespace, GPUs, inference endpoint URL, API type (OpenAI-compatible REST), and next steps (`/ai-observability`, `/model-monitor`, `/guardrails-config`).
+
+**Provide test commands** based on runtime:
+- **vLLM (OpenAI-compatible)**: `curl -X POST [endpoint]/v1/completions -H "Content-Type: application/json" -d '{"model":"[model-name]","prompt":"Hello","max_tokens":100}'`
+- **KServe v2**: `curl -X POST [endpoint]/v2/models/[model-name]/infer -H "Content-Type: application/json" -d '{"inputs":[...]}'`
 
 **Post-deployment validation** (if ai-observability MCP available):
 - `get_deployment_info` to confirm model appears in monitoring
@@ -457,9 +438,16 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 
 | Tool | Server | Purpose |
 |------|--------|---------|
-| `resources_get` | openshift | Check InferenceService status, ServingRuntimes, Account CR |
-| `resources_list` | openshift | List ServingRuntimes, find available runtimes |
-| `resources_create_or_update` | openshift | Create InferenceService CR |
+| `deploy_model` | rhoai | Create InferenceService with high-level parameters |
+| `list_inference_services` | rhoai | List deployed models with structured status |
+| `get_inference_service` | rhoai | Get detailed deployment status and conditions |
+| `get_model_endpoint` | rhoai | Get inference endpoint URL |
+| `list_serving_runtimes` | rhoai | List available runtimes and platform templates |
+| `list_data_science_projects` | rhoai | Validate namespace is an RHOAI project |
+| `list_data_connections` | rhoai | Verify S3 model storage access |
+| `resources_get` | openshift | Check NIM Account CR, LimitRange, GPU node taints |
+| `resources_list` | openshift | Check Knative availability, GPU nodes |
+| `resources_create_or_update` | openshift | Fallback for NIM InferenceService with env vars |
 | `pod_list` | openshift | Monitor rollout pod status |
 | `pod_logs` | openshift | Debug deployment failures |
 | `events_list` | openshift | Diagnose scheduling and pull errors |

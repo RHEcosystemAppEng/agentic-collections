@@ -36,7 +36,10 @@ Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). 
 | Server | Type | Required | Description |
 |--------|------|----------|-------------|
 | `openshift` | Container (podman) | Yes | Kubernetes resource CRUD, pod management, logs, events |
+| `rhoai` | Local process (uvx) | Yes | RHOAI-specific operations: model deployment, serving runtimes, data connections, project management |
 | `ai-observability` | Remote HTTP | No | vLLM metrics, GPU monitoring, distributed tracing |
+
+The `rhoai` MCP server provides high-level, RHOAI-domain-specific tools that simplify model deployment (no YAML construction needed), runtime management (including platform template discovery), and project validation. See [rhoai-mcp](https://github.com/opendatahub-io/rhoai-mcp) for details.
 
 The `ai-observability` MCP server is optional. When available, it enables GPU pre-flight checks before deployment and post-deployment performance validation. See [ai-observability-summarizer](https://github.com/rh-ai-quickstart/ai-observability-summarizer/tree/main/src/mcp_server) for deployment instructions.
 

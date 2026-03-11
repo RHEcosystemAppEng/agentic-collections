@@ -22,12 +22,18 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 
 ## Prerequisites
 
+**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+
+**Required MCP Tools** (from rhoai):
+- `list_serving_runtimes` - List available runtimes and platform templates with supported model formats
+- `create_serving_runtime` - Instantiate a serving runtime from a platform template (no YAML needed)
+- `list_data_science_projects` - Validate namespace is an RHOAI project
+
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools**:
-- `resources_get` (from openshift) - Inspect existing ServingRuntime CRs
-- `resources_list` (from openshift) - List available ServingRuntimes in a namespace
-- `resources_create_or_update` (from openshift) - Create or update ServingRuntime CR
+**Required MCP Tools** (from openshift):
+- `resources_get` (from openshift) - Inspect existing ServingRuntime CRs in detail
+- `resources_create_or_update` (from openshift) - Create fully custom ServingRuntime CR (when not using templates)
 
 **Optional MCP Server**: `ai-observability` ([AI Observability MCP](https://github.com/rh-ai-quickstart/ai-observability-summarizer))
 
@@ -59,21 +65,25 @@ See [skill-conventions.md](../../docs/references/skill-conventions.md) for prere
 1. **Action**: Read [supported-runtimes.md](../../docs/references/supported-runtimes.md) using the Read tool to understand available runtimes and their capabilities
 2. **Output to user**: "I consulted [supported-runtimes.md](../../docs/references/supported-runtimes.md) to understand available runtimes."
 
-**MCP Tool**: `resources_list` (from openshift)
+**MCP Tool**: `list_serving_runtimes` (from rhoai)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
+- `include_templates`: `true` - REQUIRED (shows both existing runtimes and platform templates)
 
 **Present findings** in a table:
 
-| Runtime Name | Model Format | Multi-Model | Container Image |
-|--------------|-------------|-------------|-----------------|
-| [name] | [format] | [true/false] | [image:tag] |
+| Runtime Name | Model Format | Source | Requires Instantiation |
+|--------------|-------------|--------|----------------------|
+| [name] | [format] | namespace / template | [true/false] |
 
-If an existing runtime fits the user's need, recommend using it directly with `/model-deploy`. Otherwise, proceed to Step 2.
+The response distinguishes between:
+- **Existing runtimes** (`source: "namespace"`) - ready to use with `/model-deploy`
+- **Platform templates** (`source: "template"`, `requires_instantiation: true`) - must be instantiated first
 
-**WAIT for user to confirm whether to create a new runtime or customize an existing one.**
+If an existing runtime fits the user's need, recommend using it directly with `/model-deploy`. If a platform template fits, offer to instantiate it (Step 4 alternative). Otherwise, proceed to Step 2 for custom runtime creation.
+
+**WAIT for user to confirm whether to create a new runtime, instantiate a template, or customize an existing one.**
 
 ### Step 2: Determine Runtime Configuration
 
@@ -160,6 +170,18 @@ spec:
 
 ### Step 4: Create ServingRuntime
 
+**If instantiating from a platform template** (user chose a template from Step 1):
+
+**MCP Tool**: `create_serving_runtime` (from rhoai)
+
+**Parameters**:
+- `namespace`: target namespace - REQUIRED
+- `template_name`: name of the template to instantiate (e.g., `"vllm-cuda-runtime-template"`) - REQUIRED
+
+The response includes the created runtime name, display name, and supported model formats.
+
+**If creating a fully custom runtime** (custom container image, non-template configuration):
+
 **MCP Tool**: `resources_create_or_update` (from openshift)
 
 **Parameters**:
@@ -174,14 +196,22 @@ spec:
 
 ### Step 5: Validate Runtime
 
+**MCP Tool**: `list_serving_runtimes` (from rhoai)
+
+**Parameters**:
+- `namespace`: user-specified namespace - REQUIRED
+- `include_templates`: `false`
+
+Verify the runtime appears in the namespace runtime list.
+
+For detailed inspection:
+
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
 - `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: the created runtime name - REQUIRED
-
-Verify the runtime was created successfully.
 
 **Report results** showing: runtime name, namespace, model format, container image, and next steps (`/model-deploy` to deploy a model using this runtime).
 
@@ -226,9 +256,11 @@ Verify the runtime was created successfully.
 
 | Tool | Server | Purpose |
 |------|--------|---------|
-| `resources_get` | openshift | Inspect existing ServingRuntime CRs |
-| `resources_list` | openshift | List available ServingRuntimes |
-| `resources_create_or_update` | openshift | Create or update ServingRuntime CR |
+| `list_serving_runtimes` | rhoai | List runtimes and platform templates with model format support |
+| `create_serving_runtime` | rhoai | Instantiate runtime from platform template |
+| `list_data_science_projects` | rhoai | Validate namespace is an RHOAI project |
+| `resources_get` | openshift | Inspect existing ServingRuntime CRs in detail |
+| `resources_create_or_update` | openshift | Create fully custom ServingRuntime CR |
 | `list_models` | ai-observability (optional) | Verify models using the runtime |
 
 ### Related Skills
