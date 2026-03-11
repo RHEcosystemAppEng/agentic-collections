@@ -736,6 +736,47 @@
       }
     ]
   },
+  "rhoai": {
+    "title": "Red Hat OpenShift AI MCP Server",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "repository": "https://github.com/opendatahub-io/rhoai-mcp",
+    "description": "RHOAI-specific operations for model deployment, serving runtimes, data connections, and project management on OpenShift AI",
+    "tools": [
+      {
+        "name": "deploy_model",
+        "description": "Create InferenceService with high-level parameters (no YAML construction needed)"
+      },
+      {
+        "name": "list_inference_services",
+        "description": "List deployed models with structured status data"
+      },
+      {
+        "name": "get_inference_service",
+        "description": "Get detailed model deployment status with conditions"
+      },
+      {
+        "name": "get_model_endpoint",
+        "description": "Get inference endpoint URL directly"
+      },
+      {
+        "name": "list_serving_runtimes",
+        "description": "List available runtimes and platform templates with model format support"
+      },
+      {
+        "name": "list_data_science_projects",
+        "description": "Discover RHOAI Data Science Projects in the cluster"
+      },
+      {
+        "name": "list_data_connections",
+        "description": "Verify S3 and other data storage connections in a namespace"
+      },
+      {
+        "name": "create_serving_runtime",
+        "description": "Instantiate a serving runtime from a platform template"
+      }
+    ]
+  },
   "openshift-virtualization": {
     "title": "OpenShift MCP Server - Virtualization",
     "tier": "Official",

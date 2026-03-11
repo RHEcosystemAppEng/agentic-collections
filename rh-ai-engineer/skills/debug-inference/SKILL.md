@@ -14,6 +14,9 @@ description: |
 
   NOT for deploying models (use /model-deploy).
   NOT for creating runtimes (use /serving-runtime-config).
+metadata:
+  author: "Red Hat Ecosystem Engineering"
+  version: "1.0"
 ---
 
 # /debug-inference Skill
@@ -59,6 +62,20 @@ Troubleshoot failed, stuck, or slow InferenceService deployments on Red Hat Open
 - An existing InferenceService deployment to debug
 
 See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
+
+## When to Use This Skill
+
+**Use this skill when you need to:**
+- Troubleshoot an InferenceService that won't start, is stuck, or shows errors
+- Diagnose slow inference latency or high error rates
+- Investigate GPU scheduling failures or OOMKilled pods
+- Perform root cause analysis on model deployment issues
+
+**Do NOT use this skill when:**
+- You want to deploy a new model (use `/model-deploy`)
+- You want to analyze ongoing model performance (use `/ai-observability`)
+- You need to create or fix a ServingRuntime (use `/serving-runtime-config`)
+- You need to set up NIM credentials (use `/nim-setup`)
 
 ## Workflow
 

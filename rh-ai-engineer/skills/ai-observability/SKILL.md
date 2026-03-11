@@ -15,6 +15,9 @@ description: |
 
   NOT for deploying models (use /model-deploy).
   NOT for debugging failed deployments (use /debug-inference).
+metadata:
+  author: "Red Hat Ecosystem Engineering"
+  version: "1.0"
 ---
 
 # /ai-observability Skill
@@ -64,6 +67,21 @@ Analyze AI model inference performance, GPU utilization, OpenShift cluster healt
 - Korrel8r deployed (optional, for cross-domain correlation)
 
 See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
+
+## When to Use This Skill
+
+**Use this skill when you need to:**
+- Check model inference performance (latency, throughput, error rates)
+- View GPU inventory and utilization across the cluster
+- Analyze OpenShift cluster health metrics by category
+- Trace slow inference requests with distributed tracing (Tempo)
+- Correlate signals across logs, metrics, traces, and alerts (Korrel8r)
+- Run custom PromQL queries against cluster Prometheus
+
+**Do NOT use this skill when:**
+- You need to troubleshoot a failed deployment (use `/debug-inference`)
+- You want to deploy or redeploy a model (use `/model-deploy`)
+- You need to create or modify a ServingRuntime (use `/serving-runtime-config`)
 
 ## Workflow
 

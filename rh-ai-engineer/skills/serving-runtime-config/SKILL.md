@@ -14,6 +14,9 @@ description: |
 
   NOT for deploying models (use /model-deploy after runtime is configured).
   NOT for NIM platform setup (use /nim-setup).
+metadata:
+  author: "Red Hat Ecosystem Engineering"
+  version: "1.0"
 ---
 
 # /serving-runtime-config Skill
@@ -50,6 +53,19 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 
 See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
+## When to Use This Skill
+
+**Use this skill when you need to:**
+- Create a custom ServingRuntime for a framework not covered by built-in runtimes
+- Customize an existing runtime's parameters (env vars, container image, model format)
+- Instantiate a platform template runtime into a namespace
+- List and compare available serving runtimes and templates
+
+**Do NOT use this skill when:**
+- You want to deploy a model using an existing runtime (use `/model-deploy`)
+- You need NIM platform setup (use `/nim-setup`)
+- You need to troubleshoot a deployment (use `/debug-inference`)
+
 ## Workflow
 
 ### Step 1: Gather Requirements
@@ -59,9 +75,7 @@ See [skill-conventions.md](../../docs/references/skill-conventions.md) for prere
 - **Namespace**: Target namespace for the ServingRuntime
 - **Intent**: New runtime from scratch, or customize an existing one?
 
-**CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
-
-**Document Consultation** (REQUIRED - Execute FIRST):
+**Document Consultation** (read before listing runtimes):
 1. **Action**: Read [supported-runtimes.md](../../docs/references/supported-runtimes.md) using the Read tool to understand available runtimes and their capabilities
 2. **Output to user**: "I consulted [supported-runtimes.md](../../docs/references/supported-runtimes.md) to understand available runtimes."
 

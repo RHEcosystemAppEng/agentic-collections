@@ -14,6 +14,10 @@ description: |
 
   NOT for NIM platform setup (use /nim-setup first).
   NOT for custom runtime creation (use /serving-runtime-config).
+color: green
+metadata:
+  author: "Red Hat Ecosystem Engineering"
+  version: "1.0"
 ---
 
 # /model-deploy Skill
@@ -61,6 +65,20 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 
 See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
+## When to Use This Skill
+
+**Use this skill when you need to:**
+- Deploy an AI/ML model on OpenShift AI (KServe InferenceService)
+- Set up vLLM, NIM, or Caikit+TGIS inference endpoints
+- Look up hardware profiles and GPU requirements for a model
+- Perform pre-flight validation before model deployment (GPU availability, namespace readiness, LimitRange conflicts)
+
+**Do NOT use this skill when:**
+- You need to set up the NIM platform first (use `/nim-setup`)
+- You need to create or customize a ServingRuntime (use `/serving-runtime-config`)
+- You need to troubleshoot a failed or slow deployment (use `/debug-inference`)
+- You need to analyze model performance or GPU metrics (use `/ai-observability`)
+
 ## Workflow
 
 ### Step 1: Gather Deployment Information
@@ -90,70 +108,20 @@ Collect the following from the user. Use defaults where sensible, but always con
 
 **CRITICAL**: Run these checks BEFORE deploying to avoid repeated deployment failures.
 
-**0. Validate namespace is an RHOAI Data Science Project:**
-
-**MCP Tool**: `list_data_science_projects` (from rhoai)
-
-Verify the target namespace appears in the project list. If not found, warn: "Namespace `[namespace]` is not a Data Science Project. Model serving may not be configured. Create one via the OpenShift AI dashboard or proceed at your own risk."
-
-**0b. Check model storage access (if using S3 source):**
-
-**MCP Tool**: `list_data_connections` (from rhoai)
-- `namespace`: target namespace
-
-If model source is S3-based, verify a matching data connection exists. If not found, inform user: "No S3 data connection found in namespace. Create one via the OpenShift AI dashboard or provide model source as PVC or HuggingFace URI."
-
-**1. Check deployment mode support:**
-
-**MCP Tool**: `resources_list` (from openshift)
-- `apiVersion`: `"serving.knative.dev/v1"`, `kind`: `"Service"`, `namespace`: target namespace
-
-If Knative Services are not available (CRD not found or error) → auto-select **RawDeployment** mode and inform the user: "Knative Services are not available on this cluster. Switching to RawDeployment mode."
-
-**2. Check namespace resource constraints:**
-
-**MCP Tool**: `resources_list` (from openshift)
-- `apiVersion`: `"v1"`, `kind`: `"LimitRange"`, `namespace`: target namespace
-
-If a LimitRange exists:
-- **Action**: `resources_get` for each LimitRange to extract min/max/default values
-- Validate that planned resource requests fit within max limits
-- **Warning**: If LimitRange minimum CPU > 10m or minimum memory > 15Mi, KServe-injected sidecar containers (with hardcoded 10m CPU / 15Mi memory requests) will fail to schedule. Warn the user: "LimitRange minimums conflict with KServe sidecar containers. The LimitRange must be adjusted or removed before deployment can succeed."
-- Adjust planned resource requests/limits to fit within constraints
-- Present adjusted values to user
-
-**3. Discover GPU node taints:**
-
-**MCP Tool**: `resources_list` (from openshift)
-- `apiVersion`: `"v1"`, `kind`: `"Node"`, `labelSelector`: `"nvidia.com/gpu.present=true"`
-
-For each GPU node, extract taints. If custom taints exist (beyond standard Kubernetes taints like `node-role.kubernetes.io/*`):
-- Auto-generate matching tolerations for the InferenceService
-- Present discovered taints and proposed tolerations to user for confirmation
-- Common example: `ai-app=true:NoSchedule` requires toleration `{key: "ai-app", operator: "Equal", value: "true", effect: "NoSchedule"}`
-
-**4. Check existing deployments in namespace:**
-
-**MCP Tool**: `list_inference_services` (from rhoai)
-- `namespace`: target namespace
-- `verbosity`: `"standard"`
-
-If similar InferenceServices exist, inspect their `storageUri`, runtime, and tolerations as a reference for proven-working configuration in this environment.
-
-**5. Validate model source accessibility:**
-
-If using `oci://` source:
-- Check namespace service account `imagePullSecrets` can access the registry
-- For `registry.redhat.io/rhelai1/*` images: these require RHEL AI subscription entitlements — verify pull secret has access or recommend switching to `hf://` (HuggingFace) source
-- **Default preference**: For public open-source models, prefer `hf://` sources (e.g., `hf://ibm-granite/granite-3.1-2b-instruct`) as they require no authentication
+Read [model-deploy-preflight-checklist.md](../../docs/references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
+- Namespace is an RHOAI Data Science Project
+- Model storage access (S3 data connections)
+- Deployment mode support (Knative availability)
+- Namespace resource constraints (LimitRange conflicts with KServe sidecars)
+- GPU node taints (auto-generate tolerations)
+- Existing deployments (reference configuration)
+- Model source accessibility (OCI registry entitlements)
 
 **Present pre-flight results** in a summary table and note any adjustments made. **WAIT for user confirmation if significant changes were needed** (e.g., deployment mode switch, resource adjustments, tolerations added).
 
 ### Step 2: Determine Runtime
 
-**CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
-
-**Document Consultation** (REQUIRED - Execute FIRST):
+**Document Consultation** (read before selecting runtime):
 1. **Action**: Read [supported-runtimes.md](../../docs/references/supported-runtimes.md) using the Read tool to understand runtime capabilities and selection criteria
 2. **Output to user**: "I consulted [supported-runtimes.md](../../docs/references/supported-runtimes.md) to understand runtime capabilities."
 
@@ -169,7 +137,7 @@ If using `oci://` source:
 
 ### Step 3: Look Up Model Hardware Profile
 
-**Document Consultation** (REQUIRED - Execute FIRST):
+**Document Consultation** (read before determining hardware requirements):
 1. **Action**: Read [known-model-profiles.md](../../docs/references/known-model-profiles.md) using the Read tool to find hardware profile for the requested model
 2. **Output to user**: "I consulted [known-model-profiles.md](../../docs/references/known-model-profiles.md) to find hardware requirements for [model-name]."
 

@@ -13,6 +13,9 @@ description: |
 
   NOT for deploying models (use /model-deploy instead).
   NOT for vLLM or Caikit deployments (NIM-specific only).
+metadata:
+  author: "Red Hat Ecosystem Engineering"
+  version: "1.0"
 ---
 
 # /nim-setup Skill
@@ -53,6 +56,19 @@ Configure the NVIDIA NIM platform on OpenShift AI. This is a one-time setup that
 
 See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
+## When to Use This Skill
+
+**Use this skill when you need to:**
+- Set up NVIDIA NIM platform on OpenShift AI for the first time
+- Create or refresh NGC credentials (image pull secret + API key secret)
+- Create the NIM Account custom resource
+- Verify GPU Operator and NFD Operator are installed and healthy
+
+**Do NOT use this skill when:**
+- You want to deploy a model (use `/model-deploy` after NIM setup is complete)
+- You want to deploy with vLLM or Caikit+TGIS (NIM-specific only, use `/model-deploy` directly)
+- You need to create a custom ServingRuntime (use `/serving-runtime-config`)
+
 ## Workflow
 
 ### Step 0: Validate Target Namespace (Optional)
@@ -67,9 +83,7 @@ If `rhoai` MCP is not available, skip this check and proceed.
 
 ### Step 1: Verify GPU Operator and Node Feature Discovery
 
-**CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
-
-**Document Consultation** (REQUIRED - Execute FIRST):
+**Document Consultation** (read before verifying operators):
 1. **Action**: Read [supported-runtimes.md](../../docs/references/supported-runtimes.md) using the Read tool to understand NIM platform requirements
 2. **Output to user**: "I consulted [supported-runtimes.md](../../docs/references/supported-runtimes.md) to understand NIM platform requirements."
 
