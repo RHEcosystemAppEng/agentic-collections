@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "sre-agents",
+      "name": "rh-sre",
       "description": "Site Reliability Engineering Agentic Collection",
       "version": "1.0.0",
       "author": {
