@@ -1,0 +1,29 @@
+version = "1.0"
+
+[metadata]
+author_name = "SkillsBench Team"
+author_email = "skillsbench@example.com"
+id = "rh-virt"
+name = "RH-Virt Inventory and Advisory Analysis"
+difficulty = "medium"
+category = "virtualization-operations"
+tags = ["python", "red-hat", "virtualization", "mcp", "rhv", "oVirt", "skills"]
+
+[verifier]
+timeout_sec = 1800.0
+
+[verifier.env]
+ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL}"
+ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"
+LLM_JUDGE_MODEL = "claude-sonnet-4-5"
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 2
+gpus = 0
+memory = "4G"
+storage = "10G"
+allow_internet = true
