@@ -57,16 +57,16 @@ Analyze AI model inference performance, GPU utilization, OpenShift cluster healt
 - `resources_get` (from openshift) - Get raw resource details for context
 - `pods_list` (from openshift) - List predictor pods for correlation context
 
-**Required Environment Variables**:
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
+
+**Additional environment variables**:
 - `AI_OBSERVABILITY_MCP_URL` - URL for the AI Observability MCP server (e.g., `http://aiobs-mcp.apps.cluster.example.com`)
 
-**Required Cluster Setup**:
+**Additional cluster requirements**:
 - AI Observability MCP server deployed on-cluster (from `quay.io/ecosystem-appeng/aiobs-mcp-server`)
 - Prometheus configured with vLLM and OpenShift metrics
 - Tempo configured for distributed tracing (optional, for trace analysis)
 - Korrel8r deployed (optional, for cross-domain correlation)
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## When to Use This Skill
 
@@ -397,29 +397,8 @@ Summarize key findings from the analysis session.
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `list_models` | ai-observability | Discover served models |
-| `list_vllm_namespaces` | ai-observability | List monitored namespaces |
-| `get_gpu_info` | ai-observability | GPU inventory and utilization |
-| `get_deployment_info` | ai-observability | Deployment health status |
-| `analyze_vllm` | ai-observability | Model performance analysis (latency, throughput, errors) |
-| `chat_vllm` | ai-observability | Conversational follow-up on vLLM metrics |
-| `analyze_openshift` | ai-observability | Cluster/namespace health metrics by category |
-| `list_openshift_metric_groups` | ai-observability | Available OpenShift metric categories |
-| `list_openshift_namespaces` | ai-observability | Discover namespaces in Prometheus |
-| `query_tempo_tool` | ai-observability | Distributed trace queries (TraceQL) |
-| `get_trace_details_tool` | ai-observability | Span-level trace details |
-| `search_metrics` | ai-observability | Metric discovery by pattern |
-| `execute_promql` | ai-observability | Custom PromQL queries |
-| `korrel8r_get_correlated` | ai-observability | Cross-domain signal correlation |
-| `list_data_science_projects` | rhoai (optional) | Discover RHOAI projects for scope |
-| `list_inference_services` | rhoai (optional) | List deployed models with status |
-| `get_inference_service` | rhoai (optional) | InferenceService status for context |
-| `resources_get` | openshift (optional) | Raw resource details for context |
-| `pods_list` | openshift (optional) | Predictor pod list for correlation queries |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/debug-inference` - Troubleshoot deployment issues found during analysis

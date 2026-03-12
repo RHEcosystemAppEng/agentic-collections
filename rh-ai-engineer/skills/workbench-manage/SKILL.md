@@ -51,14 +51,10 @@ Create and manage Jupyter notebook workbenches on Red Hat OpenShift AI. Handles 
 - `resources_get` (from openshift) - Inspect Notebook CR details, check node GPU availability
 - `events_list` (from openshift) - Check pod events when workbench is stuck
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
 
-**Required Cluster Setup**:
-- OpenShift cluster with Red Hat OpenShift AI operator installed
+**Additional cluster requirements**:
 - Target namespace is an RHOAI Data Science Project (label: `opendatahub.io/dashboard: "true"`)
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## When to Use This Skill
 
@@ -329,6 +325,8 @@ If user declines, report: "PVC `[pvc_name]` preserved. It can be reattached to a
 
 ## Common Issues
 
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../../docs/references/common-issues.md).
+
 ### Issue 1: Notebook Image Not Found
 
 **Error**: `create_workbench` fails with image not found or image reference is invalid
@@ -340,19 +338,7 @@ If user declines, report: "PVC `[pvc_name]` preserved. It can be reattached to a
 2. Verify the exact image name (case-sensitive)
 3. If no images are listed, the RHOAI operator may not have imported notebook images -- contact cluster administrator
 
-### Issue 2: Insufficient GPU Resources
-
-**Error**: Workbench pod stays in `Pending` state with scheduling failure
-
-**Cause**: The cluster does not have enough available GPUs to satisfy the workbench request.
-
-**Solution:**
-1. Use `resources_get` (from openshift) to check node GPU allocations
-2. Reduce the GPU count in the workbench configuration
-3. Wait for GPU resources to free up from other workloads
-4. Use `/ai-observability` with `get_gpu_info` to check cluster-wide GPU inventory
-
-### Issue 3: PVC Binding Failure
+### Issue 2: PVC Binding Failure
 
 **Error**: PVC remains in `Pending` state, workbench cannot start
 
@@ -364,7 +350,7 @@ If user declines, report: "PVC `[pvc_name]` preserved. It can be reattached to a
 3. If `ReadWriteMany` is required, verify the StorageClass supports it (e.g., NFS, CephFS)
 4. Contact cluster administrator if no StorageClass is available
 
-### Issue 4: Workbench Stuck in Starting
+### Issue 3: Workbench Stuck in Starting
 
 **Error**: Workbench status remains in a starting/initializing state for an extended period
 
@@ -380,25 +366,8 @@ If user declines, report: "PVC `[pvc_name]` preserved. It can be reattached to a
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `list_data_science_projects` | rhoai | Validate namespace is an RHOAI project |
-| `list_notebook_images` | rhoai | List available notebook container images |
-| `list_workbenches` | rhoai | List workbenches in a project |
-| `get_workbench` | rhoai | Get workbench details and status |
-| `create_workbench` | rhoai | Create Notebook CR with resources |
-| `start_workbench` | rhoai | Start a stopped workbench |
-| `stop_workbench` | rhoai | Stop a running workbench |
-| `delete_workbench` | rhoai | Delete a workbench |
-| `get_workbench_url` | rhoai | Get OAuth-protected notebook URL |
-| `list_storage` | rhoai | List PVCs in project |
-| `create_storage` | rhoai | Create PVC for workbench storage |
-| `delete_storage` | rhoai | Delete associated PVC |
-| `list_data_connections` | rhoai | List data connections to attach |
-| `resources_get` | openshift | Inspect Notebook CR, check GPU nodes |
-| `events_list` | openshift | Check pod events for stuck workbenches |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/ds-project-setup` - Create a Data Science Project (prerequisite: namespace must exist)

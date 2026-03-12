@@ -43,15 +43,7 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 **Optional MCP Tools** (from ai-observability):
 - `list_models` - Verify deployed models use the new runtime
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
-
-**Required Cluster Setup**:
-- OpenShift cluster with Red Hat OpenShift AI operator installed
-- KServe model serving platform configured
-- Model serving enabled on the target namespace (label: `opendatahub.io/dashboard: "true"`)
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
 
 ## When to Use This Skill
 
@@ -231,6 +223,8 @@ For detailed inspection:
 
 ## Common Issues
 
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../../docs/references/common-issues.md).
+
 ### Issue 1: InferenceService Cannot Find Runtime
 
 **Error**: InferenceService status shows "Unknown" or runtime not matched
@@ -242,18 +236,7 @@ For detailed inspection:
 2. Check the runtime is in the same namespace as the InferenceService
 3. Ensure the runtime has `opendatahub.io/dashboard: "true"` label
 
-### Issue 2: Container Image Pull Failure
-
-**Error**: Runtime pods fail with `ErrImagePull` or `ImagePullBackOff`
-
-**Cause**: Custom container image requires authentication or does not exist.
-
-**Solution:**
-1. Verify the image URI and tag are correct
-2. Create an image pull secret if the registry requires authentication
-3. Link the pull secret to the default ServiceAccount in the namespace
-
-### Issue 3: Runtime Port Mismatch
+### Issue 2: Runtime Port Mismatch
 
 **Error**: InferenceService created but health checks fail, endpoint returns connection refused
 
@@ -266,16 +249,8 @@ For detailed inspection:
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `list_serving_runtimes` | rhoai | List runtimes and platform templates with model format support |
-| `create_serving_runtime` | rhoai | Instantiate runtime from platform template |
-| `list_data_science_projects` | rhoai | Validate namespace is an RHOAI project |
-| `resources_get` | openshift | Inspect existing ServingRuntime CRs in detail |
-| `resources_create_or_update` | openshift | Create fully custom ServingRuntime CR |
-| `list_models` | ai-observability (optional) | Verify models using the runtime |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/model-deploy` - Deploy a model using the configured runtime
