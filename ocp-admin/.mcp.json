@@ -1,18 +1,10 @@
 {
   "mcpServers": {
     "openshift": {
-      "command": "podman",
+      "command": "bash",
       "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-        "--entrypoint", "/app/kubernetes-mcp-server",
-        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-        "--kubeconfig", "/kubeconfig",
-        "--read-only",
-        "--toolsets", "core,config"
+        "-c",
+        "U=(); [ \"$(uname -s)\" = Linux ] && U=(--userns=keep-id:uid=65532,gid=65532); exec podman run \"${U[@]}\" --rm -i --network=host -v \"${KUBECONFIG}:/kubeconfig:ro,Z\" --entrypoint /app/kubernetes-mcp-server quay.io/ecosystem-appeng/openshift-mcp-server:latest --kubeconfig /kubeconfig --read-only --toolsets core,config"
       ],
       "env": {
         "KUBECONFIG": "${KUBECONFIG}"
