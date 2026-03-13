@@ -1,0 +1,11 @@
+{
+  "name": "agentic-collections",
+  "dependencies": {
+    "tessl/pypi-pyyaml": {
+      "version": "6.0.0"
+    },
+    "tessl/pypi-jsonschema": {
+      "version": "4.25.0"
+    }
+  }
+}
