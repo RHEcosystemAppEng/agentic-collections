@@ -1,0 +1,32 @@
+{
+  "context": "Evaluates whether the candidate correctly implements Human-in-the-Loop requirements for a destructive operation skill. The key requirements are: a dedicated HITL section, preview before action, explicit confirmation wait, typed confirmation for irreversible operations, and a 'never assume approval' statement.",
+  "type": "weighted_checklist",
+  "capability_tested": "Human-in-the-Loop (HITL) Requirements",
+  "checklist": [
+    {
+      "name": "HITL section present",
+      "description": "The skill includes a dedicated 'Critical: Human-in-the-Loop Requirements' section (or equivalent heading). This section is not buried inside the workflow steps but is a top-level section.",
+      "max_score": 20
+    },
+    {
+      "name": "Preview-ask-wait pattern",
+      "description": "The HITL section specifies three sub-steps in order: (1) display a preview of what will happen, (2) ask the user a confirmation question, and (3) wait for an explicit response before proceeding.",
+      "max_score": 25
+    },
+    {
+      "name": "Typed confirmation for destructive ops",
+      "description": "For the destructive operation, the HITL section requires the user to type the exact resource name or a specific confirmation word (e.g., 'DELETE') as a typed match — not just 'yes'. The step verifies an exact match and cancels on mismatch.",
+      "max_score": 25
+    },
+    {
+      "name": "Never assume approval statement",
+      "description": "The HITL section explicitly states that the skill will never assume or infer approval. A phrase equivalent to 'Never assume approval — always wait for explicit confirmation' appears in the section.",
+      "max_score": 15
+    },
+    {
+      "name": "Workflow integration",
+      "description": "The workflow steps reference the HITL requirement at the point of execution, not only in the dedicated section. The destructive action step says to WAIT or references the HITL confirmation requirement inline.",
+      "max_score": 15
+    }
+  ]
+}

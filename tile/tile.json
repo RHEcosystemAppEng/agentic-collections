@@ -1,0 +1,8 @@
+{
+  "name": "agentic-collections/agentic-collections",
+  "version": "0.1.0",
+  "docs": "docs/index.md",
+  "describes": "pkg:pypi/agentic-collections@0.1.0",
+  "summary": "Persona-specific agentic skill collections automating interactions with Red Hat platforms (CVE remediation, OpenShift administration, virtualization, and developer workflows) via AI marketplaces.",
+  "private": true
+}

@@ -1,0 +1,37 @@
+{
+  "context": "Evaluates whether the candidate correctly implements a VM provisioning skill for OpenShift Virtualization, covering the full lifecycle from parameter gathering to creation and status verification. The skill must include HITL confirmation, duplicate checking, and scheduling failure diagnosis.",
+  "type": "weighted_checklist",
+  "capability_tested": "VM Creation in OpenShift Virtualization",
+  "checklist": [
+    {
+      "name": "Interactive parameter gathering",
+      "description": "When required parameters are absent, the skill uses AskUserQuestion (or equivalent) to collect all 8 VM configuration fields: VM Name, Namespace, OS, Performance class, Size, Storage, StorageClass, and Autostart. OS and Size labels map correctly to lowercase parameter values (e.g., 'Fedora' → 'fedora', 'Medium' → 'medium').",
+      "max_score": 20
+    },
+    {
+      "name": "Duplicate VM check before creation",
+      "description": "Before invoking the VM creation tool, the workflow checks whether a VM with the same name already exists in the target namespace. If found, it displays the existing VM's status and offers options (rename, delete existing, cancel) and waits for the user's choice.",
+      "max_score": 15
+    },
+    {
+      "name": "Configuration confirmation with HITL",
+      "description": "The skill presents a formatted table of all VM parameters (name, namespace, OS, performance, size, storage, StorageClass, autostart) and asks 'Confirm: yes/no/modify' before invoking the VM creation tool. It waits for explicit confirmation.",
+      "max_score": 20
+    },
+    {
+      "name": "VM creation tool invocation",
+      "description": "The vm_create tool is called with the correct parameters: namespace, name, workload (OS), size, storage, performance, and autostart. Parameters use the correct lowercase value format.",
+      "max_score": 20
+    },
+    {
+      "name": "Status verification step",
+      "description": "After creation, the workflow checks the VM's printableStatus field. It handles at minimum: Stopped/Halted (success), Running (success if autostart=true), Provisioning (wait and recheck), and ErrorUnschedulable (trigger diagnostic workflow).",
+      "max_score": 15
+    },
+    {
+      "name": "ErrorUnschedulable diagnostic workflow",
+      "description": "The ErrorUnschedulable diagnostic step reads a troubleshooting reference document first (document consultation), then gathers events and node taints, presents a root-cause analysis with remediation options, and waits for user decision.",
+      "max_score": 10
+    }
+  ]
+}

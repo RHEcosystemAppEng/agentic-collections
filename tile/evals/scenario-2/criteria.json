@@ -1,0 +1,27 @@
+{
+  "context": "Evaluates whether the candidate correctly implements the Document Consultation Transparency pattern (Design Principle 1) in a skill workflow step. The step must both actually read the reference document and declare the consultation to the user.",
+  "type": "weighted_checklist",
+  "capability_tested": "Document Consultation Transparency",
+  "checklist": [
+    {
+      "name": "Action to read file present",
+      "description": "The Document Consultation block includes a numbered Action instruction that specifies reading a named file using the Read tool. The instruction names the specific file and explains what knowledge it provides.",
+      "max_score": 30
+    },
+    {
+      "name": "Output to user declaration present",
+      "description": "The Document Consultation block includes a numbered Output to user instruction with a quoted message that names the file consulted and the topic learned. For example: 'I consulted [file.md] to understand [topic].'",
+      "max_score": 25
+    },
+    {
+      "name": "Consultation before tool invocation",
+      "description": "The Document Consultation block appears before the MCP Tool specification in the same workflow step. The ordering makes clear that the agent reads the document first and only then calls the tool.",
+      "max_score": 25
+    },
+    {
+      "name": "Labeled as REQUIRED and FIRST",
+      "description": "The Document Consultation block is marked as REQUIRED and/or FIRST to signal that skipping it is not acceptable. Labels like '(REQUIRED - Execute FIRST)' or 'CRITICAL: Document consultation MUST happen BEFORE' are present.",
+      "max_score": 20
+    }
+  ]
+}

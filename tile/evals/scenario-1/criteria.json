@@ -1,0 +1,32 @@
+{
+  "context": "Evaluates whether the candidate correctly authors an MCP server configuration file for an agentic pack, with particular focus on secure credential handling and complete server entry structure. The most critical requirement is that no credentials are hardcoded.",
+  "type": "weighted_checklist",
+  "capability_tested": "MCP Server Configuration",
+  "checklist": [
+    {
+      "name": "No hardcoded credentials",
+      "description": "All values in the env block use the ${ENV_VAR} reference format. No actual secrets, tokens, API keys, or passwords appear as literal strings in the .mcp.json file.",
+      "max_score": 30
+    },
+    {
+      "name": "mcpServers structure",
+      "description": "The file has a top-level mcpServers object containing at least one named server entry with command, args, and env fields.",
+      "max_score": 20
+    },
+    {
+      "name": "Container command format",
+      "description": "The command uses podman, docker, or npx. When using podman/docker, the args array includes 'run', '--rm', '-i', and passes environment variables using '--env' flags rather than hardcoding them in args.",
+      "max_score": 20
+    },
+    {
+      "name": "Security metadata block",
+      "description": "Each server entry includes a security block with isolation, network, and credentials sub-fields. Values are appropriate for the server type (e.g., isolation: 'container', credentials: 'env-only').",
+      "max_score": 20
+    },
+    {
+      "name": "Server description present",
+      "description": "Each server entry includes a description field with a brief explanation of the MCP server's purpose.",
+      "max_score": 10
+    }
+  ]
+}

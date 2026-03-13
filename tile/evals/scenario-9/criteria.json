@@ -1,0 +1,32 @@
+{
+  "context": "Evaluates whether the candidate correctly implements the HITL-first pagination pattern for large CVE dataset retrieval. The critical requirement is that the pagination strategy prompt must be the very first user-visible action, before any tool calls or identifier resolution.",
+  "type": "weighted_checklist",
+  "capability_tested": "Pagination Handling for Large Datasets with HITL",
+  "checklist": [
+    {
+      "name": "HITL pagination prompt is first action",
+      "description": "The pagination prompt is the very first user-visible response. No MCP tool calls (not find_host_by_name, not get_system_cves, not any other tool) appear before this prompt in the workflow. The workflow explicitly states 'WAIT for user response. Do NOT proceed until response received.'",
+      "max_score": 30
+    },
+    {
+      "name": "Three pagination options offered",
+      "description": "The pagination prompt offers at least three distinct options: (1) first page only (quick, may miss results), (2) all pages (recommended for remediatable), and (3) N pages (user-specified count). Each option includes a brief description of its tradeoff.",
+      "max_score": 20
+    },
+    {
+      "name": "First-page limitation warning",
+      "description": "The pagination prompt includes an explicit warning that first-page-only results may return 0 remediatable CVEs because remediatable vulnerabilities may appear on any page. The 'all pages' option is marked as recommended for remediatable queries.",
+      "max_score": 20
+    },
+    {
+      "name": "Correct pagination loop",
+      "description": "After strategy selection, the implementation uses limit=100 per page request and increments the offset (or page number) on each iteration. The loop correctly stops when: response count < limit (last page), user-specified page count reached, or no more results.",
+      "max_score": 20
+    },
+    {
+      "name": "UUID resolution after HITL",
+      "description": "The hostname-to-UUID resolution (inventory lookup) occurs only after the user has responded to the pagination prompt, not before. The workflow order is: HITL prompt → await response → resolve hostname → paginate.",
+      "max_score": 10
+    }
+  ]
+}

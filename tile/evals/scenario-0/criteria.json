@@ -1,0 +1,37 @@
+{
+  "context": "Evaluates whether the candidate correctly authors a skill definition file following the agentic-collections YAML frontmatter conventions. The skill must include all mandatory fields with valid values, and the color must reflect the read-only nature of the operation.",
+  "type": "weighted_checklist",
+  "capability_tested": "Skill YAML Frontmatter Structure",
+  "checklist": [
+    {
+      "name": "Required fields present",
+      "description": "The SKILL.md frontmatter includes all four mandatory fields: name, description, model, and color. No required field is missing.",
+      "max_score": 25
+    },
+    {
+      "name": "kebab-case name",
+      "description": "The name field uses kebab-case (lowercase letters, digits, and hyphens only; starts with a letter; no consecutive hyphens; no leading or trailing hyphens) and matches the parent directory name.",
+      "max_score": 15
+    },
+    {
+      "name": "Description format",
+      "description": "The description field includes at least one 'Use when' example (as a quoted user phrase or bullet) and at least one 'NOT for' anti-pattern that names an alternative skill.",
+      "max_score": 20
+    },
+    {
+      "name": "Correct color for read-only skill",
+      "description": "The color field is set to 'cyan', which is the correct value for read-only (list/view/get) operations per the risk classification convention.",
+      "max_score": 20
+    },
+    {
+      "name": "Valid model value",
+      "description": "The model field is set to one of the three valid values: inherit, sonnet, or haiku.",
+      "max_score": 10
+    },
+    {
+      "name": "Token-efficient description",
+      "description": "The description field is concise and stays under 500 tokens. It defers implementation details to the skill body rather than embedding them in the frontmatter.",
+      "max_score": 10
+    }
+  ]
+}

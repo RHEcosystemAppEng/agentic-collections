@@ -1,0 +1,37 @@
+{
+  "context": "Evaluates whether the candidate correctly implements an AI-optimized documentation system with semantic indexing for an agentic pack. The system must produce three interconnected index files and documentation with proper YAML frontmatter to enable token-efficient document discovery.",
+  "type": "weighted_checklist",
+  "capability_tested": "AI-Optimized Documentation System",
+  "checklist": [
+    {
+      "name": "Three required index files",
+      "description": "The .ai-index/ directory contains all three required files: semantic-index.json, task-to-docs-mapping.json, and cross-reference-graph.json. All three files are valid JSON.",
+      "max_score": 15
+    },
+    {
+      "name": "Semantic index entry fields",
+      "description": "Each entry in semantic-index.json includes at minimum: id, title, path, category, semantic_keywords (array of discovery phrases), use_cases (array of task identifiers), and related_docs (array of related document IDs). The semantic_keywords are descriptive phrases suitable for AI keyword matching.",
+      "max_score": 25
+    },
+    {
+      "name": "Task-to-docs mapping structure",
+      "description": "task-to-docs-mapping.json maps common workflow task type keys (e.g., 'cve_remediation', 'vm_creation') to arrays of document paths that should be loaded for that workflow. At least two distinct task types are mapped.",
+      "max_score": 20
+    },
+    {
+      "name": "Cross-reference graph structure",
+      "description": "cross-reference-graph.json maps document IDs to objects containing a 'related' array of related document IDs, enabling agents to follow cross-reference chains.",
+      "max_score": 15
+    },
+    {
+      "name": "Documentation YAML frontmatter",
+      "description": "Documentation markdown files include YAML frontmatter with all mandatory fields: title, category, sources (array with title/url/date_accessed), tags, semantic_keywords, use_cases, related_docs, and last_updated. Sources reference official documentation URLs.",
+      "max_score": 15
+    },
+    {
+      "name": "INDEX.md navigation structure",
+      "description": "A docs/INDEX.md file exists as a navigation map that AI agents can read first to understand the documentation structure before querying the semantic index.",
+      "max_score": 10
+    }
+  ]
+}

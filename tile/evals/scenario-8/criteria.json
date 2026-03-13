@@ -1,0 +1,32 @@
+{
+  "context": "Evaluates whether the candidate correctly implements an end-to-end CVE remediation orchestration skill following the rh-sre remediation skill pattern. The skill must include upfront task planning, sequential sub-skill invocation, a remediatable gate, and two mandatory HITL checkpoints.",
+  "type": "weighted_checklist",
+  "capability_tested": "End-to-End CVE Remediation Orchestration",
+  "checklist": [
+    {
+      "name": "Upfront planned task list with approval gate",
+      "description": "Before any sub-skill invocation, the skill presents all planned tasks in workflow execution order and waits for explicit user approval ('yes' or 'proceed'). No sub-skill is invoked until this approval is received.",
+      "max_score": 20
+    },
+    {
+      "name": "All 7 sub-skills referenced",
+      "description": "The workflow references all seven required sub-skill categories: (1) MCP prerequisite validation, (2) CVE impact analysis, (3) CVE validation, (4) system context gathering, (5) playbook generation, (6) playbook execution, and (7) remediation verification. All are invoked using the /skill-name slash format.",
+      "max_score": 20
+    },
+    {
+      "name": "Remediatable gate implemented",
+      "description": "After the CVE validation step, the skill checks the remediation availability flag. If not remediatable, it explains why, suggests manual alternatives, and asks 'Continue anyway? (yes/no)' before proceeding. It does NOT silently continue or hard-stop.",
+      "max_score": 20
+    },
+    {
+      "name": "Remediation plan before execution",
+      "description": "Before invoking the playbook execution sub-skill, the skill presents a remediation plan containing: a 1-2 sentence summary, a table (CVE | Target Systems | Key Action), and an ordered checklist. It waits for confirmation ('yes'/'proceed'/'dry-run only'/'abort') and does not execute until confirmed.",
+      "max_score": 25
+    },
+    {
+      "name": "Sequential execution enforcement",
+      "description": "The workflow explicitly states that each step must complete before the next begins. The skill uses 'do not start Step N+1 until Step N has returned its result' or equivalent language to enforce sequential execution.",
+      "max_score": 15
+    }
+  ]
+}

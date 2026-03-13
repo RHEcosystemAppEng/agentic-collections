@@ -1,0 +1,37 @@
+{
+  "context": "Evaluates whether the candidate correctly implements a CVE impact analysis workflow using the rh-sre cve-impact skill pattern. The workflow must validate MCP prerequisites, retrieve vulnerability data with correct parameters, identify and classify affected systems, and produce a structured risk assessment.",
+  "type": "weighted_checklist",
+  "capability_tested": "CVE Impact Analysis Workflow",
+  "checklist": [
+    {
+      "name": "MCP prerequisite validation step",
+      "description": "The workflow begins with a step that invokes a prerequisite validator sub-skill before any CVE query. The step handles all three outcomes: PASSED (continue), PARTIAL (warn user and offer to proceed), FAILED (stop and provide setup instructions).",
+      "max_score": 20
+    },
+    {
+      "name": "CVE ID format in parameters",
+      "description": "The CVE detail retrieval step specifies the cve_id parameter in the exact format 'CVE-YYYY-NNNNN' (e.g., 'CVE-2024-1234'). The parameter includes_details is set to true to get full metadata.",
+      "max_score": 15
+    },
+    {
+      "name": "Correct system identifier parameter",
+      "description": "The affected systems retrieval step uses 'system_uuid' (not 'system_id' or 'id') when calling the system-level CVE tool, and uses include_patched: false to focus on vulnerable systems.",
+      "max_score": 20
+    },
+    {
+      "name": "System classification step",
+      "description": "After identifying affected systems, the workflow includes a classification step that categorizes systems by environment (production/staging/development) and by type (bare metal/virtual machine).",
+      "max_score": 15
+    },
+    {
+      "name": "Risk assessment output structure",
+      "description": "The risk assessment output includes: Overall Risk Level (Critical/High/Medium/Low), a list of contributing factors (CVSS score, affected systems count, environment, attack vector, exploitability), a recommendation, and a priority tier (P0/P1/P2) with time guidance.",
+      "max_score": 20
+    },
+    {
+      "name": "Document consultation for CVSS",
+      "description": "The step that performs CVSS interpretation includes a Document Consultation block that reads the CVSS scoring reference document before making risk determinations.",
+      "max_score": 10
+    }
+  ]
+}

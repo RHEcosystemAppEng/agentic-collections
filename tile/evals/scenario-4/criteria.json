@@ -1,0 +1,32 @@
+{
+  "context": "Evaluates whether the candidate correctly authors a complete Dependencies section for a skill that uses MCP tools and invokes other skills. All four required subsections must be present and each must contain the correct information.",
+  "type": "weighted_checklist",
+  "capability_tested": "Dependencies Section",
+  "checklist": [
+    {
+      "name": "Required MCP Servers subsection",
+      "description": "The Dependencies section includes a 'Required MCP Servers' subsection listing each MCP server by name (in backtick format), with a brief description and at least one link (e.g., setup guide or documentation URL).",
+      "max_score": 20
+    },
+    {
+      "name": "Required MCP Tools subsection",
+      "description": "The Dependencies section includes a 'Required MCP Tools' subsection. Each tool entry names the tool in backtick format, identifies which server it comes from in parentheses, describes its purpose, and lists its key parameters.",
+      "max_score": 30
+    },
+    {
+      "name": "Related Skills subsection",
+      "description": "The Dependencies section includes a 'Related Skills' subsection listing all sub-skills that this skill invokes, with a note explaining when or why each is called.",
+      "max_score": 25
+    },
+    {
+      "name": "Reference Documentation subsection",
+      "description": "The Dependencies section includes a 'Reference Documentation' subsection with at least one internal reference (relative markdown link) and optionally official documentation links.",
+      "max_score": 15
+    },
+    {
+      "name": "Completeness and accuracy",
+      "description": "All MCP servers, tools, and skills referenced in the skill's workflow steps are listed in the corresponding Dependencies subsections. There are no orphaned tool calls or sub-skill invocations that lack a Dependencies entry.",
+      "max_score": 10
+    }
+  ]
+}
