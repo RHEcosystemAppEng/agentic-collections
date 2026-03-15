@@ -51,17 +51,11 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 - `get_deployment_info` - Post-deployment validation
 - `analyze_vllm` - Verify metrics are flowing after deployment
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
-**Required Cluster Setup**:
-- OpenShift cluster with Red Hat OpenShift AI operator installed
-- KServe model serving platform configured
-- Model serving enabled on the target namespace (label: `opendatahub.io/dashboard: "true"`)
+**Additional cluster requirements**:
 - For NIM runtime: NIM platform set up via `/nim-setup`
 - For vLLM/NIM: NVIDIA GPU nodes available in the cluster
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## When to Use This Skill
 
@@ -144,7 +138,7 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 - Present to user
 
 **If model is NOT in known-model-profiles.md -> Trigger live doc lookup:**
-1. **Action**: Read [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) using the Read tool for the lookup protocol
+1. **Action**: Read [live-doc-lookup.md](../references/live-doc-lookup.md) using the Read tool for the lookup protocol
 2. **Output to user**: "Model [model-name] is not in my cached profiles. I'll look up its hardware requirements."
 3. Use **WebFetch** tool to retrieve specs from:
    - For NIM models: `https://build.nvidia.com/models` or `https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html`
@@ -296,6 +290,8 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 
 ## Common Issues
 
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
+
 ### Issue 1: InferenceService Stuck in "Unknown"
 
 **Error**: InferenceService `status.conditions` shows "Unknown" state
@@ -308,42 +304,7 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 3. Check the runtime name in the InferenceService matches an available ServingRuntime
 4. If no matching runtime, use `/serving-runtime-config` to create one
 
-### Issue 2: Pod OOMKilled
-
-**Error**: Predictor pod terminated with OOMKilled exit code
-
-**Cause**: Model requires more memory than allocated in resource requests/limits.
-
-**Solution:**
-1. Increase memory limits in the InferenceService spec
-2. Use a quantized model variant (AWQ/GPTQ/FP8) to reduce memory footprint
-3. Reduce `--max-model-len` to limit KV cache memory usage
-4. Verify GPU VRAM is sufficient using `get_gpu_info`
-
-### Issue 3: GPU Scheduling Failure
-
-**Error**: Pod stuck in Pending with events showing "Insufficient nvidia.com/gpu"
-
-**Cause**: Cluster does not have enough available GPUs of the required type.
-
-**Solution:**
-1. Check GPU availability: `get_gpu_info` from ai-observability (if available)
-2. Check node GPU resources: `resources_get` for nodes with `nvidia.com/gpu` capacity
-3. Consider using fewer GPUs with `--tensor-parallel-size` reduction and quantization
-4. Check if other workloads are consuming GPU resources
-
-### Issue 4: NIM Image Pull Error
-
-**Error**: Pod fails with `ErrImagePull` or `ImagePullBackOff` for NIM container images
-
-**Cause**: NGC image pull secret is missing, expired, or not in the correct namespace.
-
-**Solution:**
-1. Verify NGC pull secret exists in namespace: `resources_get` for the secret
-2. Re-run `/nim-setup` to recreate credentials if expired
-3. Check Account CR status for credential-related errors
-
-### Issue 5: Model Download Timeout
+### Issue 2: Model Download Timeout
 
 **Error**: Pod starts but times out while downloading model weights from S3 or OCI registry
 
@@ -355,7 +316,7 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 3. Consider using a PVC with pre-downloaded model weights instead
 4. Check network connectivity between the pod and storage endpoint
 
-### Issue 6: LimitRange Conflicts with KServe Sidecars
+### Issue 3: LimitRange Conflicts with KServe Sidecars
 
 **Error**: Pod rejected with `minimum cpu usage per Container is 50m, but request is 10m` or `minimum memory usage per Container is 64Mi, but request is 15Mi`
 
@@ -367,7 +328,7 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 3. Options: (a) Lower LimitRange minimums to accommodate sidecars (min CPU ≤ 10m, min memory ≤ 15Mi), (b) Remove the LimitRange entirely, (c) Deploy in a different namespace without restrictive LimitRanges
 4. **Prevention**: Step 1.5 pre-flight validation now checks for this conflict before deployment
 
-### Issue 7: GPU Node Taints Prevent Scheduling
+### Issue 4: GPU Node Taints Prevent Scheduling
 
 **Error**: Pod stuck in Pending with events showing `node(s) had untolerated taint {ai-app: true}` or similar custom taint messages, while also showing `Insufficient nvidia.com/gpu` on remaining nodes
 
@@ -387,40 +348,10 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
    ```
 3. **Prevention**: Step 1.5 pre-flight validation now auto-discovers GPU node taints and generates tolerations
 
-### Issue 8: OCI Image Pull Unauthorized for RHEL AI Registry
-
-**Error**: Pod fails with `ErrImagePull` / `ImagePullBackOff` with message `unauthorized: access to the requested resource is not authorized` for `registry.redhat.io/rhelai1/*` images
-
-**Cause**: The `registry.redhat.io/rhelai1/*` OCI model images (used with `oci://` storageUri) require RHEL AI subscription entitlements. The cluster's pull secret or namespace pull secrets may not have the required entitlements, even if they have general `registry.redhat.io` access.
-
-**Solution:**
-1. Switch to HuggingFace source: use `hf://` storageUri instead (e.g., `hf://ibm-granite/granite-3.1-2b-instruct`). This is the recommended default for public models as it requires no authentication.
-2. If OCI source is required: verify RHEL AI entitlements are included in the pull secret by testing with `skopeo inspect` against the target image
-3. Create a namespace-scoped pull secret with valid RHEL AI credentials and link it to the default service account: `oc secrets link default <secret-name> --for=pull`
-4. **Prevention**: Step 1.5 pre-flight validation now checks model source accessibility and recommends `hf://` sources for public models
-
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `deploy_model` | rhoai | Create InferenceService with high-level parameters |
-| `list_inference_services` | rhoai | List deployed models with structured status |
-| `get_inference_service` | rhoai | Get detailed deployment status and conditions |
-| `get_model_endpoint` | rhoai | Get inference endpoint URL |
-| `list_serving_runtimes` | rhoai | List available runtimes and platform templates |
-| `list_data_science_projects` | rhoai | Validate namespace is an RHOAI project |
-| `list_data_connections` | rhoai | Verify S3 model storage access |
-| `resources_get` | openshift | Check NIM Account CR, LimitRange, GPU node taints |
-| `resources_list` | openshift | Check Knative availability, GPU nodes |
-| `resources_create_or_update` | openshift | Fallback for NIM InferenceService with env vars |
-| `pods_list` | openshift | Monitor rollout pod status |
-| `pods_log` | openshift | Debug deployment failures |
-| `events_list` | openshift | Diagnose scheduling and pull errors |
-| `get_gpu_info` | ai-observability (optional) | Pre-flight GPU validation |
-| `get_deployment_info` | ai-observability (optional) | Post-deployment validation |
-| `analyze_vllm` | ai-observability (optional) | Verify metrics flowing |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/nim-setup` - Prerequisite for NIM runtime deployments
@@ -432,11 +363,11 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Hardware profiles for common models
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - Runtime capabilities and selection criteria
-- [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) - Protocol for fetching specs for unknown models
+- [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for fetching specs for unknown models
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After gathering settings (Step 1): confirm configuration table

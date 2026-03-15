@@ -43,6 +43,18 @@ Most rh-ai-engineer skills use the `openshift` MCP server by default (some skill
 - Required env var: `KUBECONFIG`
 - Setup: Add to `.mcp.json`, set `KUBECONFIG`, restart Claude Code
 
+## Common Prerequisites
+
+All rh-ai-engineer skills share these baseline prerequisites. Individual skills reference this section instead of repeating them.
+
+**Required Environment Variables**:
+- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
+
+**Required Cluster Setup**:
+- OpenShift cluster with Red Hat OpenShift AI operator installed
+- For model serving skills (`/model-deploy`, `/serving-runtime-config`, `/debug-inference`): KServe model serving platform configured, model serving enabled on the target namespace (label: `opendatahub.io/dashboard: "true"`)
+- For NIM runtime: NVIDIA GPU Operator and Node Feature Discovery (NFD) Operator installed
+
 ## Human-in-the-Loop Requirements
 
 All rh-ai-engineer skills that create or modify Kubernetes resources MUST:

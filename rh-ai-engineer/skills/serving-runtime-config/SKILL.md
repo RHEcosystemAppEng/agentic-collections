@@ -42,15 +42,7 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 **Optional MCP Tools** (from ai-observability):
 - `list_models` - Verify deployed models use the new runtime
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
-
-**Required Cluster Setup**:
-- OpenShift cluster with Red Hat OpenShift AI operator installed
-- KServe model serving platform configured
-- Model serving enabled on the target namespace (label: `opendatahub.io/dashboard: "true"`)
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 ## When to Use This Skill
 
@@ -115,7 +107,7 @@ Based on the user's framework and model requirements, determine the ServingRunti
 Extract the current spec as a starting point. Present the current configuration and ask what the user wants to change.
 
 **If the user requests a runtime for an unfamiliar framework -> Trigger live doc lookup:**
-1. **Action**: Read [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) using the Read tool for the lookup protocol
+1. **Action**: Read [live-doc-lookup.md](../references/live-doc-lookup.md) using the Read tool for the lookup protocol
 2. **Output to user**: "Framework [name] is not in my cached runtimes. I'll look up its serving requirements."
 3. Use **WebFetch** to retrieve specs from Red Hat OpenShift AI documentation
 4. Extract: container image, model format name, supported protocols, required env vars
@@ -237,6 +229,8 @@ For detailed inspection:
 
 ## Common Issues
 
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
+
 ### Issue 1: InferenceService Cannot Find Runtime
 
 **Error**: InferenceService status shows "Unknown" or runtime not matched
@@ -248,18 +242,7 @@ For detailed inspection:
 2. Check the runtime is in the same namespace as the InferenceService
 3. Ensure the runtime has `opendatahub.io/dashboard: "true"` label
 
-### Issue 2: Container Image Pull Failure
-
-**Error**: Runtime pods fail with `ErrImagePull` or `ImagePullBackOff`
-
-**Cause**: Custom container image requires authentication or does not exist.
-
-**Solution:**
-1. Verify the image URI and tag are correct
-2. Create an image pull secret if the registry requires authentication
-3. Link the pull secret to the default ServiceAccount in the namespace
-
-### Issue 3: Runtime Port Mismatch
+### Issue 2: Runtime Port Mismatch
 
 **Error**: InferenceService created but health checks fail, endpoint returns connection refused
 
@@ -272,16 +255,8 @@ For detailed inspection:
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `list_serving_runtimes` | rhoai | List runtimes and platform templates with model format support |
-| `create_serving_runtime` | rhoai | Instantiate runtime from platform template |
-| `list_data_science_projects` | rhoai | Validate namespace is an RHOAI project |
-| `resources_get` | openshift | Inspect existing ServingRuntime CRs in detail |
-| `resources_create_or_update` | openshift | Create fully custom ServingRuntime CR |
-| `list_models` | ai-observability (optional) | Verify models using the runtime |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/model-deploy` - Deploy a model using the configured runtime
@@ -290,11 +265,11 @@ For detailed inspection:
 
 ### Reference Documentation
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - Runtime capabilities and model format names
-- [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) - Protocol for fetching specs for unknown frameworks
+- [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for fetching specs for unknown frameworks
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After listing existing runtimes (Step 1): confirm whether to create new or customize existing

@@ -52,15 +52,10 @@ Troubleshoot failed, stuck, or slow InferenceService deployments on Red Hat Open
 - `execute_promql` - Run custom PromQL queries for metrics not covered by standard analysis
 - `korrel8r_get_correlated` - Correlate signals (logs, traces, metrics, alerts) across a pod/namespace for root cause analysis
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
-**Required Cluster Setup**:
-- OpenShift cluster with Red Hat OpenShift AI operator installed
-- KServe model serving platform configured
+**Additional cluster requirements**:
 - An existing InferenceService deployment to debug
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## When to Use This Skill
 
@@ -190,7 +185,7 @@ Present log analysis:
 - GPU compatibility messages
 
 **If the error is unrecognized -> Trigger live doc lookup:**
-1. **Action**: Read [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) using the Read tool
+1. **Action**: Read [live-doc-lookup.md](../references/live-doc-lookup.md) using the Read tool
 2. Use **WebFetch** to look up the error message in RHOAI documentation
 3. **Output to user**: "I looked up this error on [source]: [explanation and fix]"
 
@@ -298,31 +293,9 @@ Would you like me to:
 
 ## Common Issues
 
-### Issue 1: GPU Scheduling Failure
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
 
-**Error**: Predictor pod stuck in Pending with "Insufficient nvidia.com/gpu" event
-
-**Cause**: Cluster does not have enough available GPUs of the required type.
-
-**Solution:**
-1. Check GPU availability: `get_gpu_info` from ai-observability (if available) or inspect node resources via `resources_get`
-2. Reduce GPU request or use a quantized model variant
-3. Check if other InferenceServices are consuming GPU resources
-4. Verify GPU Operator and NFD Operator are healthy
-
-### Issue 2: OOMKilled During Model Loading
-
-**Error**: Predictor pod terminated with OOMKilled, often during initial model weight loading
-
-**Cause**: Model requires more memory than allocated. Common with large models or when `--max-model-len` is set too high.
-
-**Solution:**
-1. Increase memory limits in the InferenceService spec
-2. Reduce `--max-model-len` to lower KV cache memory usage
-3. Use a quantized model variant (AWQ/GPTQ/FP8)
-4. Consult [known-model-profiles.md](../../docs/references/known-model-profiles.md) for correct resource sizing
-
-### Issue 3: S3 Storage Access Denied
+### Issue 1: S3 Storage Access Denied
 
 **Error**: Pod logs show "Access Denied" or "NoSuchBucket" when loading model weights
 
@@ -334,7 +307,7 @@ Would you like me to:
 3. Verify the Secret is referenced by the ServiceAccount or data connection
 4. Test S3 access independently to confirm credentials are valid
 
-### Issue 4: NIM Authentication / GPU Incompatibility
+### Issue 2: NIM Authentication / GPU Incompatibility
 
 **Error**: NIM pod logs show NGC authentication failure, or TensorRT engine fails to compile for the available GPU
 
@@ -348,26 +321,8 @@ Would you like me to:
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `list_inference_services` | rhoai | List deployed models with structured status |
-| `get_inference_service` | rhoai | Detailed deployment status and conditions |
-| `get_model_endpoint` | rhoai | Quick endpoint availability check |
-| `resources_get` | openshift | ServingRuntime, NIM Account CR inspection |
-| `pods_list` | openshift | Find predictor pods |
-| `pods_log` | openshift | Container logs for diagnosis |
-| `events_list` | openshift | Scheduling, pull, and runtime events |
-| `get_deployment_info` | ai-observability (optional) | Model initialization status |
-| `analyze_vllm` | ai-observability (optional) | Performance bottleneck analysis |
-| `chat_vllm` | ai-observability (optional) | Conversational follow-up on vLLM metrics |
-| `get_gpu_info` | ai-observability (optional) | GPU inventory and utilization |
-| `analyze_openshift` | ai-observability (optional) | GPU health check |
-| `query_tempo_tool` | ai-observability (optional) | Request latency tracing |
-| `get_trace_details_tool` | ai-observability (optional) | Span-level trace details |
-| `execute_promql` | ai-observability (optional) | Custom PromQL metric queries |
-| `korrel8r_get_correlated` | ai-observability (optional) | Cross-signal correlation (logs, traces, metrics, alerts) |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/model-deploy` - Redeploy or modify the InferenceService after fixing issues
@@ -377,11 +332,11 @@ Would you like me to:
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Correct resource sizing for common models
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - Runtime capabilities and known limitations
-- [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) - Protocol for looking up unrecognized errors
+- [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for looking up unrecognized errors
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After identifying target (Step 1): confirm which InferenceService to debug

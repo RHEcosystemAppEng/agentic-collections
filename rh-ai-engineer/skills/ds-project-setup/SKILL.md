@@ -46,14 +46,10 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 **Required MCP Tools** (from openshift):
 - `resources_get` (from openshift) - Inspect namespace labels, LimitRange, ResourceQuota
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
-**Required Cluster Setup**:
-- OpenShift cluster with Red Hat OpenShift AI operator installed
+**Additional cluster requirements**:
 - Cluster admin or namespace creation privileges for the user
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## When to Use This Skill
 
@@ -309,20 +305,8 @@ Confirm the pipeline server is configured and initializing.
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `list_data_science_projects` | rhoai | Check for existing projects |
-| `create_data_science_project` | rhoai | Create namespace with RHOAI labels |
-| `get_project_details` | rhoai | Verify project creation |
-| `get_project_status` | rhoai | Comprehensive project status |
-| `create_s3_data_connection` | rhoai | Create S3 data connection secret |
-| `list_data_connections` | rhoai | List and verify data connections |
-| `get_pipeline_server` | rhoai | Check pipeline server status |
-| `create_pipeline_server` | rhoai | Configure pipeline server |
-| `set_model_serving_mode` | rhoai | Enable model serving |
-| `resources_get` | openshift | Inspect namespace labels, quotas |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/workbench-manage` - Create notebook workbenches in the project
@@ -331,7 +315,7 @@ Confirm the pipeline server is configured and initializing.
 - `/serving-runtime-config` - Configure custom serving runtimes in the project
 
 ### Reference Documentation
-- [skill-conventions.md](../../docs/references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
+- [skill-conventions.md](../references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
 
 ## Example Usage
 
@@ -341,7 +325,7 @@ Confirm the pipeline server is configured and initializing.
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After gathering requirements (Step 1): confirm project configuration table

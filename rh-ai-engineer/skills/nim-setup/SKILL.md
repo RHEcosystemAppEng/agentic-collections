@@ -39,21 +39,17 @@ Configure the NVIDIA NIM platform on OpenShift AI. This is a one-time setup that
 
 **Optional MCP Server**: `ai-observability` (for `get_gpu_info` to verify GPU availability)
 
-**Required Environment Variables**:
-- `KUBECONFIG` - Path to Kubernetes configuration file with cluster access
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 **Required User Input**:
 - NGC API key (from https://ngc.nvidia.com)
 - Target namespace for NIM resources
 
-**Required Cluster Setup**:
-- OpenShift cluster (>= 4.14)
-- Red Hat OpenShift AI operator installed
+**Additional cluster requirements**:
+- OpenShift cluster >= 4.14
 - NVIDIA GPU Operator installed
 - Node Feature Discovery (NFD) Operator installed
 - ServiceAccount with RBAC permissions to create Secrets, Accounts, and ConfigMaps
-
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for prerequisite verification protocol, human-in-the-loop requirements, and security conventions.
 
 ## When to Use This Skill
 
@@ -309,6 +305,8 @@ If `ai-observability` MCP server is available, use `get_gpu_info` to report clus
 
 ## Common Issues
 
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
+
 ### Issue 1: Account CR Stuck in "Pending"
 
 **Error**: Account CR `status.conditions` shows pending state indefinitely
@@ -332,19 +330,7 @@ If `ai-observability` MCP server is available, use `get_gpu_info` to report clus
 3. Verify GPU nodes are detected: check for `nvidia.com/gpu` resources on nodes
 4. Re-run `/nim-setup`
 
-### Issue 3: Image Pull Error from nvcr.io
-
-**Error**: Pods fail with `ErrImagePull` or `ImagePullBackOff` referencing `nvcr.io`
-
-**Cause**: The NGC image pull secret is misconfigured, the API key is expired, or the secret is not in the correct namespace.
-
-**Solution:**
-1. Verify the pull secret exists in the target namespace
-2. Check that the secret contains valid docker credentials for `nvcr.io`
-3. Re-run `/nim-setup` to recreate credentials with a fresh NGC API key
-4. Ensure the secret is referenced by the ServiceAccount or Account CR
-
-### Issue 4: NIM ServingRuntimes Not Appearing
+### Issue 3: NIM ServingRuntimes Not Appearing
 
 **Error**: `resources_list` for ServingRuntimes returns no NIM runtimes
 
@@ -358,17 +344,8 @@ If `ai-observability` MCP server is available, use `get_gpu_info` to report clus
 
 ## Dependencies
 
-### MCP Tools Used
-
-| Tool | Server | Purpose |
-|------|--------|---------|
-| `resources_get` | openshift | Check operator CSVs, Account CR status |
-| `resources_list` | openshift | List NIM ServingRuntimes (fallback) |
-| `resources_create_or_update` | openshift | Create secrets, Account CR, ConfigMap |
-| `events_list` | openshift | Troubleshoot Account CR issues |
-| `list_data_science_projects` | rhoai (optional) | Validate namespace is an RHOAI project |
-| `list_serving_runtimes` | rhoai (optional) | Verify NIM runtimes after setup |
-| `get_gpu_info` | ai-observability (optional) | GPU inventory check |
+### MCP Tools
+See [Prerequisites](#prerequisites) for the complete list of required and optional MCP tools.
 
 ### Related Skills
 - `/model-deploy` - Deploy a model using NIM runtime after setup is complete
@@ -376,11 +353,11 @@ If `ai-observability` MCP server is available, use `get_gpu_info` to report clus
 
 ### Reference Documentation
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - NIM runtime capabilities and requirements
-- [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) - Protocol for fetching current RHOAI/NIM documentation
+- [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for fetching current RHOAI/NIM documentation
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - Before creating each Secret: display manifest (credentials REDACTED), confirm
