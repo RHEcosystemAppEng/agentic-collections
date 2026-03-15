@@ -38,10 +38,10 @@ Before executing any skill, verify MCP server availability:
 
 **Common prerequisite: OpenShift MCP Server**
 
-All rh-ai-engineer skills require the `openshift` MCP server:
+Most rh-ai-engineer skills use the `openshift` MCP server by default (some skills may treat it as optional). Always defer to each skill's **Dependencies/Prerequisites** section for whether `openshift` is required or optional:
 - Source: https://github.com/openshift/openshift-mcp-server
 - Required env var: `KUBECONFIG`
-- Setup: Add to `.mcp.json`, set KUBECONFIG, restart Claude Code
+- Setup: Add to `.mcp.json`, set `KUBECONFIG`, restart Claude Code
 
 ## Human-in-the-Loop Requirements
 
