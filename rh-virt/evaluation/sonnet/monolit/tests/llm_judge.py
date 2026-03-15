@@ -5,7 +5,8 @@ Only criteria that empirically discriminate between skilled and unskilled
 agents are included. Non-discriminating criteria (both variants pass
 equally) have been removed to sharpen the signal.
 
-Requires ANTHROPIC_API_KEY and LLM_JUDGE_MODEL environment variables.
+Requires ANTHROPIC_API_KEY env var. LLM_JUDGE_MODEL is optional
+(defaults to claude-sonnet-4-5 if unset).
 """
 
 import json
@@ -380,7 +381,9 @@ def judge_criterion(client: Anthropic, model: str, criterion: dict) -> dict:
 def main():
     api_key = os.getenv("ANTHROPIC_API_KEY")
     base_url = os.getenv("ANTHROPIC_BASE_URL")
-    model = os.getenv("LLM_JUDGE_MODEL", "claude-haiku-4-5")
+    model = os.getenv("LLM_JUDGE_MODEL", "claude-sonnet-4-5")
+
+    Path("/logs/verifier").mkdir(parents=True, exist_ok=True)
 
     if not api_key:
         print("ERROR: ANTHROPIC_API_KEY not set, skipping LLM judge")
