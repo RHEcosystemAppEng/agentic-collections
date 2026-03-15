@@ -1,8 +1,7 @@
 # Haiku Variants
 
-The Haiku folders only contain `instruction.md` files — everything else (Dockerfiles, mock MCP server, tests, task.toml) is identical to the Sonnet variants.
+The Haiku folders only contain files that differ from Sonnet — specifically the `instruction.md` files. Everything else (Dockerfiles, mock MCP server, tests, `task.toml`) is identical to the Sonnet variants.
 
-The only differences from Sonnet:
+The instruction difference: Haiku instructions use emphatic CAPS reminders and numbered sub-steps to help Haiku discover and follow the available skill files.
 
-- **Instructions** use emphatic CAPS reminders and numbered sub-steps to ensure Haiku reads the skill files
-- **`task.toml`** sets `LLM_JUDGE_MODEL = "claude-3-5-haiku"` instead of `claude-sonnet-4-5`
+**Note:** When running evaluations with Harbor and SkillsBench, each task must be a self-contained folder with the full required structure (`instruction.md`, `task.toml`, `environment/`, `tests/`). Copy the shared files from the Sonnet variant and replace only `instruction.md` with the Haiku version.
