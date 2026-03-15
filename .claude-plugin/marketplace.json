@@ -60,7 +60,7 @@
     },
     {
       "name": "rh-ai-engineer",
-      "description": "AI/ML Model Deployment and Management on Red Hat OpenShift AI",
+      "description": "Red Hat OpenShift AI Engineering Agentic Collection",
       "version": "1.0.0",
       "author": {
         "name": "Red Hat Ecosystem Engineering",
