@@ -10,18 +10,39 @@ Scoring combines deterministic checks (did the agent produce the right files wit
 
 ## Skills vs no-skills: what changes
 
-The "with skills" and "without skills" variants use different Dockerfiles. The skilled variant copies skills, docs, and helper scripts into the container so the agent can discover and read them. The no-skills variant intentionally **does not** copy any of these — the agent only gets the mock MCP server and a kubeconfig. Same task, same tests, but the agent must rely entirely on its own knowledge.
+The "with skills" and "without skills" variants use different Dockerfiles. The skilled variant (`common/Dockerfile`) copies skills, docs, and helper scripts into the container so the agent can discover and read them. The no-skills variant (`common/Dockerfile.no-skills`) intentionally **does not** copy any of these — the agent only gets the mock MCP server and a kubeconfig. Same task, same tests, but the agent must rely entirely on its own knowledge.
 
 ## What's in this folder
 
-**`sonnet/`** and **`haiku/`** contain task instructions and tests tailored for each model.
+```
+evaluation/
+├── README.md
+├── common/                        # Shared across all variants
+│   ├── Dockerfile                 # With-skills container build
+│   ├── Dockerfile.no-skills       # No-skills container build
+│   └── mcp-servers/
+│       └── mock-virt-mcp.py       # Mock OpenShift Virtualization MCP server
+├── sonnet/
+│   ├── monolit/                   # All 4 parts in one task
+│   │   ├── instruction.md
+│   │   ├── task.toml
+│   │   └── tests/
+│   │       ├── test.sh
+│   │       ├── test_outputs.py
+│   │       └── llm_judge.py
+│   └── parts/                     # Each part as its own task
+│       ├── part_1/ ... part_4/    # Same structure as monolit
+└── haiku/
+    ├── README.md
+    ├── monolit/
+    │   └── instruction.md         # Only differing file — Haiku-specific prompting
+    └── parts/
+        └── part_1/ ... part_4/    # Only instruction.md per part
+```
 
-Within each, there are two layouts:
+**Haiku folders only contain `instruction.md` files** — tests, `task.toml`, Dockerfiles, and MCP server are all reused from Sonnet. See `haiku/README.md` for details.
 
-- **`monolit/`** — all 4 parts in one task. The agent gets a single instruction covering cloning, migration, provisioning, and decommissioning. Simpler to run, but if the agent gets stuck on Part 1, it drags down the entire score.
-- **`parts/`** — each part is its own task with focused instructions and tests. Gives cleaner per-skill measurements and avoids cascading failures.
-
-**`common/`** has the shared Dockerfile, no-skills Dockerfile, and mock MCP server used across all variants.
+**`parts/`** are included for reference. They show how to split the monolithic task into focused per-skill evaluations for cleaner measurements.
 
 ## Sonnet vs Haiku instructions
 
@@ -30,36 +51,40 @@ The task content is identical — same deliverables, same expectations. The diff
 - **Sonnet** — a brief note at the top and bottom: "check whether skills are available and read them."
 - **Haiku** — aggressive reminders in CAPS throughout: "CRITICAL — READ THIS BEFORE DOING ANYTHING ELSE", "YOU MUST READ EVERY SKILL FILE", per-section nudges, and numbered sub-steps. Haiku tends to skip skill files without this level of emphasis.
 
-## SkillsBench task structure
+## Reproducing evaluations
 
-Harbor expects each task to follow the SkillsBench folder layout. A task is a self-contained directory with everything needed to build the environment, run the agent, and verify its output:
+### Prerequisites
+
+1. [Harbor](https://github.com/redhat-et/agent-frameworks-bench) — the benchmark runner
+2. [SkillsBench](https://github.com/redhat-et/skillsbench) — cloned locally
+3. Podman (or Docker) for container builds
+4. An Anthropic API key (for the agent and the LLM judge)
+
+### Step-by-step
+
+1. **Assemble full task folders in SkillsBench.** Harbor expects self-contained task directories. For each variant you want to run, create a folder under `skillsbench/tasks/` (with skills) and `skillsbench/tasks-no-skills/` (without skills) following this structure:
 
 ```
-tasks/rh-virt_part_1/
-├── instruction.md                 # What the agent is asked to do
-├── task.toml                      # Metadata (id, timeouts, env vars for the judge)
+tasks/rh-virt/
+├── instruction.md         # From evaluation/sonnet/monolit/ (or haiku/)
+├── task.toml              # From evaluation/sonnet/monolit/
 ├── environment/
-│   ├── Dockerfile                 # Builds the container the agent runs in
-│   ├── mcp-servers/               # Mock MCP server(s)
-│   └── skills/                    # Skills the agent can discover (omitted in no-skills)
+│   ├── Dockerfile         # From evaluation/common/Dockerfile
+│   ├── mcp-servers/
+│   │   └── mock-virt-mcp.py   # From evaluation/common/mcp-servers/
+│   └── skills/            # Copy from rh-virt/skills/ in this repo
 ├── tests/
-│   ├── test.sh                    # Entry point — installs deps, runs pytest + LLM judge
-│   ├── test_outputs.py            # Deterministic pytest checks
-│   └── llm_judge.py               # LLM-based evaluation of skill-specific knowledge
-└── solution/
-    └── solve.sh                   # Oracle solution (must score 100%)
+│   ├── test.sh            # From evaluation/sonnet/monolit/tests/
+│   ├── test_outputs.py
+│   └── llm_judge.py
 ```
 
-The "no-skills" counterpart lives under `tasks-no-skills/` with the same structure, but its Dockerfile does not copy skills or docs into the container.
+For no-skills variants, use `Dockerfile.no-skills` and omit the `skills/` folder.
 
-For a sweep, Harbor needs at least the `tasks/` and `tasks-no-skills/` paths to exist with this layout. The sweep YAML just points to them.
-
-## Running evaluations
-
-We use [Harbor](https://github.com/redhat-et/agent-frameworks-bench) as the benchmark runner and [SkillsBench](https://github.com/redhat-et/skillsbench) for the task structure. You point Harbor at a sweep config file that specifies which tasks to run and how many trials:
+2. **Create a sweep config.** Save a YAML file in the Harbor directory:
 
 ```yaml
-job_name: skills-vs-no-skills-rh-virt-part1
+job_name: skills-vs-no-skills-rh-virt
 jobs_dir: jobs
 n_attempts: 4
 
@@ -74,17 +99,37 @@ environment:
 
 agents:
   - name: claude-code
-    model_name: claude-sonnet-4-5  # or claude-haiku-3-5
+    model_name: claude-sonnet-4-5
 
 tasks:
-  - path: /path/to/skillsbench/tasks/rh-virt_part_1         # with skills
-  - path: /path/to/skillsbench/tasks-no-skills/rh-virt_part_1  # without skills
+  - path: /path/to/skillsbench/tasks/rh-virt
+  - path: /path/to/skillsbench/tasks-no-skills/rh-virt
 ```
 
-Then run:
+3. **Run:**
 
 ```bash
-harbor run --config sweep-rh-virt-part1.yaml
+harbor run --config sweep-rh-virt.yaml
 ```
 
-Harbor builds the container, runs the agent, evaluates the output, and writes a score. Repeat across parts and models to build a full comparison.
+Harbor builds the container, runs the agent, evaluates the output, and writes results to `jobs/<job_name>/`.
+
+## Results summary
+
+Sonnet (monolithic, 4 trials each):
+
+| Variant | Mean Score | Pytest | LLM Judge |
+|---------|-----------|--------|-----------|
+| With skills | 0.929 | ~30/33 | ~12/15 |
+| Without skills | 0.694 | ~22/33 | ~8/15 |
+| **Skill uplift** | **+0.235** | | |
+
+Haiku (monolithic, 4 trials each):
+
+| Variant | Mean Score | Pytest | LLM Judge |
+|---------|-----------|--------|-----------|
+| With skills | 0.728 | ~24/33 | ~9/15 |
+| Without skills | 0.397 | ~13/33 | ~5/15 |
+| **Skill uplift** | **+0.331** | | |
+
+Skills improve both models, with a larger relative lift for Haiku (+33%) than Sonnet (+24%). See the [blog post](../blog/) for detailed analysis including cost breakdowns and per-part results.
