@@ -106,7 +106,7 @@ Collect the following from the user. Use defaults where sensible, but always con
 
 **CRITICAL**: Run these checks BEFORE deploying to avoid repeated deployment failures.
 
-Read [model-deploy-preflight-checklist.md](../../docs/references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
+Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
 - Namespace is an RHOAI Data Science Project
 - Model storage access (S3 data connections)
 - Deployment mode support (Knative availability)
