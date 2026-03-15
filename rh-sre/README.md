@@ -145,14 +145,14 @@ Install the pack as a Claude Code plugin:
 
 ```bash
 claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
-claude plugin install sre-agents
+claude plugin install rh-sre
 ```
 
 Or for local development:
 
 ```bash
 claude plugin marketplace add /path/to/agentic-collections
-claude plugin install sre-agents
+claude plugin install rh-sre
 ```
 
 Show installed Red Hat plugins:

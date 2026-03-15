@@ -14,10 +14,8 @@ description: |
 
   NOT for NIM platform setup (use /nim-setup first).
   NOT for custom runtime creation (use /serving-runtime-config).
+model: inherit
 color: green
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
 ---
 
 # /model-deploy Skill
@@ -42,8 +40,8 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 **Required MCP Tools** (from openshift):
 - `resources_get` (from openshift) - Check NIM Account CR, LimitRange, GPU node taints
 - `resources_list` (from openshift) - Check Knative availability, GPU nodes, existing deployments
-- `pod_list` (from openshift) - Check predictor pod status during rollout
-- `pod_logs` (from openshift) - Retrieve pod logs for debugging
+- `pods_list` (from openshift) - Check predictor pod status during rollout
+- `pods_log` (from openshift) - Retrieve pod logs for debugging
 - `events_list` (from openshift) - Check events for errors
 
 **Optional MCP Server**: `ai-observability` ([AI Observability MCP](https://github.com/rh-ai-quickstart/ai-observability-summarizer))
@@ -108,7 +106,7 @@ Collect the following from the user. Use defaults where sensible, but always con
 
 **CRITICAL**: Run these checks BEFORE deploying to avoid repeated deployment failures.
 
-Read [model-deploy-preflight-checklist.md](../../docs/references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
+Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
 - Namespace is an RHOAI Data Science Project
 - Model storage access (S3 data connections)
 - Deployment mode support (Knative availability)
@@ -175,7 +173,8 @@ Compare available GPUs against model requirements from Step 3:
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"accounts.nim.opendatahub.io"` - REQUIRED
+- `apiVersion`: `"nim.opendatahub.io/v1alpha1"` - REQUIRED
+- `kind`: `"Account"` - REQUIRED
 - `namespace`: target namespace - REQUIRED
 - `name`: `"nim-account"` - REQUIRED
 
@@ -270,12 +269,12 @@ Check the Ready condition and status. Repeat every 15-30 seconds until Ready=Tru
 
 **Check predictor pod status:**
 
-**MCP Tool**: `pod_list` (from openshift)
+**MCP Tool**: `pods_list` (from openshift)
 - `namespace`: target namespace, `labelSelector`: `"serving.kserve.io/inferenceservice=[model-name]"`
 
 Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Started, Model Loaded, Ready. Include pod name, status, and restart count.
 
-**On failure:** Check pod logs (`pod_logs`) and events (`events_list`) for diagnostics. Present options: (1) View full pod logs, (2) Check namespace events, (3) Invoke `/debug-inference`, (4) Delete and retry, (5) Continue waiting. **WAIT for user decision. NEVER auto-delete failed deployments.**
+**On failure:** Check pod logs (`pods_log`) and events (`events_list`) for diagnostics. Present options: (1) View full pod logs, (2) Check namespace events, (3) Invoke `/debug-inference`, (4) Delete and retry, (5) Continue waiting. **WAIT for user decision. NEVER auto-delete failed deployments.**
 
 ### Step 10: Deployment Complete
 
@@ -416,8 +415,8 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 | `resources_get` | openshift | Check NIM Account CR, LimitRange, GPU node taints |
 | `resources_list` | openshift | Check Knative availability, GPU nodes |
 | `resources_create_or_update` | openshift | Fallback for NIM InferenceService with env vars |
-| `pod_list` | openshift | Monitor rollout pod status |
-| `pod_logs` | openshift | Debug deployment failures |
+| `pods_list` | openshift | Monitor rollout pod status |
+| `pods_log` | openshift | Debug deployment failures |
 | `events_list` | openshift | Diagnose scheduling and pull errors |
 | `get_gpu_info` | ai-observability (optional) | Pre-flight GPU validation |
 | `get_deployment_info` | ai-observability (optional) | Post-deployment validation |
@@ -443,7 +442,7 @@ See [skill-conventions.md](../../docs/references/skill-conventions.md) for gener
 - After gathering settings (Step 1): confirm configuration table
 - After pre-flight validation (Step 1.5): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
 - After runtime selection (Step 2): confirm runtime choice
-- Before creating InferenceService (Step 7): display full YAML, confirm
+- Before calling deploy_model (Step 7): review and confirm deployment parameters
 - On deployment failure (Step 9): present diagnostic options, wait for user decision
 - **NEVER** auto-delete failed deployments or auto-select runtimes without confirmation
 

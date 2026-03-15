@@ -672,8 +672,8 @@
   },
   "ai-observability": {
     "title": "AI Observability MCP Server",
-    "tier": "Community",
-    "owner": "Red Hat Ecosystem Engineering",
+    "tier": "Official",
+    "owner": "Red Hat",
     "type": "http",
     "repository": "https://github.com/rh-ai-quickstart/ai-observability-summarizer/tree/main/src/mcp_server",
     "description": "AI Observability MCP server for vLLM model performance analysis, GPU monitoring, OpenShift metrics, and distributed tracing",

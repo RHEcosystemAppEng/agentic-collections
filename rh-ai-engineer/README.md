@@ -15,6 +15,7 @@ Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). 
 ## Prerequisites
 
 ### Tools
+- `podman` for running containerized MCP servers
 - `oc` CLI (OpenShift client) for cluster access
 
 ### Environment Variables

@@ -15,9 +15,8 @@ description: |
 
   NOT for deploying models (use /model-deploy).
   NOT for debugging failed deployments (use /debug-inference).
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
+model: inherit
+color: cyan
 ---
 
 # /ai-observability Skill
