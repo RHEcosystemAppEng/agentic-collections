@@ -107,7 +107,8 @@ Based on the user's framework and model requirements, determine the ServingRunti
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
+- `apiVersion`: `"serving.kserve.io/v1alpha1"` - REQUIRED
+- `kind`: `"ServingRuntime"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: name of the existing runtime to customize - REQUIRED
 
@@ -198,7 +199,7 @@ The response includes the created runtime name, display name, and supported mode
 **MCP Tool**: `resources_create_or_update` (from openshift)
 
 **Parameters**:
-- `resource`: full ServingRuntime manifest as JSON string - REQUIRED
+- `manifest`: full ServingRuntime manifest as JSON string - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 
 **Error Handling**:
@@ -222,7 +223,8 @@ For detailed inspection:
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
+- `apiVersion`: `"serving.kserve.io/v1alpha1"` - REQUIRED
+- `kind`: `"ServingRuntime"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: the created runtime name - REQUIRED
 

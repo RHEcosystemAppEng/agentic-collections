@@ -173,7 +173,8 @@ Compare available GPUs against model requirements from Step 3:
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"accounts.nim.opendatahub.io"` - REQUIRED
+- `apiVersion`: `"nim.opendatahub.io/v1alpha1"` - REQUIRED
+- `kind`: `"Account"` - REQUIRED
 - `namespace`: target namespace - REQUIRED
 - `name`: `"nim-account"` - REQUIRED
 

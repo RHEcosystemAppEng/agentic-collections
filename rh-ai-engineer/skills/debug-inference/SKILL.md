@@ -205,7 +205,8 @@ Present log analysis:
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
+- `apiVersion`: `"serving.kserve.io/v1alpha1"` - REQUIRED
+- `kind`: `"ServingRuntime"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: runtime name from the InferenceService spec - REQUIRED
 
@@ -216,7 +217,8 @@ Verify the runtime exists and its model format matches the InferenceService.
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"accounts.nim.opendatahub.io"` - REQUIRED
+- `apiVersion`: `"nim.opendatahub.io/v1alpha1"` - REQUIRED
+- `kind`: `"Account"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: `"nim-account"` - REQUIRED
 
