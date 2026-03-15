@@ -14,9 +14,8 @@ description: |
 
   NOT for deploying models (use /model-deploy after runtime is configured).
   NOT for NIM platform setup (use /nim-setup).
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
+model: inherit
+color: blue
 ---
 
 # /serving-runtime-config Skill

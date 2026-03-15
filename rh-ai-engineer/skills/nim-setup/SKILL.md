@@ -13,9 +13,8 @@ description: |
 
   NOT for deploying models (use /model-deploy instead).
   NOT for vLLM or Caikit deployments (NIM-specific only).
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
+model: inherit
+color: blue
 ---
 
 # /nim-setup Skill

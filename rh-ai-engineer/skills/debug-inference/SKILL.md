@@ -14,9 +14,8 @@ description: |
 
   NOT for deploying models (use /model-deploy).
   NOT for creating runtimes (use /serving-runtime-config).
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
+model: inherit
+color: yellow
 ---
 
 # /debug-inference Skill
