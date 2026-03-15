@@ -442,7 +442,7 @@ See [skill-conventions.md](../../docs/references/skill-conventions.md) for gener
 - After gathering settings (Step 1): confirm configuration table
 - After pre-flight validation (Step 1.5): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
 - After runtime selection (Step 2): confirm runtime choice
-- Before creating InferenceService (Step 7): display full YAML, confirm
+- Before calling deploy_model (Step 7): review and confirm deployment parameters
 - On deployment failure (Step 9): present diagnostic options, wait for user decision
 - **NEVER** auto-delete failed deployments or auto-select runtimes without confirmation
 
