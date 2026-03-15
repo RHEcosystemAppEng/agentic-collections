@@ -162,8 +162,13 @@ spec:
         - containerPort: 8080
           protocol: TCP
       env:
-        - name: [ENV_VAR]
-          value: "[value]"
+        - name: [ENV_VAR_NON_SECRET]
+          value: "[non-sensitive-value]"
+        - name: [SECRET_ENV_VAR]
+          valueFrom:
+            secretKeyRef:
+              name: [k8s-secret-name]
+              key: [secret-key-name]
       resources:
         limits:
           nvidia.com/gpu: "[gpu-count]"
@@ -172,7 +177,7 @@ spec:
           memory: "[memory]"
 ```
 
-**Display the complete ServingRuntime YAML** to the user.
+Display the ServingRuntime YAML to the user, **redacting any sensitive values**.
 
 **Ask**: "Proceed with creating this ServingRuntime? (yes/no/modify)"
 

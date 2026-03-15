@@ -317,7 +317,7 @@ If `ai-observability` MCP server is available, use `get_gpu_info` to report clus
 
 **Solution:**
 1. Verify NGC API key is valid by testing at https://ngc.nvidia.com
-2. Check Account CR events: `resources_get` with events for the Account resource
+2. Check Account CR events: use `events_list` filtered by namespace to find events related to the Account resource
 3. Regenerate NGC API key and re-run `/nim-setup` with new credentials
 
 ### Issue 2: GPU Operator Not Installed
