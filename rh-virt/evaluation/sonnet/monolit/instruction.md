@@ -42,7 +42,7 @@ Node `hv-prod-dc1-03` (`virt-prod-dc1`) is going into firmware maintenance. Move
 
 ## Part 3: Provision a Benchmarking VM
 
-Provision `perf-bench-01` in `virt-staging` using the MCP server's VM creation tool:
+Provision `perf-bench-01` in `virt-staging`:
 - CPU-bound workload (concurrent query load) — choose a matching resource profile
 - Fedora OS, medium-range size, auto-start disabled
 
