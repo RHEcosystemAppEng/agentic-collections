@@ -53,7 +53,7 @@ Troubleshoot failed, stuck, or slow InferenceService deployments on Red Hat Open
 - `execute_promql` - Run custom PromQL queries for metrics not covered by standard analysis
 - `korrel8r_get_correlated` - Correlate signals (logs, traces, metrics, alerts) across a pod/namespace for root cause analysis
 
-**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 **Additional cluster requirements**:
 - An existing InferenceService deployment to debug
@@ -186,7 +186,7 @@ Present log analysis:
 - GPU compatibility messages
 
 **If the error is unrecognized -> Trigger live doc lookup:**
-1. **Action**: Read [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) using the Read tool
+1. **Action**: Read [live-doc-lookup.md](../references/live-doc-lookup.md) using the Read tool
 2. Use **WebFetch** to look up the error message in RHOAI documentation
 3. **Output to user**: "I looked up this error on [source]: [explanation and fix]"
 
@@ -292,7 +292,7 @@ Would you like me to:
 
 ## Common Issues
 
-For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../../docs/references/common-issues.md).
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
 
 ### Issue 1: S3 Storage Access Denied
 
@@ -331,11 +331,11 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Correct resource sizing for common models
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - Runtime capabilities and known limitations
-- [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) - Protocol for looking up unrecognized errors
+- [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for looking up unrecognized errors
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After identifying target (Step 1): confirm which InferenceService to debug

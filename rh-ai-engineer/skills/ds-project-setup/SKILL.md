@@ -46,7 +46,7 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 **Required MCP Tools** (from openshift):
 - `resources_get` (from openshift) - Inspect namespace labels, LimitRange, ResourceQuota
 
-**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 **Additional cluster requirements**:
 - Cluster admin or namespace creation privileges for the user
@@ -315,7 +315,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/serving-runtime-config` - Configure custom serving runtimes in the project
 
 ### Reference Documentation
-- [skill-conventions.md](../../docs/references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
+- [skill-conventions.md](../references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
 
 ## Example Usage
 
@@ -325,7 +325,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After gathering requirements (Step 1): confirm project configuration table

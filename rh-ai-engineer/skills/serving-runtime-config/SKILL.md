@@ -43,7 +43,7 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 **Optional MCP Tools** (from ai-observability):
 - `list_models` - Verify deployed models use the new runtime
 
-**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 ## When to Use This Skill
 
@@ -107,7 +107,7 @@ Based on the user's framework and model requirements, determine the ServingRunti
 Extract the current spec as a starting point. Present the current configuration and ask what the user wants to change.
 
 **If the user requests a runtime for an unfamiliar framework -> Trigger live doc lookup:**
-1. **Action**: Read [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) using the Read tool for the lookup protocol
+1. **Action**: Read [live-doc-lookup.md](../references/live-doc-lookup.md) using the Read tool for the lookup protocol
 2. **Output to user**: "Framework [name] is not in my cached runtimes. I'll look up its serving requirements."
 3. Use **WebFetch** to retrieve specs from Red Hat OpenShift AI documentation
 4. Extract: container image, model format name, supported protocols, required env vars
@@ -223,7 +223,7 @@ For detailed inspection:
 
 ## Common Issues
 
-For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../../docs/references/common-issues.md).
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
 
 ### Issue 1: InferenceService Cannot Find Runtime
 
@@ -259,11 +259,11 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 
 ### Reference Documentation
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - Runtime capabilities and model format names
-- [live-doc-lookup.md](../../docs/references/live-doc-lookup.md) - Protocol for fetching specs for unknown frameworks
+- [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for fetching specs for unknown frameworks
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After listing existing runtimes (Step 1): confirm whether to create new or customize existing

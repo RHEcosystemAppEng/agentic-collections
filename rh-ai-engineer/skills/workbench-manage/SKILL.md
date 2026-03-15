@@ -51,7 +51,7 @@ Create and manage Jupyter notebook workbenches on Red Hat OpenShift AI. Handles 
 - `resources_get` (from openshift) - Inspect Notebook CR details, check node GPU availability
 - `events_list` (from openshift) - Check pod events when workbench is stuck
 
-**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 **Additional cluster requirements**:
 - Target namespace is an RHOAI Data Science Project (label: `opendatahub.io/dashboard: "true"`)
@@ -325,7 +325,7 @@ If user declines, report: "PVC `[pvc_name]` preserved. It can be reattached to a
 
 ## Common Issues
 
-For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../../docs/references/common-issues.md).
+For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [common-issues.md](../references/common-issues.md).
 
 ### Issue 1: Notebook Image Not Found
 
@@ -375,7 +375,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/ai-observability` - Check GPU inventory before requesting GPU workbenches
 
 ### Reference Documentation
-- [skill-conventions.md](../../docs/references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
+- [skill-conventions.md](../references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
 
 ## Example Usage
 
@@ -385,7 +385,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - Before creating workbench (Step 4): display full configuration table, confirm

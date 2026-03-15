@@ -57,7 +57,7 @@ Analyze AI model inference performance, GPU utilization, OpenShift cluster healt
 - `resources_get` (from openshift) - Get raw resource details for context
 - `pods_list` (from openshift) - List predictor pods for correlation context
 
-**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../../docs/references/skill-conventions.md).
+**Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
 
 **Additional environment variables**:
 - `AI_OBSERVABILITY_MCP_URL` - URL for the AI Observability MCP server (e.g., `http://aiobs-mcp.apps.cluster.example.com`)
@@ -411,7 +411,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 
 ## Critical: Human-in-the-Loop Requirements
 
-See [skill-conventions.md](../../docs/references/skill-conventions.md) for general HITL and security conventions.
+See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
 - After triage (Step 1): confirm analysis scope (model, namespace, time range) before running queries
