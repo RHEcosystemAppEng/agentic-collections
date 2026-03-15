@@ -21,7 +21,7 @@ REQUIRED_REPORTS = [
     "/root/execution_and_telemetry_log.md",
     "/root/hardware_identity_audit.md",
 ]
-CLONE_JSON = "/root/cloned_vm_spec.json"
+CLONED_VM_SPEC = "/root/cloned_vm_spec.json"
 
 # ── Part 2 files ──────────────────────────────────────────────────────────
 MIGRATION_REPORT = "/root/migration_assessment.md"
@@ -29,7 +29,7 @@ MIGRATION_PLAN_JSON = "/root/migration_plan.json"
 
 # ── Part 3 files ──────────────────────────────────────────────────────────
 PROVISION_REPORT = "/root/vm_provisioning_report.md"
-CREATE_JSON = "/root/perf_bench_vm_create.json"
+VM_CREATE_PARAMS = "/root/perf_bench_vm_create.json"
 
 # ── Part 4 files ──────────────────────────────────────────────────────────
 DELETION_REPORT = "/root/deletion_operations_report.md"
@@ -71,7 +71,7 @@ class TestPart1RequirementFulfillment:
     """All Part 1 deliverables must exist with professional structure."""
 
     def test_deliverables_exist(self):
-        for path in REQUIRED_REPORTS + [CLONE_JSON]:
+        for path in REQUIRED_REPORTS + [CLONED_VM_SPEC]:
             assert os.path.exists(path), f"Missing required file: {path}"
 
     def test_markdown_structure(self):
@@ -122,7 +122,7 @@ class TestCloningProtocols:
         and .serial) is domain-specific knowledge from the skill's Step 4.1.
         Without the skill, agents don't know these fields exist.
         """
-        with open(CLONE_JSON) as f:
+        with open(CLONED_VM_SPEC) as f:
             spec = json.load(f)
         firmware = (
             spec.get("spec", {})
@@ -149,7 +149,7 @@ class TestCloningProtocols:
         The instruction hints at this ('avoid resource contention'), so this
         is partially guessable. The skill makes it explicit: runStrategy=Halted.
         """
-        with open(CLONE_JSON) as f:
+        with open(CLONED_VM_SPEC) as f:
             spec = json.load(f)
         running = spec.get("spec", {}).get("running", True)
         run_strategy = spec.get("spec", {}).get("runStrategy", "")
@@ -164,7 +164,7 @@ class TestCloningProtocols:
         Source: vm-clone SKILL.md — DataVolume naming pattern.
         Without the skill, agents may use arbitrary DV names.
         """
-        with open(CLONE_JSON) as f:
+        with open(CLONED_VM_SPEC) as f:
             spec = json.load(f)
         dv_templates = spec.get("spec", {}).get("dataVolumeTemplates", [])
         volumes = (
@@ -256,7 +256,7 @@ class TestPart3RequirementFulfillment:
     """Part 3 deliverables must exist."""
 
     def test_provisioning_deliverables_exist(self):
-        for path in (PROVISION_REPORT, CREATE_JSON):
+        for path in (PROVISION_REPORT, VM_CREATE_PARAMS):
             assert os.path.exists(path), f"Missing required file: {path}"
 
     def test_provisioning_report_structure(self):
@@ -267,7 +267,7 @@ class TestPart3RequirementFulfillment:
 
     def test_create_json_has_basic_params(self):
         """vm_create JSON must include name, namespace, and workload."""
-        params = _load_create_params(CREATE_JSON)
+        params = _load_create_params(VM_CREATE_PARAMS)
         assert params.get("name") == "perf-bench-01", (
             "vm_create JSON must set name to 'perf-bench-01'"
         )
@@ -280,7 +280,7 @@ class TestPart3RequirementFulfillment:
 
     def test_autostart_disabled(self):
         """VM must not auto-start per instruction."""
-        params = _load_create_params(CREATE_JSON)
+        params = _load_create_params(VM_CREATE_PARAMS)
         assert params.get("autostart") is False or params.get("autostart") == "false", (
             "perf-bench-01 must have autostart disabled"
         )
