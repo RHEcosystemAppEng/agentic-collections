@@ -3,11 +3,11 @@ version = "1.0"
 [metadata]
 author_name = "Guy Ziv"
 author_email = "gziv@redhat.com"
-id = "rh-virt"
-name = "RH-Virt Inventory and Advisory Analysis"
+id = "rh-virt_part_1"
+name = "RH-Virt Part 1: VM Cloning"
 difficulty = "medium"
 category = "virtualization-operations"
-tags = ["python", "red-hat", "virtualization", "mcp", "rhv", "oVirt", "skills"]
+tags = ["python", "red-hat", "virtualization", "mcp", "kubevirt", "skills", "clone"]
 
 [verifier]
 timeout_sec = 1800.0
