@@ -13,9 +13,8 @@ description: |
 
   NOT for deploying models (use /model-deploy instead).
   NOT for vLLM or Caikit deployments (NIM-specific only).
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
+model: inherit
+color: blue
 ---
 
 # /nim-setup Skill
@@ -88,10 +87,9 @@ Check that the NVIDIA GPU Operator and NFD Operator are installed and healthy.
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"clusterserviceversions"` - REQUIRED
-  - Example: `"clusterserviceversions"`
+- `apiVersion`: `"operators.coreos.com/v1alpha1"` - REQUIRED
+- `kind`: `"ClusterServiceVersion"` - REQUIRED
 - `namespace`: `"nvidia-gpu-operator"` - REQUIRED (namespace where GPU Operator CSV is installed)
-  - Example: `"nvidia-gpu-operator"`
 - `name`: the CSV name matching `"gpu-operator-certified"` prefix
 
 **Expected Output**: ClusterServiceVersion object with `status.phase: "Succeeded"`
@@ -156,7 +154,7 @@ Note: The `.dockerconfigjson` contains:
 **MCP Tool**: `resources_create_or_update` (from openshift)
 
 **Parameters**:
-- `resource`: full Secret manifest as JSON string - REQUIRED
+- `manifest`: full Secret manifest as JSON string - REQUIRED
   - The JSON must include apiVersion, kind, metadata (name, namespace), type, and data fields
 - `namespace`: user-specified namespace - REQUIRED
   - Example: `"my-ai-project"`
@@ -192,7 +190,7 @@ stringData:
 **MCP Tool**: `resources_create_or_update` (from openshift)
 
 **Parameters**:
-- `resource`: full Secret manifest as JSON string - REQUIRED
+- `manifest`: full Secret manifest as JSON string - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 
 **Expected Output**: Created Secret object with `metadata.uid`
@@ -227,7 +225,7 @@ spec:
 **MCP Tool**: `resources_create_or_update` (from openshift)
 
 **Parameters**:
-- `resource`: full Account CR manifest as JSON string - REQUIRED
+- `manifest`: full Account CR manifest as JSON string - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 
 **Expected Output**: Created Account object with `metadata.uid`
@@ -277,7 +275,8 @@ Check that the NIM platform is ready for model deployments.
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"accounts.nim.opendatahub.io"` - REQUIRED
+- `apiVersion`: `"nim.opendatahub.io/v1"` - REQUIRED
+- `kind`: `"Account"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: `"nim-account"` - REQUIRED
 
@@ -292,7 +291,7 @@ Check that the NIM platform is ready for model deployments.
 - `include_templates`: `false`
 
 **Fallback MCP Tool**: `resources_list` (from openshift)
-- `resource`: `"servingruntimes.serving.kserve.io"`, `namespace`: user-specified namespace
+- `apiVersion`: `"serving.kserve.io/v1alpha1"`, `kind`: `"ServingRuntime"`, `namespace`: user-specified namespace
 
 **Expected Output**: List of ServingRuntime objects including NIM runtimes
 
@@ -316,7 +315,7 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
 
 **Solution:**
 1. Verify NGC API key is valid by testing at https://ngc.nvidia.com
-2. Check Account CR events: `resources_get` with events for the Account resource
+2. Check Account CR events: use `events_list` filtered by namespace to find events related to the Account resource
 3. Regenerate NGC API key and re-run `/nim-setup` with new credentials
 
 ### Issue 2: GPU Operator Not Installed

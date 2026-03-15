@@ -14,9 +14,8 @@ description: |
 
   NOT for deploying models (use /model-deploy after runtime is configured).
   NOT for NIM platform setup (use /nim-setup).
-metadata:
-  author: "Red Hat Ecosystem Engineering"
-  version: "1.0"
+model: inherit
+color: blue
 ---
 
 # /serving-runtime-config Skill
@@ -100,7 +99,8 @@ Based on the user's framework and model requirements, determine the ServingRunti
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
+- `apiVersion`: `"serving.kserve.io/v1alpha1"` - REQUIRED
+- `kind`: `"ServingRuntime"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: name of the existing runtime to customize - REQUIRED
 
@@ -154,8 +154,13 @@ spec:
         - containerPort: 8080
           protocol: TCP
       env:
-        - name: [ENV_VAR]
-          value: "[value]"
+        - name: [ENV_VAR_NON_SECRET]
+          value: "[non-sensitive-value]"
+        - name: [SECRET_ENV_VAR]
+          valueFrom:
+            secretKeyRef:
+              name: [k8s-secret-name]
+              key: [secret-key-name]
       resources:
         limits:
           nvidia.com/gpu: "[gpu-count]"
@@ -164,7 +169,7 @@ spec:
           memory: "[memory]"
 ```
 
-**Display the complete ServingRuntime YAML** to the user.
+Display the ServingRuntime YAML to the user, **redacting any sensitive values**.
 
 **Ask**: "Proceed with creating this ServingRuntime? (yes/no/modify)"
 
@@ -191,7 +196,7 @@ The response includes the created runtime name, display name, and supported mode
 **MCP Tool**: `resources_create_or_update` (from openshift)
 
 **Parameters**:
-- `resource`: full ServingRuntime manifest as JSON string - REQUIRED
+- `manifest`: full ServingRuntime manifest as JSON string - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 
 **Error Handling**:
@@ -215,7 +220,8 @@ For detailed inspection:
 **MCP Tool**: `resources_get` (from openshift)
 
 **Parameters**:
-- `resource`: `"servingruntimes.serving.kserve.io"` - REQUIRED
+- `apiVersion`: `"serving.kserve.io/v1alpha1"` - REQUIRED
+- `kind`: `"ServingRuntime"` - REQUIRED
 - `namespace`: user-specified namespace - REQUIRED
 - `name`: the created runtime name - REQUIRED
 

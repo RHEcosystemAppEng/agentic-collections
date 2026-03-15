@@ -7,8 +7,8 @@
 - [ ] `rh-sre`
 - [ ] `rh-developer`
 - [ ] `ocp-admin`
-- [ ] `rh-support-engineer`
 - [ ] `rh-virt`
+- [ ] `rh-ai-engineer`
 - [ ] Other / repo-wide
 
 ## Change type
