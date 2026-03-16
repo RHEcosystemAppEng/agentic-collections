@@ -254,6 +254,7 @@ Confirm the pipeline server is configured and initializing.
 - `/workbench-manage` - Create a notebook workbench in this project
 - `/model-deploy` - Deploy a model to this project
 - `/pipeline-manage` - Create and run data science pipelines
+- `/model-registry` - Register and manage models in the Model Registry
 
 ## Common Issues
 

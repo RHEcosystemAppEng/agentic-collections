@@ -81,7 +81,7 @@ Collect the following from the user. Use defaults where sensible, but always con
 - **Model name**: Which model to deploy (e.g., "Llama 3.1 8B", "Granite 3.1 8B")
 - **Runtime preference**: vLLM (default), NIM, or Caikit+TGIS (auto-detect if not specified)
 - **Namespace**: Target namespace (must have model serving enabled)
-- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, or NGC for NIM)
+- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, NGC for NIM, or artifact URI from `/model-registry`)
 - **Deployment mode**: Serverless (Knative, default) or RawDeployment
 
 **Present configuration table for review:**
@@ -359,6 +359,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/ai-observability` - Analyze deployed model performance
 - `/serving-runtime-config` - Create custom ServingRuntime CRs
 - `/ds-project-setup` - Create a namespace with model serving enabled
+- `/model-registry` - Get artifact URIs for registered model versions to deploy
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Hardware profiles for common models
