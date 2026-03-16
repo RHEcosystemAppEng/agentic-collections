@@ -1,13 +1,17 @@
 # Red Hat AI Engineer Agentic Pack
 
-Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). Deploy and manage models using KServe with vLLM, NVIDIA NIM, and Caikit+TGIS serving runtimes.
+Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). Deploy and manage models, pipelines, registries, workbenches, and serving runtimes on OpenShift AI.
 
 ## Skills
 
 | Command | Description |
 |---------|-------------|
-| `/nim-setup` | Configure NVIDIA NIM platform on OpenShift AI (NGC credentials, Account CR) |
+| `/ds-project-setup` | Create and configure Data Science Projects with namespace, data connections, pipeline server, and model serving |
+| `/workbench-manage` | Create and manage Jupyter notebook workbenches with image selection, resources, and lifecycle |
 | `/model-deploy` | Deploy AI/ML models with vLLM, NIM, or Caikit+TGIS runtimes |
+| `/model-registry` | Register, version, and promote ML models in the Model Registry across environments |
+| `/pipeline-manage` | Create, run, schedule, and monitor Data Science Pipelines (Kubeflow Pipelines 2.0) |
+| `/nim-setup` | Configure NVIDIA NIM platform on OpenShift AI (NGC credentials, Account CR) |
 | `/serving-runtime-config` | Configure custom ServingRuntime CRs for model serving frameworks |
 | `/debug-inference` | Troubleshoot failed or slow InferenceService deployments |
 | `/ai-observability` | Analyze model performance, GPU utilization, cluster health, and distributed traces |
