@@ -1,7 +1,7 @@
 {
   "name": "rh-developer",
   "version": "1.0.0",
-  "description": "Developer Agentic Collection",
+  "description": "Plugins for building and deploying applications on Red Hat platforms.",
   "author": {
     "name": "Red Hat Ecosystem Engineering",
     "email": "eco-engineering@redhat.com"

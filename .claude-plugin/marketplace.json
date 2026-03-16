@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "sre-agents",
+      "name": "rh-sre",
       "description": "Site Reliability Engineering Agentic Collection",
       "version": "1.0.0",
       "author": {
@@ -18,7 +18,7 @@
       },
       "source": "./rh-sre",
       "category": "sre",
-      "agents": "./agents/remediator.md",
+      "agents": [],
       "skills": "./skills"
     },
     {
@@ -47,15 +47,27 @@
       "skills": "./skills"
     },
     {
-      "name": "openshift-administration",
-      "description": "OpenShift Administration Agentic Collection",
+      "name": "ocp-admin",
+      "description": "Red Hat OpenShift Administration Agentic Skills Collection",
       "version": "1.0.0",
       "author": {
         "name": "Red Hat Ecosystem Engineering",
         "email": "eco-engineering@redhat.com"
       },
       "source": "./ocp-admin",
-      "category": "installation",
+      "category": "openshift",
+      "skills": "./skills"
+    },
+    {
+      "name": "rh-ai-engineer",
+      "description": "Red Hat OpenShift AI Engineering Agentic Collection",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "source": "./rh-ai-engineer",
+      "category": "ai-engineering",
       "skills": "./skills"
     }
   ]

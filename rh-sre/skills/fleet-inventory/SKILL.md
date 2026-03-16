@@ -1,7 +1,7 @@
 ---
 name: fleet-inventory
 description: |
-  Query and display Red Hat Lightspeed managed system inventory. Use this skill for information-gathering requests about the fleet, registered systems, or inventory queries. This skill focuses on discovery and listing only - for remediation actions, transition to the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent).
+  Query and display Red Hat Lightspeed managed system inventory. Use this skill for information-gathering requests about the fleet, registered systems, or inventory queries. This skill focuses on discovery and listing only - for remediation actions, transition to the `/remediation` skill.
 
   **When to use this skill**:
   - "Show the managed fleet"
@@ -10,7 +10,7 @@ description: |
   - "How many RHEL 8 systems do we have?"
   - "Show me production systems"
 
-  **When NOT to use this skill** (use sre-agents:remediator agent instead):
+  **When NOT to use this skill** (use `/remediation` skill instead):
   - "Remediate CVE-X on these systems"
   - "Create a playbook for..."
   - "Patch system Y"
@@ -38,7 +38,7 @@ This skill queries Red Hat Lightspeed to retrieve and display information about 
 
 ### Prerequisite Validation
 
-**CRITICAL**: Before executing any operations, invoke the [mcp-lightspeed-validator](../mcp-lightspeed-validator/SKILL.md) skill to verify MCP server availability.
+**CRITICAL**: Before executing any operations, execute the `/mcp-lightspeed-validator` skill to verify MCP server availability.
 
 See **Step 0** in the Workflow section below for implementation details.
 
@@ -54,27 +54,23 @@ See **Step 0** in the Workflow section below for implementation details.
 - Count systems matching criteria
 - Verify system registration status
 
-**Use the sre-agents:remediator agent when you need**:
+**Use the `/remediation` skill when you need**:
 - Remediate vulnerabilities on systems
 - Generate or execute playbooks
 - Perform infrastructure changes
 - End-to-end CVE remediation workflows
 
-**How they work together**: Use this skill for discovery ("What systems are affected?"), then transition to the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent) for action ("Remediate those systems").
+**How they work together**: Use this skill for discovery ("What systems are affected?"), then transition to the `/remediation` skill for action ("Remediate those systems").
 
 ## Workflow
 
 ### Step 0: Validate Lightspeed MCP Prerequisites
 
-**Action**: Invoke the [mcp-lightspeed-validator](../mcp-lightspeed-validator/SKILL.md) skill
+**Action**: Execute the `/mcp-lightspeed-validator` skill
 
 **Note**: Can skip if validation was performed earlier in this session and succeeded. See [Validation Freshness Policy](../mcp-lightspeed-validator/SKILL.md#validation-freshness-policy).
 
-**How to invoke**:
-```
-Use the Skill tool:
-  skill: "mcp-lightspeed-validator"
-```
+**How to invoke**: Execute the `/mcp-lightspeed-validator` skill
 
 **Handle validation result**:
 - **If validation PASSED**: Continue to Step 1
@@ -109,58 +105,7 @@ Proceeding with fleet inventory query...
 
 **Purpose**: Query Lightspeed for comprehensive system information
 
-**Parameters** (based on user query):
-
-```python
-# For "Show the managed fleet" (no filters)
-get_host_details()
-
-# For "Show system abc-123" (specific system)
-get_host_details(
-    system_id="abc-123"
-)
-
-# For "Show web servers" (hostname pattern)
-get_host_details(
-    hostname_pattern="web-*"
-)
-
-# For "Show production systems" (tag filter)
-get_host_details(
-    tags=["production"]
-)
-
-# For "Show RHEL 8 systems" (version filter)
-get_host_details(
-    operating_system__version__startswith="8"
-)
-
-# Multiple filters combined
-get_host_details(
-    tags=["production", "web-tier"],
-    operating_system__version__startswith="8"
-)
-```
-
-**Expected Response**:
-```json
-{
-  "systems": [
-    {
-      "id": "abc-def-123",
-      "display_name": "web-server-01.example.com",
-      "fqdn": "web-server-01.example.com",
-      "rhel_version": "8.9",
-      "last_seen": "2024-01-20T10:30:00Z",
-      "tags": ["production", "web-tier"],
-      "stale": false,
-      "satellite_managed": false
-    }
-  ],
-  "total": 42,
-  "count": 10
-}
-```
+**Parameters**: See [references/01-parameter-reference.md](references/01-parameter-reference.md) for get_host_details/get_cve_systems parameters and response fields.
 
 **Verification Checklist**:
 - ✓ Systems list returned with metadata
@@ -182,42 +127,7 @@ get_host_details(
 1. **Action**: Read [fleet-management.md](../../docs/insights/fleet-management.md) using the Read tool to understand fleet inventory reporting structure and best practices
 2. **Output to user**: "I consulted [fleet-management.md](../../docs/insights/fleet-management.md) to structure this inventory report."
 
-Apply user-requested filters and grouping:
-
-**Filtering Examples**:
-
-```python
-# By RHEL Version
-systems_rhel8 = [s for s in systems if s['rhel_version'].startswith("8")]
-# Result: All RHEL 8.x systems
-
-# By Environment Tag
-production_systems = [s for s in systems if "production" in s.get('tags', [])]
-# Result: Production systems only
-
-# By Status (active vs stale)
-active_systems = [s for s in systems if not s.get('stale', False)]
-# Result: Active systems (checked in recently)
-
-# By Hostname Pattern
-web_servers = [s for s in systems if 'web-server' in s.get('fqdn', '')]
-# Result: Web tier systems
-```
-
-**Sorting Options**:
-```python
-# By last check-in (most recent first)
-sorted(systems, key=lambda s: s['last_seen'], reverse=True)
-
-# By RHEL version (group by OS)
-sorted(systems, key=lambda s: s['rhel_version'])
-
-# By display name (alphabetical)
-sorted(systems, key=lambda s: s['display_name'])
-
-# By environment tag
-sorted(systems, key=lambda s: s.get('tags', [''])[0])
-```
+Apply user-requested filters and grouping. See [references/01-parameter-reference.md](references/01-parameter-reference.md) for filtering and sorting patterns.
 
 ### Step 3: Query CVE-Affected Systems
 
@@ -225,43 +135,7 @@ sorted(systems, key=lambda s: s.get('tags', [''])[0])
 
 **Purpose**: Find systems affected by specific CVEs
 
-**Parameters** (exact specification):
-
-```python
-# For "What systems are affected by CVE-2024-1234?"
-get_cve_systems(
-    cve_id="CVE-2024-1234"  # Exact CVE ID from user query
-)
-
-# The cve_id parameter MUST:
-# - Match format: CVE-YYYY-NNNNN
-# - Be uppercase: CVE-2024-1234 (not cve-2024-1234)
-# - Include full ID: CVE-2024-1234 (not 2024-1234)
-```
-
-**Expected Response**:
-```json
-{
-  "cve_id": "CVE-2024-1234",
-  "affected_systems": [
-    {
-      "system_id": "abc-def-123",
-      "display_name": "web-server-01.example.com",
-      "status": "Vulnerable",
-      "remediation_available": true
-    },
-    {
-      "system_id": "xyz-123-456",
-      "display_name": "db-server-02.example.com",
-      "status": "Vulnerable",
-      "remediation_available": true
-    }
-  ],
-  "total_affected": 15,
-  "total_remediated": 3,
-  "total_vulnerable": 12
-}
-```
+**Parameters**: `cve_id` (CVE-YYYY-NNNNN, uppercase). See [references/01-parameter-reference.md](references/01-parameter-reference.md).
 
 **Verification Checklist**:
 - ✓ CVE ID matches request exactly
@@ -273,7 +147,7 @@ get_cve_systems(
 ```
 Status: "Vulnerable"
 → CVE affects this system, patch not applied
-→ Action: Suggest remediation via sre-agents:remediator agent
+→ Action: Suggest remediation via `/remediation` skill
 
 Status: "Patched"
 → CVE previously affected, now remediated
@@ -286,49 +160,17 @@ Status: "Not Affected"
 
 ### Step 4: Generate Fleet Summary
 
-Create organized output based on query results:
-
-**Summary Template**:
-```markdown
-# Fleet Inventory Summary
-
-Retrieved from Red Hat Lightspeed on YYYY-MM-DDTHH:MM:SSZ
-
-## Overview
-**Total Systems**: <total_count>
-**Active Systems**: <active_count> (last seen < 24 hours)
-**Stale Systems**: <stale_count> (last seen > 7 days)
-
-## By RHEL Version
-- RHEL 9.x: <count> systems (<percentage>%)
-- RHEL 8.x: <count> systems (<percentage>%)
-- RHEL 7.x: <count> systems (<percentage>%)
-
-## By Environment (Tags)
-- Production: <count> systems
-- Staging: <count> systems
-- Development: <count> systems
-
-## System Details
-
-| Display Name | RHEL Version | Environment | Last Seen | Status |
-|--------------|--------------|-------------|-----------|--------|
-| [system details rows...]
-
-## Stale Systems (Attention Required)
-⚠️ The following systems have not checked in recently:
-- [stale system list...]
-```
+Create organized output. **Read [references/03-output-templates.md](references/03-output-templates.md)** for report format (Overview, RHEL/Environment breakdown, System Details, Stale Systems).
 
 ### Step 5: Offer Remediation Transition
 
-When appropriate, suggest transitioning to the sre-agents:remediator agent:
+When appropriate, suggest transitioning to the `/remediation` skill:
 
 ```markdown
 ## Next Steps
 
 **For CVE Remediation**:
-If you need to remediate vulnerabilities on any of these systems, I can help using the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent):
+If you need to remediate vulnerabilities on any of these systems, I can help using the `/remediation` skill:
 
 Examples:
 - "Remediate CVE-2024-1234 on web-server-01"
@@ -370,7 +212,7 @@ Examples:
 - `system-context` - Get detailed system configuration for specific hosts
   - Use after: Fleet discovery identifies systems needing deeper investigation
 
-- `sre-agents:remediator` (agent) - Transition to remediation workflows after discovery (invoke the `sre-agents:remediator` agent)
+- `/remediation` (skill) - Transition to remediation workflows after discovery
   - Use after: "Show affected systems" → "Remediate those systems"
 
 ### Reference Documentation
@@ -395,342 +237,19 @@ CVSS 8.1, Critical severity, affects httpd package
     ↓
 User: "Remediate CVE-2024-1234 on all production systems"
     ↓
-sre-agents:remediator agent (action - invoke the `sre-agents:remediator` agent)
+`/remediation` skill (action)
     ↓
 Playbook generated and executed
 ```
 
 **Key Principle**: Always start with discovery before taking remediation actions. This ensures informed decisions based on actual fleet state.
 
-## Output Templates
-
-### Template 1: Full Fleet Listing
-
-**User Request**: "Show the managed fleet"
-
-**Skill Response**:
-```markdown
-# Managed Fleet Inventory
-
-I consulted [fleet-management.md](../../docs/insights/fleet-management.md) to structure this inventory report.
-
-Retrieved from Red Hat Lightspeed on 2024-01-20T10:30:00Z
-
-## Fleet Overview
-- **Total Registered Systems**: 42
-- **Active (< 24h)**: 38
-- **Stale (> 7 days)**: 4
-
-## RHEL Version Distribution
-| Version | Count | Percentage |
-|---------|-------|------------|
-| RHEL 9.3 | 12 | 29% |
-| RHEL 9.2 | 6 | 14% |
-| RHEL 8.9 | 15 | 36% |
-| RHEL 8.8 | 5 | 12% |
-| RHEL 7.9 | 4 | 9% |
-
-## Environment Breakdown
-| Environment | Count | Systems |
-|-------------|-------|---------|
-| Production | 25 | web-*, db-*, app-* |
-| Staging | 10 | stg-* |
-| Development | 7 | dev-* |
-
-## Top 20 Systems (by last check-in)
-[Table with display_name, rhel_version, tags, last_seen]
-
-**Would you like to**:
-- Filter by specific environment or RHEL version
-- View CVEs affecting these systems
-- Create remediation plans for vulnerabilities
-```
-
-### Template 2: CVE-Affected Systems
-
-**User Request**: "What systems are affected by CVE-2024-1234?"
-
-**Skill Response**:
-```markdown
-# CVE-2024-1234 Impact Analysis
-
-## Affected Systems Summary
-- **Total Vulnerable**: 12 systems
-- **Already Patched**: 3 systems
-- **Total Registered**: 42 systems
-- **Impact Rate**: 29% of fleet
-
-## Vulnerable Systems
-
-| System Name | RHEL Version | Environment | Remediation Available |
-|-------------|--------------|-------------|-----------------------|
-| web-server-01.example.com | 8.9 | production | ✓ Yes |
-| web-server-02.example.com | 8.9 | production | ✓ Yes |
-| app-server-03.example.com | 8.8 | staging | ✓ Yes |
-| ... | ... | ... | ... |
-
-**Affected Package**: httpd-2.4.51-7.el8_6.5
-
-## Already Patched (No Action Needed)
-- db-server-01.example.com (patched on 2024-01-18)
-- cache-server-02.example.com (patched on 2024-01-19)
-- lb-server-01.example.com (patched on 2024-01-19)
-
-## Next Steps
-
-**To remediate these systems**, use the sre-agents:remediator agent (invoke the `sre-agents:remediator` agent):
-- Single system: "Remediate CVE-2024-1234 on web-server-01"
-- Batch production: "Remediate CVE-2024-1234 on all production systems"
-- All vulnerable: "Create playbook for CVE-2024-1234 affecting these 12 systems"
-
-**For more analysis**:
-- "Show CVSS score and severity for CVE-2024-1234" (use cve-impact skill)
-- "What's the risk assessment for this CVE?" (use cve-impact skill)
-```
-
-### Template 3: Environment-Filtered View
-
-**User Request**: "Show me production systems"
-
-**Skill Response**:
-```markdown
-# Production Systems Inventory
-
-Filtered by tag: "production"
-
-## Production Fleet Summary
-- **Total Production Systems**: 25
-- **RHEL 9.x**: 12 systems
-- **RHEL 8.x**: 10 systems
-- **RHEL 7.x**: 3 systems
-- **Active**: 24 systems
-- **Stale**: 1 system ⚠️
-
-## System Tiers
-### Web Tier (8 systems)
-- web-server-01.example.com (RHEL 8.9)
-- web-server-02.example.com (RHEL 8.9)
-- web-server-03.example.com (RHEL 9.3)
-- ...
-
-### Database Tier (6 systems)
-- db-server-01.example.com (RHEL 9.3)
-- db-server-02.example.com (RHEL 9.3)
-- ...
-
-### Application Tier (11 systems)
-- app-server-01.example.com (RHEL 8.9)
-- app-server-02.example.com (RHEL 8.9)
-- ...
-
-## Stale System Alert ⚠️
-- backup-server-01.example.com (last seen: 8 days ago)
-  - Action: Investigate Lightspeed client connectivity
-
-## Next Steps
-- "Show CVEs affecting production systems"
-- "List critical vulnerabilities in production"
-- "Remediate CVE-X on production web tier"
-```
-
-## Examples
-
-### Example 1: General Fleet Query
-
-**User Request**: "Show the managed fleet"
-
-**Skill Execution**:
-1. **Invoke mcp-lightspeed-validator skill** (Step 0)
-   - Validation result: ✓ PASSED
-   - Message: "Lightspeed MCP validation successful. Proceeding with fleet inventory query..."
-2. Call `get_host_details()` with no filters → retrieve all systems
-3. I consulted [fleet-management.md](../../docs/insights/fleet-management.md) for grouping strategy
-4. Group by RHEL version, environment tags
-5. Calculate totals and percentages
-6. Sort by last_seen (most recent first)
-7. Generate Template 1 output
-8. Offer next step options (CVE analysis, remediation)
-
-### Example 2: CVE Impact Query
-
-**User Request**: "What systems are affected by CVE-2024-1234?"
-
-**Skill Execution**:
-1. **Invoke mcp-lightspeed-validator skill** (Step 0)
-   - Validation result: ✓ PASSED
-2. Call `get_cve_systems(cve_id="CVE-2024-1234")`
-3. Separate vulnerable vs. patched systems
-4. Extract affected package information
-5. Generate Template 2 output
-6. Suggest remediation agent for next steps
-
-### Example 3: Environment Filter
-
-**User Request**: "Show me staging systems"
-
-**Skill Execution**:
-1. **Invoke mcp-lightspeed-validator skill** (Step 0)
-   - Validation result: ⚠ PARTIAL (connectivity test unavailable)
-   - Ask user: "Configuration appears correct but connectivity could not be tested. Proceed? (yes/no)"
-   - User response: "yes"
-2. Call `get_host_details()` → retrieve all systems
-3. Filter by tag: "staging" in system.tags
-4. Group by tier/function (inferred from hostname patterns)
-5. Generate Template 3 output
-6. Suggest CVE analysis or remediation options
-
-## Error Handling
-
-**No Systems Found**:
-```
-Fleet Inventory Query: No Results
-
-Query: [user's filter criteria]
-Result: No systems match the specified criteria
-
-❓ Possible reasons:
-1. No systems registered in Red Hat Lightspeed
-2. Filter criteria too restrictive
-3. Systems not tagged with specified environment
-
-🔧 Troubleshooting:
-- Verify systems are registered: Visit https://console.redhat.com/insights/inventory
-- Try broader filters: Remove environment/version constraints
-- Check tag spelling: Ensure tag names match exactly (case-sensitive)
-
-💡 Suggested actions:
-- "Show the managed fleet" (no filters)
-- "List all system tags"
-- "Show system registration status"
-```
-
-**Lightspeed API Error**:
-```
-❌ Fleet Inventory Query: API Error
-
-Error: Unable to retrieve system inventory from Red Hat Lightspeed
-
-📋 Possible causes:
-1. lightspeed-mcp server not running
-2. Authentication failure (invalid credentials)
-3. Network connectivity issues
-4. Red Hat Lightspeed service outage
-
-🔧 Troubleshooting:
-1. Verify lightspeed-mcp server configuration:
-   - Check .mcp.json has lightspeed-mcp entry
-   - Verify container is running: podman ps | grep insights
-
-2. Check credentials:
-   - echo $LIGHTSPEED_CLIENT_ID
-   - echo $LIGHTSPEED_CLIENT_SECRET
-   - Verify credentials at https://console.redhat.com/settings/service-accounts
-
-3. Test connection manually:
-   podman run --rm -i --env LIGHTSPEED_CLIENT_ID --env LIGHTSPEED_CLIENT_SECRET \
-     quay.io/redhat-services-prod/lightspeed-mcp:latest
-
-4. Check service status:
-   - Visit https://status.redhat.com/
-
-❓ How would you like to proceed?
-- "retry" - Try the query again
-- "setup" - Reconfigure lightspeed-mcp server
-- "abort" - Stop the workflow
-```
-
-**Stale System Warning**:
-```
-⚠️ Stale Systems Detected
-
-The following systems have not checked in recently (> 7 days):
-- system-01.example.com (last seen: 8 days ago)
-- system-02.example.com (last seen: 12 days ago)
-
-📊 Impact: Vulnerability data may be outdated for these systems
-
-🔧 Recommended Actions:
-1. Verify Lightspeed client is running:
-   ssh system-01.example.com "systemctl status insights-client"
-
-2. Check network connectivity from these systems:
-   ssh system-01.example.com "ping console.redhat.com"
-
-3. Review Lightspeed client logs:
-   ssh system-01.example.com "cat /var/log/insights-client/insights-client.log"
-
-4. Re-register if needed:
-   ssh system-01.example.com "insights-client --register"
-
-5. Force immediate check-in:
-   ssh system-01.example.com "insights-client --check-results"
-
-💡 Note: Stale systems are still included in inventory but may have outdated CVE data.
-```
+## Output, Examples, Error Handling
+
+**Read [references/03-output-templates.md](references/03-output-templates.md)** for report format.
+**Read [references/04-examples.md](references/04-examples.md)** for fleet, CVE-affected, and environment-filter examples.
+**Read [references/05-error-handling.md](references/05-error-handling.md)** for no-results, API errors, and stale system handling.
 
 ## Best Practices
 
-1. **Start broad, then filter** - Retrieve full inventory first, then apply user-requested filters
-2. **Group by meaningful categories** - Environment, RHEL version, tier/function for clarity
-3. **Highlight stale systems** - Warn users about systems with potentially outdated vulnerability data
-4. **Offer remediation transitions** - Always suggest next steps using sre-agents:remediator agent (the `sre-agents:remediator` agent)
-5. **Use clear formatting** - Tables for detailed lists, summaries for high-level overviews
-6. **Include percentages** - Help users understand fleet composition at a glance
-7. **Show last check-in times** - Indicate data freshness and system health
-8. **Link to CVE analysis** - Transition smoothly to cve-impact skill for vulnerability details
-9. **Declare document consultations** - Always state "I consulted [file]" for transparency
-10. **Verify prerequisites first** - Never attempt MCP calls without checking server availability
-
-## Integration with Other Skills
-
-**Skill Orchestration Workflows**:
-
-**Workflow 1: Discovery → Analysis → Action**
-```
-User: "Show the managed fleet"
-  ↓
-fleet-inventory skill
-  ↓
-Response: 42 systems, 15 affected by CVE-2024-1234
-  ↓
-User: "What's the risk of CVE-2024-1234?"
-  ↓
-cve-impact skill (analyzes severity)
-  ↓
-Response: CVSS 8.1, Critical severity
-  ↓
-User: "Remediate CVE-2024-1234 on all affected systems"
-  ↓
-sre-agents:remediator agent (orchestrates remediation - invoke the `sre-agents:remediator` agent)
-  ↓
-Complete: Playbook generated and executed
-```
-
-**Workflow 2: Environment Focus**
-```
-User: "Show production systems"
-  ↓
-fleet-inventory skill (environment filter)
-  ↓
-Response: 25 production systems
-  ↓
-User: "List critical CVEs in production"
-  ↓
-cve-impact skill (production scope)
-  ↓
-Response: 3 critical CVEs
-  ↓
-User: "Create remediation plan"
-  ↓
-sre-agents:remediator agent (multi-CVE workflow - invoke the `sre-agents:remediator` agent)
-```
-
-**Information-First Principle**:
-```
-Always follow this sequence:
-1. What systems do we have? (fleet-inventory)
-2. What are they vulnerable to? (cve-impact)
-3. How do we fix it? (sre-agents:remediator agent via the `sre-agents:remediator` agent)
-
-This ensures informed decisions before taking remediation actions.
-```
+Start broad then filter; group by environment/RHEL/tier; highlight stale systems; offer `/remediation` transitions; use tables and percentages; declare document consultations; verify prerequisites first.

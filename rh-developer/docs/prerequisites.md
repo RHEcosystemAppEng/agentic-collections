@@ -35,6 +35,11 @@ This document lists all tools required by the rh-developer agentic collection.
 | `/containerize-deploy` | `oc` | `git`, `helm` |
 | `/rhel-deploy` | `ssh`, `podman` or `docker` | `git`, `dnf` |
 | `/recommend-image` | - | `skopeo`, `curl`, `jq` |
+| `/debug-pod` | `oc` | - |
+| `/debug-build` | `oc` | - |
+| `/debug-network` | `oc` | - |
+| `/debug-rhel` | `ssh` | `ausearch`, `journalctl` |
+| `/debug-container` | `podman` or `docker` | - |
 
 ## Tool Reference
 

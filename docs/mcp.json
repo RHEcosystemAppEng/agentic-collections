@@ -1,5 +1,7 @@
 {
-  "openshift-mcp-server": {
+  "openshift": {
+    "title": "OpenShift MCP Server",
+    "owner": "Official",
     "repository": "https://github.com/openshift/openshift-mcp-server",
     "tools": [
       {
@@ -160,8 +162,11 @@
       }
     ]
   },
-  "podman-mcp-server": {
-    "repository": "https://github.com/containers/podman-mcp-server",
+  "podman": {
+    "title": "Podman MCP Server",
+    "tier": "Community",
+    "owner": "Marc Nuri (Red Hat)",
+    "repository": "https://github.com/manusa/podman-mcp-server",
     "tools": [
       {
         "name": "container_inspect",
@@ -217,7 +222,10 @@
       }
     ]
   },
-  "github-mcp-server": {
+  "github": {
+    "title": "GitHub MCP Server",
+    "tier": "Community",
+    "owner": "GitHub",
     "repository": "https://github.com/github/github-mcp-server",
     "tools": [
       {
@@ -383,7 +391,10 @@
     ]
   },
   "lightspeed-mcp": {
-    "repository": "https://github.com/RedHatInsights/insights-mcp/tree/main",
+    "title": "Red Hat Lightspeed MCP",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "repository": "https://github.com/RedHatInsights/insights-mcp",
     "tools": [
       {
         "name": "advisor__get_active_rules",
@@ -543,20 +554,233 @@
       }
     ]
   },
-  "ansible-mcp-server": {
-    "repository": "https://github.com/dmartinol/mock-ansible-mcp-server",
+  "aap-mcp-job-management": {
+    "title": "AAP MCP Service-Job Management",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/ansible/aap-mcp-server",
+    "description": "Ansible Automation Platform (AAP) job management MCP server for managing job templates, workflows, and job execution",
     "tools": [
       {
-        "name": "execute_playbook",
-        "description": "Execute an Ansible playbook and return a job ID for tracking. Validates that the playbook file exists before creating the job. The job will transition through states: PENDING → RUNNING → COMPLETED."
+        "name": "job_templates_list",
+        "description": "List job templates that define playbook execution configurations"
       },
       {
-        "name": "get_job_status",
-        "description": "Get the current status of an Ansible playbook execution job. Returns job status, timestamps, and completion information."
+        "name": "job_templates_retrieve",
+        "description": "Retrieve details of a specific job template by ID"
+      },
+      {
+        "name": "job_templates_launch_retrieve",
+        "description": "Launch a job from a job template"
+      },
+      {
+        "name": "jobs_list",
+        "description": "List job executions and their current status"
+      },
+      {
+        "name": "jobs_retrieve",
+        "description": "Retrieve the details of a job"
+      },
+      {
+        "name": "jobs_relaunch_retrieve",
+        "description": "Relaunch a job with the same parameters"
+      },
+      {
+        "name": "jobs_stdout_retrieve",
+        "description": "Retrieve the console output (stdout) from a job execution"
+      },
+      {
+        "name": "jobs_job_events_list",
+        "description": "List individual task events that occurred during a job execution"
+      },
+      {
+        "name": "jobs_job_host_summaries_list",
+        "description": "List per-host summary statistics for a job execution (ok, changed, failed counts)"
+      },
+      {
+        "name": "workflow_job_templates_list",
+        "description": "List workflow job templates that define multi-step automation workflows"
+      },
+      {
+        "name": "workflow_job_templates_retrieve",
+        "description": "Retrieve details of a specific workflow job template by ID"
+      },
+      {
+        "name": "workflow_jobs_list",
+        "description": "List workflow job executions and their current status"
+      },
+      {
+        "name": "workflow_jobs_retrieve",
+        "description": "Retrieve the details of a workflow job"
+      },
+      {
+        "name": "workflow_jobs_workflow_nodes_list",
+        "description": "List workflow jobs executed by each workflow node (step) within a workflow job"
+      },
+      {
+        "name": "projects_list",
+        "description": "List projects containing Ansible playbooks from source control repositories"
+      },
+      {
+        "name": "activation_instances_list",
+        "description": "List all the Activation Instances"
+      },
+      {
+        "name": "activation_instances_logs_list",
+        "description": "List all logs for the Activation Instance"
+      },
+      {
+        "name": "analytics_retrieve",
+        "description": "List available analytics-related endpoints for reports, explorers, and templates"
+      },
+      {
+        "name": "metrics_retrieve",
+        "description": "Show Metrics Details"
+      }
+    ]
+  },
+  "aap-mcp-inventory-management": {
+    "title": "AAP MCP Service-Inventory Management",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/ansible/aap-mcp-server",
+    "description": "Ansible Automation Platform (AAP) inventory management MCP server for managing inventories, hosts, and groups",
+    "tools": [
+      {
+        "name": "inventories_list",
+        "description": "List inventories containing collections of hosts and groups"
+      },
+      {
+        "name": "groups_list",
+        "description": "List inventory groups used to organize and manage hosts"
+      },
+      {
+        "name": "hosts_list",
+        "description": "List managed hosts in the inventory"
+      },
+      {
+        "name": "hosts_retrieve",
+        "description": "Retrieve details of a specific host by ID"
+      },
+      {
+        "name": "hosts_variable_data_retrieve",
+        "description": "Retrieve Ansible variables defined for a specific host"
+      }
+    ]
+  },
+  "ai-observability": {
+    "title": "AI Observability MCP Server",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/rh-ai-quickstart/ai-observability-summarizer/tree/main/src/mcp_server",
+    "description": "AI Observability MCP server for vLLM model performance analysis, GPU monitoring, OpenShift metrics, and distributed tracing",
+    "tools": [
+      {
+        "name": "list_models",
+        "description": "List available AI models being served and monitored by vLLM"
+      },
+      {
+        "name": "list_vllm_namespaces",
+        "description": "Get monitored Kubernetes namespaces with vLLM observability data"
+      },
+      {
+        "name": "get_gpu_info",
+        "description": "Get cluster GPU inventory including count, vendors, models, temperatures, and power usage"
+      },
+      {
+        "name": "get_deployment_info",
+        "description": "Get deployment status for a model in a namespace (is_new_deployment, deployment_date)"
+      },
+      {
+        "name": "analyze_vllm",
+        "description": "Analyze vLLM model performance metrics (latency, throughput, errors, token rates) with LLM-generated summary"
+      },
+      {
+        "name": "chat_vllm",
+        "description": "Conversational follow-up on vLLM metrics analysis with context from previous analysis"
+      },
+      {
+        "name": "analyze_openshift",
+        "description": "Analyze OpenShift metrics by category (Fleet Overview, GPU & Accelerators, Workloads & Pods, etc.) with cluster-wide or namespace scope"
+      },
+      {
+        "name": "list_openshift_metric_groups",
+        "description": "List available OpenShift metric group categories for cluster-wide analysis"
+      },
+      {
+        "name": "list_openshift_namespaces",
+        "description": "List all OpenShift namespaces observed in Prometheus"
+      },
+      {
+        "name": "query_tempo_tool",
+        "description": "Query distributed traces from Tempo by TraceQL query, service, operation, or time range"
+      },
+      {
+        "name": "get_trace_details_tool",
+        "description": "Get detailed trace information with spans, operations, durations, and tags by trace ID"
+      },
+      {
+        "name": "search_metrics",
+        "description": "Search for Prometheus metrics using semantic pattern matching"
+      },
+      {
+        "name": "execute_promql",
+        "description": "Execute a PromQL query and return structured results with time range support"
+      },
+      {
+        "name": "korrel8r_get_correlated",
+        "description": "Find correlated observability signals (logs, traces, metrics, alerts) across domains using Korrel8r"
+      }
+    ]
+  },
+  "rhoai": {
+    "title": "Red Hat OpenShift AI MCP Server",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "repository": "https://github.com/opendatahub-io/rhoai-mcp",
+    "description": "RHOAI-specific operations for model deployment, serving runtimes, data connections, and project management on OpenShift AI",
+    "tools": [
+      {
+        "name": "deploy_model",
+        "description": "Create InferenceService with high-level parameters (no YAML construction needed)"
+      },
+      {
+        "name": "list_inference_services",
+        "description": "List deployed models with structured status data"
+      },
+      {
+        "name": "get_inference_service",
+        "description": "Get detailed model deployment status with conditions"
+      },
+      {
+        "name": "get_model_endpoint",
+        "description": "Get inference endpoint URL directly"
+      },
+      {
+        "name": "list_serving_runtimes",
+        "description": "List available runtimes and platform templates with model format support"
+      },
+      {
+        "name": "list_data_science_projects",
+        "description": "Discover RHOAI Data Science Projects in the cluster"
+      },
+      {
+        "name": "list_data_connections",
+        "description": "Verify S3 and other data storage connections in a namespace"
+      },
+      {
+        "name": "create_serving_runtime",
+        "description": "Instantiate a serving runtime from a platform template"
       }
     ]
   },
   "openshift-virtualization": {
+    "title": "OpenShift MCP Server - Virtualization",
+    "tier": "Official",
+    "owner": "Red Hat",
     "repository": "https://github.com/openshift/openshift-mcp-server",
     "tools": [
       {

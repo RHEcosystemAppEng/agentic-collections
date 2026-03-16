@@ -14,7 +14,7 @@ claude plugin marketplace remove redhat-agentic-collections
 ### Install plugin
 ```bash
 claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
-claude plugin install sre-agents
+claude plugin install rh-sre
 ```
 
 ## (optional) System prompt
@@ -37,7 +37,7 @@ Tools: <tool1>, <tool2>,...
 Docs: <doc1>, <doc2>, ...
 **** EXECUTION SUMMARY END ****
 """
-Agent, skills and tools names must include the plugin name, as in remediation-agent:remediator. 
+Agent, skills and tools names must include the plugin name, as in rh-sre:remediation. 
 Doc names must include only the folder and the document name, omit everything before the docs/ folder. Example: docs/ansible/cve-remediation-templates.md
 ```
 

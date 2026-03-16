@@ -8,11 +8,12 @@
 let data = null;
 let allPacks = [];
 let allMCPServers = [];
+let allCommunityMCPServers = [];
 
 /**
  * Update toolbar counter badges
  */
-function updateToolbarCounters(packs, mcpServers) {
+function updateToolbarCounters(packs, mcpServers, communityMCPServers) {
     // Count total skills and agents across all packs
     const totalSkills = packs.reduce((sum, pack) => sum + pack.skills.length, 0);
     const totalAgents = packs.reduce((sum, pack) => sum + pack.agents.length, 0);
@@ -29,7 +30,7 @@ function updateToolbarCounters(packs, mcpServers) {
     document.querySelector('#skills-badge .counter-number').textContent = totalSkills;
     document.querySelector('#agents-badge .counter-number').textContent = totalAgents;
     document.querySelector('#docs-badge .counter-number').textContent = totalDocs;
-    document.querySelector('#mcp-badge .counter-number').textContent = mcpServers.length;
+    document.querySelector('#mcp-badge .counter-number').textContent = mcpServers.length + communityMCPServers.length;
 }
 
 /**
@@ -43,14 +44,18 @@ async function init() {
 
         // Store original data for search
         allPacks = data.packs;
-        allMCPServers = data.mcp_servers;
+        
+        // Separate MCP servers by tier
+        allMCPServers = data.mcp_servers.filter(server => server.tier !== 'Community');
+        allCommunityMCPServers = data.mcp_servers.filter(server => server.tier === 'Community');
 
         // Update toolbar counters
-        updateToolbarCounters(allPacks, allMCPServers);
+        updateToolbarCounters(allPacks, allMCPServers, allCommunityMCPServers);
 
         // Render sections
         renderPacks(allPacks);
         renderMCPServers(allMCPServers);
+        renderCommunityMCPServers(allCommunityMCPServers);
 
         // Setup search
         document.getElementById('searchInput').addEventListener('input', handleSearch);
@@ -109,10 +114,35 @@ function createPackCard(pack) {
     const div = document.createElement('div');
     div.className = 'card pack-card';
 
-    // Pack name
+    // Pack name with icon
     const h3 = document.createElement('h3');
-    h3.textContent = pack.plugin.name || pack.name;
+    h3.style.display = 'flex';
+    h3.style.alignItems = 'center';
+    h3.style.gap = '0.5rem';
+    
+    // Custom icon (if available)
+    if (pack.icon) {
+        const customIcon = document.createElement('span');
+        customIcon.className = 'card-icon';
+        customIcon.textContent = pack.icon;
+        customIcon.style.fontSize = '1.2rem';
+        h3.appendChild(customIcon);
+    }
+    
+    const titleText = document.createElement('span');
+    titleText.textContent = pack.plugin.title || pack.plugin.name || pack.name;
+    h3.appendChild(titleText);
+    
     div.appendChild(h3);
+
+    // Owner subtitle
+    const owner = document.createElement('p');
+    owner.className = 'pack-owner';
+    owner.textContent = 'By Red Hat';
+    owner.style.color = 'var(--text-muted)';
+    owner.style.fontSize = '0.85rem';
+    owner.style.marginTop = '0.25rem';
+    div.appendChild(owner);
 
     // Version
     const version = document.createElement('p');
@@ -148,13 +178,26 @@ function createPackCard(pack) {
         stats.appendChild(docsSpan);
     }
 
+    // Add MCP count (count MCP servers for this pack - both Official and Community)
+    const mcpCount = [...allMCPServers, ...allCommunityMCPServers].filter(server => server.pack === pack.name).length;
+    if (mcpCount > 0) {
+        const mcpSpan = document.createElement('span');
+        mcpSpan.textContent = `${mcpCount} MCP`;
+        stats.appendChild(mcpSpan);
+    }
+
     div.appendChild(stats);
 
-    // View button
-    const button = document.createElement('button');
-    button.textContent = 'View Details';
-    button.onclick = () => showPackDetails(pack.name);
-    div.appendChild(button);
+    // View details link
+    const link = document.createElement('a');
+    link.className = 'card-link';
+    link.textContent = 'View details';
+    link.href = '#';
+    link.onclick = (e) => {
+        e.preventDefault();
+        showPackDetails(pack.name);
+    };
+    div.appendChild(link);
 
     return div;
 }
@@ -185,40 +228,89 @@ function renderMCPServers(servers) {
 }
 
 /**
+ * Render Community MCP servers grid
+ */
+function renderCommunityMCPServers(servers) {
+    const grid = document.getElementById('community-mcp-grid');
+    const count = document.getElementById('community-mcp-count');
+
+    // Clear existing content
+    grid.textContent = '';
+    count.textContent = `(${servers.length})`;
+
+    if (servers.length === 0) {
+        const noResults = document.createElement('p');
+        noResults.textContent = 'No community MCP servers found matching your search.';
+        noResults.style.color = '#d2d2d2';
+        grid.appendChild(noResults);
+        return;
+    }
+
+    servers.forEach(server => {
+        const card = createMCPCard(server);
+        grid.appendChild(card);
+    });
+}
+
+/**
  * Create an MCP server card (XSS-safe)
  */
 function createMCPCard(server) {
     const div = document.createElement('div');
     div.className = 'card mcp-card';
-    div.style.position = 'relative'; // For absolute positioning of README button
 
-    // README button in top-right corner (if repository exists)
-    if (server.repository) {
-        const readmeButton = document.createElement('a');
-        readmeButton.href = server.repository;
-        readmeButton.target = '_blank';
-        readmeButton.className = 'readme-badge';
-        readmeButton.textContent = 'README';
-        readmeButton.onclick = (e) => e.stopPropagation(); // Prevent card click
-        div.appendChild(readmeButton);
-    }
-
-    // Server name
+    // Server title with icon
     const h3 = document.createElement('h3');
-    h3.textContent = server.name;
+    h3.style.display = 'flex';
+    h3.style.alignItems = 'center';
+    h3.style.gap = '0.5rem';
+    
+    // Custom icon (if available)
+    if (server.icon) {
+        const customIcon = document.createElement('span');
+        customIcon.className = 'card-icon';
+        customIcon.textContent = server.icon;
+        customIcon.style.fontSize = '1.2rem';
+        h3.appendChild(customIcon);
+    }
+    
+    const titleText = document.createElement('span');
+    titleText.textContent = server.title || server.name;
+    h3.appendChild(titleText);
+    
+    // HTTP remote indicator (if applicable)
+    if (server.type === 'http') {
+        const icon = document.createElement('span');
+        icon.textContent = '🌐';
+        icon.title = 'HTTP Remote Server';
+        icon.style.fontSize = '1rem';
+        h3.appendChild(icon);
+    }
+    
     div.appendChild(h3);
 
-    // Pack tag
-    const packTag = document.createElement('p');
-    packTag.className = 'pack-tag';
-    packTag.textContent = `Collection: ${server.pack}`;
-    div.appendChild(packTag);
+    // Owner subtitle
+    const owner = document.createElement('p');
+    owner.className = 'mcp-owner';
+    owner.textContent = `By ${server.owner || 'Red Hat'}`;
+    owner.style.color = 'var(--text-muted)';
+    owner.style.fontSize = '0.85rem';
+    owner.style.marginTop = '0.25rem';
+    div.appendChild(owner);
 
-    // Container
-    const container = document.createElement('p');
-    container.className = 'container';
-    container.textContent = `Container: ${server.command}`;
-    div.appendChild(container);
+    // Type and connection info
+    const connectionInfo = document.createElement('p');
+    connectionInfo.className = 'container';
+
+    if (server.type === 'http') {
+        // HTTP remote server
+        connectionInfo.textContent = `Type: HTTP Remote`;
+    } else {
+        // Container-based server
+        connectionInfo.textContent = `Type: Container`;
+    }
+
+    div.appendChild(connectionInfo);
 
     // Environment variables
     const envVars = document.createElement('div');
@@ -236,12 +328,17 @@ function createMCPCard(server) {
         div.appendChild(toolsInfo);
     }
 
-    // Details button
-    const detailsButton = document.createElement('button');
-    detailsButton.textContent = 'Details';
-    detailsButton.onclick = () => showMCPDetails(server.name, server.pack);
-    detailsButton.style.marginTop = 'auto';
-    div.appendChild(detailsButton);
+    // View details link
+    const link = document.createElement('a');
+    link.className = 'card-link';
+    link.textContent = 'View details';
+    link.href = '#';
+    link.style.marginTop = 'auto';
+    link.onclick = (e) => {
+        e.preventDefault();
+        showMCPDetails(server.name, server.pack);
+    };
+    div.appendChild(link);
 
     return div;
 }
@@ -254,18 +351,20 @@ function handleSearch(event) {
 
     if (!query) {
         // Reset to show all
-        updateToolbarCounters(allPacks, allMCPServers);
+        updateToolbarCounters(allPacks, allMCPServers, allCommunityMCPServers);
         renderPacks(allPacks);
         renderMCPServers(allMCPServers);
+        renderCommunityMCPServers(allCommunityMCPServers);
         return;
     }
 
     // Filter packs
     const filteredPacks = allPacks.filter(pack => {
-        // Search in pack name, description, skills, agents
+        // Search in pack name, title, description, skills, agents
         const searchText = [
             pack.name,
             pack.plugin.name,
+            pack.plugin.title,
             pack.plugin.description,
             ...pack.skills.map(s => s.name + ' ' + s.description),
             ...pack.agents.map(a => a.name + ' ' + a.description)
@@ -274,23 +373,41 @@ function handleSearch(event) {
         return searchText.includes(query);
     });
 
-    // Filter MCP servers
-    const filteredServers = allMCPServers.filter(server => {
-        // Search in server name, pack, command
-        const searchText = [
+    // Helper function to filter MCP servers
+    const filterMCPServers = (servers) => servers.filter(server => {
+        // Search in server name, title, owner, pack, command/URL, env vars
+        const searchFields = [
             server.name,
+            server.title,
+            server.owner,
             server.pack,
-            server.command,
+            server.type,
             ...server.env
-        ].join(' ').toLowerCase();
+        ];
 
+        // Add type-specific fields
+        if (server.type === 'http') {
+            searchFields.push(server.url);
+            if (server.headers) {
+                searchFields.push(...Object.keys(server.headers));
+            }
+        } else {
+            searchFields.push(server.command);
+        }
+
+        const searchText = searchFields.join(' ').toLowerCase();
         return searchText.includes(query);
     });
 
+    // Filter MCP servers
+    const filteredServers = filterMCPServers(allMCPServers);
+    const filteredCommunityServers = filterMCPServers(allCommunityMCPServers);
+
     // Update counters to reflect filtered results
-    updateToolbarCounters(filteredPacks, filteredServers);
+    updateToolbarCounters(filteredPacks, filteredServers, filteredCommunityServers);
     renderPacks(filteredPacks);
     renderMCPServers(filteredServers);
+    renderCommunityMCPServers(filteredCommunityServers);
 }
 
 /**
@@ -335,10 +452,19 @@ function showPackDetails(packName) {
     titleGroup.className = 'modal-title-group';
 
     const h2 = document.createElement('h2');
-    h2.textContent = pack.plugin.name || pack.name;
+    h2.textContent = pack.plugin?.title || pack.plugin?.name || pack.name;
     titleGroup.appendChild(h2);
 
-    // Counts (skills + agents)
+    // Owner subtitle
+    const ownerSubtitle = document.createElement('div');
+    ownerSubtitle.className = 'pack-owner-subtitle';
+    ownerSubtitle.textContent = 'By Red Hat';
+    ownerSubtitle.style.color = 'var(--text-muted)';
+    ownerSubtitle.style.fontSize = '0.95rem';
+    ownerSubtitle.style.marginTop = '0.5rem';
+    titleGroup.appendChild(ownerSubtitle);
+
+    // Counts (skills + agents + MCPs)
     const counts = document.createElement('div');
     counts.className = 'modal-counts';
     const countParts = [];
@@ -347,6 +473,11 @@ function showPackDetails(packName) {
     }
     if (pack.agents.length > 0) {
         countParts.push(`${pack.agents.length} agent${pack.agents.length !== 1 ? 's' : ''}`);
+    }
+    // Count both Official and Community MCPs for this pack
+    const packMCPCount = [...allMCPServers, ...allCommunityMCPServers].filter(server => server.pack === pack.name).length;
+    if (packMCPCount > 0) {
+        countParts.push(`${packMCPCount} MCP`);
     }
     counts.textContent = countParts.join(' ');
     titleGroup.appendChild(counts);
@@ -380,6 +511,29 @@ function showPackDetails(packName) {
         desc.className = 'modal-description';
         desc.textContent = pack.plugin.description;
         header.appendChild(desc);
+    }
+
+    // Plugin name field (if different from title)
+    if (pack.plugin.name && pack.plugin.name !== pack.plugin.title) {
+        const pluginNameDiv = document.createElement('div');
+        pluginNameDiv.style.marginTop = '1rem';
+        pluginNameDiv.style.fontSize = '0.9rem';
+        pluginNameDiv.style.color = 'var(--text-muted)';
+        
+        const label = document.createElement('strong');
+        label.textContent = 'Plugin name: ';
+        label.style.color = 'var(--text-primary)';
+        pluginNameDiv.appendChild(label);
+        
+        const nameCode = document.createElement('code');
+        nameCode.textContent = pack.plugin.name;
+        nameCode.style.backgroundColor = 'rgba(238, 0, 0, 0.1)';
+        nameCode.style.padding = '0.25rem 0.5rem';
+        nameCode.style.borderRadius = '4px';
+        nameCode.style.fontSize = '0.85rem';
+        pluginNameDiv.appendChild(nameCode);
+        
+        header.appendChild(pluginNameDiv);
     }
 
     details.appendChild(header);
@@ -625,6 +779,109 @@ claude plugin install ${pluginName}`;
         body.appendChild(docsSection);
     }
 
+    // MCP section (shown last, if MCP servers exist for this pack)
+    // Include both Official and Community MCP servers for this pack
+    const packMCPServers = [...allMCPServers, ...allCommunityMCPServers].filter(server => server.pack === pack.name);
+    if (packMCPServers.length > 0) {
+        const mcpSection = document.createElement('div');
+        mcpSection.className = 'modal-section';
+
+        const mcpHeader = document.createElement('div');
+        mcpHeader.className = 'modal-section-header';
+        mcpHeader.textContent = 'MCP';
+        mcpSection.appendChild(mcpHeader);
+
+        const mcpList = document.createElement('div');
+        mcpList.className = 'item-list';
+
+        packMCPServers.forEach(server => {
+            const mcpDef = document.createElement('div');
+            mcpDef.className = 'skill-definition mcp-link-item';
+            mcpDef.style.cursor = 'pointer';
+            mcpDef.style.transition = 'all 0.2s ease';
+            mcpDef.style.borderLeft = '3px solid transparent';
+            mcpDef.style.paddingLeft = '1rem';
+
+            // MCP server name with icon and arrow (clickable)
+            const nameBlock = document.createElement('div');
+            nameBlock.className = 'definition-syntax';
+            nameBlock.style.display = 'flex';
+            nameBlock.style.alignItems = 'center';
+            nameBlock.style.gap = '0.5rem';
+            nameBlock.style.justifyContent = 'space-between';
+            
+            const nameGroup = document.createElement('div');
+            nameGroup.style.display = 'flex';
+            nameGroup.style.alignItems = 'center';
+            nameGroup.style.gap = '0.5rem';
+            
+            // Custom icon (if available)
+            if (server.icon) {
+                const customIcon = document.createElement('span');
+                customIcon.className = 'item-icon';
+                customIcon.textContent = server.icon;
+                customIcon.style.fontSize = '0.9rem';
+                nameGroup.appendChild(customIcon);
+            }
+            
+            const nameCode = document.createElement('code');
+            nameCode.textContent = server.title || server.name;
+            nameCode.style.color = 'var(--primary)';
+            nameGroup.appendChild(nameCode);
+            
+            // HTTP remote indicator (if applicable)
+            if (server.type === 'http') {
+                const icon = document.createElement('span');
+                icon.textContent = '🌐';
+                icon.title = 'HTTP Remote Server';
+                icon.style.fontSize = '0.9rem';
+                nameGroup.appendChild(icon);
+            }
+            
+            nameBlock.appendChild(nameGroup);
+            
+            // Add arrow indicator
+            const arrow = document.createElement('span');
+            arrow.textContent = '→';
+            arrow.style.color = 'var(--text-muted)';
+            arrow.style.fontSize = '1.2rem';
+            arrow.style.transition = 'transform 0.2s ease';
+            nameBlock.appendChild(arrow);
+            
+            mcpDef.appendChild(nameBlock);
+
+            // MCP owner subtitle
+            const ownerText = document.createElement('div');
+            ownerText.className = 'definition-description';
+            ownerText.textContent = `By ${server.owner || 'Red Hat'}`;
+            ownerText.style.color = 'var(--text-muted)';
+            ownerText.style.fontSize = '0.85rem';
+            ownerText.style.marginTop = '0.25rem';
+            mcpDef.appendChild(ownerText);
+
+            // Hover effects
+            mcpDef.onmouseenter = () => {
+                mcpDef.style.borderLeftColor = 'var(--primary)';
+                mcpDef.style.backgroundColor = 'rgba(238, 0, 0, 0.05)';
+                arrow.style.transform = 'translateX(4px)';
+            };
+            
+            mcpDef.onmouseleave = () => {
+                mcpDef.style.borderLeftColor = 'transparent';
+                mcpDef.style.backgroundColor = 'transparent';
+                arrow.style.transform = 'translateX(0)';
+            };
+
+            // Click to open MCP details
+            mcpDef.onclick = () => showMCPDetails(server.name, server.pack);
+
+            mcpList.appendChild(mcpDef);
+        });
+
+        mcpSection.appendChild(mcpList);
+        body.appendChild(mcpSection);
+    }
+
     details.appendChild(body);
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
@@ -664,8 +921,42 @@ function showMCPDetails(serverName, packName) {
     titleGroup.className = 'modal-title-group';
 
     const h2 = document.createElement('h2');
-    h2.textContent = server.name;
+    h2.style.display = 'flex';
+    h2.style.alignItems = 'center';
+    h2.style.gap = '0.5rem';
+    
+    // Custom icon (if available)
+    if (server.icon) {
+        const customIcon = document.createElement('span');
+        customIcon.className = 'card-icon';
+        customIcon.textContent = server.icon;
+        customIcon.style.fontSize = '1.8rem';
+        h2.appendChild(customIcon);
+    }
+    
+    const titleText = document.createElement('span');
+    titleText.textContent = server.title || server.name;
+    h2.appendChild(titleText);
+    
+    // HTTP remote indicator (if applicable)
+    if (server.type === 'http') {
+        const icon = document.createElement('span');
+        icon.textContent = '🌐';
+        icon.title = 'HTTP Remote Server';
+        icon.style.fontSize = '1.5rem';
+        h2.appendChild(icon);
+    }
+    
     titleGroup.appendChild(h2);
+
+    // Owner subtitle
+    const ownerSubtitle = document.createElement('div');
+    ownerSubtitle.className = 'mcp-owner-subtitle';
+    ownerSubtitle.textContent = `By ${server.owner || 'Red Hat'}`;
+    ownerSubtitle.style.color = 'var(--text-muted)';
+    ownerSubtitle.style.fontSize = '0.95rem';
+    ownerSubtitle.style.marginTop = '0.5rem';
+    titleGroup.appendChild(ownerSubtitle);
 
     headerTop.appendChild(titleGroup);
     header.appendChild(headerTop);
@@ -710,41 +1001,97 @@ function showMCPDetails(serverName, packName) {
     const body = document.createElement('div');
     body.className = 'modal-body';
 
-    // Command section
-    const cmdSection = document.createElement('div');
-    cmdSection.className = 'modal-section';
+    // Connection section (command or URL based on type)
+    if (server.type === 'http') {
+        // URL section for HTTP servers
+        const urlSection = document.createElement('div');
+        urlSection.className = 'modal-section';
 
-    const cmdHeader = document.createElement('div');
-    cmdHeader.className = 'modal-section-header';
-    cmdHeader.textContent = 'COMMAND';
-    cmdSection.appendChild(cmdHeader);
+        const urlHeader = document.createElement('div');
+        urlHeader.className = 'modal-section-header';
+        urlHeader.textContent = 'ENDPOINT URL';
+        urlSection.appendChild(urlHeader);
 
-    const codeWrapper = document.createElement('div');
-    codeWrapper.className = 'install-code-wrapper';
+        const urlCodeWrapper = document.createElement('div');
+        urlCodeWrapper.className = 'install-code-wrapper';
 
-    const cmdPre = document.createElement('pre');
-    const cmdCode = document.createElement('code');
+        const urlPre = document.createElement('pre');
+        const urlCode = document.createElement('code');
+        urlCode.textContent = server.url;
+        urlPre.appendChild(urlCode);
+        urlCodeWrapper.appendChild(urlPre);
 
-    // Format command with line breaks for readability
-    let formattedCmd = server.command;
-    if (server.args.length > 0) {
-        formattedCmd += ' ' + server.args[0]; // First arg on same line
-        for (let i = 1; i < server.args.length; i++) {
-            formattedCmd += ' \\\n  ' + server.args[i]; // Subsequent args indented
+        const urlCopyBtn = document.createElement('button');
+        urlCopyBtn.className = 'copy-button';
+        urlCopyBtn.textContent = 'Copy';
+        urlCopyBtn.onclick = () => copyToClipboard(urlCode.textContent, urlCopyBtn);
+        urlCodeWrapper.appendChild(urlCopyBtn);
+
+        urlSection.appendChild(urlCodeWrapper);
+        body.appendChild(urlSection);
+
+        // Headers section for HTTP servers
+        if (server.headers && Object.keys(server.headers).length > 0) {
+            const headersSection = document.createElement('div');
+            headersSection.className = 'modal-section';
+
+            const headersHeader = document.createElement('div');
+            headersHeader.className = 'modal-section-header';
+            headersHeader.textContent = 'HTTP HEADERS';
+            headersSection.appendChild(headersHeader);
+
+            const headersList = document.createElement('ul');
+            headersList.className = 'simple-list';
+
+            Object.entries(server.headers).forEach(([key, value]) => {
+                const li = document.createElement('li');
+                const strong = document.createElement('strong');
+                strong.textContent = `${key}: `;
+                li.appendChild(strong);
+                li.appendChild(document.createTextNode(value));
+                headersList.appendChild(li);
+            });
+
+            headersSection.appendChild(headersList);
+            body.appendChild(headersSection);
         }
+    } else {
+        // Command section for command-based servers
+        const cmdSection = document.createElement('div');
+        cmdSection.className = 'modal-section';
+
+        const cmdHeader = document.createElement('div');
+        cmdHeader.className = 'modal-section-header';
+        cmdHeader.textContent = 'COMMAND';
+        cmdSection.appendChild(cmdHeader);
+
+        const codeWrapper = document.createElement('div');
+        codeWrapper.className = 'install-code-wrapper';
+
+        const cmdPre = document.createElement('pre');
+        const cmdCode = document.createElement('code');
+
+        // Format command with line breaks for readability
+        let formattedCmd = server.command;
+        if (server.args.length > 0) {
+            formattedCmd += ' ' + server.args[0]; // First arg on same line
+            for (let i = 1; i < server.args.length; i++) {
+                formattedCmd += ' \\\n  ' + server.args[i]; // Subsequent args indented
+            }
+        }
+        cmdCode.textContent = formattedCmd;
+        cmdPre.appendChild(cmdCode);
+        codeWrapper.appendChild(cmdPre);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-button';
+        copyBtn.textContent = 'Copy';
+        copyBtn.onclick = () => copyToClipboard(cmdCode.textContent, copyBtn);
+        codeWrapper.appendChild(copyBtn);
+
+        cmdSection.appendChild(codeWrapper);
+        body.appendChild(cmdSection);
     }
-    cmdCode.textContent = formattedCmd;
-    cmdPre.appendChild(cmdCode);
-    codeWrapper.appendChild(cmdPre);
-
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-button';
-    copyBtn.textContent = 'Copy';
-    copyBtn.onclick = () => copyToClipboard(cmdCode.textContent, copyBtn);
-    codeWrapper.appendChild(copyBtn);
-
-    cmdSection.appendChild(codeWrapper);
-    body.appendChild(cmdSection);
 
     // Environment variables section
     if (server.env.length > 0) {
@@ -769,30 +1116,32 @@ function showMCPDetails(serverName, packName) {
         body.appendChild(envSection);
     }
 
-    // Security section
-    const secSection = document.createElement('div');
-    secSection.className = 'modal-section';
+    // Security section (only for command-based servers)
+    if (server.type !== 'http' && server.security && Object.keys(server.security).length > 0) {
+        const secSection = document.createElement('div');
+        secSection.className = 'modal-section';
 
-    const secHeader = document.createElement('div');
-    secHeader.className = 'modal-section-header';
-    secHeader.textContent = 'SECURITY';
-    secSection.appendChild(secHeader);
+        const secHeader = document.createElement('div');
+        secHeader.className = 'modal-section-header';
+        secHeader.textContent = 'SECURITY';
+        secSection.appendChild(secHeader);
 
-    const secList = document.createElement('ul');
-    secList.className = 'simple-list';
+        const secList = document.createElement('ul');
+        secList.className = 'simple-list';
 
-    ['isolation', 'network', 'credentials'].forEach(key => {
-        const li = document.createElement('li');
-        const strong = document.createElement('strong');
-        const keyLabel = key.charAt(0).toUpperCase() + key.slice(1);
-        strong.textContent = `${keyLabel}: `;
-        li.appendChild(strong);
-        li.appendChild(document.createTextNode(server.security[key] || 'N/A'));
-        secList.appendChild(li);
-    });
+        ['isolation', 'network', 'credentials'].forEach(key => {
+            const li = document.createElement('li');
+            const strong = document.createElement('strong');
+            const keyLabel = key.charAt(0).toUpperCase() + key.slice(1);
+            strong.textContent = `${keyLabel}: `;
+            li.appendChild(strong);
+            li.appendChild(document.createTextNode(server.security[key] || 'N/A'));
+            secList.appendChild(li);
+        });
 
-    secSection.appendChild(secList);
-    body.appendChild(secSection);
+        secSection.appendChild(secList);
+        body.appendChild(secSection);
+    }
 
     // Tools section (if available)
     if (server.tools && server.tools.length > 0) {

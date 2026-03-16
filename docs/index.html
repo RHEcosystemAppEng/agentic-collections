@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>agentic-collections - Red Hat Agentic Collections</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Agentic Skills packs</title>
+    <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body>
     <header>
         <div class="toolbar">
             <div class="toolbar-left">
-                <h1>agentic-collections</h1>
-                <p class="subtitle">Red Hat Agentic Collections for Claude Code and AI Marketplaces</p>
+                <h1>Red Hat Agentic Catalog</h1>
+                <p class="subtitle">Catalog of Red Hat agentic skills collections, MCP tools & resources, and other agentic capabilities</p>
             </div>
             <div class="toolbar-center">
                 <div class="counter-badge" id="packs-badge">
@@ -32,11 +32,10 @@
                 </div>
                 <div class="counter-badge" id="mcp-badge">
                     <span class="counter-number">0</span>
-                    <span class="counter-label">MCP Servers</span>
+                    <span class="counter-label">MCP</span>
                 </div>
             </div>
             <div class="toolbar-right">
-                <button class="toolbar-button primary" id="install-button">How to Install</button>
                 <a href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank" class="toolbar-button">GitHub</a>
             </div>
         </div>
@@ -49,17 +48,28 @@
         <!-- Section 1: Agentic Packs -->
         <section id="packs-section">
             <h2 onclick="toggleSection('packs')">
-                <span class="arrow">▼</span> Agentic Collections <span id="packs-count" class="count"></span>
+                <span class="arrow">▼</span> Agentic Skills packs <span id="packs-count" class="count"></span>
             </h2>
+            <p class="section-subtitle">Ready-to-use capability packs designed for Claude Code and Cursor to automate complex domain-specific tasks.</p>
             <div id="packs-grid" class="grid"></div>
         </section>
 
         <!-- Section 2: MCP Servers -->
         <section id="mcp-section">
             <h2 onclick="toggleSection('mcp')">
-                <span class="arrow">▼</span> MCP Servers <span id="mcp-count" class="count"></span>
+                <span class="arrow">▼</span> Red Hat MCP servers <span id="mcp-count" class="count"></span>
             </h2>
+            <p class="section-subtitle">Securely connect your agents to the latest Red Hat knowledge and expertise using the open Model Context Protocol (MCP) standard.</p>
             <div id="mcp-grid" class="grid"></div>
+        </section>
+
+        <!-- Section 3: Community MCP Servers -->
+        <section id="community-mcp-section">
+            <h2 onclick="toggleSection('community-mcp')">
+                <span class="arrow">▼</span> Community MCP servers <span id="community-mcp-count" class="count"></span>
+            </h2>
+            <p class="section-subtitle">Validated community-contributed MCP servers that extend your agents with trusted third-party integrations and capabilities.</p>
+            <div id="community-mcp-grid" class="grid"></div>
         </section>
     </main>
 
@@ -77,6 +87,6 @@
         <div class="modal-content" id="mcp-details"></div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=21"></script>
 </body>
 </html>

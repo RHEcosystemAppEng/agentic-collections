@@ -14,7 +14,7 @@ description: |
 
 This skill verifies CVE remediation success by validating that vulnerabilities have been properly fixed on target systems.
 
-**Integration with Remediator Agent**: The sre-agents:remediator agent (invoked) orchestrates this skill as part of its Step 6 (Verify Deployment) workflow. For standalone verification after manual remediation, you can invoke this skill directly.
+**Integration with Remediation Skill**: The `/remediation` skill orchestrates this skill as part of its Step 6 (Verify Deployment) workflow. For standalone verification after manual remediation, you can invoke this skill directly.
 
 ## When to Use This Skill
 
@@ -25,11 +25,11 @@ This skill verifies CVE remediation success by validating that vulnerabilities h
 - Validate Kubernetes pod recovery after node updates
 - Generate verification reports for compliance
 
-**Use the sre-agents:remediator agent when you need**:
+**Use the `/remediation` skill when you need**:
 - Full remediation workflow including verification
 - Integrated remediation → execution → verification
 
-**How they work together**: The sre-agents:remediator agent (invoked) invokes this skill after the user executes the remediation playbook, providing final confirmation that the CVE is resolved.
+**How they work together**: The `/remediation` skill invokes this skill after the user executes the remediation playbook, providing final confirmation that the CVE is resolved.
 
 ## Workflow
 
@@ -381,7 +381,7 @@ When completing verification, provide output in this format:
 - **system-context**: Provides system context for verification scope
 - **cve-impact**: Initial impact assessment to compare against verification results
 
-**Orchestration Example** (from sre-agents:remediator agent - invoked):
+**Orchestration Example** (from `/remediation` skill):
 1. User requests CVE remediation
 2. Agent invokes playbook-generator → Creates playbook
 3. User executes playbook manually

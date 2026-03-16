@@ -1,0 +1,23 @@
+{
+  "name": "rh-ai-engineer",
+  "version": "1.0.0",
+  "description": "Plugins for deploying and managing AI/ML models on Red Hat OpenShift AI.",
+  "author": {
+    "name": "Red Hat Ecosystem Engineering",
+    "email": "eco-engineering@redhat.com"
+  },
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "license": "Apache-2.0",
+  "keywords": [
+    "ai-engineer",
+    "openshift-ai",
+    "rhoai",
+    "kserve",
+    "vllm",
+    "nvidia-nim",
+    "model-serving",
+    "inference",
+    "gpu"
+  ]
+}

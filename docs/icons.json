@@ -1,0 +1,20 @@
+{
+  "packs": {
+    "rh-sre": "🔧",
+    "rh-developer": "💻",
+    "ocp-admin": "☸️",
+    "rh-support-engineer": "🎯",
+    "rh-virt": "🖥️",
+    "rh-ai-engineer": "🤖"
+  },
+  "mcp_servers": {
+    "lightspeed-mcp": "💡",
+    "aap-mcp-job-management": "⚙️",
+    "aap-mcp-inventory-management": "📋",
+    "openshift": "☸️",
+    "openshift-virtualization": "🖥️",
+    "podman": "🐳",
+    "github": "🐙",
+    "ai-observability": "🔬"
+  }
+}

@@ -1,46 +1,15 @@
 {
   "mcpServers": {
-    "openshift-installer": {
-      "command": "podman",
+    "openshift": {
+      "command": "bash",
       "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "-e", "TRANSPORT=stdio",
-        "-e", "OFFLINE_TOKEN=${OFFLINE_TOKEN}",
-        "-e", "INVENTORY_URL=https://api.openshift.com/api/assisted-install/",
-        "-e", "PULL_SECRET_URL=https://api.openshift.com/api/accounts_mgmt/v1/access_token",
-        "quay.io/ecosystem-appeng/assisted-service-mcp:latest"
-      ],
-      "env": {
-        "OFFLINE_TOKEN": "${OFFLINE_TOKEN}"
-      },
-      "description": "Red Hat Openshift MCP server for installing and managing clusters",
-      "security": {
-        "isolation": "container",
-        "network": "local",
-        "credentials": "env-only"
-      }
-    },
-    "openshift-administration": {
-      "command": "podman",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "--userns=keep-id:uid=65532,gid=65532",
-        "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-        "--entrypoint", "/app/kubernetes-mcp-server",
-        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
-        "--kubeconfig", "/kubeconfig",
-        "--toolsets", "core"
+        "-c",
+        "U=(); [ \"$(uname -s)\" = Linux ] && U=(--userns=keep-id:uid=65532,gid=65532); exec podman run \"${U[@]}\" --rm -i --network=host -v \"${KUBECONFIG}:/kubeconfig:ro,Z\" --entrypoint /app/kubernetes-mcp-server quay.io/ecosystem-appeng/openshift-mcp-server:latest --kubeconfig /kubeconfig --read-only --toolsets core,config"
       ],
       "env": {
         "KUBECONFIG": "${KUBECONFIG}"
       },
-      "description": "Red Hat Openshift MCP server for interacting with Openshift Container Platform clusters and its operators",
+      "description": "Red Hat OpenShift MCP server for multi-cluster administration and reporting",
       "security": {
         "isolation": "container",
         "network": "local",

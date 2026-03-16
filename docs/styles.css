@@ -1,16 +1,27 @@
-/* Red Hat Brand Colors */
+/* Red Hat Brand Colors - Light Theme */
 :root {
     --primary: #ee0000;
     --primary-dark: #c00000;
+    --primary-light: #ffebee;
     --secondary: #ff6b6b;
-    --bg-dark: #0f0f0f;
-    --bg-card: #1a1a1a;
-    --bg-code: #2d2d2d;
-    --text-primary: #f5f5f5;
-    --text-secondary: #d4d4d4;
-    --text-muted: #a3a3a3;
-    --border: #3d3d3d;
-    --success: #92cc6f;
+    
+    /* Light backgrounds */
+    --bg-light: #ffffff;
+    --bg-section: #f8f9fa;
+    --bg-card: #ffffff;
+    --bg-code: #f5f5f5;
+    --bg-hover: #fafafa;
+    
+    /* Dark text on light background */
+    --text-primary: #151515;
+    --text-secondary: #4a4a4a;
+    --text-muted: #767676;
+    
+    /* Light borders */
+    --border: #e5e5e5;
+    --border-hover: #cccccc;
+    
+    --success: #3ba935;
     --radius: 12px;
     --transition-speed: 0.3s;
 }
@@ -23,7 +34,7 @@
 
 body {
     font-family: 'Red Hat Text', 'Red Hat Display', 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-card) 100%);
+    background: var(--bg-section);
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
@@ -33,8 +44,9 @@ body {
 
 /* Header */
 header {
-    background: var(--bg-card);
+    background: var(--bg-light);
     border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* Toolbar */
@@ -43,12 +55,16 @@ header {
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem 2rem;
-    background: var(--bg-dark);
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border);
     gap: 2rem;
+    flex-wrap: wrap;
 }
 
 .toolbar-left {
-    flex-shrink: 0;
+    flex-shrink: 1;
+    max-width: 500px;
+    flex: 1;
 }
 
 .toolbar-left h1 {
@@ -69,38 +85,40 @@ header {
 
 .toolbar-center {
     display: flex;
-    gap: 1rem;
-    flex: 1;
+    gap: 0.5rem;
+    flex: 0 1 auto;
     justify-content: center;
 }
 
 .counter-badge {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-light);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    min-width: 80px;
+    gap: 0.2rem;
+    min-width: 60px;
     transition: all var(--transition-speed) ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .counter-badge:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--primary-light);
     border-color: var(--primary);
+    box-shadow: 0 2px 4px rgba(238, 0, 0, 0.1);
 }
 
 .counter-number {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--primary);
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .counter-label {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -153,11 +171,12 @@ header {
     width: 100%;
     padding: 1rem 1.5rem;
     font-size: 1rem;
-    background: var(--bg-card);
+    background: var(--bg-light);
     border: 2px solid var(--border);
     border-radius: var(--radius);
     color: var(--text-primary);
     transition: all var(--transition-speed) ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 #searchInput:focus {
@@ -185,8 +204,9 @@ section {
 }
 
 section h2 {
-    color: var(--primary);
+    color: var(--text-primary);
     font-size: 1.75rem;
+    font-weight: 700;
     margin-bottom: 1.5rem;
     cursor: pointer;
     user-select: none;
@@ -197,7 +217,7 @@ section h2 {
 }
 
 section h2:hover {
-    color: var(--secondary);
+    color: var(--primary);
     transform: translateX(4px);
 }
 
@@ -214,6 +234,15 @@ section h2 .count {
     color: var(--text-muted);
     font-size: 1.25rem;
     font-weight: 400;
+}
+
+.section-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: -0.75rem 0 1.5rem 0;
+    padding-left: 2rem;
+    max-width: 800px;
 }
 
 section.collapsed .grid {
@@ -239,12 +268,13 @@ section.collapsed .grid {
     gap: 0.75rem;
     cursor: pointer;
     height: 100%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .card:hover {
     transform: translateY(-2px);
     border-color: var(--primary);
-    box-shadow: 0 8px 24px rgba(238, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(238, 0, 0, 0.15);
 }
 
 .card h3 {
@@ -283,10 +313,12 @@ section.collapsed .grid {
 
 .card .stats span {
     padding: 0.4rem 0.75rem;
-    background: var(--bg-code);
+    background: var(--bg-section);
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 0.85rem;
+    color: var(--text-secondary);
 }
 
 .card .pack-tag,
@@ -306,23 +338,20 @@ section.collapsed .grid {
     font-size: 0.85rem;
 }
 
-.card button {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--radius);
+.card-link {
+    color: var(--primary);
+    text-decoration: none;
     cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 500;
     transition: all var(--transition-speed) ease;
     margin-top: auto;
+    display: inline-block;
 }
 
-.card button:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(238, 0, 0, 0.3);
+.card-link:hover {
+    text-decoration: underline;
+    color: var(--primary-dark);
 }
 
 /* README badge in top-right corner of MCP cards */
@@ -357,7 +386,7 @@ section.collapsed .grid {
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.5);
     align-items: center;
     justify-content: center;
 }
@@ -373,7 +402,7 @@ section.collapsed .grid {
     max-height: 85vh;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
 }
@@ -686,6 +715,32 @@ footer a:hover {
 }
 
 /* Responsive Design */
+/* Medium screens - tablets and small desktops */
+@media (max-width: 1200px) {
+    .toolbar {
+        padding: 1.25rem 1.5rem;
+        gap: 1.5rem;
+    }
+
+    .toolbar-center {
+        gap: 0.4rem;
+    }
+
+    .counter-badge {
+        min-width: 55px;
+        padding: 0.35rem 0.6rem;
+    }
+
+    .counter-number {
+        font-size: 1.1rem;
+    }
+
+    .counter-label {
+        font-size: 0.6rem;
+    }
+}
+
+/* Mobile devices */
 @media (max-width: 768px) {
     .toolbar {
         flex-direction: column;
@@ -746,13 +801,13 @@ footer a:hover {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-dark);
+    background: var(--bg-section);
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--primary);
     border-radius: 6px;
-    border: 2px solid var(--bg-dark);
+    border: 2px solid var(--bg-section);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -768,4 +823,21 @@ footer a:hover {
 /* Smooth Transitions */
 * {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Icon Styling */
+.card-icon,
+.item-icon {
+    display: inline-block;
+    line-height: 1;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.card-icon {
+    font-size: 1.2rem;
+}
+
+.item-icon {
+    font-size: 1rem;
 }

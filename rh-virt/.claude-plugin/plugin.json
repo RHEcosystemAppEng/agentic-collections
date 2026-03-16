@@ -1,7 +1,7 @@
 {
   "name": "openshift-virtualization",
   "version": "1.0.0",
-  "description": "OpenShift Virtualization Agentic Collection",
+  "description": "Virtual machine management and automation for OpenShift Virtualization and KubeVirt workloads.",
   "author": {
     "name": "Red Hat Ecosystem Engineering",
     "email": "eco-engineering@redhat.com"

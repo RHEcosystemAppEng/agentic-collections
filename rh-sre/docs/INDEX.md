@@ -5,8 +5,8 @@ sources:
   - title: Red Hat Product Documentation
     url: https://docs.redhat.com
     sections: RHEL, OpenShift, Ansible Automation Platform, Red Hat Lightspeed
-    date_accessed: 2026-01-20
-last_updated: 2026-01-20
+    date_accessed: 2026-02-24
+last_updated: 2026-02-24
 ---
 
 # Red Hat Remediation Agent - Documentation Index
@@ -35,6 +35,13 @@ This knowledge base provides comprehensive Red Hat-specific patterns for CVE rem
   - CVSS v3.1 metrics breakdown
   - Red Hat severity mappings (Critical/Important/Moderate/Low)
   - Priority decision matrix
+
+- **[Lightspeed MCP Parameters](references/lightspeed-mcp-parameters.md)** ✅
+  - Correct parameter names for Lightspeed MCP tools (e.g. `per_page` not `page_size` for list_hosts)
+  - Consult before calling inventory__list_hosts to avoid validation errors
+
+- **[Lightspeed MCP Tool Failures](references/lightspeed-mcp-tool-failures.md)** ✅
+  - Generic pattern for backend errors (e.g. explain_cves `'dnf_modules'`) — user-friendly message, workarounds, no raw error exposure
 
 - **RHEL Version Compatibility** (planned)
   - RHEL 7/8/9 compatibility matrix
@@ -281,7 +288,7 @@ See [SOURCES.md](SOURCES.md) for complete source attribution table including:
 
 **License**: Content derived from Red Hat documentation licensed under CC BY-SA 4.0 or similar. All credit to Red Hat, Inc.
 
-**Verification**: All sources verified active and current as of 2026-01-20.
+**Verification**: All sources verified active and current as of 2026-02-24.
 
 ## AI Inference Optimization
 

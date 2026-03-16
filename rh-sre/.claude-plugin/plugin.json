@@ -1,7 +1,7 @@
 {
-  "name": "sre-agents",
+  "name": "rh-sre",
   "version": "1.0.0",
-  "description": "Site Reliability Engineering Agentic Collection",
+  "description": "Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.",
   "author": {
     "name": "Red Hat Ecosystem Engineering",
     "email": "eco-engineering@redhat.com"

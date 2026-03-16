@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 # List of agentic packs to parse
-PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt']
+PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-virt', 'rh-ai-engineer']
 
 
 def extract_env_vars(env_dict: Dict[str, str]) -> List[str]:
@@ -41,9 +41,29 @@ def extract_env_vars(env_dict: Dict[str, str]) -> List[str]:
     return sorted(set(env_vars))
 
 
+def extract_header_env_vars(headers: Dict[str, str]) -> List[str]:
+    """
+    Extract environment variable names from header values.
+
+    Args:
+        headers: Dictionary of HTTP headers
+
+    Returns:
+        List of environment variable names found in headers
+    """
+    env_vars = []
+    for key, value in headers.items():
+        if isinstance(value, str):
+            # Extract ${VAR} patterns from header values
+            matches = re.findall(r'\$\{([A-Z_][A-Z0-9_]*)\}', value)
+            env_vars.extend(matches)
+    return env_vars
+
+
 def parse_mcp_file(pack_dir: str) -> List[Dict[str, Any]]:
     """
     Parse .mcp.json file from a pack directory.
+    Supports both command-based and HTTP-based MCP servers.
 
     Args:
         pack_dir: Name of the pack directory
@@ -64,15 +84,42 @@ def parse_mcp_file(pack_dir: str) -> List[Dict[str, Any]]:
 
         # Extract each MCP server
         for server_name, server_config in config.get('mcpServers', {}).items():
+            # Detect server type
+            server_type = server_config.get('type', 'command')
+
+            # Base server configuration
             server = {
                 'name': server_name,
                 'pack': pack_dir,
-                'command': server_config.get('command', ''),
-                'args': server_config.get('args', []),
-                'env': extract_env_vars(server_config.get('env', {})),
+                'type': server_type,
                 'description': server_config.get('description', ''),
                 'security': server_config.get('security', {})
             }
+
+            # Extract type-specific fields
+            if server_type == 'http':
+                # HTTP-based remote server
+                server['url'] = server_config.get('url', '')
+                server['headers'] = server_config.get('headers', {})
+
+                # Extract env vars from both env dict and headers
+                env_vars = extract_env_vars(server_config.get('env', {}))
+                header_env_vars = extract_header_env_vars(server_config.get('headers', {}))
+                server['env'] = sorted(set(env_vars + header_env_vars))
+
+                # Command and args are not applicable for HTTP servers
+                server['command'] = ''
+                server['args'] = []
+            else:
+                # Command-based server (default)
+                server['command'] = server_config.get('command', '')
+                server['args'] = server_config.get('args', [])
+                server['env'] = extract_env_vars(server_config.get('env', {}))
+
+                # URL and headers are not applicable for command servers
+                server['url'] = ''
+                server['headers'] = {}
+
             servers.append(server)
 
         return servers
@@ -128,13 +175,19 @@ def generate_mcp_data() -> List[Dict[str, Any]]:
         for server in servers:
             server_name = server['name']
             if server_name in custom_data:
-                # Add repository and tools from custom data
+                # Add custom metadata from docs/mcp.json
                 server['repository'] = custom_data[server_name].get('repository', '')
                 server['tools'] = custom_data[server_name].get('tools', [])
+                server['title'] = custom_data[server_name].get('title', server_name)
+                server['tier'] = custom_data[server_name].get('tier', 'Official')
+                server['owner'] = custom_data[server_name].get('owner', 'Red Hat')
             else:
-                # No custom data available
+                # No custom data available - use defaults
                 server['repository'] = ''
                 server['tools'] = []
+                server['title'] = server_name
+                server['tier'] = 'Official'
+                server['owner'] = 'Red Hat'
 
         mcp_servers.extend(servers)
 
@@ -157,8 +210,18 @@ if __name__ == '__main__':
     print("Summary:")
     for server in servers:
         print(f"  • {server['name']} (from {server['pack']})")
-        print(f"    Command: {server['command']}")
+        print(f"    Type: {server['type']}")
+
+        if server['type'] == 'http':
+            print(f"    URL: {server['url']}")
+            if server['headers']:
+                print(f"    Headers: {', '.join(server['headers'].keys())}")
+        else:
+            print(f"    Command: {server['command']}")
+
         if server['env']:
             print(f"    Env vars: {', '.join(server['env'])}")
-        print(f"    Security: {server['security'].get('isolation', 'N/A')}")
+
+        if server['security']:
+            print(f"    Security: {server['security'].get('isolation', 'N/A')}")
         print()

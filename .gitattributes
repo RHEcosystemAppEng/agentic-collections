@@ -1,0 +1,6 @@
+# Enforce LF line endings for text files (prevents CRLF issues in CI)
+* text=auto eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

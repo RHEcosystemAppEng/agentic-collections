@@ -2,6 +2,10 @@
 name: containerize-deploy
 description: |
   Complete end-to-end workflow for containerizing and deploying applications to OpenShift or standalone RHEL systems. Orchestrates /detect-project, /s2i-build, /deploy, /helm-deploy, and /rhel-deploy skills with user confirmation checkpoints at each phase. Supports S2I, Podman, Helm deployment strategies for OpenShift, and Podman/native deployments for RHEL hosts. Use this skill when user wants to go from source code to running application in one guided workflow. Supports resume after interruption and rollback on failure. Triggers on /containerize-deploy command.
+model: inherit
+color: green
+metadata:
+   user_invocable: "true"
 ---
 
 # /containerize-deploy Skill
@@ -11,63 +15,25 @@ Provide a complete, guided workflow from local source code to running applicatio
 ## Overview
 
 ```
-[Intro] → [Detect] → [Target] → [Strategy] ──┬─→ [OpenShift Path] ─────┬─→ [Complete]
-                        │                    │   [S2I/Podman/Helm]      │
-                        │                    │                          │
-                        │                    └─→ [RHEL Path] ───────────┘
-                        │                        (/rhel-deploy)
-                        │
-                   User chooses target:
-                   - OpenShift → Strategy selection (S2I/Podman/Helm)
-                   - RHEL → Delegate to /rhel-deploy skill
+[Intro] → [Detect] → [Target] → [Strategy] ──┬─→ [OpenShift: S2I/Podman/Helm] ──┬─→ [Complete]
+                                               └─→ [RHEL: /rhel-deploy] ──────────┘
 ```
 
-**Deployment Targets:**
-- **OpenShift** - Deploy to OpenShift/Kubernetes cluster (S2I, Podman, or Helm strategies)
-- **RHEL Host** - Deploy to standalone RHEL system via SSH (delegates to /rhel-deploy)
+## When to Use This Skill
 
-**OpenShift Deployment Strategies (if OpenShift target selected):**
-- **S2I** - Source-to-Image build on OpenShift, then deploy (Phases 3-7)
-- **Podman** - Build from Containerfile/Dockerfile on OpenShift, then deploy (Phases 3-7)
-- **Helm** - Deploy using Helm chart (Phase 2-H)
+Use `/containerize-deploy` when a user wants a complete guided workflow from source code to running application on OpenShift or standalone RHEL systems. This skill orchestrates project detection, build strategy selection, and deployment with user confirmation at each phase.
+
+## Critical: Human-in-the-Loop Requirements
+
+See [Human-in-the-Loop Requirements](../../docs/human-in-the-loop.md) for mandatory checkpoint behavior.
 
 ## Workflow
 
 ### Phase 0: Introduction
 
-```markdown
-# Containerize & Deploy
+Present the workflow overview and available deployment targets/strategies. Ask: **Ready to begin?** (yes/no)
 
-I'll help you containerize and deploy your application to OpenShift or a standalone RHEL system.
-
-**What this workflow does:**
-1. **Detect** - Analyze your project and determine the best deployment strategy
-2. **Choose Target** - Deploy to OpenShift cluster or RHEL host
-3. **Build** - Build container image (S2I or Podman) or skip if using Helm with existing image
-4. **Deploy** - Deploy using Kubernetes resources, Helm chart, or systemd services
-
-**Deployment Targets:**
-- **OpenShift** - Deploy to OpenShift/Kubernetes cluster
-- **RHEL Host** - Deploy directly to a RHEL system via SSH
-
-**OpenShift Strategies:**
-- **S2I (Source-to-Image)** - Build and deploy from source code
-- **Podman** - Build from existing Containerfile/Dockerfile
-- **Helm** - Deploy using Helm chart
-
-**RHEL Strategies:**
-- **Container** - Run with Podman + systemd
-- **Native** - Install with dnf + systemd
-
-**What I need from you:**
-- Confirmation at each step before I make changes
-- Access to an OpenShift cluster OR SSH access to a RHEL host
-- Your project source code
-
-**Ready to begin?** (yes/no)
-```
-
-Wait for user confirmation before proceeding.
+**WAIT for user confirmation before proceeding.**
 
 ### Phase 1: Project Detection
 
@@ -113,6 +79,8 @@ Where would you like to deploy this application?
 
 Store `DEPLOYMENT_TARGET` in session state.
 
+**WAIT for user confirmation before proceeding.**
+
 **If user selects "RHEL":**
 - Store `DEPLOYMENT_TARGET = "rhel"` in session state
 - Delegate to `/rhel-deploy` skill with detected project info
@@ -151,6 +119,8 @@ Based on my analysis, you have these options:
 
 Store `DEPLOYMENT_STRATEGY` in session state.
 
+**WAIT for user confirmation before proceeding.**
+
 ### Phase 1.6: Image Selection (S2I/Podman only)
 
 If user selected S2I or Podman deployment strategy, offer image selection options:
@@ -180,6 +150,57 @@ Which option would you prefer?
 **BRANCHING LOGIC:**
 - If `DEPLOYMENT_STRATEGY` is **"S2I"** or **"Podman"** → After Phase 2, continue to **Phase 3 (S2I/Podman Path)**
 - If `DEPLOYMENT_STRATEGY` is **"Helm"** → After Phase 2, go to **Phase 2-H (Helm Path)**
+
+### Phase 1.7: Configuration Review (MANDATORY)
+
+**This phase MUST NOT be skipped regardless of how the user responded to previous phases.**
+
+```markdown
+## Configuration Review
+
+Before I proceed, let me confirm the deployment configuration:
+
+**Environment Type:**
+| Type | Characteristics |
+|------|-----------------|
+| **Development** | `latest` tags, lower resources, quick iteration |
+| **Staging** | Version tags, moderate resources, testing |
+| **Production** | Pinned versions, higher resources, HA-ready |
+
+**Which environment is this deployment for?**
+1. Development
+2. Staging
+3. Production
+
+---
+
+**Configuration Approach:**
+| Approach | When to Use |
+|----------|-------------|
+| **Runtime config** | Need to change settings without rebuilding (Recommended for prod) |
+| **Build-time config** | Simpler, settings baked into image (OK for dev) |
+
+**How should environment variables be handled?**
+1. Runtime (ConfigMap mount)
+2. Build-time (baked into image)
+
+---
+
+**Resource Settings:**
+| Setting | Dev Default | Prod Default |
+|---------|-------------|--------------|
+| Replicas | 1 | 2+ |
+| CPU limit | 200m | 400m+ |
+| Memory limit | 256Mi | 512Mi+ |
+
+**Use defaults for your environment, or customize?**
+1. Use defaults
+2. Customize resources
+```
+
+**WAIT for user to answer ALL questions above before proceeding.**
+
+Store: `ENVIRONMENT_TYPE`, `CONFIG_APPROACH`, `RESOURCE_PROFILE` in session state.
 
 ### Phase 2: OpenShift Connection
 
@@ -361,6 +382,34 @@ Continue to deployment? (yes/no)
 Rollout complete!
 ```
 
+**If rollout fails** (pods not ready, CrashLoopBackOff, ImagePullBackOff, etc.):
+
+```markdown
+## Deployment Failed
+
+The deployment did not complete successfully.
+
+**Pod Status:**
+| Pod | Status | Ready | Restarts |
+|-----|--------|-------|----------|
+| [app-name]-xxx-yyy | [status] | 0/1 | [count] |
+
+---
+
+**Would you like me to diagnose the issue?**
+
+1. **Debug Pod** (`/debug-pod`) - Investigate pod failures
+2. **Debug Network** (`/debug-network`) - Check service/route connectivity
+3. **Debug Build** (`/debug-build`) - Re-check build if image issues
+4. **View logs manually**
+5. **Rollback and stop**
+
+Select an option:
+```
+
+- If user selects a debug option → Invoke the corresponding skill
+- After debugging → Offer to retry deployment
+
 ---
 
 ## HELM PATH (If DEPLOYMENT_STRATEGY is "Helm")
@@ -401,83 +450,28 @@ Proceeding with Helm deployment...
 
 ### Phase 8: Completion
 
-```markdown
-## Deployment Complete!
+Present a summary including:
+- Application name, namespace, language, framework
+- Access URLs (external route, internal service DNS)
+- Resources created with status (ImageStream, BuildConfig, Deployment, Service, Route)
+- Quick commands: view logs, scale, rebuild, delete
+- Next steps: open app URL, set up webhooks, add env vars, configure autoscaling
 
-Your application is now running on OpenShift.
+## Dependencies
 
----
+### Required MCP Servers
+- `openshift` - cluster resource management for OpenShift deployments
 
-**Application Summary:**
+### Related Skills
+- `/debug-pod` - Pod failures (CrashLoopBackOff, OOMKilled, ImagePullBackOff)
+- `/debug-build` - S2I or Podman build failures
+- `/debug-network` - Service connectivity issues (no endpoints, 503 errors)
+- `/debug-rhel` - RHEL deployment failures (systemd, SELinux, firewall)
 
-| Setting | Value |
-|---|---|
-| Name | [app-name] |
-| Namespace | [namespace] |
-| Language | [language] |
-| Framework | [framework] |
-
----
-
-**Access URLs:**
-
-| Type | URL |
-|---|-----|
-| **External** | https://[route-host] |
-| Internal | http://[app-name].[namespace].svc.cluster.local:[port] |
-
----
-
-**Resources Created:**
-
-| Resource | Name | Status |
-|----|---|-----|
-| ImageStream | [app-name] | Ready |
-| BuildConfig | [app-name] | Ready |
-| Deployment | [app-name] | 1/1 Running |
-| Service | [app-name] | Active |
-| Route | [app-name] | Admitted |
-
----
-
-**Quick Commands:**
-
-```bash
-# View logs
-oc logs -f deployment/[app-name] -n [namespace]
-
-# Scale up
-oc scale deployment/[app-name] --replicas=3 -n [namespace]
-
-# Trigger rebuild (after code changes)
-oc start-build [app-name] -n [namespace]
-
-# Delete everything
-oc delete all -l app=[app-name] -n [namespace]
-```
-
----
-
-**Next Steps:**
-- Open your app: [route-url]
-- Set up Git webhooks for automatic builds
-- Add environment variables: `oc set env deployment/[app-name] KEY=value`
-- Configure autoscaling: `oc autoscale deployment/[app-name] --min=1 --max=5`
-
----
-
-Congratulations! Your application is live.
-```
-
-## MCP Tools Used
-
-All tools from child skills:
-
-| Phase | Tools |
-|---|---|
-| Detect | `run_terminal_cmd` (optional clone) |
-| Connect | `resources_list` (namespaces) |
-| Build | `resources_create_or_update`, `pod_logs`, `events_list` |
-| Deploy | `resources_create_or_update`, `pod_list`, `pod_logs` |
-| Helm | `helm_install`, `helm_upgrade`, `helm_status`, `helm_list`, `pods_list` |
-| Rollback | `resources_delete`, `helm_uninstall`, `helm_rollback` |
+### Reference Documentation
+- [docs/builder-images.md](../../docs/builder-images.md) - Language detection, S2I builder images
+- [docs/image-selection-criteria.md](../../docs/image-selection-criteria.md) - Image variant selection, LTS timelines
+- [docs/python-s2i-entrypoints.md](../../docs/python-s2i-entrypoints.md) - Python S2I configuration
+- [docs/rhel-deployment.md](../../docs/rhel-deployment.md) - RHEL host deployment
+- [docs/debugging-patterns.md](../../docs/debugging-patterns.md) - Common error patterns and troubleshooting
+- [docs/prerequisites.md](../../docs/prerequisites.md) - All required tools by skill

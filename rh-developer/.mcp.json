@@ -1,17 +1,15 @@
 {
   "mcpServers": {
     "openshift": {
-      "command": "podman",
+      "command": "bash",
       "args": [
-        "run", "-i", "--rm",
-        "-v", "${HOME}/.kube:/home/nonroot/.kube:ro",
-        "-e", "KUBECONFIG=/home/nonroot/.kube/config",
-        "quay.io/redhat-user-workloads/ocp-mcp-server-tenant/openshift-mcp-server-release-010:latest"
+        "-c",
+        "U=(); [ \"$(uname -s)\" = Linux ] && U=(--userns=keep-id:uid=65532,gid=65532); exec podman run \"${U[@]}\" --rm -i --network=host -v \"${KUBECONFIG}:/kubeconfig:ro,Z\" --entrypoint /app/kubernetes-mcp-server quay.io/ecosystem-appeng/openshift-mcp-server:latest --kubeconfig /kubeconfig --toolsets core,config,helm,kubevirt,observability,ossm"
       ],
       "env": {
         "KUBECONFIG": "${KUBECONFIG}"
       },
-      "description": "OpenShift MCP server for cluster management, resource operations, and Helm deployments",
+      "description": "Red Hat Openshift MCP server for interacting with Openshift Container Platform clusters and its operators",
       "security": {
         "isolation": "container",
         "network": "local",
@@ -40,6 +38,29 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       },
       "description": "GitHub MCP server for repository browsing and code analysis",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    },
+    "lightspeed-mcp": {
+      "command": "podman",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--env",
+        "LIGHTSPEED_CLIENT_ID",
+        "--env",
+        "LIGHTSPEED_CLIENT_SECRET",
+        "quay.io/redhat-services-prod/insights-management-tenant/insights-mcp/red-hat-lightspeed-mcp:latest"
+      ],
+      "env": {
+        "LIGHTSPEED_CLIENT_ID": "${LIGHTSPEED_CLIENT_ID}",
+        "LIGHTSPEED_CLIENT_SECRET": "${LIGHTSPEED_CLIENT_SECRET}"
+      },
+      "description": "Red Hat Lightspeed MCP server for vulnerability, advisor, inventory, and planning data from Red Hat Insights (optional, used by /debug-rhel and /rhel-deploy)",
       "security": {
         "isolation": "container",
         "network": "local",
