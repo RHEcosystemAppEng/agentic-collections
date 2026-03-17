@@ -31,6 +31,14 @@ Consult this guide when:
 - Troubleshooting host discovery and registration issues
 - Resolving OFFLINE_TOKEN authentication problems
 
+**Quick Commands**: See [Quick Reference](./quick-reference.md) for common diagnostic commands and emergency procedures.
+
+**Related Documentation**:
+- [Quick Reference](./quick-reference.md) - Diagnostic commands and scenarios
+- [Networking Guide](./networking.md) - Network configuration details
+- [Host Requirements](./host-requirements.md) - Hardware specifications
+- [INDEX](./INDEX.md) - Complete documentation index
+
 ---
 
 ## MCP Server Authentication Issues
@@ -314,6 +322,8 @@ oc get nodes                  # All nodes should be Ready
 oc get clusteroperators       # All operators should be Available
 oc get co                     # Short form of above
 ```
+
+**See**: [Quick Reference - Cluster Status](./quick-reference.md#cluster-status) for more diagnostic commands
 
 **Indicators in cluster_info**:
 - Status: "installed"

@@ -1,3288 +1,474 @@
 ---
 name: cluster-creator
 description: |
-  End-to-end OpenShift cluster creation and installation using Red Hat Assisted Installer.
-  Handles both Single-Node OpenShift (SNO) and High-Availability (HA) multi-node clusters
-  across all supported platforms (baremetal, vsphere, oci, nutanix, none).
+  End-to-end OpenShift cluster creation using Red Hat Assisted Installer.
+  Handles Single-Node OpenShift (SNO) and HA multi-node clusters on baremetal, vsphere, oci, nutanix.
 
   Use when:
   - "Create a new OpenShift cluster"
   - "Install OpenShift on my servers"
   - "Set up a single-node cluster for edge deployment"
-  - "Deploy a production HA OpenShift cluster"
-  - "I need to create an OpenShift cluster on VMware/bare metal/OCI/Nutanix"
+  - "Deploy a production HA cluster"
 
-  Handles complete workflow:
-  1. Cluster definition creation with full configuration
-  2. ISO generation and host discovery
-  3. Host validation and role assignment
-  4. Network configuration (VIPs, static networking)
-  5. Installation initiation and real-time monitoring
-  6. Credential retrieval and access setup
+  Complete workflow: cluster definition, ISO generation, host discovery/validation, role assignment,
+  network configuration (VIPs, static networking), installation monitoring, credential retrieval.
 
   NOT for:
   - Listing existing clusters → Use cluster-inventory skill
   - Modifying running clusters → Use openshift-administration MCP tools
-  - Cluster upgrades → Different workflow (not yet supported)
+  - Cluster upgrades (not yet supported)
 model: inherit
 color: green
 ---
 
 # cluster-creator
 
+## Critical: Human-in-the-Loop Requirements
+
+This skill performs critical, irreversible operations requiring explicit user confirmation:
+
+1. **Cluster Definition Creation** (Step 5): Display configuration, ask "Ready to create?"
+2. **Starting Installation** (Step 13): Display summary, emphasize "WARNING: Irreversible!", wait for explicit "YES"
+3. **After Major Steps**: Report VIP/network/role configuration results
+
+**Never Assume Approval** - Always wait for explicit confirmation.
+
+---
+
 ## Prerequisites
 
 **Required MCP Servers**: `openshift-installer` ([setup guide](../README.md#environment-setup))
 
-**Required MCP Tools** (from openshift-installer):
-- `list_versions` - List available OpenShift versions
-- `create_cluster` - Create cluster definition
-- `cluster_info` - Get cluster details and validation status
-- `cluster_events` - Get cluster event history
-- `set_cluster_vips` - Configure virtual IP addresses (HA clusters)
-- `set_cluster_ssh_key` - Set SSH key for node access
-- `set_cluster_platform` - Set platform type
-- `set_host_role` - Assign host roles (master/worker)
-- `cluster_iso_download_url` - Get cluster boot ISO URL
-- `install_cluster` - Start cluster installation
-- `cluster_credentials_download_url` - Get kubeconfig and credentials
-- `cluster_logs_download_url` - Get cluster logs (for troubleshooting)
-- `generate_nmstate_yaml` - Generate static network configuration (optional)
-- `validate_nmstate_yaml` - Validate NMState YAML (optional)
-- `alter_static_network_config_nmstate_for_host` - Apply static network config (optional)
-- `list_static_network_config` - List static network configurations (optional)
+**Required MCP Tools**: `list_versions`, `create_cluster`, `cluster_info`, `set_cluster_vips`, `set_host_role`, `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`, `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
 
-**Environment Variables**: `OFFLINE_TOKEN` (Red Hat API authentication token)
+**Environment Variables**: `OFFLINE_TOKEN` ([obtain here](https://cloud.redhat.com/openshift/token))
 
-**Verification Steps**:
+**Verification**:
+1. Check `openshift-installer` in `.mcp.json`
+2. Verify `OFFLINE_TOKEN` set: `test -n "$OFFLINE_TOKEN"`
+3. Test connection: Call `list_versions` to verify MCP server responsive
 
-1. **Check MCP Server Configuration**
-   - Verify `openshift-installer` exists in `.mcp.json`
-   - If missing → Proceed to Human Notification
+**On Failure**: Stop immediately, display setup instructions, ask "How to proceed? (setup/skip/abort)", wait for user input.
 
-2. **Check Environment Variables** (CRITICAL: Never expose values)
-   - Execute: `test -n "$OFFLINE_TOKEN" && echo "✓ OFFLINE_TOKEN is set" || echo "✗ OFFLINE_TOKEN not set"`
-   - If not set → Proceed to Human Notification
-
-3. **Test MCP Server Connection** (REQUIRED)
-   **MCP Tool**: `list_versions` (from openshift-installer)
-
-   **Parameters**: None
-
-   **Action**: Call list_versions to verify:
-   - MCP server is responsive
-   - Authentication (OFFLINE_TOKEN) is valid
-   - API connectivity to Red Hat Console is working
-
-   **Expected Output**: Markdown table with available OpenShift versions
-
-   **On Success**:
-   - Store available versions for Step 2 (version selection)
-   - **Output to user**: "✅ MCP server connection verified. {version_count} OpenShift versions available."
-
-   **On Failure**:
-   - Proceed to Human Notification Protocol
-   - Do NOT continue with cluster creation
-
-**Human Notification Protocol**:
-
-When prerequisites fail, the skill MUST:
-
-1. **Stop Execution Immediately** - Do not attempt tool calls
-
-2. **Report Clear Error**:
-   ```
-   ❌ Cannot execute cluster-creator: MCP server `openshift-installer` is not available
-
-   📋 Setup Instructions:
-   1. Obtain OFFLINE_TOKEN from https://cloud.redhat.com/openshift/token
-   2. Set environment variable:
-      export OFFLINE_TOKEN="your-offline-token-here"
-   3. Verify openshift-installer is configured in .mcp.json
-   4. Restart Claude Code to reload MCP servers
-
-   🔗 Documentation: [ocp-admin/README.md](../../README.md#environment-setup)
-
-   Quick Fix → See [MCP Server Setup](../../README.md#environment-setup)
-   Quick Fix → See [Offline Token Issues](../../docs/troubleshooting.md#offline-token-authentication-failures)
-   ```
-
-3. **Request User Decision**:
-   ```
-   ❓ How would you like to proceed?
-
-   Options:
-   - "setup" - I'll help you configure the MCP server now
-   - "skip" - Skip cluster creation and use alternative approach
-   - "abort" - Stop the workflow entirely
-
-   Please respond with your choice.
-   ```
-
-4. **Wait for Explicit User Input** - Do not proceed automatically
-
-**Error Message Templates**:
-
-- Missing MCP Server:
-  ```
-  ❌ MCP server `openshift-installer` not configured in .mcp.json
-  📋 Add server configuration: See [setup guide](../../README.md#mcp-server-integration)
-  ```
-
-- Missing Environment Variable:
-  ```
-  ❌ Environment variable `OFFLINE_TOKEN` not set
-  📋 Set variable: export OFFLINE_TOKEN="your-token"
-  ⚠️ SECURITY: Obtain token from https://cloud.redhat.com/openshift/token
-  ⚠️ NEVER expose token values in output or logs
-  ```
-
-- Connection Failure:
-  ```
-  ❌ Cannot connect to `openshift-installer` MCP server
-  📋 Possible causes:
-     - Container not running (run: podman ps)
-     - Network issues (check: podman logs)
-     - Invalid OFFLINE_TOKEN (verify at https://console.redhat.com)
-  ```
+**Security**: Never expose credential values in output.
 
 ---
 
 ## When to Use This Skill
 
-Use this skill when:
-- User wants to create a new OpenShift cluster from scratch
-- User needs to deploy Single-Node OpenShift (SNO) for edge/development
-- User wants to set up a production High-Availability (HA) cluster
-- User has physical servers or VMs ready and needs OpenShift installed
-- User wants guided end-to-end cluster creation with validation
+**Use when**:
+- Creating new OpenShift cluster from scratch
+- Deploying SNO for edge/development
+- Setting up production HA cluster
+- Have servers ready for OpenShift installation
 
-Do NOT use when:
-- Listing or inspecting existing clusters → Use **cluster-inventory** skill instead
-- Managing workloads on existing clusters → Use **openshift-administration** MCP tools
-- Troubleshooting cluster status → Use **cluster-inventory** skill for diagnostics
-- Upgrading existing clusters → Different workflow (not yet supported)
+**Do NOT use when**:
+- Listing/inspecting clusters → Use `cluster-inventory` skill
+- Managing workloads → Use `openshift-administration` MCP tools
+- Troubleshooting → Use `cluster-inventory` skill
+- Upgrading clusters (not supported)
 
 ---
 
 ## Workflow
 
-This skill implements an end-to-end cluster creation workflow with interactive guidance,
-validation at every step, and human confirmation before destructive actions.
+End-to-end cluster creation with interactive guidance and validation.
 
-### Step 1: Prerequisites Verification and Initial Consultation
+### Step 1: Prerequisites and Documentation
 
-**Progress**: Step 1 of 18 - Verifying Prerequisites
+**Progress**: Step 1 of 18
 
-**CRITICAL**: Document consultation MUST happen BEFORE any tool invocation.
+**Document Consultation** (REQUIRED):
+1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md)
+2. **Output**: "I consulted troubleshooting.md to understand cluster lifecycle states."
 
-**Document Consultation** (REQUIRED - Execute FIRST):
-1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand cluster lifecycle states, validation requirements, platform differences, and common error patterns
-2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand cluster lifecycle states and requirements."
-
-**Prerequisites Check**:
-- Verify OFFLINE_TOKEN is set (without exposing value)
-- Verify openshift-installer MCP server is available
-- If prerequisites fail, follow Human Notification Protocol (see Prerequisites section)
-
-**Expected Output**: Confirmation that prerequisites are met and documentation consulted.
+**Prerequisites Check**: Execute verification from Prerequisites section.
 
 ---
 
-### Step 2: Gather Cluster Requirements Interactively
+### Step 2: Gather Cluster Requirements
 
-**Progress**: Step 2 of 18 - Gathering Cluster Configuration
+**Progress**: Step 2 of 18
 
-**Purpose**: Collect all necessary information from the user to create the cluster definition.
+Use AskUserQuestion tool to collect:
 
-**Interactive Questions** (use AskUserQuestion tool):
+1. **Cluster Type**: SNO or HA
+2. **Platform**: SNO=`none` (auto), HA=baremetal/vsphere/nutanix/oci (user selects)
+3. **Version**: Call `list_versions`, show "Full Support" versions
+4. **Cluster Name**: 1-54 chars, lowercase/numbers/hyphens, starts with letter ([validation](../../docs/input-validation-guide.md#cluster-name))
+5. **Base Domain**: Valid DNS domain ([validation](../../docs/input-validation-guide.md#base-domain))
+6. **CPU Arch**: x86_64 (default), aarch64, ppc64le, s390x
+7. **SSH Key**: Valid SSH public key ([validation](../../docs/input-validation-guide.md#ssh-public-key))
 
-#### Question 1: Cluster Type Selection
+**Store all values** for subsequent steps.
 
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "What type of OpenShift cluster do you want to create?",
-      "header": "Cluster Type",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "Single-Node OpenShift (SNO)",
-          "description": "One node combining control plane and worker. Ideal for edge locations, development, or resource-constrained environments. Minimum: 8 CPU, 32GB RAM, 120GB disk."
-        },
-        {
-          "label": "High-Availability (HA) Multi-Node",
-          "description": "Multiple nodes for production workloads. Requires minimum 3 master nodes. Provides redundancy and scalability. Recommended for production environments."
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Store User Choice**: Save as `cluster_type` (either "SNO" or "HA")
+**Reference**: [Input Validation Guide](../../docs/input-validation-guide.md)
 
 ---
 
-#### Question 2: Platform Selection (Based on Cluster Type)
+### Step 3: Platform-Specific Configuration
 
-**Platform Options** (conditional on cluster type):
+**Progress**: Step 3 of 18
 
-**For SNO clusters**:
-- Platform MUST be `none` (automatically set, inform user)
-- No user selection needed
+**For HA on baremetal/vsphere/nutanix**:
+- **Gather VIPs**: API VIP and Ingress VIP (IPv4, same subnet as nodes, not assigned)
+- **Validation**: [VIP Requirements](../../docs/input-validation-guide.md#virtual-ips-vips)
 
-**For HA clusters**:
+**Optional Static Networking**:
+- Ask: "Use DHCP or static networking?"
+- **If static**: For each host, gather network config (Simple/Advanced/Manual mode)
+  - **Simple**: Interface, MAC, IP, prefix, gateway, DNS
+  - **Advanced**: VLANs, bonding, multiple interfaces
+  - **Manual**: User provides NMState YAML
+- **Tools**: `generate_nmstate_yaml`, `validate_nmstate_yaml`
+- **Store**: `static_network_configs` array
 
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "Which infrastructure platform will you use for the HA cluster?",
-      "header": "Platform",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "Bare Metal (Recommended)",
-          "description": "Physical servers. Full hardware control. Requires manual VIP configuration for API and Ingress endpoints."
-        },
-        {
-          "label": "VMware vSphere",
-          "description": "VMware virtualization environment. Requires vSphere integration. Needs VIP configuration."
-        },
-        {
-          "label": "Nutanix AHV",
-          "description": "Nutanix hyperconverged infrastructure. Integrates with Nutanix platform. Requires VIP configuration."
-        },
-        {
-          "label": "Oracle Cloud Infrastructure (OCI)",
-          "description": "Oracle Cloud. VIPs handled automatically by cloud provider. Cloud-native networking."
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Store User Choice**: Save as `platform` (map label to API value: "Bare Metal" → "baremetal", "VMware vSphere" → "vsphere", "Nutanix AHV" → "nutanix", "Oracle Cloud Infrastructure (OCI)" → "oci")
-
-**Platform Selection Logic Explained**:
-- **SNO clusters**: Platform MUST be "none" - **Why**: SNO doesn't use load-balanced VIPs (automatic, no user choice)
-- **HA clusters**: Platform defaults to "baremetal" if not specified - **Why**: Most common deployment scenario
-  - **Other valid options**: "vsphere", "oci", "nutanix"
-  - **Choice affects**: VIP requirements and installation process
-    - baremetal/vsphere/nutanix → Requires API and Ingress VIPs
-    - oci → No VIPs needed (cloud load balancer)
-    - none → No VIPs (for non-production or special cases)
-
-**For SNO**: Set `platform = "none"` automatically
+**Reference**: [Static Networking Guide](../../docs/static-networking-guide.md), [Networking Guide](../../docs/networking.md)
 
 ---
 
-#### Question 3: OpenShift Version Selection
+### Step 4: Configuration Briefing
 
-**MCP Tool**: `list_versions` (from openshift-installer)
+**Progress**: Step 4 of 18
 
-**Parameters**: None
-
-**Action**:
-1. Call `list_versions` to get available OpenShift versions
-2. Parse the markdown table returned
-3. Extract versions with "Full Support" support level
-4. Present to user for selection
-
-**AskUserQuestion Parameters** (dynamically generated from list_versions):
-```json
-{
-  "questions": [
-    {
-      "question": "Which OpenShift version do you want to install?",
-      "header": "OCP Version",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "4.18.2 (Recommended)",
-          "description": "Latest stable release with full support. Recommended for production deployments."
-        },
-        {
-          "label": "4.17.1",
-          "description": "Previous stable release. Full support."
-        }
-        // ... up to 4 most recent Full Support versions
-      ]
-    }
-  ]
-}
-```
-
-**Store User Choice**: Save as `openshift_version` (e.g., "4.18.2")
-
-**Version Support Levels Explained** (from list_versions output):
-- **"Full Support"** - Production-ready, Generally Available (GA) releases **← Recommended for production**
-- **"Release Candidate"** - Beta/pre-release versions, NOT for production use
-- **"Maintenance Support"** - In maintenance mode, limited updates
-- **"End of Life"** - No longer supported, avoid using
-- **"Extended Support"** - Extended support lifecycle
-
-**Only show "Full Support" versions to users by default**
-
-**Input Validation**:
-- Verify version exists in list_versions output
-- Ensure version has "Full Support" status
-- If user chooses unsupported version, warn and ask for confirmation
-
----
-
-#### Question 4: Basic Cluster Information
-
-**For freeform text inputs, use plain prompts with clear validation**:
-
----
-
-**4a. Cluster Name**:
-
-**Prompt to user**:
-```
-What should we name this cluster?
-
-Requirements:
-- Length: 1-54 characters
-- Must start with a letter
-- Only lowercase letters, numbers, and hyphens allowed
-- No spaces or special characters
-
-Examples: "production-ocp", "edge-site-01", "dev-cluster"
-
-Enter cluster name:
-```
-
-**Wait for user response**
-
-**Validation**:
-```python
-import re
-
-def validate_cluster_name(name):
-    # Length check
-    if not (1 <= len(name) <= 54):
-        return False, "Cluster name must be 1-54 characters"
-
-    # Pattern check
-    pattern = r'^[a-z][a-z0-9-]*$'
-    if not re.match(pattern, name):
-        return False, "Must start with letter and contain only lowercase letters, numbers, hyphens"
-
-    # No consecutive hyphens or ending with hyphen
-    if '--' in name or name.endswith('-'):
-        return False, "Cannot have consecutive hyphens or end with hyphen"
-
-    return True, "Valid"
-
-# Execute validation
-is_valid, message = validate_cluster_name(user_input)
-```
-
-**If invalid**:
-```
-❌ Invalid cluster name: {message}
-
-Please enter a valid cluster name:
-```
-*Repeat until valid*
-
-**If valid**:
-```
-✅ Cluster name: {cluster_name}
-```
-
-**Store as**: `cluster_name`
-
----
-
-**4b. Base Domain**:
-
-**Prompt to user**:
-```
-What is the base DNS domain for this cluster?
-
-This is the parent domain under which the cluster will be accessible.
-
-The cluster will be accessible at:
-  API: https://api.{cluster-name}.{base-domain}:6443
-  Console: https://console-openshift-console.apps.{cluster-name}.{base-domain}
-
-Examples: "example.com", "ocp.mycompany.org", "edge.local"
-
-Enter base domain:
-```
-
-**Wait for user response**
-
-**Validation**:
-```python
-import re
-
-def validate_base_domain(domain):
-    # Basic pattern check
-    pattern = r'^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$'
-    if not re.match(pattern, domain, re.IGNORECASE):
-        return False, "Invalid domain format. Must be a valid DNS domain (e.g., example.com)"
-
-    # No underscores or spaces
-    if '_' in domain or ' ' in domain:
-        return False, "Domain cannot contain underscores or spaces"
-
-    # Should have at least one dot
-    if '.' not in domain:
-        return False, "Domain must have at least one dot (e.g., example.com)"
-
-    return True, "Valid"
-
-is_valid, message = validate_base_domain(user_input)
-```
-
-**If invalid**:
-```
-❌ Invalid domain: {message}
-
-Please enter a valid base domain:
-```
-*Repeat until valid*
-
-**If valid**:
-```
-✅ Base domain: {base_domain}
-
-Your cluster will be accessible at:
-  API: https://api.{cluster_name}.{base_domain}:6443
-  Console: https://console-openshift-console.apps.{cluster_name}.{base_domain}
-```
-
-**Store as**: `base_domain`
-
----
-
-3. **CPU Architecture**:
-
-   **AskUserQuestion Parameters**:
-   ```json
-   {
-     "questions": [
-       {
-         "question": "Which CPU architecture will your cluster nodes use?",
-         "header": "CPU Arch",
-         "multiSelect": false,
-         "options": [
-           {
-             "label": "x86_64 (Recommended)",
-             "description": "Standard Intel/AMD 64-bit processors. Most common architecture for servers and cloud environments."
-           },
-           {
-             "label": "aarch64 (ARM 64-bit)",
-             "description": "ARM 64-bit processors. Used in edge devices, some cloud instances, and ARM-based servers."
-           },
-           {
-             "label": "ppc64le (IBM Power)",
-             "description": "IBM POWER little-endian. Enterprise IBM hardware."
-           },
-           {
-             "label": "s390x (IBM Z)",
-             "description": "IBM mainframe architecture. z/Architecture systems."
-           }
-         ]
-       }
-     ]
-   }
-   ```
-
-   - Store as: `cpu_architecture`
-   - Default: "x86_64" if user doesn't specify
-   - Map labels: "x86_64 (Recommended)" → "x86_64", "aarch64 (ARM 64-bit)" → "aarch64", etc.
-
----
-
-**4c. SSH Public Key**:
-
-**Prompt to user**:
-```
-Provide your SSH public key for cluster node access.
-
-This key is REQUIRED for troubleshooting and maintenance access to cluster nodes.
-
-Your SSH public key should:
-✅ Start with: ssh-rsa, ssh-ed25519, ecdsa-sha2-nistp256, or ssh-dss
-✅ Be a single line (no newlines)
-✅ Have the format: <type> <key-data> <comment>
-
-To get your public key:
-  cat ~/.ssh/id_rsa.pub
-  (or ~/.ssh/id_ed25519.pub for ed25519 keys)
-
-⚠️  DO NOT paste your private key (files without .pub extension)
-
-Paste your SSH public key:
-```
-
-**Wait for user response**
-
-**Validation**:
-```python
-import re
-
-def validate_ssh_public_key(key):
-    # Remove any leading/trailing whitespace
-    key = key.strip()
-
-    # Check for private key markers (CRITICAL - reject if found)
-    private_markers = ['BEGIN RSA PRIVATE KEY', 'BEGIN OPENSSH PRIVATE KEY',
-                       'BEGIN DSA PRIVATE KEY', 'BEGIN EC PRIVATE KEY',
-                       'BEGIN PRIVATE KEY']
-
-    for marker in private_markers:
-        if marker in key:
-            return False, "⚠️  SECURITY: This appears to be a PRIVATE key! Only provide your PUBLIC key (.pub file)"
-
-    # Check for valid public key start
-    valid_types = ['ssh-rsa', 'ssh-ed25519', 'ecdsa-sha2-nistp256',
-                   'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521', 'ssh-dss']
-
-    key_type = key.split()[0] if key.split() else ""
-
-    if key_type not in valid_types:
-        return False, f"Key must start with one of: {', '.join(valid_types)}"
-
-    # Should have at least 3 parts (type, key-data, comment)
-    parts = key.split()
-    if len(parts) < 2:
-        return False, "Invalid format. Expected: <type> <key-data> [comment]"
-
-    # Key data should be base64
-    key_data = parts[1]
-    if not re.match(r'^[A-Za-z0-9+/]+=*$', key_data):
-        return False, "Key data appears invalid (should be base64 encoded)"
-
-    # Should be single line
-    if '\n' in key or '\r' in key:
-        return False, "Key must be on a single line"
-
-    return True, "Valid"
-
-is_valid, message = validate_ssh_public_key(user_input)
-```
-
-**If invalid**:
-```
-❌ Invalid SSH public key: {message}
-
-Please provide a valid SSH public key:
-```
-*Repeat until valid*
-
-**If valid**:
-```
-✅ SSH public key configured
-
-Key type: {key_type}
-Comment: {comment_if_present}
-```
-
-**Store as**: `ssh_public_key`
-
----
-
-### Step 3: Platform-Specific Configuration Gathering
-
-**Progress**: Step 3 of 18 - Platform Configuration
-
-**Purpose**: Collect configuration specific to the chosen platform and cluster type.
-
-#### For HA Clusters on baremetal/vsphere/nutanix (VIP Configuration Required)
-
-**Context**: These platforms require Virtual IP addresses for API and Ingress endpoints.
-
-**Prompt User**:
-```
-For High-Availability clusters on {platform}, you need to provide two Virtual IP addresses (VIPs):
-
-1. **API VIP**: Used for Kubernetes API server access (kubectl, oc commands)
-2. **Ingress VIP**: Used for application ingress traffic (routes to applications)
-
-Requirements:
-- Both IPs must be in the same subnet as your cluster nodes
-- IPs must NOT be assigned to any physical device
-- IPs must be reachable from all cluster nodes
-
-Example:
-  Machine Network: 192.168.1.0/24
-  API VIP: 192.168.1.100
-  Ingress VIP: 192.168.1.101
-```
-
-**Gather via prompts**:
-1. **API VIP**:
-   - Prompt: "Enter the API VIP address (e.g., 192.168.1.100):"
-   - Store as: `api_vip`
-   - **Validation**:
-     - Must be valid IPv4 format: `^(\d{1,3}\.){3}\d{1,3}$`
-     - Each octet must be 0-255
-     - Should not be: 0.0.0.0, 255.255.255.255, 127.x.x.x (loopback)
-     - If invalid format, ask user to re-enter
-
-2. **Ingress VIP**:
-   - Prompt: "Enter the Ingress VIP address (e.g., 192.168.1.101):"
-   - Store as: `ingress_vip`
-   - **Validation**: Same as API VIP
-   - **Additional Check**: Should be different from API VIP (warn if same, allow override)
-
-**If SNO or OCI platform**: Skip this section entirely (VIPs not needed)
-
----
-
-#### Optional: Static Network Configuration
-
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "Do you want to configure static network settings for cluster nodes? (DHCP will be used by default if you skip this)",
-      "header": "Network Config",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "Use DHCP (Recommended)",
-          "description": "Nodes will obtain IP addresses automatically via DHCP. Simplest option if DHCP is available on your network."
-        },
-        {
-          "label": "Configure Static Networking",
-          "description": "Manually specify IP addresses, DNS, routes, VLANs, and bonding. Required if DHCP is not available or for advanced networking requirements."
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Store User Choice**: `network_config_mode` ("dhcp" or "static")
-
-**If user chooses "Configure Static Networking"**:
-
-**Proceed to Static Network Configuration Workflow** (Step 3a below)
-
-**If user chooses "Use DHCP"**:
-- Set `static_network_configs = []` (empty)
-- Continue to next step
-
----
-
-### Step 3a: Three-Tier Static Network Configuration (OPTIONAL)
-
-**This section only executes if user chose "Configure Static Networking" in Step 3**
-
-**📘 Complete Guide**: For detailed workflows, examples, and troubleshooting, see **[Static Networking Guide](../../docs/static-networking-guide.md)**
-
-**Purpose**: Configure static IP addresses for cluster hosts when DHCP is not available.
-
-**Context**: Each physical host that will boot from the ISO needs its own static network configuration.
-The assisted installer applies configurations in **boot order**: first boot gets index 0, second boot gets index 1, etc.
-
-**⚠️ IMPORTANT**: Boot hosts in the order you configure them to avoid mismatched network settings.
-
----
-
-#### Step 3a-1: Select Configuration Complexity Tier
-
-**Consult Guide First** (RECOMMENDED):
-1. **Action**: Read [static-networking-guide.md](../../docs/static-networking-guide.md) using Read tool to understand the three configuration tiers
-2. **Output to user**: "I consulted [static-networking-guide.md](../../docs/static-networking-guide.md) to review static networking options."
-
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "How would you like to configure static networking? See the Static Networking Guide for detailed information on each tier.",
-      "header": "Config Mode",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "Simple Mode (Recommended)",
-          "description": "Basic setup - IP address, gateway, DNS. For straightforward networks. See guide: Simple Mode Workflow"
-        },
-        {
-          "label": "Advanced Mode",
-          "description": "Full control - VLANs, bonding, custom routes. For enterprise networks. See guide: Advanced Mode Workflow"
-        },
-        {
-          "label": "Manual Mode",
-          "description": "Provide your own NMState YAML. For experts. See guide: Manual Mode Workflow"
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Store User Choice**: `config_tier` ("simple", "advanced", or "manual")
-
-**Display**:
-```
-Selected configuration tier: {config_tier}
-
-📖 Refer to [Static Networking Guide](../../docs/static-networking-guide.md) for:
-   - Detailed step-by-step instructions for your chosen tier
-   - NMState YAML examples and templates
-   - Troubleshooting common networking issues
-   - Best practices for network configuration
-```
-
----
-
-#### Step 3a-2: Determine Number of Hosts
-
-**Prompt**:
-```
-How many hosts will you configure with static networking?
-
-For reference:
-- Single-Node OpenShift: 1 host
-- HA Compact (3 masters, no workers): 3 hosts
-- HA Standard (3 masters + N workers): 3 + N hosts
-
-You can configure fewer hosts now and add more later if needed.
-
-Enter number of hosts (1-20):
-```
-
-**Gather**: `num_static_hosts` (integer, 1-20)
-
-**Validation**:
-- Must be >= 1
-- Warn if number doesn't match expected cluster size (but allow to proceed)
-
-**Initialize**: `static_network_configs = []` (array to store NMState YAML for each host)
-
-**Display**:
-```
-Configuring static networking for {num_static_hosts} host(s)
-
-📖 See [Static Networking Guide - Boot Order](../../docs/static-networking-guide.md#how-assisted-installer-applies-network-configs) for critical information about boot order.
-```
-
----
-
-#### Step 3a-3: Configure Each Host
-
-**For each host from 1 to num_static_hosts**:
-
-**Display Progress**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Configuring Host #{current_host} of {num_static_hosts}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This configuration will be applied to the {ordinal} server that boots from the cluster ISO.
-
-📖 For detailed configuration instructions, see:
-   - Simple Mode: [Guide - Simple Mode](../../docs/static-networking-guide.md#simple-mode-workflow)
-   - Advanced Mode: [Guide - Advanced Mode](../../docs/static-networking-guide.md#advanced-mode-workflow)
-   - Manual Mode: [Guide - Manual Mode](../../docs/static-networking-guide.md#manual-mode-workflow)
-```
-
----
-
-**Branch Based on Tier**:
-
----
-
-##### Simple Mode (config_tier == "simple"):
-
-**Gather Required Information** (following guide):
-
-1. **Interface Name**: (default: `eth0`)
-2. **MAC Address**: Format `XX:XX:XX:XX:XX:XX`
-3. **IPv4 Address**: e.g., `192.168.1.10`
-4. **Subnet Prefix**: e.g., `24` (for /24)
-5. **Gateway**: e.g., `192.168.1.1`
-6. **DNS Server(s)**: e.g., `8.8.8.8` (can provide multiple, comma-separated)
-
-**MCP Tool**: `generate_nmstate_yaml` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "params": {
-    "ethernet_ifaces": [
-      {
-        "name": "{interface_name}",
-        "mac_address": "{mac_address}",
-        "ipv4_address": {
-          "address": "{ipv4_address}",
-          "cidr_length": {subnet_prefix}
-        }
-      }
-    ],
-    "dns": {
-      "dns_servers": ["{dns_server_1}", "{dns_server_2}", ...]
-    },
-    "routes": [
-      {
-        "destination": "0.0.0.0/0",
-        "next_hop_address": "{gateway}",
-        "next_hop_interface": "{interface_name}",
-        "table_id": 254
-      }
-    ]
-  }
-}
-```
-
-**Expected Output**: NMState YAML string
-
-**📖 Reference**: See [Static Networking Guide - Simple Mode Example](../../docs/static-networking-guide.md#example-1-sno---single-interface) for complete examples
-
----
-
-##### Advanced Mode (config_tier == "advanced"):
-
-**Display**:
-```
-Advanced Mode selected.
-
-You can configure:
-✅ Multiple ethernet interfaces
-✅ VLAN tagging (802.1Q)
-✅ Network bonding (active-backup, 802.3ad, etc.)
-✅ Custom routing
-✅ Interfaces without IPs (for bonding/VLAN base)
-
-📖 See [Static Networking Guide - Advanced Mode](../../docs/static-networking-guide.md#advanced-mode-workflow) for detailed instructions and examples.
-```
-
-**Gather Information** (following advanced guide):
-
-1. **Ethernet Interfaces**: Name, MAC, optional IP (can be base for VLAN/bond)
-2. **VLAN Interfaces** (optional): VLAN ID, base interface, IP
-3. **Bond Interfaces** (optional): Mode, port interfaces, IP
-4. **DNS**: Servers, optional search domains
-5. **Routes**: Destination, gateway, interface, metric
-
-**MCP Tool**: `generate_nmstate_yaml` (from openshift-installer)
-
-**Parameters**: Use complete params object with ethernet_ifaces, vlan_ifaces, bond_ifaces, dns, routes
-
-**📖 Reference**: See [Static Networking Guide - Advanced Example](../../docs/static-networking-guide.md#example-3-ha---bonded--vlan) for bonded + VLAN configuration
-
----
-
-##### Manual Mode (config_tier == "manual"):
-
-**Display**:
-```
-Manual Mode selected.
-
-You'll provide your own NMState YAML.
-
-Requirements:
-✅ Valid NMState YAML syntax
-✅ Proper interface configuration
-✅ MAC addresses must match physical hardware
-✅ IP addresses must not conflict with other hosts
-
-📖 See [Static Networking Guide - Manual Mode](../../docs/static-networking-guide.md#manual-mode-workflow) for examples and reference YAML.
-```
-
-**Prompt**:
-```
-Paste your NMState YAML for Host #{current_host}:
-
-(Paste complete YAML, then type "END" on a new line when done)
-```
-
-**Gather**: `nmstate_yaml` (multiline YAML input)
-
-**Store**: `nmstate_yaml` directly (skip generate_nmstate_yaml tool)
-
----
-
-#### Step 3a-4: Validate Generated/Provided YAML
-
-**For all tiers** (Simple, Advanced, Manual):
-
-**MCP Tool**: `validate_nmstate_yaml` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "nmstate_yaml": "{nmstate_yaml_from_previous_step}"
-}
-```
-
-**Expected Output**: "YAML is valid" or error message
-
-**On Success**:
-```
-✅ NMState YAML validated successfully for Host #{current_host}
-```
-
-**On Failure**:
-```
-❌ Invalid NMState YAML:
-
-Error: {validation_error_message}
-
-📖 See [Static Networking Guide - Troubleshooting](../../docs/static-networking-guide.md#issue-invalid-yaml-error) for help fixing YAML errors.
-
-Options:
-- "retry" - Re-configure this host's networking
-- "manual" - Provide YAML manually
-- "abort" - Cancel static networking setup
-```
-
-**If "retry"**: Restart from Step 3a-3 for this host (same index)
-**If "manual"**: Switch to Manual Mode for this host
-**If "abort"**: Exit static networking workflow, continue with DHCP
-
-Quick Fix → See [YAML Validation](../../docs/static-networking-guide.md#troubleshooting)
-
----
-
-#### Step 3a-5: Review and Confirm Configuration
-
-**Display to User**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Static Network Configuration for Host #{current_host}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-{if simple mode:}
-Interface: {interface_name} ({mac_address})
-IP Address: {ipv4_address}/{subnet_prefix}
-Gateway: {gateway}
-DNS Servers: {dns_servers}
-{endif}
-
-{if advanced/manual mode:}
-Configuration includes:
-{list key components: interfaces, VLANs, bonds, routes}
-{endif}
-
-Generated NMState YAML:
-```yaml
-{display_yaml_preview}
-```
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "Accept this network configuration for Host #{current_host}?",
-      "header": "Confirm Config",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "Yes - Accept this configuration",
-          "description": "Save this NMState YAML for Host #{current_host}"
-        },
-        {
-          "label": "No - Reconfigure this host",
-          "description": "Start over for this host with different settings"
-        }
-      ]
-    }
-  ]
-}
-```
-
-**If "Yes"**:
-- Append `nmstate_yaml` to `static_network_configs` array
-- **Display**: `✅ Configuration saved for Host #{current_host}`
-- **Continue** to next host (or Step 3a-6 if last host)
-
-**If "No"**:
-- **Display**: `Restarting configuration for Host #{current_host}`
-- Restart from Step 3a-3 for this host (same index)
-
----
-
-#### Step 3a-6: Apply All Configurations to Cluster
-
-**After all hosts configured**:
-
-**Display Summary**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Static Network Configuration Complete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Configured {num_static_hosts} host(s) with static networking.
-
-⚠️  CRITICAL REMINDER:
-Boot your physical servers IN ORDER to match these configurations:
-- First server booted → Gets Host #1 config
-- Second server booted → Gets Host #2 config
-- Third server booted → Gets Host #3 config
-... and so on
-
-📖 See [Static Networking Guide - Best Practices](../../docs/static-networking-guide.md#best-practices) for deployment tips.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**For each NMState YAML in static_network_configs array (index 0, 1, 2, ...)**:
-
-**MCP Tool**: `alter_static_network_config_nmstate_for_host` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}",
-  "index": null,
-  "new_nmstate_yaml": "{nmstate_yaml_from_array}"
-}
-```
-
-**Note**: Use `index=null` to append configurations in order. First call appends at index 0, second at index 1, etc.
-
-**On Success for Each**:
-```
-✅ Applied static network configuration #{index} to cluster
-```
-
-**Verification** (optional):
-
-**MCP Tool**: `list_static_network_config` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
-
-**Expected Output**: JSON array showing all configured network configs
-
-**Display**:
-```
-✅ All {num_static_hosts} static network configurations applied to cluster
-
-You can verify configurations anytime with:
-- cluster_inventory skill: "show cluster network config"
-- MCP tool: list_static_network_config
-```
-
-**Store**: `static_network_configs` array for reference
-
-**Continue to Step 4**
-
----
-
-### Step 4: Display Configuration Briefing Table
-
-**Progress**: Step 4 of 18 - Configuration Review
-
-**Purpose**: Show complete cluster configuration to user before creation, allow review and confirmation.
-
-**Generate Configuration Summary Table**:
-
-```markdown
-# 📋 OpenShift Cluster Configuration Summary
+Display summary table:
 
 | Parameter | Value |
 |-----------|-------|
-| **Cluster Name** | {cluster_name} |
-| **Cluster Type** | {cluster_type} (SNO / HA) |
-| **OpenShift Version** | {openshift_version} |
-| **Platform** | {platform} |
-| **CPU Architecture** | {cpu_architecture} |
-| **Base Domain** | {base_domain} |
-| **Cluster FQDN** | api.{cluster_name}.{base_domain} |
-| **SSH Key Configured** | ✓ Yes (public key provided) |
-| **VIP Configuration** | {if HA + baremetal/vsphere/nutanix: API={api_vip}, Ingress={ingress_vip}} {else: Not required for this platform} |
-| **Static Networking** | {if static: "Configured for {num_static_hosts} hosts"} {else: "DHCP (default)"} |
+| Cluster Name | {cluster_name} |
+| Type | {SNO/HA} |
+| Version | {openshift_version} |
+| Platform | {platform} |
+| Architecture | {cpu_architecture} |
+| Domain | {base_domain} |
+| VIPs | {if applicable} |
+| Networking | {DHCP or Static (n hosts)} |
 
-## Next Steps:
-1. Create cluster definition
-2. Download cluster ISO
-3. Boot {expected_host_count} host(s) from ISO
-4. Wait for host discovery and validation
-5. Assign host roles (master/worker)
-6. Start installation
-7. Monitor installation progress
-8. Download credentials after completion
-
-**Installation Phases**:
-- Cluster definition creation (Phase 1)
-- Host discovery and validation (Phase 2)
-- Role assignment and configuration (Phase 3)
-- Installation execution (Phase 4)
-- Credential retrieval (Phase 5)
-```
-
-**Expected Host Count Calculation**:
-- SNO: 1 host
-- HA: Minimum 3 hosts (inform user they can add more for workers)
+**Reference**: [Examples](../../docs/examples.md)
 
 ---
 
-### Step 5: Human Confirmation Before Cluster Creation
+### Step 5: Confirmation Before Creation
 
-**Progress**: Step 5 of 18 - Awaiting User Approval
+**Progress**: Step 5 of 18 - CRITICAL CHECKPOINT
 
-**CRITICAL: Human-in-the-Loop Checkpoint**
+Ask: "Review configuration. Ready to create cluster definition?"
 
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "Review the configuration above. Ready to create the cluster definition?",
-      "header": "Proceed?",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "Yes - Create cluster now (Recommended)",
-          "description": "Proceed with cluster creation using the configuration shown above. This will create the cluster definition in Red Hat Console."
-        },
-        {
-          "label": "No - Modify configuration",
-          "description": "Go back and change cluster settings before creating"
-        },
-        {
-          "label": "Abort - Cancel cluster creation",
-          "description": "Stop the workflow and do not create the cluster"
-        }
-      ]
-    }
-  ]
-}
-```
-
-**If "Yes - Create cluster now"**: Proceed to Step 6
-
-**If "No - Modify configuration"**:
-- Ask which parameter to modify (cluster name, version, platform, networking, etc.)
-- Re-prompt for that specific parameter
-- Re-display configuration summary
-- Re-ask confirmation
-- Loop until user confirms
-
-**If "Abort - Cancel cluster creation"**:
-- Display: "Cluster creation cancelled. No changes were made."
-- Exit skill gracefully
+**Options**:
+- **Yes**: Proceed to Step 6
+- **No**: Allow parameter modification, re-display, re-ask
+- **Abort**: Exit gracefully
 
 ---
 
 ### Step 6: Create Cluster Definition
 
-**Progress**: Step 6 of 18 - Creating Cluster Definition
+**Progress**: Step 6 of 18
 
-**CRITICAL**: This is a destructive/irreversible action. Confirmation obtained in Step 5.
+**Tool**: `create_cluster`
 
-**MCP Tool**: `create_cluster` (from openshift-installer)
+**Parameters**: `{name, version, base_domain, single_node, platform, cpu_architecture, ssh_public_key}`
 
-**Parameters**:
-```json
-{
-  "name": "{cluster_name}",
-  "version": "{openshift_version}",
-  "base_domain": "{base_domain}",
-  "single_node": {true if SNO, false if HA},
-  "platform": "{platform}",
-  "cpu_architecture": "{cpu_architecture}",
-  "ssh_public_key": "{ssh_public_key}"
-}
-```
+**Output**: Cluster UUID (`cluster_id`) - **CRITICAL for all subsequent operations**
 
-**Expected Output**: Cluster UUID (cluster_id)
-
-**Store**: `cluster_id` - **CRITICAL: This is needed for ALL subsequent operations**
-
-**Error Handling**:
-- If tool returns error (e.g., duplicate cluster name, invalid parameters):
-  - Display error message
-  - If duplicate name: Suggest alternative name or ask to use existing cluster
-  - If invalid parameters: Show which parameter is invalid, ask to correct
-  - Allow retry or abort
-
-**On Success**:
-```
-✅ Cluster definition created successfully!
-
-Cluster ID: {cluster_id}
-Cluster Name: {cluster_name}
-Status: insufficient (waiting for host discovery)
-
-Next: Configure cluster-specific settings...
-```
+**Error Handling**: Display error, allow retry/abort if duplicate name or invalid parameters.
 
 ---
 
-### Step 7: Apply Platform-Specific Configuration
+### Step 7: Apply Platform Configuration
 
-**Progress**: Step 7 of 18 - Applying Additional Configuration
+**Progress**: Step 7 of 18
 
-**Purpose**: Configure settings that can only be set after cluster creation.
+**7a. Set VIPs** (HA + baremetal/vsphere/nutanix only):
+- **Tool**: `set_cluster_vips`
+- **Parameters**: `{cluster_id, api_vip, ingress_vip}`
 
-#### Step 7a: Set VIPs (HA Clusters Only)
+**7b. Apply Static Network** (if configured):
+- For each host: **Tool**: `alter_static_network_config_nmstate_for_host`
+- **Parameters**: `{cluster_id, nmstate_yaml, mac_address}`
+- **Verify**: Call `list_static_network_config`
 
-**Conditional**: Only execute if platform is baremetal, vsphere, or nutanix AND cluster_type is HA
-
-**MCP Tool**: `set_cluster_vips` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}",
-  "api_vip": "{api_vip}",
-  "ingress_vip": "{ingress_vip}"
-}
-```
-
-**Expected Output**: Updated cluster configuration
-
-**Error Handling**:
-- If VIPs are invalid or already in use, display error
-- Ask user to provide different VIP addresses
-- Retry with new VIPs
-
-**On Success**:
-```
-✅ VIP configuration applied:
-   API VIP: {api_vip}
-   Ingress VIP: {ingress_vip}
-```
-
-**If platform is SNO/OCI**: Skip this step entirely, display:
-```
-ℹ️  VIP configuration not required for {platform} clusters (skipped)
-```
+**Reference**: [Providers](../../docs/providers.md), [Networking](../../docs/networking.md)
 
 ---
 
-#### Step 7b: Apply Static Network Configuration (If Configured)
+### Step 8: Generate Cluster ISO
 
-**Conditional**: Only execute if `static_network_configs` array is not empty
+**Progress**: Step 8 of 18
 
-**For each NMState YAML in static_network_configs array (index 0, 1, 2, ...)**:
-
-**MCP Tool**: `alter_static_network_config_nmstate_for_host` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}",
-  "index": null,  // null means append new config
-  "new_nmstate_yaml": "{nmstate_yaml_for_this_host}"
-}
-```
-
-**Expected Output**: Updated infrastructure environment
-
-**On Success for Each Host**:
-```
-✅ Static network configuration applied for Host #{index + 1}
-```
-
-**After All Hosts**:
-```
-✅ Static network configuration complete for all {num_static_hosts} hosts
-```
-
-**Error Handling**:
-- If YAML application fails, display error
-- Show which host configuration failed
-- Offer to retry or skip this host
-
-**If no static networking**: Skip this step, display:
-```
-ℹ️  Using DHCP for network configuration (no static config to apply)
-```
-
----
-
-## Cleanup and Rollback Strategy
-
-**When to Use**:
-- Cluster creation succeeded but configuration failed
-- User wants to abort and start over
-- Installation failed and cluster is in error state
-
-**Cleanup Options**:
-
-### Option 1: Delete Cluster and Start Over
-
-**Display to User**:
-```
-🗑️  Cluster Cleanup
-
-Current cluster:
-- Name: {cluster_name}
-- ID: {cluster_id}
-- Status: {current_status}
-- Hosts discovered: {host_count}
-
-Deleting this cluster will:
-❌ Remove the cluster definition from Red Hat Console
-❌ Deregister all discovered hosts
-❌ Invalidate the cluster ISO
-✅ Allow you to start fresh with same cluster name
-✅ Free up any reserved resources
-
-⚠️  This action cannot be undone.
-
-Do you want to delete this cluster and start over? (yes/no)
-```
-
-**If "yes"**:
-
-**Note**: There is NO delete_cluster MCP tool currently available.
-
-**Workaround - Manual Deletion Instructions**:
-```
-⚠️  Automated cluster deletion is not currently available via MCP tools.
-
-To delete the cluster manually:
-
-1. Visit Red Hat Console:
-   https://console.redhat.com/openshift/assisted-installer/clusters
-
-2. Find cluster: "{cluster_name}" (ID: {cluster_id})
-
-3. Click the ⋮ (three dots) menu → "Delete Cluster"
-
-4. Confirm deletion
-
-5. Come back here when done and say "cleanup complete" to start over
-
-Alternatively, say "manual" if you want to manage this cluster manually outside this workflow.
-```
-
-**Wait for user confirmation**:
-- If "cleanup complete": Restart from Step 2 (gather requirements)
-- If "manual": Exit skill gracefully
-
-**If "no"**:
-```
-Cluster will be preserved in its current state.
-
-You can:
-- Resume configuration later using cluster-inventory skill
-- Manually configure via Red Hat Console
-- Delete the cluster manually if needed
-
-Cluster ID for reference: {cluster_id}
-```
-
----
-
-### Option 2: Preserve and Manual Fix
-
-```
-The cluster "{cluster_name}" (ID: {cluster_id}) will be left in its current state: {status}
-
-You can:
-
-1. **View cluster details**:
-   Use cluster-inventory skill: "show cluster {cluster_name}"
-
-2. **Continue manual configuration**:
-   Red Hat Console: https://console.redhat.com/openshift/assisted-installer/clusters/{cluster_id}
-
-3. **Delete later if needed**:
-   Via Red Hat Console ⋮ menu → Delete Cluster
-
-Cluster information saved to: /tmp/{cluster_name}/cluster-info.txt
-```
-
-**MCP Tool**: Write tool
-
-**Parameters**:
-- file_path: "/tmp/{cluster_name}/cluster-info.txt"
-- content:
-  ```
-  Cluster Information
-  ==================
-  Name: {cluster_name}
-  ID: {cluster_id}
-  Status: {current_status}
-  OpenShift Version: {version}
-  Platform: {platform}
-  Base Domain: {base_domain}
-
-  Console URL: https://console.redhat.com/openshift/assisted-installer/clusters/{cluster_id}
-
-  Hosts Discovered: {host_count}
-  {for each host:}
-    - {hostname}: {role}, {status}
-  {endfor}
-
-  Configuration Applied:
-  - SSH Key: {ssh_key_configured}
-  - VIPs: {vip_info if applicable}
-  - Static Networking: {static_network_count} hosts configured
-
-  Created: {creation_timestamp}
-  Last Updated: {current_timestamp}
-  ```
+**Tool**: `cluster_iso_download_url`
+**Parameters**: `{cluster_id}`
 
 **Display**:
 ```
-✅ Cluster information saved to /tmp/{cluster_name}/cluster-info.txt
+Cluster Boot ISO Ready
+Download: {url}
 
-You can reference this file for cluster details.
+Instructions:
+1. Download ISO
+2. Boot {expected_host_count} server(s) from ISO
+3. Wait 5-10 minutes for registration
+4. Say "check for hosts" when ready
+
+Note: Hosts receive static configs in boot order.
 ```
 
 ---
 
-### Option 3: Retry Current Step
+### Step 9: Wait for User to Boot Hosts
 
-```
-You can retry the current configuration step without deleting the cluster.
+**Progress**: Step 9 of 18
 
-Current step: {current_step_name}
+Display: "Waiting for you to boot hosts. When ready, say 'check for hosts'."
 
-Retry this step? (yes/no)
-```
-
-**If "yes"**: Re-execute current step
-**If "no"**: Proceed to cleanup Option 1 or 2
+**Wait for user trigger** - No automatic polling.
 
 ---
 
-**Add cleanup prompts to these failure points**:
+### Step 10: Check Host Discovery
 
-1. **Step 7a (VIP configuration fails)**:
-   After repeated failures, ask:
-   ```
-   Options:
-   - "retry" - Try different VIP addresses
-   - "cleanup" - Delete cluster and start over
-   - "manual" - I'll configure manually
-   ```
+**Progress**: Step 10 of 18
 
-2. **Step 7b (Static network config fails)**:
-   After validation errors, ask:
-   ```
-   Options:
-   - "retry" - Re-enter network configuration
-   - "cleanup" - Delete cluster and start over
-   - "skip" - Proceed without static networking (use DHCP)
-   ```
+**Tool**: `cluster_info`
+**Parameters**: `{cluster_id}`
 
-3. **Step 12 (Validation fails)**:
-   Already includes cleanup option
+**Parse**: Extract `hosts` array, count discovered hosts
 
-4. **Step 15b (Installation fails)**:
-   Already includes cleanup option
+**Display**: Table with Host #, Hostname, CPU, RAM, Disk, Status
 
----
-
-### Step 8: Generate and Provide Cluster ISO
-
-**Progress**: Step 8 of 18 - Generating Cluster ISO
-
-**Purpose**: Get the bootable ISO URL for user to download and boot their physical/virtual hosts.
-
-**MCP Tool**: `cluster_iso_download_url` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
-
-**Expected Output**: JSON with ISO download URL and optional expiration timestamp
-
-**Parse Response**:
-- Extract `url` from JSON response
-- Extract `expires_at` if present
-
-**Display to User**:
-```
-📀 Cluster Boot ISO Ready
-
-Download URL: {url}
-{if expires_at: "⏰ URL expires at: {expires_at} (download soon!)"}
-
-📋 Instructions to Boot Hosts:
-
-{if cluster_type == "SNO":}
-1. Download the ISO from the URL above
-2. Write ISO to USB drive or use virtual media (for VMs)
-3. Boot your single server from the ISO
-4. Wait 3-5 minutes for the host to register automatically
-5. Return here and say "check for hosts" when ready
-
-{else: // HA cluster}
-1. Download the ISO from the URL above
-2. Write ISO to USB drives or use virtual media
-3. Boot AT LEAST {minimum_hosts} servers from the ISO simultaneously
-   - For HA: minimum 3 master nodes required
-   - You can boot additional servers for worker nodes
-4. Wait 5-10 minutes for all hosts to register
-5. Return here and say "check for hosts" when ready
-
-⚠️  Important:
-- The same ISO works for all hosts
-- Hosts will auto-register with the cluster when booted
-- Each host will receive network config in order booted (if using static networking)
-{if static_network_configs not empty:}
-  - 1st host booted → Host #1 network config
-  - 2nd host booted → Host #2 network config
-  - etc.
-```
-
-**Store**: `iso_url` for reference
-
----
-
-### Step 9: Wait for User to Boot Hosts (User-Triggered)
-
-**Progress**: Step 9 of 18 - Waiting for Host Boot
-
-**Purpose**: Pause workflow, wait for user confirmation that they've booted hosts and are ready to check.
-
-**Action**: Display message and wait:
-```
-⏸️  Waiting for you to boot the hosts...
-
-When you've booted {expected_host_count} host(s) from the ISO and waited 5-10 minutes,
-tell me "check for hosts" or "hosts are ready" and I'll verify they've been discovered.
-
-You can also:
-- Say "I need more time" - I'll wait longer
-- Say "show me the ISO URL again" - I'll redisplay the download link
-- Say "abort" - Cancel the installation
-```
-
-**Wait for User Response**:
-- Monitor for keywords: "check", "ready", "hosts", "discovered", "done"
-- If user says "ISO URL" or "download": Re-display ISO URL from Step 8
-- If user says "abort" or "cancel": Ask for confirmation, then exit skill
-- If user confirms ready: Proceed to Step 10
-
-**Do NOT poll automatically** - wait for explicit user trigger
-
----
-
-### Step 10: Check Host Discovery (User-Triggered)
-
-**Progress**: Step 10 of 18 - Discovering Cluster Hosts
-
-**Purpose**: Verify that the expected number of hosts have booted and been discovered by the cluster.
-
-**MCP Tool**: `cluster_info` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
-
-**Expected Output**: Detailed cluster information including discovered hosts
-
-**Parse Response**:
-1. Extract `hosts` array from cluster_info
-2. Count number of discovered hosts: `discovered_host_count = len(hosts)`
-3. Extract each host's:
-   - `id` (host UUID)
-   - `requested_hostname` or generated hostname
-   - Hardware specs: CPU cores, RAM, disk size
-   - `status` (discovering, known, insufficient, disconnected, ready)
-   - `role` (master, worker, auto-assign, or unassigned)
-   - Validation messages
-
-**Display Host Discovery Status**:
-```
-🔍 Host Discovery Status:
-
-Discovered Hosts: {discovered_host_count} / {expected_host_count}
-
-| Host # | Hostname | CPU | RAM | Disk | Status | Role | Validations |
-|--------|----------|-----|-----|------|--------|------|-------------|
-| 1 | {hostname} | {cpu} cores | {ram} GB | {disk} GB | {status} | {role} | {validation_summary} |
-| 2 | ... | ... | ... | ... | ... | ... | ... |
-
-{if discovered_host_count < expected_host_count:}
-⚠️  Expected {expected_host_count} hosts, only {discovered_host_count} discovered so far.
-
-Options:
-- Wait longer and "check again" (hosts may still be booting)
-- Proceed with {discovered_host_count} hosts (if sufficient for cluster type)
-- Abort installation
-
-Quick Fix → See [Host Discovery Issues](../../docs/troubleshooting.md#host-discovery-issues)
-Quick Fix → See [Network Connectivity](../../docs/troubleshooting.md#network-connectivity-problems)
-{endif}
-
-{if discovered_host_count >= expected_host_count:}
-✅ All expected hosts discovered!
-
-Next: Assign roles to hosts and validate they're ready for installation.
-{endif}
-```
-
-**Minimum Host Validation**:
+**Validation**:
 - SNO: Requires exactly 1 host
-- HA: Requires minimum 3 hosts for masters
+- HA: Minimum 3 hosts
 
-**If insufficient hosts discovered**:
-- Ask user: "Do you want to wait longer for more hosts, proceed with current count, or abort?"
-- If wait: Loop back to Step 9 (user-triggered check again)
-- If proceed: Warn about insufficient hosts but allow continuation (will fail later validations)
-- If abort: Exit skill
+**If insufficient**: Ask to wait/proceed/abort.
 
-**If sufficient hosts**: Proceed to Step 11
+**Reference**: [Host Requirements](../../docs/host-requirements.md)
 
 ---
 
-### Step 11: Host Role Assignment with Automatic Suggestions
+### Step 11: Host Role Assignment
 
-**Progress**: Step 11 of 18 - Assigning Host Roles
+**Progress**: Step 11 of 18
 
-**Purpose**: Assign master/worker roles to discovered hosts based on hardware specs and cluster requirements.
+**SNO**: Single host auto-assigned "master"
 
-**Role Assignment Rules**:
+**HA**:
+- Suggest first 3 hosts as "master"
+- Additional hosts as "worker"
+- Allow user override
 
-**For SNO Clusters**:
-- The single discovered host MUST be assigned role: "master"
-- No user selection needed
-- Display: "✅ Host assigned role: master (SNO - all roles combined)"
-- Proceed directly to role assignment MCP tool call
-
-**For HA Clusters**:
-
-**Initialization**:
-- `assigned_masters_count = 0`
-- `assigned_workers_count = 0`
-- `host_index = 1`
-
-**For Each Discovered Host** (iterate in order of discovery):
-
-**Step 11.1: Analyze Host Hardware**:
-
-Extract from cluster_info host data:
-- `cpu_cores` = host CPU count
-- `ram_gb` = host RAM in GB
-- `disk_gb` = host disk size in GB
-
-**Step 11.2: Determine Suggested Role**:
-
-**Hardware Requirements Explained**:
-
-**Master Node Requirements** (for HA clusters):
-- Minimum: 4 CPU cores - **Why**: Run Kubernetes control plane (API server, etcd, scheduler) - CPU-intensive
-- Recommended: 4+ cores for production
-- Minimum: 16 GB RAM - **Why**: etcd and API server consume significant memory
-- Recommended: 32+ GB RAM for production workloads
-- Minimum: 120 GB disk - **Why**: Container images, etcd database, system logs
-- Recommended: 500+ GB for production with many operators
-
-**Worker Node Requirements**:
-- Minimum: 2 CPU cores - **Why**: Run containerized applications
-- Recommended: 8+ cores for production workloads
-- Minimum: 8 GB RAM - **Why**: Application containers need memory
-- Recommended: 16+ GB RAM for production applications
-- Minimum: 120 GB disk - **Why**: Container images and application data
-- Recommended: 500+ GB for production with many applications
-
-**SNO Requirements** (single node serves all roles):
-- Minimum: 8 CPU cores - **Why**: Combined control plane + workload requirements
-- Minimum: 32 GB RAM - **Why**: Must accommodate both control plane and applications
-- Minimum: 120 GB disk - **Why**: All cluster components and applications
-
-**Rule Set**:
-
-```
-IF assigned_masters_count < 3:
-    # Still need master nodes for HA cluster
-
-    IF cpu_cores >= 4 AND ram_gb >= 16 AND disk_gb >= 120:
-        suggested_role = "master"
-        suggestion_note = "Recommended - meets master requirements"
-
-    ELSE:
-        suggested_role = "master"
-        suggestion_note = "⚠️ Below recommended specs (4 cores, 16GB RAM, 120GB disk)"
-        warning = "Host may experience performance issues as master node. Quick Fix → See [Hardware Requirements](../../docs/troubleshooting.md#hardware-requirements)"
-
-ELSE:
-    # Already have 3 masters, suggest worker
-
-    IF cpu_cores >= 2 AND ram_gb >= 8 AND disk_gb >= 120:
-        suggested_role = "worker"
-        suggestion_note = "Recommended - meets worker requirements"
-
-    ELSE:
-        suggested_role = "worker"
-        suggestion_note = "⚠️ Below recommended specs (2 cores, 8GB RAM, 120GB disk)"
-        warning = "Host may not handle production workloads well. Quick Fix → See [Hardware Requirements](../../docs/troubleshooting.md#hardware-requirements)"
-```
-
-**Step 11.3: Present Suggestion to User**:
-
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "Assign role for Host #{i}: {hostname} ({cpu} cores, {ram}GB RAM, {disk}GB disk)?",
-      "header": "Host #{i} Role",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "{suggested_role}",
-          "description": "Use the suggested role based on hardware specs and cluster requirements"
-        },
-        {
-          "label": "master",
-          "description": "Control plane node (API server, etcd, scheduler). Requires 4+ cores, 16+ GB RAM."
-        },
-        {
-          "label": "worker",
-          "description": "Compute node for application workloads. Requires 2+ cores, 8+ GB RAM."
-        },
-        {
-          "label": "auto-assign",
-          "description": "Let the installer choose the role automatically based on cluster needs"
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Important**: First option (suggested_role) will appear with "(Recommended)" label automatically
-
-**Step 11.4: Store User Selection**:
-
-```
-user_selected_role = user_response_from_AskUserQuestion
-
-# Update counters
-IF user_selected_role == "master":
-    assigned_masters_count += 1
-ELIF user_selected_role == "worker":
-    assigned_workers_count += 1
-# auto-assign doesn't update counters (installer will decide)
-```
-
-**Step 11.5: Assign Role via MCP Tool**:
-
-**MCP Tool**: `set_host_role` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "host_id": "{host_id}",
-  "cluster_id": "{cluster_id}",
-  "role": "{user_selected_role}"
-}
-```
-
-**Expected Output**: Updated host configuration
-
-**On Success**:
-```
-✅ Role assigned: Host #{host_index} ({hostname}) → {user_selected_role}
-
-{if warning exists: Display warning}
-```
-
-**Step 11.6: Increment Host Index and Continue**:
-
-```
-host_index += 1
-
-IF more_hosts_remaining:
-    GOTO Step 11.1 (next host)
-ELSE:
-    GOTO Step 11.7 (summary)
-```
+**Tool**: `set_host_role` (for each host)
+**Parameters**: `{cluster_id, host_id, role}`
 
 ---
 
-**Step 11.7: Role Assignment Summary**:
+### Step 12: Validate Cluster Readiness
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ All Host Roles Assigned
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Progress**: Step 12 of 18
 
-**Summary**:
-- Master nodes: {assigned_masters_count}
-- Worker nodes: {assigned_workers_count}
-- Auto-assigned: {auto_assigned_count}
-- Total hosts: {total_host_count}
+**Tool**: `cluster_info`
 
-**Host Details**:
-| Host # | Hostname | Role | CPU | RAM | Disk |
-|--------|----------|------|-----|-----|------|
-| 1 | {hostname} | {role} | {cpu} | {ram} | {disk} |
-...
+**Check**: Cluster `status` should be "ready"
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**If validation fails**: Display errors, offer fix/wait/abort.
 
-**Validation Check for HA Clusters**:
-
-```
-IF cluster_type == "HA" AND assigned_masters_count != 3:
-    DISPLAY WARNING:
-    ```
-    ⚠️  Warning: HA clusters should have exactly 3 master nodes.
-        Current master count: {assigned_masters_count}
-
-        Recommendation: Adjust role assignments before proceeding.
-
-        Would you like to reassign roles? (yes/no)
-    ```
-
-    IF user says "yes":
-        GOTO Step 11.1 (restart role assignment for all hosts)
-    ELSE:
-        CONTINUE (user accepts non-standard configuration)
-```
-
-**Proceed to Step 12** (validation)
+**Reference**: [Troubleshooting](../../docs/troubleshooting.md)
 
 ---
 
-### Step 12: Validate Cluster is Ready for Installation
+### Step 13: Final Confirmation Before Installation
 
-**Progress**: Step 12 of 18 - Validating Cluster Prerequisites
+**Progress**: Step 13 of 18 - CRITICAL CHECKPOINT
 
-**Purpose**: Final validation that all prerequisites are met before starting installation.
-
-**CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
-
-**Document Consultation** (REQUIRED - Execute FIRST):
-1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand cluster validation requirements, common validation failures, and resolution steps
-2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand validation requirements."
-
----
-
-**MCP Tool**: `cluster_info` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
+**Display**:
 ```
-
-**Parse Response**:
-1. Extract `status` field
-2. Extract `validations` object (cluster-level and host-level validations)
-3. Check for blocking validation failures
-
-**Expected Status Progression**:
-- Should be: `"ready"` (all validations passing)
-- May be: `"pending-for-input"` (missing configuration)
-- Should NOT be: `"insufficient"` (if we assigned roles correctly)
-
-**Validation Check**:
-```
-🔍 Pre-Installation Validation:
-
-Cluster Status: {status}
-
-Validations:
-{for each validation category:}
-  {category_name}:
-    {for each validation in category:}
-      {if passing: ✅} {else: ❌} {validation_name}: {validation_message}
-    {endfor}
-{endfor}
-
-{if all validations passing:}
-✅ All validations passed! Cluster is ready for installation.
-
-{else:}
-❌ Validation failures detected. Cannot proceed with installation until resolved.
-
-Failed Validations:
-{list all failed validations with details}
-
-Recommendations:
-{for each failed validation, consult troubleshooting.md and provide resolution}
-
-Quick Fix → See [Validation Failures](../../docs/troubleshooting.md#validation-failures)
-Quick Fix → See [Common Validation Errors](../../docs/troubleshooting.md#common-validation-errors)
-{endif}
-```
-
-**Document Consultation for Failed Validations**:
-
-If any validation fails:
-1. **Action**: Re-read [troubleshooting.md](../../docs/troubleshooting.md) focusing on the specific validation failure
-2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand this validation failure: {validation_name}"
-3. Provide specific resolution steps from troubleshooting.md
-
-**Common Validation Failures and Resolutions**:
-
-- **"Network VIPs required"**:
-  - Resolution: VIPs should have been set in Step 7a
-  - If missed: Call `set_cluster_vips` now with user-provided VIPs
-  - Re-validate after fixing
-
-- **"Insufficient hosts"**:
-  - Resolution: Boot more hosts from ISO
-  - Go back to Step 9-10 to discover additional hosts
-
-- **"Host hardware insufficient"**:
-  - Resolution: Increase host resources or use different hardware
-  - Check specific host validation failures in `host_events`
-
-- **"Host not ready"**:
-  - Resolution: Wait longer for host validation to complete
-  - Check network connectivity
-  - Review `host_events` for specific issues
-
-**If Status is "ready"**: Proceed to Step 13
-
-**If Status is NOT "ready"**:
-- Display validation failures with resolutions
-- Ask user:
-  ```
-  ❓ How would you like to proceed?
-
-  Options:
-  - "fix" - I'll help you resolve the validation failures
-  - "wait" - Wait and re-check (validations may still be running)
-  - "abort" - Cancel the installation
-  ```
-- If "fix": Address each validation failure, then re-validate (loop Step 12)
-- If "wait": Pause, then re-run Step 12 after user confirmation
-- If "abort": Exit skill
-
----
-
-### Step 13: Human Confirmation Before Installation
-
-**Progress**: Step 13 of 18 - Final Confirmation Required ⚠️
-
-**CRITICAL: Human-in-the-Loop Checkpoint - DESTRUCTIVE ACTION**
-
-**Display Pre-Installation Summary**:
-```
-🚀 Ready to Start Installation
+Ready to Start Installation
 
 Cluster: {cluster_name}
-OpenShift Version: {openshift_version}
-Platform: {platform}
-Hosts: {discovered_host_count} ({master_count} masters, {worker_count} workers)
-Status: {status}
+Hosts: {count}
 
-⚠️  WARNING: Starting installation is irreversible!
-Once started, the installation process will:
-1. Begin installing OpenShift on all {discovered_host_count} hosts
-2. Progress through multiple phases without manual intervention
-3. Cannot be paused or cancelled mid-installation
-
-Make sure:
-✅ All hosts are correctly configured
-✅ Network configuration is correct (VIPs, static IPs)
-✅ You have time to monitor the installation
-✅ Hosts have stable network connectivity
+WARNING: Starting installation is irreversible!
+Cannot pause or cancel once started.
 ```
 
-**AskUserQuestion Parameters**:
-```json
-{
-  "questions": [
-    {
-      "question": "Start the OpenShift installation now?",
-      "header": "Start Install?",
-      "multiSelect": false,
-      "options": [
-        {
-          "label": "YES - Start installation now",
-          "description": "⚠️  IRREVERSIBLE: Begin installing OpenShift on all hosts. Installation will progress through multiple phases."
-        },
-        {
-          "label": "Wait - Review configuration first",
-          "description": "Pause to review cluster settings before starting installation"
-        },
-        {
-          "label": "Abort - Cancel installation",
-          "description": "Do not start installation. Cluster definition will remain in 'ready' state."
-        }
-      ]
-    }
-  ]
-}
-```
+Ask: "Start installation now?"
 
-**If "YES - Start installation now"**: Proceed to Step 14
-
-**If "Wait - Review configuration first"**:
-- Display current cluster configuration (re-show briefing from Step 4)
-- Allow user to check specific settings
-- Re-ask confirmation (loop Step 13)
-
-**If "Abort - Cancel installation"**:
-```
-Installation cancelled. Cluster remains in 'ready' state.
-
-You can:
-- Start installation later using cluster-inventory skill
-- Modify cluster configuration
-- Delete the cluster if no longer needed
-
-Cluster ID: {cluster_id}
-Cluster Name: {cluster_name}
-```
-- Exit skill
+**Options**:
+- **YES - Start now**: Proceed to Step 14
+- **Wait - Review first**: Display config, re-ask
+- **Abort**: Exit skill
 
 ---
 
-### Step 14: Start Cluster Installation
+### Step 14: Start Installation
 
-**Progress**: Step 14 of 18 - Starting Installation 🚀
+**Progress**: Step 14 of 18
 
-**CRITICAL**: Destructive/irreversible action. Confirmation obtained in Step 13.
+**Tool**: `install_cluster`
+**Parameters**: `{cluster_id}`
 
-**MCP Tool**: `install_cluster` (from openshift-installer)
+**On Success**: Display "Installation started!"
 
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
-
-**Expected Output**: Cluster status with installation started
-
-**On Success**:
-```
-✅ Installation started successfully!
-
-Cluster: {cluster_name}
-Status: installing
-Started at: {current_timestamp}
-
-Beginning real-time monitoring...
-```
-
-**On Error**:
-- Display error message
-- **Document Error in troubleshooting.md**:
-  1. **Action**: Read current troubleshooting.md using Read tool
-  2. Check if error already documented
-  3. If new error, prepare updated content with new section under "Common Error Messages":
-     - Error message text
-     - Symptoms observed
-     - Cluster status when error occurred
-     - Resolution steps (if known, or "Under investigation")
-  4. **MCP Tool**: Write tool
-     **Parameters**:
-     - file_path: "/home/avillega/work/redhat/projects/ai/ai5/agentic-collections/ocp-admin/docs/troubleshooting.md"
-     - content: {complete_file_content_with_new_section_appended}
-  5. **Output to user**: "I've documented this error in troubleshooting.md for future reference."
-
-- Provide immediate resolution if known
-- Ask user if they want to retry or abort
+**On Error**: Display error, document in troubleshooting.md if new, offer retry/abort.
 
 ---
 
-### Step 15: Monitor Installation Progress (User-Triggered)
+### Step 15: Monitor Installation
 
-**Progress**: Step 15 of 18 - Monitoring Installation
+**Progress**: Step 15 of 18
 
-**Purpose**: Guide user to monitor installation progress through manual status checks.
-
-**Installation is now running. User must monitor it.**
-
-**Display to User**:
+**Display**:
 ```
-✅ Installation started successfully!
+Installation Phases:
+1. Preparing
+2. Installing (bootstrapping)
+3. Installing control plane
+4. Finalizing
+5. Completed
 
-Cluster: {cluster_name}
-Status: installing
-Started at: {current_timestamp}
+How to monitor:
+- Say "check status" anytime
+- Or use background monitoring
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 MONITORING INSTALLATION PROGRESS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-The installation will progress through these phases:
-1. ✅ Preparing for installation
-2. 🔄 Installing (bootstrapping cluster)
-3. ⏳ Installing control plane
-4. ⏳ Installing workers (HA clusters only)
-5. ⏳ Finalizing
-6. ⏳ Completed
-
-Installation progresses automatically without manual intervention.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ HOW TO MONITOR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Option 1: Manual Checks (Recommended)**
-Come back anytime and say:
-- "check installation status"
-- "how is the installation going?"
-- "show cluster progress"
-- "is it done yet?"
-
-I'll poll the cluster and show current progress.
-
-**Option 2: Background Monitoring**
-I can monitor in the background and notify you when complete.
-This lets you continue working on other tasks.
-
-Would you like me to start background monitoring? (yes/no)
+Background monitoring? (yes/no)
 ```
 
-**Wait for User Response**
+**If background**: Use Task tool with `run_in_background=true`
+
+**If manual**: Wait for "check status", then call `cluster_info`, display progress, repeat until "installed" or "error"
+
+**If fails**: Download logs (`cluster_logs_download_url`), offer diagnose/cleanup/manual options.
+
+**Reference**: [Troubleshooting](../../docs/troubleshooting.md)
 
 ---
 
-#### If User Chooses Background Monitoring:
+### Step 16: Installation Complete
 
-**MCP Tool**: Task tool with run_in_background=true
+**Progress**: Step 16 of 18
 
-**Parameters**:
-```json
-{
-  "subagent_type": "general-purpose",
-  "description": "Monitor cluster installation",
-  "prompt": "Monitor OpenShift cluster '{cluster_name}' (ID: {cluster_id}) installation progress using the openshift-installer MCP server. Poll cluster_info every 60 seconds. When status changes from 'installing' to 'installed', notify user installation is complete and provide cluster credentials download URLs (use cluster_credentials_download_url for 'kubeconfig' and 'kubeadmin-password'). When status changes to 'error', retrieve cluster_events and cluster_logs_download_url and report failure details. Continue monitoring until terminal state reached.",
-  "run_in_background": true
-}
-```
-
-**Store**: `background_task_id` from Task tool response
-
-**Display to User**:
-```
-🔄 Background monitoring started (Task ID: {background_task_id})
-
-I'm monitoring your cluster installation in the background.
-
-You can now:
-✅ Continue working on other tasks
-✅ Ask me other questions
-✅ Check status manually anytime: "check installation status"
-
-I'll automatically notify you when:
-✅ Installation completes successfully
-❌ Installation fails (with error details and logs)
-
-To stop background monitoring: "stop monitoring {cluster_id}"
-```
-
-**Exit Step 15** - User can continue with other work
+Display: "Installation Completed! Cluster: {cluster_name}, Status: installed, Time: {duration}"
 
 ---
 
-#### If User Chooses Manual Monitoring (or says "check installation status"):
+### Step 17: Retrieve Credentials
 
-**MCP Tool**: `cluster_info` (from openshift-installer)
+**Progress**: Step 17 of 18
 
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
+**Security**: Credentials provide full admin access. Handle securely.
 
-**Parse Response**:
-- `current_status` = cluster status field
-- `installation_progress_percentage` = progress field (if available)
-- `current_phase` = status_info or phase field
-- `hosts_status` = array of host statuses
-
-**Display Progress Update**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Installation Status for {cluster_name}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Status**: {current_status}
-**Phase**: {current_phase}
-{if progress available: **Progress**: {installation_progress_percentage}% complete}
-
-**Phase Progression**:
-{display phase checklist with completed/current/pending indicators}
-1. {if completed: ✅} {if current: 🔄} {if pending: ⏳} Preparing for installation
-2. {if completed: ✅} {if current: 🔄} {if pending: ⏳} Installing (bootstrapping)
-3. {if completed: ✅} {if current: 🔄} {if pending: ⏳} Installing control plane
-4. {if completed: ✅} {if current: 🔄} {if pending: ⏳} Installing workers (HA only)
-5. {if completed: ✅} {if current: 🔄} {if pending: ⏳} Finalizing
-6. {if completed: ✅} {if current: 🔄} {if pending: ⏳} Completed
-
-**Hosts Status**:
-| Host | Role | Status | Progress |
-|------|------|--------|----------|
-| {hostname} | {role} | {status} | {host_progress} |
-...
-
-**Current Activity**: {describe what's happening based on phase, e.g., "Bootstrapping OpenShift control plane nodes"}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Terminal Status Checks**:
-
-```python
-if current_status == "installed":
-    # Display success message
-    print("✅ Installation completed successfully! Proceeding to credential retrieval...")
-    # Proceed to Step 16 (completion)
-
-elif current_status == "error":
-    # Display error notification
-    print("❌ Installation failed. Retrieving error details...")
-    # Proceed to Step 15b (error handling)
-
-elif current_status == "installing":
-    # Display next steps
-    print("""
-⏳ Installation in progress.
-
-What would you like to do?
-- "check again" - Poll status again now
-- "wait" - I'll come back later to check
-- "background" - Start background monitoring
-- "logs" - Get cluster logs URL for detailed monitoring
-    """)
-    # Wait for user input
-
-elif current_status in ["insufficient", "pending-for-input", "ready"]:
-    # Unexpected regression during installation
-    print("""
-⚠️  Warning: Cluster status changed to '{current_status}' during installation.
-This is unusual. Installation may have encountered an issue.
-
-Retrieving cluster events for diagnosis...
-    """)
-    # Retrieve cluster_events for diagnostics
-    # Continue monitoring
-```
-
-**Wait for User Action**:
-- If user says "check again": Re-run this manual status check immediately
-- If user says "wait": Acknowledge and wait for user to return later
-- If user says "background": Switch to background monitoring (see above)
-- If user says "logs": Provide cluster_logs_download_url
-
----
-
-#### Step 15b: Handle Installation Errors
-
-**Trigger**: Manual or background monitoring detects status == "error"
-
-**Display Error Notification**:
-```
-❌ Installation Failed
-
-Cluster: {cluster_name}
-Status: error
-Time: {current_timestamp}
-
-Retrieving error details and diagnostics...
-```
-
-**MCP Tool**: `cluster_events` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
-
-**Parse Events**:
-- Filter for events with severity "ERROR" or "WARNING"
-- Sort chronologically (most recent first)
-- Extract last 10 error events
-
-**Display Error Analysis**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Error Analysis
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Recent Errors**:
-{for each error event:}
-  [{timestamp}] {severity}: {message}
-{endfor}
-
-**Affected Hosts**:
-{for each host with errors:}
-  - {hostname} ({role}): {host_error_message}
-{endfor}
-```
-
-**MCP Tool**: `cluster_logs_download_url` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}"
-}
-```
-
-**Provide Logs URL**:
-```
-📋 Full cluster logs available for download:
-
-Download URL: {logs_url}
-{if expires_at: "⏰ Expires: {expires_at} - Download soon!"}
-
-💾 Downloading logs to local storage...
-```
-
-**Action**: Download logs to temporary storage using curl command:
+**17a. Prepare Storage**:
 ```bash
-curl -o /tmp/{cluster_name}/cluster-installation-logs.tar.gz "{logs_url}"
+mkdir -p /tmp/{cluster_name} && chmod 700 /tmp/{cluster_name}
 ```
+
+**17b. Download Kubeconfig**:
+- **Tool**: `cluster_credentials_download_url`
+- **Parameters**: `{cluster_id, file_name: "kubeconfig"}`
+- **Download**: `curl -s -o /tmp/{cluster_name}/kubeconfig "{url}" && chmod 600 /tmp/{cluster_name}/kubeconfig`
+
+**17c. Download Kubeadmin Password**:
+- **Tool**: `cluster_credentials_download_url`
+- **Parameters**: `{cluster_id, file_name: "kubeadmin-password"}`
+- **Download**: `curl -s -o /tmp/{cluster_name}/kubeadmin-password "{url}" && chmod 600 /tmp/{cluster_name}/kubeadmin-password`
 
 **Display**:
 ```
-✅ Logs downloaded to: /tmp/{cluster_name}/cluster-installation-logs.tar.gz
-
-Extract with: tar -xzf /tmp/{cluster_name}/cluster-installation-logs.tar.gz
-```
-
----
-
-**Ask User About Documentation**:
-```
-📝 New installation error detected.
-
-Would you like me to document this error in troubleshooting.md?
-This will help you and others troubleshoot similar issues in the future.
-
-(yes/no)
-```
-
-**If user says "yes"**:
-
-1. **Document Consultation**:
-   - **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using Read tool
-   - **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to check for existing error documentation."
-
-2. Check if error already documented
-
-3. If new error, prepare documentation:
-
-   **MCP Tool**: Write tool
-
-   **Parameters**:
-   - file_path: "/home/avillega/work/redhat/projects/ai/ai5/agentic-collections/ocp-admin/docs/troubleshooting.md"
-   - content: {updated_content_with_new_error_section}
-
-   **Format for new error section** (append to troubleshooting.md):
-   ```markdown
-
-   ### Error: "{primary_error_message}"
-
-   **Symptoms**: {describe observed behavior}
-
-   **Context**:
-   - Cluster Type: {SNO or HA}
-   - Platform: {platform}
-   - OpenShift Version: {version}
-   - Installation Phase When Failed: {phase}
-
-   **Cluster Events** (last 5 errors):
-   ```
-   {recent_error_events}
-   ```
-
-   **Resolution Steps**:
-   {if known resolution from similar patterns:}
-   1. {step 1}
-   2. {step 2}
-   ...
-   {else:}
-   Under investigation. Download cluster logs for detailed analysis:
-   - Cluster logs provide detailed diagnostics
-   - Check logs for specific error messages in bootstrap and installation phases
-   - Common causes: network connectivity, insufficient resources, DNS issues
-   {endif}
-
-   **First Observed**: {current_date}
-
-   **Cluster ID**: {cluster_id}
-   ```
-
-4. **Output to user**: "✅ Error documented in [troubleshooting.md](../../docs/troubleshooting.md#error-{sanitized-error-title}) for future reference."
-
-**If user says "no"**:
-- Skip documentation
-- Continue with error resolution options
-
----
-
-**Consult Troubleshooting Knowledge** (if not already done):
-
-1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using Read tool
-2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to search for known resolutions."
-3. Search for similar error patterns in troubleshooting.md
-4. If match found:
-   - Display known resolution steps
-   - **Output to user**: "Found a known resolution for this error pattern."
-
----
-
-**Present Resolution Options to User**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚 Troubleshooting Resources
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Quick Fix → See [Installation Failures](../../docs/troubleshooting.md#installation-failures)
-Quick Fix → See [Common Installation Errors](../../docs/troubleshooting.md#common-installation-errors)
-Quick Fix → See [Log Analysis Guide](../../docs/troubleshooting.md#analyzing-installation-logs)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-❓ How would you like to proceed?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Options:
-1. "diagnose" - Show detailed troubleshooting steps {if known resolution exists}
-2. "logs" - Analyze downloaded cluster logs (already at /tmp/{cluster_name}/)
-3. "cleanup" - Delete failed cluster and start over
-4. "manual" - I'll investigate manually, stop here
-5. "retry" - Keep cluster and attempt to resume installation (may not work)
-
-Please choose an option (1-5):
-```
-
-**Handle User Choice**:
-
-- **"diagnose"**:
-  - Display known resolution steps from troubleshooting.md
-  - Provide command-by-command guidance
-  - Offer to execute fixes if applicable
-
-- **"logs"**:
-  - Guide user to examine /tmp/{cluster_name}/cluster-installation-logs.tar.gz
-  - Suggest key files to check:
-    ```
-    Key files to examine:
-    - bootstrap/bootstrap.log - Bootstrap process logs
-    - master/crio.log - Container runtime logs
-    - master/kubelet.log - Kubelet logs
-    - installation.log - Overall installation log
-    ```
-
-- **"cleanup"**:
-  - **Proceed to Cleanup Strategy** (see Cleanup and Rollback Strategy section)
-
-- **"manual"**:
-  - Display cluster details for reference
-  - Provide cluster-inventory skill reference: "Use cluster-inventory skill to monitor cluster status"
-  - Exit skill gracefully
-
-- **"retry"**:
-  - Warn: "Retrying a failed installation is not guaranteed to work. The cluster may need to be recreated."
-  - Ask confirmation: "Are you sure you want to attempt retry? (yes/no)"
-  - If yes: Attempt to call install_cluster again (may fail if cluster is in error state)
-  - If fails: Suggest cleanup option
-
-**Exit Step 15b**
-
----
-
-### Step 16: Installation Completed Successfully
-
-**Progress**: Step 16 of 18 - Installation Complete ✅
-
-**Trigger**: Monitoring loop exits with `current_status == "installed"`
-
-**Display Success Message**:
-```
-🎉 Installation Completed Successfully!
-
-Cluster: {cluster_name}
-Status: installed
-Total Time: {total_installation_time}
-OpenShift Version: {openshift_version}
-
-All hosts are operational:
-{for each host:}
-  ✅ {hostname} ({role}): Ready
-{endfor}
-
-Next: Download cluster credentials and access the cluster...
-```
-
----
-
-### Step 17: Retrieve Cluster Credentials
-
-**Progress**: Step 17 of 18 - Retrieving Access Credentials
-
-**Purpose**: Download kubeconfig and kubeadmin password for secure cluster access.
-
-⚠️  **SECURITY NOTICE**:
-Cluster credentials provide FULL ADMINISTRATIVE ACCESS to your OpenShift cluster.
-Treat them like passwords - store securely and never share publicly.
-
----
-
-#### Step 17a: Prepare Secure Storage Directory
-
-**Create temporary storage directory**:
-
-**MCP Tool**: Bash
-
-**Parameters**:
-- command: `mkdir -p /tmp/{cluster_name} && chmod 700 /tmp/{cluster_name}`
-- description: "Create secure temporary directory for cluster credentials"
-
-**Explanation**:
-- `/tmp/{cluster_name}/` - Temporary storage (cleared on reboot for security)
-- `chmod 700` - Only current user can read/write (prevents other users from accessing)
-
-**Display**:
-```
-📁 Secure credential storage created: /tmp/{cluster_name}/
-
-⚠️  Note: This directory is in /tmp/ and will be cleared on system reboot.
-   For permanent storage, you'll be prompted to copy credentials elsewhere.
-```
-
----
-
-#### Step 17b: Download Kubeconfig
-
-**MCP Tool**: `cluster_credentials_download_url` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}",
-  "file_name": "kubeconfig"
-}
-```
-
-**Expected Output**: JSON with presigned URL and optional expiration
-
-**Parse Response**:
-- Extract `url` from JSON
-- Extract `expires_at` if present
-
-**Download Kubeconfig to Secure Storage**:
-
-**MCP Tool**: Bash
-
-**Parameters**:
-- command: `curl -s -o /tmp/{cluster_name}/kubeconfig "{kubeconfig_url}" && chmod 600 /tmp/{cluster_name}/kubeconfig`
-- description: "Download kubeconfig to secure storage with restrictive permissions"
-
-**Explanation**:
-- `chmod 600` - Only owner can read/write (industry-standard kubeconfig permissions)
-
-**Verify Download**:
-
-**MCP Tool**: Bash
-
-**Parameters**:
-- command: `test -f /tmp/{cluster_name}/kubeconfig && ls -lh /tmp/{cluster_name}/kubeconfig`
-- description: "Verify kubeconfig downloaded successfully"
-
-**Display**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📄 Kubeconfig Downloaded
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ Location: /tmp/{cluster_name}/kubeconfig
-✅ Permissions: -rw------- (secure - only you can read)
-✅ Size: {file_size}
-
-{if expires_at:}
-⏰ Download URL expires: {expires_at}
-   (File is already downloaded - expiration doesn't affect local copy)
-{endif}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔒 SECURITY BEST PRACTICES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ DO:
-  - Keep kubeconfig file permissions at 600 (rw-------)
-  - Store in a secure location with limited access
-  - Use separate kubeconfigs for different clusters
-  - Regularly rotate cluster credentials
-  - Back up kubeconfig securely (encrypted storage)
-
-❌ DON'T:
-  - Commit kubeconfig to version control (Git, etc.)
-  - Share kubeconfig via email, chat, or public links
-  - Store kubeconfig in publicly accessible directories
-  - Use the same kubeconfig on untrusted systems
-  - Share the download URL (contains authentication tokens)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-To use this kubeconfig:
-```bash
-export KUBECONFIG=/tmp/{cluster_name}/kubeconfig
-oc get nodes
-oc get clusteroperators
-```
-
-Or test cluster access now:
-```bash
-KUBECONFIG=/tmp/{cluster_name}/kubeconfig oc get nodes
-```
-```
-
----
-
-#### Step 17c: Download Kubeadmin Password
-
-**MCP Tool**: `cluster_credentials_download_url` (from openshift-installer)
-
-**Parameters**:
-```json
-{
-  "cluster_id": "{cluster_id}",
-  "file_name": "kubeadmin-password"
-}
-```
-
-**Expected Output**: JSON with presigned URL
-
-**Download Password to Secure Storage**:
-
-**MCP Tool**: Bash
-
-**Parameters**:
-- command: `curl -s -o /tmp/{cluster_name}/kubeadmin-password "{password_url}" && chmod 600 /tmp/{cluster_name}/kubeadmin-password`
-- description: "Download kubeadmin password to secure storage"
-
-**Display**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔑 Kubeadmin Password Downloaded
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ Location: /tmp/{cluster_name}/kubeadmin-password
-✅ Permissions: -rw------- (secure - only you can read)
-
-{if expires_at:}
-⏰ Download URL expires: {expires_at}
-{endif}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Web Console Access**:
-
-URL: https://console-openshift-console.apps.{cluster_name}.{base_domain}
-Username: kubeadmin
-Password: (stored in /tmp/{cluster_name}/kubeadmin-password)
-
-⚠️  SECURITY: The kubeadmin user has FULL CLUSTER ADMIN privileges.
-   After logging in, you should:
-   1. Create additional user accounts with limited permissions
-   2. Configure OAuth identity providers (LDAP, GitHub, etc.)
-   3. Delete or disable the kubeadmin user for production clusters
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-#### Step 17d: Offer to Display Password (User Choice)
-
-**Ask User**:
-```
-Would you like me to display the kubeadmin password now so you can copy it?
-
-This will show the password in this conversation.
-
-(yes/no)
-```
-
-**If "yes"**:
-
-**MCP Tool**: Bash
-
-**Parameters**:
-- command: `cat /tmp/{cluster_name}/kubeadmin-password`
-- description: "Display kubeadmin password"
-
-**Display**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔑 Kubeadmin Password
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Password: {password_content}
-
-⚠️  SECURITY REMINDER:
-   - This password grants FULL administrative access
-   - Clear your terminal history after copying
-   - Consider rotating this password after first login
-   - Store securely (password manager recommended)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**If "no"**:
-```
-Password is stored securely in /tmp/{cluster_name}/kubeadmin-password
-
-To view later:
-```bash
-cat /tmp/{cluster_name}/kubeadmin-password
-```
-```
-
----
-
-#### Step 17e: Offer Permanent Storage (User Choice)
-
-**Ask User**:
-```
-The credentials are currently stored in /tmp/{cluster_name}/ which is TEMPORARY.
-Files in /tmp/ are deleted on system reboot.
-
-Would you like to copy credentials to a permanent location? (yes/no)
-
-Options:
-- yes: I'll copy to a location you specify
-- no: Keep in /tmp/ (will be lost on reboot)
-```
-
-**If "yes"**:
-
-**Prompt**:
-```
-Enter the permanent storage path for cluster credentials:
-
-Recommended locations:
-- ~/.kube/{cluster_name}/ (user home directory)
-- ~/Documents/openshift-clusters/{cluster_name}/ (documents)
-- /secure/storage/{cluster_name}/ (custom secure location)
-
-Enter path (or 'cancel' to skip):
-```
-
-**Wait for user input**
-
-**If user provides path**:
-
-**MCP Tool**: Bash
-
-**Parameters**:
-- command: `mkdir -p "{user_path}" && cp -p /tmp/{cluster_name}/kubeconfig /tmp/{cluster_name}/kubeadmin-password "{user_path}/" && chmod 700 "{user_path}" && ls -lh "{user_path}"`
-- description: "Copy credentials to permanent secure storage"
-
-**Display**:
-```
-✅ Credentials copied to permanent storage:
-   {user_path}/kubeconfig
-   {user_path}/kubeadmin-password
-
-Permissions set to 700 (owner access only)
+Kubeconfig: /tmp/{cluster_name}/kubeconfig
+Password: /tmp/{cluster_name}/kubeadmin-password
+Permissions: -rw------- (secure)
 
 To use:
-```bash
-export KUBECONFIG={user_path}/kubeconfig
-```
-
-⚠️  IMPORTANT: Backup this directory securely and protect from unauthorized access.
-```
-
-**If "no"** or "cancel":
-```
-Credentials remain in /tmp/{cluster_name}/
-
-⚠️  Remember: Files will be deleted on system reboot.
-   Copy to permanent storage before rebooting.
-```
-
----
-
-### Step 18: Final Verification and Next Steps
-
-**Progress**: Step 18 of 18 - Cluster Ready! 🎉
-
-#### Step 18a: Display Success Summary
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎉 OpenShift Cluster Successfully Created and Installed!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 Cluster Information:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Cluster Details**:
-- Name: {cluster_name}
-- ID: {cluster_id}
-- OpenShift Version: {openshift_version}
-- Platform: {platform}
-- Base Domain: {base_domain}
-- Status: ✅ Installed
-
-**Access Endpoints**:
-- API: https://api.{cluster_name}.{base_domain}:6443
-- Web Console: https://console-openshift-console.apps.{cluster_name}.{base_domain}
-
-**Cluster Topology**:
-- Masters: {master_count} node(s)
-- Workers: {worker_count} node(s)
-- Total Nodes: {total_host_count}
-
-**Installation Summary**:
-- Installation Phases: 100% Complete ✅
-- All Hosts: Ready ✅
-- Cluster Operators: Available ✅
-- Credentials: Downloaded ✅
-
-**Credentials Location**:
-- Kubeconfig: /tmp/{cluster_name}/kubeconfig
-- Admin Password: /tmp/{cluster_name}/kubeadmin-password
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-#### Step 18b: cluster-inventory Skill Integration
-
-**Display cluster-inventory Skill Information**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Ongoing Cluster Monitoring
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You can monitor your cluster anytime using the **cluster-inventory** skill:
-
-**Skill Commands**:
-- "show cluster status" - Current cluster state and health
-- "check cluster events" - Recent activity and diagnostics
-- "is my cluster healthy?" - Validation and health check
-- "show cluster details for {cluster_name}" - Comprehensive cluster info
-- "get cluster logs" - Download logs for troubleshooting
-
-**Example**:
-```
-User: "show cluster status"
-→ cluster-inventory skill displays current status, hosts, operators
-```
-
-The cluster-inventory skill uses the same openshift-installer MCP server
-and can provide detailed insights into your cluster at any time.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-#### Step 18c: Manual Verification Commands
-
-**Display Manual Verification Instructions**:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Manual Verification Steps
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**1. Configure kubeconfig**:
-```bash
 export KUBECONFIG=/tmp/{cluster_name}/kubeconfig
-```
-
-**2. Verify all nodes are ready**:
-```bash
 oc get nodes
 ```
 
-Expected output: All nodes with STATUS "Ready"
-
-**3. Check cluster operators**:
-```bash
-oc get clusteroperators
-```
-
-Expected output: All operators with:
-- AVAILABLE = True
-- DEGRADED = False
-- PROGRESSING = False
-
-**4. Access the web console**:
-
-Open browser to:
-https://console-openshift-console.apps.{cluster_name}.{base_domain}
-
-Login with:
-- Username: kubeadmin
-- Password: (from /tmp/{cluster_name}/kubeadmin-password)
-
-**5. Verify cluster version**:
-```bash
-oc get clusterversion
-```
-
-Expected: VERSION = {openshift_version}, AVAILABLE = True
-
-**Troubleshooting Post-Installation Issues**:
-
-If verification steps fail:
-- Quick Fix → See [Post-Installation Verification](../../docs/troubleshooting.md#post-installation-verification)
-- Quick Fix → See [Cluster Operator Issues](../../docs/troubleshooting.md#cluster-operator-issues)
-- Quick Fix → See [Node Not Ready](../../docs/troubleshooting.md#node-not-ready)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**Reference**: [Credentials Management](../../docs/credentials-management.md)
 
 ---
 
-#### Step 18d: Next Steps and Recommendations
+### Step 18: Cluster Ready
 
+**Progress**: Step 18 of 18
+
+**Display**:
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚 Next Steps
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OpenShift Cluster Ready!
 
-Now that your cluster is running, you can:
+Cluster: {cluster_name}
+API: https://api.{cluster_name}.{base_domain}:6443
+Console: https://console-openshift-console.apps.{cluster_name}.{base_domain}
 
-1. **Configure Storage**:
-   - Set up persistent volume claims
-   - Configure storage classes
+Credentials: /tmp/{cluster_name}/
 
-2. **Deploy Applications**:
-   - Create projects/namespaces
-   - Deploy containerized applications
-   - Expose applications via routes
+Next Steps:
+- Access cluster: oc --kubeconfig /tmp/{cluster_name}/kubeconfig get nodes
+- Web console: Use kubeadmin + password from /tmp/{cluster_name}/kubeadmin-password
+- Configure identity provider (see credentials-management.md)
+- Install operators and deploy applications
 
-3. **Install Operators** (using openshift-administration MCP server):
-   - OpenShift Virtualization
-   - OpenShift AI
-   - Logging, Monitoring, Service Mesh, etc.
-
-4. **Configure Authentication**:
-   - Set up OAuth providers (LDAP, GitHub, etc.)
-   - Create additional users and role bindings
-   - Delete or disable kubeadmin for security
-
-5. **Cluster Management**:
-   - Use cluster-inventory skill to monitor status
-   - Use openshift-administration MCP tools for day-2 operations
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🎉 Congratulations! Your OpenShift cluster is ready to use!
+Congratulations!
 ```
 
-**Skill Completion**: Exit successfully
+**Ask**: "Copy credentials to permanent storage? (yes/no)"
+
+**If yes**: Copy to `~/.kube/` with secure permissions.
+
+**Reference**: [Credentials Management](../../docs/credentials-management.md)
 
 ---
 
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift-installer` - Red Hat Assisted Installer service access
-  - Container: `quay.io/ecosystem-appeng/assisted-service-mcp:latest`
-  - Requires: `OFFLINE_TOKEN` environment variable
-  - Access: Red Hat Console API at https://api.openshift.com
+- `openshift-installer` - Assisted Installer service ([setup](../README.md#environment-setup))
 
 ### Required MCP Tools
-**All from `openshift-installer` MCP server**:
-- `list_versions` - List available OpenShift versions for user selection
-- `create_cluster` - Create cluster definition with all parameters
-- `cluster_info` - Get detailed cluster status, hosts, validations
-- `cluster_events` - Get chronological event history for diagnostics
-- `set_cluster_vips` - Configure API and Ingress VIPs (HA clusters only)
-- `set_cluster_ssh_key` - Set SSH public key for node access
-- `set_cluster_platform` - Set infrastructure platform type
-- `set_host_role` - Assign master/worker roles to discovered hosts
-- `cluster_iso_download_url` - Get bootable ISO download URL
-- `install_cluster` - Start cluster installation (irreversible)
-- `cluster_credentials_download_url` - Get kubeconfig and credentials after installation
-- `cluster_logs_download_url` - Get cluster logs for troubleshooting
-- `generate_nmstate_yaml` - Generate static network configuration (optional)
-- `validate_nmstate_yaml` - Validate NMState YAML syntax (optional)
-- `alter_static_network_config_nmstate_for_host` - Apply static network config (optional)
-- `list_static_network_config` - List applied static network configurations (optional)
+All from `openshift-installer`:
+- `list_versions`, `create_cluster`, `cluster_info`, `set_cluster_vips`, `set_host_role`
+- `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`
+- `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
 
 ### Related Skills
-- `cluster-inventory` - List and inspect clusters, monitor status (used for verification)
+- `cluster-inventory` - List and inspect clusters
 
 ### Reference Documentation
-- [troubleshooting.md](../../docs/troubleshooting.md) - Cluster lifecycle states, validation requirements, error patterns, platform differences
-- [README.md](../../README.md) - MCP server setup, environment configuration, prerequisites
+**Configuration & Validation**:
+- [Input Validation Guide](../../docs/input-validation-guide.md) - Parameter requirements
+- [Networking](../../docs/networking.md) - Network configuration, VIPs, CIDR planning
+- [Static Networking Guide](../../docs/static-networking-guide.md) - NMState configuration
 
----
+**Platform & Infrastructure**:
+- [Providers](../../docs/providers.md) - Infrastructure providers (baremetal, vsphere, oci, nutanix)
+- [Platforms](../../docs/platforms.md) - OpenShift types (SNO, OCP, ROSA, ARO, OSD)
+- [Host Requirements](../../docs/host-requirements.md) - Hardware specs by cluster type
 
-## Critical: Human-in-the-Loop Requirements
-
-This skill performs **critical, irreversible operations** and requires explicit user confirmation at key steps.
-
-**Confirmation Required Before**:
-
-1. **Cluster Definition Creation** (Step 5):
-   - Ask: "Review the configuration above. Ready to create the cluster definition?"
-   - Display: Complete configuration briefing table
-   - Wait for explicit "Yes" or "No"
-   - Allow modification before proceeding
-
-2. **Starting Installation** (Step 13):
-   - Ask: "Start the OpenShift installation now?"
-   - Display: Pre-installation summary with warning
-   - Emphasize: "⚠️ WARNING: Starting installation is irreversible!"
-   - Wait for explicit "YES - Start installation now"
-   - This is the MOST CRITICAL confirmation point
-
-3. **After Each Major Configuration Step**:
-   - Report results of VIP configuration
-   - Report results of static network configuration
-   - Report results of host role assignment
-   - Allow user to review before proceeding
-
-4. **During Static Network Configuration** (Step 3a):
-   - Confirm each host's network configuration before applying
-   - Display generated NMState YAML for review
-   - Allow reconfiguration if needed
-
-**Never Assume Approval**:
-- Always wait for explicit user confirmation
-- Provide clear "Yes"/"No"/"Abort" options
-- Explain consequences of each action before requesting confirmation
-- Allow user to review configuration at any step
-
-**User Control**:
-- User can abort at any point before installation starts (Step 13)
-- User can modify configuration before cluster creation (Step 5)
-- User triggers host discovery checks (Step 10) - no automatic polling
-- User confirms each destructive action explicitly
-
----
-
-## Error Handling and Troubleshooting
-
-### Automatic Error Documentation
-
-When errors occur during cluster creation or installation:
-
-1. **Capture Error Details**:
-   - Error message from MCP tool
-   - Cluster status when error occurred
-   - Relevant cluster events
-   - Affected hosts (if applicable)
-
-2. **Document in troubleshooting.md**:
-   - Read current troubleshooting.md
-   - Check if error already documented
-   - If new: Add section with error pattern, symptoms, context, resolution
-   - Write updated troubleshooting.md
-   - Notify user: "I've documented this error in troubleshooting.md"
-
-3. **Consult Existing Knowledge**:
-   - Search troubleshooting.md for similar error patterns
-   - If match found: Provide known resolution steps
-   - If new error: Mark as "Under investigation" and provide logs
-
-4. **Provide Immediate Assistance**:
-   - Display error details to user
-   - Offer troubleshooting options (diagnose, retry, logs, abort)
-   - Retrieve cluster logs if needed
-   - Guide user through resolution steps
-
-### Common Error Scenarios
-
-**Authentication Errors** (OFFLINE_TOKEN):
-- Detected at prerequisite check (Step 1)
-- Follow Human Notification Protocol
-- Provide setup instructions
-- Do not proceed without valid token
-
-**Validation Failures** (Step 12):
-- Consult troubleshooting.md for specific validation
-- Provide targeted resolution steps
-- Allow user to fix and re-validate
-- Loop until all validations pass
-
-**Installation Failures** (Step 15b):
-- Retrieve cluster events automatically
-- Provide cluster logs download URL
-- Document error in troubleshooting.md
-- Offer resolution options to user
-
-**Host Discovery Issues** (Step 10):
-- Display current host count vs. expected
-- Provide guidance on booting additional hosts
-- Allow user to wait or proceed with current count
-- Validate minimum requirements for cluster type
+**Post-Installation**:
+- [Credentials Management](../../docs/credentials-management.md) - Kubeconfig, OAuth, RBAC
+- [Storage](../../docs/storage.md) - Storage options by provider
+- [Examples](../../docs/examples.md) - Configuration examples
+- [Troubleshooting](../../docs/troubleshooting.md) - Common errors and resolutions
 
 ---
 
 ## Example Usage
 
-### Example 1: Single-Node OpenShift for Edge Deployment
+**User**: "Create a single-node OpenShift cluster for my edge location."
 
-**User Query**:
-```
-"I want to create a single-node OpenShift cluster for my edge location. I have one server with 8 cores and 32GB RAM."
-```
+**Execution**:
+1. Prerequisites verified, docs consulted
+2. SNO selected, platform: none, version: 4.18.2
+3. Name: "edge-site-01", domain: "edge.local"
+4. SSH key provided, VIPs skipped, DHCP networking
+5. Configuration confirmed, cluster created
+6. ISO provided, user boots server
+7. Host discovered, assigned "master"
+8. Validation: ready
+9. Installation confirmed and started
+10. Monitoring: 0% → 100% (~45 min)
+11. Credentials downloaded to /tmp/edge-site-01/
+12. Cluster operational!
 
-**Skill Execution**:
-1. ✅ Prerequisites verified (OFFLINE_TOKEN set, openshift-installer available)
-2. 📖 Consulted troubleshooting.md
-3. 🎯 Cluster type: SNO selected
-4. 🔧 Platform: Automatically set to "none" (required for SNO)
-5. 📦 OpenShift version: User selects 4.18.2 from list
-6. 📝 Cluster name: "edge-site-01"
-7. 🌐 Base domain: "edge.local"
-8. 💻 CPU architecture: x86_64 (default)
-9. 🔑 SSH key: User provides public key
-10. ❌ VIPs: Skipped (not required for SNO)
-11. 🌐 Networking: DHCP selected (default)
-12. 📋 Configuration briefing displayed
-13. ✅ User confirms, cluster created
-14. 📀 ISO URL provided
-15. ⏸️ User boots server from ISO, waits 5 minutes
-16. ✅ 1 host discovered, validated
-17. 👤 Host assigned "master" role automatically
-18. ✅ Cluster status: "ready"
-19. ⚠️ User confirms installation start
-20. 🚀 Installation begins
-21. 📊 Real-time monitoring: 0% → 25% → 50% → 75% → 100%
-22. 🎉 Installation complete (45 minutes total)
-23. 📄 Kubeconfig and credentials downloaded
-24. ✅ Cluster operational!
+**Result**: SNO cluster deployed in ~45 minutes.
 
-**Result**: Successfully deployed SNO cluster in ~45 minutes with full guidance.
-
----
-
-### Example 2: HA Production Cluster on Bare Metal with Static Networking
-
-**User Query**:
-```
-"Create a production HA OpenShift cluster on 3 bare metal servers. I need static IP configuration for all nodes."
-```
-
-**Skill Execution**:
-1. ✅ Prerequisites verified
-2. 📖 Consulted troubleshooting.md
-3. 🎯 Cluster type: HA selected
-4. 🔧 Platform: "Bare Metal" selected
-5. 📦 OpenShift version: 4.18.2 selected
-6. 📝 Cluster name: "production-ocp"
-7. 🌐 Base domain: "mycompany.com"
-8. 💻 CPU architecture: x86_64
-9. 🔑 SSH key: User provides public key
-10. 🌐 VIPs required: User provides:
-    - API VIP: 192.168.1.100
-    - Ingress VIP: 192.168.1.101
-11. 🌐 Networking: "Configure Static Networking" selected
-12. 🔧 Static config for 3 hosts:
-    - Host 1: eth0 (52:54:00:6b:45:01) → 192.168.1.10/24, gateway 192.168.1.1, DNS 8.8.8.8
-    - Host 2: eth0 (52:54:00:6b:45:02) → 192.168.1.11/24, gateway 192.168.1.1, DNS 8.8.8.8
-    - Host 3: eth0 (52:54:00:6b:45:03) → 192.168.1.12/24, gateway 192.168.1.1, DNS 8.8.8.8
-13. ✅ NMState YAML generated and validated for all 3 hosts
-14. 📋 Configuration briefing displayed
-15. ✅ User confirms, cluster created
-16. 🔧 VIPs applied
-17. 🌐 Static network configs applied (3 hosts)
-18. 📀 ISO URL provided
-19. ⏸️ User boots 3 servers in order, waits 10 minutes
-20. ✅ 3 hosts discovered:
-    - Host 1: 16 cores, 64GB RAM → Suggested "master"
-    - Host 2: 16 cores, 64GB RAM → Suggested "master"
-    - Host 3: 16 cores, 64GB RAM → Suggested "master"
-21. 👤 User accepts all 3 as masters
-22. ✅ All validations pass, status: "ready"
-23. ⚠️ User confirms installation start (WARNING displayed)
-24. 🚀 Installation begins
-25. 📊 Real-time monitoring: 60 minutes, phases:
-    - Preparing → Installing → Bootstrapping → Installing control plane → Finalizing
-26. 🎉 Installation complete
-27. 📄 Credentials downloaded
-28. ✅ HA cluster operational with static networking!
-
-**Result**: Successfully deployed production HA cluster with full static networking in ~90 minutes.
-
----
-
-### Example 3: Error Handling - Insufficient Hosts
-
-**User Query**:
-```
-"Create an HA cluster but I only booted 2 hosts by mistake."
-```
-
-**Skill Execution**:
-1-9. [Normal cluster creation steps]
-10. ⏸️ User boots 2 hosts, says "check for hosts"
-11. 🔍 Host discovery: 2 hosts found
-12. ⚠️ Validation failure detected:
-    ```
-    ⚠️ Expected 3+ hosts for HA cluster, only 2 discovered.
-
-    Options:
-    - Wait longer and check again (more hosts may still be booting)
-    - Boot additional hosts from ISO
-    - Abort installation
-    ```
-13. 📖 Consulted troubleshooting.md for "Insufficient hosts" error
-14. 💡 Provided resolution: "Boot at least 1 more host from the cluster ISO"
-15. ⏸️ User boots 3rd host, waits 5 minutes, says "check again"
-16. ✅ 3 hosts now discovered
-17. [Continue normal workflow]
-
-**Result**: Error caught early, user guided to resolution, installation succeeds.
-
----
-
-## Notes for AI Execution
-
-**When executing this skill, you (the AI) should**:
-
-1. **Follow the workflow sequentially** - Each step builds on previous steps
-2. **Store all gathered information** - Cluster ID, host IDs, user choices are needed throughout
-3. **Validate inputs rigorously** - Use the validation criteria provided for each parameter
-4. **Consult troubleshooting.md proactively** - Read it at Step 1, re-read when errors occur
-5. **Never skip confirmations** - Human-in-the-loop is critical for Steps 5 and 13
-6. **Document errors automatically** - Update troubleshooting.md when new errors discovered
-7. **Use AskUserQuestion extensively** - This skill is highly interactive by design
-8. **Display clear progress updates** - Users need to understand what's happening at each step
-9. **Handle errors gracefully** - Provide clear error messages, resolutions, and options
-10. **Track state carefully** - SNO vs HA, platform type, VIP requirements, etc. affect workflow
-
-**Key State Variables to Track**:
-- `cluster_id` (UUID) - CRITICAL, needed for all operations after Step 6
-- `cluster_type` ("SNO" or "HA")
-- `platform` ("baremetal", "vsphere", "oci", "nutanix", "none")
-- `openshift_version` (e.g., "4.18.2")
-- `cluster_name`, `base_domain`, `cpu_architecture`
-- `ssh_public_key`
-- `api_vip`, `ingress_vip` (if applicable)
-- `static_network_configs` (array of NMState YAML strings)
-- `discovered_hosts` (array of host objects with IDs, hardware, roles)
-- `installation_started` (boolean)
-- `installation_start_time` (timestamp)
-
-**Conditional Logic**:
-- VIPs required ONLY if: HA cluster AND platform in [baremetal, vsphere, nutanix]
-- Platform "none" required ONLY for SNO clusters
-- Static networking is OPTIONAL for all cluster types
-- Minimum hosts: 1 for SNO, 3 for HA
-
-**Phase Progression**:
-- Installation progresses through: Preparing → Installing → Finalizing
-- Monitor completion percentage and phase status
-- Poll interval during monitoring: 30 seconds
-- Host discovery wait: Allow 3-10 minutes after booting
+**More Examples**: See [examples.md](../../docs/examples.md) for HA, static networking, multi-cluster, and air-gapped configurations.
