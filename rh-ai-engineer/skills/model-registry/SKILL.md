@@ -36,6 +36,7 @@ Register, version, and manage ML models in the Red Hat OpenShift AI Model Regist
 - `list_catalog_sources` - List Model Catalog source categories
 - `get_catalog_model_artifacts` - Get artifacts from Model Catalog entries
 - `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
+- `list_data_connections` - Verify S3 data connections exist in target namespace (for promotion)
 
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
