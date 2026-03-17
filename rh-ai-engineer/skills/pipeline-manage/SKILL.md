@@ -92,7 +92,7 @@ Check via `get_pipeline_server` (from rhoai) with `namespace`. If healthy, proce
 
 **For setup**: Check data connections via `list_data_connections` (from rhoai). If none exist, offer to delegate to `/ds-project-setup`.
 
-**Gather:** S3 data connection name (secret), bucket, endpoint, region (default: `us-east-1`). Present configuration for review. **WAIT for confirmation.**
+**Gather:** Select from available data connections (the data connection name is the S3 secret name). The bucket, endpoint, and region can be extracted from the data connection secret. Present configuration for review. **WAIT for confirmation.**
 
 **MCP Tool**: `create_pipeline_server` (from rhoai)
 
