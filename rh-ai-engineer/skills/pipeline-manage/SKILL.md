@@ -259,12 +259,6 @@ See [Prerequisites](#prerequisites) for the complete list of required MCP tools.
 ### Reference Documentation
 - [skill-conventions.md](../references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
 
-## Example Usage
-
-**User**: "Set up the pipeline server in my ml-training project and run a data preprocessing pipeline"
-
-**Skill response**: Validates project, sets up pipeline server with S3 data connection after confirmation, monitors readiness, then gathers pipeline YAML, presents run config for confirmation, submits PipelineRun, and monitors step-level progress.
-
 ## Critical: Human-in-the-Loop Requirements
 
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
@@ -279,3 +273,9 @@ See [skill-conventions.md](../references/skill-conventions.md) for general HITL 
 - **NEVER** auto-submit pipeline runs without confirmation
 - **NEVER** auto-delete pipeline servers or auto-retry failed runs
 - **NEVER** display S3 credentials or secret values in output
+
+## Example Usage
+
+**User**: "Set up the pipeline server in my ml-training project and run a data preprocessing pipeline"
+
+**Skill response**: Validates project, sets up pipeline server with S3 data connection after confirmation, monitors readiness, then gathers pipeline YAML, presents run config for confirmation, submits PipelineRun, and monitors step-level progress.

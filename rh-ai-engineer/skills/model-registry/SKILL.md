@@ -202,12 +202,6 @@ See [Prerequisites](#prerequisites) for the complete list of required MCP tools.
 ### Reference Documentation
 - [skill-conventions.md](../references/skill-conventions.md) - Shared prerequisite, HITL, and security conventions
 
-## Example Usage
-
-**User**: "Register a new model called sentiment-analyzer and create version v1.0 with weights stored at s3://ml-models/sentiment/v1"
-
-**Skill response**: Gathers metadata, presents registration table for confirmation, creates RegisteredModel CR, then gathers version details, presents version config for confirmation, creates ModelVersion and ModelArtifact CRs, reports success.
-
 ## Critical: Human-in-the-Loop Requirements
 
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
@@ -219,3 +213,9 @@ See [skill-conventions.md](../references/skill-conventions.md) for general HITL 
 - If model name already exists (Step 4): confirm whether to create a version or use a different name
 - **NEVER** auto-register models or auto-promote across environments without confirmation
 - **NEVER** display credential values from data connections or storage secrets
+
+## Example Usage
+
+**User**: "Register a new model called sentiment-analyzer and create version v1.0 with weights stored at s3://ml-models/sentiment/v1"
+
+**Skill response**: Gathers metadata, presents registration table for confirmation, creates RegisteredModel CR, then gathers version details, presents version config for confirmation, creates ModelVersion and ModelArtifact CRs, reports success.
