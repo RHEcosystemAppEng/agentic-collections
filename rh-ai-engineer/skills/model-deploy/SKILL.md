@@ -73,32 +73,17 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 
 ## Workflow
 
-### Step 1: Gather Deployment Information
+### Step 1: Gather Target and Validate Environment
 
-Collect the following from the user. Use defaults where sensible, but always confirm.
+Collect the deployment target from the user, then immediately validate the environment before gathering remaining details.
 
 **Ask the user for:**
 - **Model name**: Which model to deploy (e.g., "Llama 3.1 8B", "Granite 3.1 8B")
-- **Runtime preference**: vLLM (default), NIM, or Caikit+TGIS (auto-detect if not specified)
 - **Namespace**: Target namespace (must have model serving enabled)
-- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, or NGC for NIM)
-- **Deployment mode**: Serverless (Knative, default) or RawDeployment
 
-**Present configuration table for review:**
+**Pre-flight Environment Validation**:
 
-| Setting | Value | Source |
-|---------|-------|--------|
-| Model | [model-name] | user input |
-| Runtime | [to be determined in Step 2] | auto-detect / user input |
-| Namespace | [namespace] | user input |
-| Model Source | [source-uri] | user input |
-| Deployment Mode | [Serverless/RawDeployment] | user input / default: Serverless |
-
-**WAIT for user to confirm or modify these settings.**
-
-### Step 1.5: Pre-flight Environment Validation
-
-**CRITICAL**: Run these checks BEFORE deploying to avoid repeated deployment failures.
+**CRITICAL**: Run these checks BEFORE gathering remaining deployment details to avoid wasted configuration effort.
 
 Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
 - Namespace is an RHOAI Data Science Project
@@ -111,7 +96,28 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 
 **Present pre-flight results** in a summary table and note any adjustments made. **WAIT for user confirmation if significant changes were needed** (e.g., deployment mode switch, resource adjustments, tolerations added).
 
-### Step 2: Determine Runtime
+### Step 2: Gather Deployment Details
+
+After the environment is validated, collect remaining deployment configuration. Use pre-flight findings to inform defaults (e.g., if Knative is unavailable, default to RawDeployment).
+
+**Ask the user for:**
+- **Runtime preference**: vLLM (default), NIM, or Caikit+TGIS (auto-detect if not specified)
+- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, or NGC for NIM)
+- **Deployment mode**: Serverless (Knative, default) or RawDeployment
+
+**Present configuration table for review:**
+
+| Setting | Value | Source |
+|---------|-------|--------|
+| Model | [model-name] | user input (Step 1) |
+| Runtime | [to be determined in Step 3] | auto-detect / user input |
+| Namespace | [namespace] | user input (Step 1) |
+| Model Source | [source-uri] | user input |
+| Deployment Mode | [Serverless/RawDeployment] | user input / default (informed by pre-flight) |
+
+**WAIT for user to confirm or modify these settings.**
+
+### Step 3: Determine Runtime
 
 **Document Consultation** (read before selecting runtime):
 1. **Action**: Read [supported-runtimes.md](../../docs/references/supported-runtimes.md) using the Read tool to understand runtime capabilities and selection criteria
@@ -127,7 +133,7 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 
 **Present recommendation** with rationale. **WAIT for user confirmation.**
 
-### Step 3: Look Up Model Hardware Profile
+### Step 4: Look Up Model Hardware Profile
 
 **Document Consultation** (read before determining hardware requirements):
 1. **Action**: Read [known-model-profiles.md](../../docs/references/known-model-profiles.md) using the Read tool to find hardware profile for the requested model
@@ -148,19 +154,19 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 
 **Present hardware requirements** in a table (GPUs, VRAM, Key Args).
 
-### Step 4: Pre-flight GPU Check (Optional)
+### Step 5: Pre-flight GPU Check (Optional)
 
 **Condition**: Only if `ai-observability` MCP server is available.
 
 **MCP Tool**: `get_gpu_info` (from ai-observability)
 
-Compare available GPUs against model requirements from Step 3:
+Compare available GPUs against model requirements from Step 4:
 - If sufficient GPUs available -> Report match and proceed
 - If insufficient -> Warn user with options: smaller model, quantized version, different cluster, or proceed at user's risk
 
 **If ai-observability not available**: Skip with note: "GPU pre-flight check skipped (ai-observability MCP not configured)."
 
-### Step 5: Verify NIM Platform (NIM Runtime Only)
+### Step 6: Verify NIM Platform (NIM Runtime Only)
 
 **Condition**: Only when the selected runtime is NIM.
 
@@ -175,7 +181,7 @@ Compare available GPUs against model requirements from Step 3:
 **If Account CR not found or not ready:**
 Offer options: (1) Run `/nim-setup` now, (2) Switch to vLLM, (3) Abort. **WAIT for user decision.**
 
-### Step 6: Select ServingRuntime and Prepare Deployment Parameters
+### Step 7: Select ServingRuntime and Prepare Deployment Parameters
 
 **Verify available ServingRuntimes:**
 
@@ -191,16 +197,16 @@ If the needed runtime shows `requires_instantiation: true`, it must first be ins
 
 Use the runtime list to select the correct `runtime` name for the deployment.
 
-**Prepare deployment parameters** from Steps 1-3 and environment data from Step 1.5:
+**Prepare deployment parameters** from Steps 1-4 and environment data from Step 1:
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
 | `name` | [model-deployment-name] | user input (DNS-compatible) |
 | `namespace` | [namespace] | user input |
-| `runtime` | [serving-runtime-name] | selected from `list_serving_runtimes` |
+| `runtime` | [serving-runtime-name] | selected from `list_serving_runtimes` (Step 7) |
 | `model_format` | [vLLM/pytorch/onnx/caikit/etc.] | runtime selection |
 | `storage_uri` | [model-source-uri] | user input (prefer `hf://` for public models) |
-| `gpu_count` | [gpu-count] | from hardware profile (Step 3) |
+| `gpu_count` | [gpu-count] | from hardware profile (Step 4) |
 | `cpu_request` | [cpu] | from profile, adjusted for LimitRange |
 | `memory_request` | [memory] | from profile, adjusted for LimitRange |
 | `min_replicas` | [1] | default 1 (0 for scale-to-zero) |
@@ -213,7 +219,7 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 
 **Scale-to-zero note**: Setting `min_replicas=0` saves resources but introduces cold start latency (30s-2min for model loading).
 
-### Step 7: User Review and Confirmation
+### Step 8: User Review and Confirmation
 
 **Display the deployment parameters table** and a configuration summary to the user.
 
@@ -221,18 +227,18 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 
 **WAIT for explicit confirmation.**
 
-- If **yes** -> Proceed to Step 8
+- If **yes** -> Proceed to Step 9
 - If **no** -> Abort
 - If **modify** -> Ask what to change, update parameters, return to this step
 
-### Step 8: Deploy Model
+### Step 9: Deploy Model
 
 **MCP Tool**: `deploy_model` (from rhoai)
 
 **Parameters**:
 - `name`: deployment name (DNS-compatible) - REQUIRED
 - `namespace`: target namespace - REQUIRED
-- `runtime`: serving runtime name from Step 6 - REQUIRED
+- `runtime`: serving runtime name from Step 7 - REQUIRED
 - `model_format`: model format string (e.g., `"vLLM"`, `"pytorch"`, `"onnx"`) - REQUIRED
 - `storage_uri`: model location (e.g., `"hf://ibm-granite/granite-3.1-2b-instruct"`, `"s3://bucket/path"`, `"pvc://pvc-name/path"`) - REQUIRED
 - `display_name`: human-readable display name - OPTIONAL
@@ -252,7 +258,7 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 - If quota exceeded -> Report error, suggest reducing resource requests
 - If RBAC error -> Report insufficient permissions
 
-### Step 9: Monitor Rollout
+### Step 10: Monitor Rollout
 
 Poll InferenceService status until ready or timeout (10 minutes).
 
@@ -270,7 +276,7 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 
 **On failure:** Check pod logs (`pods_log`) and events (`events_list`) for diagnostics. Present options: (1) View full pod logs, (2) Check namespace events, (3) Invoke `/debug-inference`, (4) Delete and retry, (5) Continue waiting. **WAIT for user decision. NEVER auto-delete failed deployments.**
 
-### Step 10: Deployment Complete
+### Step 11: Deployment Complete
 
 **Get endpoint URL:**
 
@@ -326,7 +332,7 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
 1. Check LimitRange: `resources_list` for `LimitRange` in the namespace
 2. If LimitRange minimum CPU > 10m or minimum memory > 15Mi, the LimitRange must be adjusted
 3. Options: (a) Lower LimitRange minimums to accommodate sidecars (min CPU ≤ 10m, min memory ≤ 15Mi), (b) Remove the LimitRange entirely, (c) Deploy in a different namespace without restrictive LimitRanges
-4. **Prevention**: Step 1.5 pre-flight validation now checks for this conflict before deployment
+4. **Prevention**: Step 1 pre-flight validation now checks for this conflict before deployment
 
 ### Issue 4: GPU Node Taints Prevent Scheduling
 
@@ -346,7 +352,7 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
            value: "true"
            effect: "NoSchedule"
    ```
-3. **Prevention**: Step 1.5 pre-flight validation now auto-discovers GPU node taints and generates tolerations
+3. **Prevention**: Step 1 pre-flight validation now auto-discovers GPU node taints and generates tolerations
 
 ## Dependencies
 
@@ -370,11 +376,11 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
-- After gathering settings (Step 1): confirm configuration table
-- After pre-flight validation (Step 1.5): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
-- After runtime selection (Step 2): confirm runtime choice
-- Before calling deploy_model (Step 7): review and confirm deployment parameters
-- On deployment failure (Step 9): present diagnostic options, wait for user decision
+- After pre-flight validation (Step 1): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
+- After gathering deployment details (Step 2): confirm configuration table
+- After runtime selection (Step 3): confirm runtime choice
+- Before calling deploy_model (Step 8): review and confirm deployment parameters
+- On deployment failure (Step 10): present diagnostic options, wait for user decision
 - **NEVER** auto-delete failed deployments or auto-select runtimes without confirmation
 
 ## Example Usage

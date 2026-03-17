@@ -59,11 +59,24 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 
 ## Workflow
 
-### Step 1: Gather Requirements
+### Step 1: Validate Target Namespace
+
+**Ask the user for:**
+- **Namespace**: Target namespace for the ServingRuntime
+
+**MCP Tool**: `list_data_science_projects` (from rhoai)
+
+**Parameters**: none
+
+Verify the user-specified namespace is an RHOAI Data Science Project.
+
+**Error Handling**:
+- If namespace not found in project list -> Report: "Namespace `[namespace]` is not an RHOAI Data Science Project. Use `/ds-project-setup` to create one, or specify a different namespace." **WAIT for user decision.**
+
+### Step 2: Gather Requirements
 
 **Ask the user for:**
 - **Use case**: What framework/model needs serving? (e.g., "ONNX model", "custom TensorRT engine", "vLLM with custom args")
-- **Namespace**: Target namespace for the ServingRuntime
 - **Intent**: New runtime from scratch, or customize an existing one?
 
 **Document Consultation** (read before listing runtimes):
@@ -73,7 +86,7 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 **MCP Tool**: `list_serving_runtimes` (from rhoai)
 
 **Parameters**:
-- `namespace`: user-specified namespace - REQUIRED
+- `namespace`: validated namespace from Step 1 - REQUIRED
 - `include_templates`: `true` - REQUIRED (shows both existing runtimes and platform templates)
 
 **Present findings** in a table:
@@ -86,11 +99,11 @@ The response distinguishes between:
 - **Existing runtimes** (`source: "namespace"`) - ready to use with `/model-deploy`
 - **Platform templates** (`source: "template"`, `requires_instantiation: true`) - must be instantiated first
 
-If an existing runtime fits the user's need, recommend using it directly with `/model-deploy`. If a platform template fits, offer to instantiate it (Step 4 alternative). Otherwise, proceed to Step 2 for custom runtime creation.
+If an existing runtime fits the user's need, recommend using it directly with `/model-deploy`. If a platform template fits, offer to instantiate it (Step 5 alternative). Otherwise, proceed to Step 3 for custom runtime creation.
 
 **WAIT for user to confirm whether to create a new runtime, instantiate a template, or customize an existing one.**
 
-### Step 2: Determine Runtime Configuration
+### Step 3: Determine Runtime Configuration
 
 Based on the user's framework and model requirements, determine the ServingRuntime spec.
 
@@ -127,9 +140,9 @@ Extract the current spec as a starting point. Present the current configuration 
 
 **WAIT for user to confirm or modify parameters.**
 
-### Step 3: Generate ServingRuntime YAML
+### Step 4: Generate ServingRuntime YAML
 
-Generate the ServingRuntime manifest using values from Steps 1-2.
+Generate the ServingRuntime manifest using values from Steps 2-3.
 
 ```yaml
 apiVersion: serving.kserve.io/v1alpha1
@@ -175,13 +188,13 @@ Display the ServingRuntime YAML to the user, **redacting any sensitive values**.
 
 **WAIT for explicit confirmation.**
 
-- If **yes** -> Proceed to Step 4
+- If **yes** -> Proceed to Step 5
 - If **no** -> Abort
 - If **modify** -> Ask what to change, regenerate YAML, return to this step
 
-### Step 4: Create ServingRuntime
+### Step 5: Create ServingRuntime
 
-**If instantiating from a platform template** (user chose a template from Step 1):
+**If instantiating from a platform template** (user chose a template from Step 2):
 
 **MCP Tool**: `create_serving_runtime` (from rhoai)
 
@@ -205,7 +218,7 @@ The response includes the created runtime name, display name, and supported mode
 - If CRD not found -> Report: "ServingRuntime CRD not available. Ensure Red Hat OpenShift AI operator is installed."
 - If RBAC error -> Report insufficient permissions
 
-### Step 5: Validate Runtime
+### Step 6: Validate Runtime
 
 **MCP Tool**: `list_serving_runtimes` (from rhoai)
 
@@ -272,7 +285,8 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
-- After listing existing runtimes (Step 1): confirm whether to create new or customize existing
-- After collecting parameters (Step 2): confirm runtime configuration
-- Before creating ServingRuntime (Step 3): display full YAML, confirm
+- After namespace validation (Step 1): confirm namespace or redirect to `/ds-project-setup`
+- After listing existing runtimes (Step 2): confirm whether to create new or customize existing
+- After collecting parameters (Step 3): confirm runtime configuration
+- Before creating ServingRuntime (Step 4): display full YAML, confirm
 - **NEVER** overwrite an existing ServingRuntime without user confirmation

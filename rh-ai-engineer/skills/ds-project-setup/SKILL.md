@@ -70,8 +70,19 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 ### Step 1: Gather Requirements
 
-**Ask the user for:**
+**Ask the user for the project name first:**
 - **Project name**: DNS-compatible name for the namespace (lowercase, no spaces, max 63 chars)
+
+**Immediately check if the project name already exists:**
+
+**MCP Tool**: `list_data_science_projects` (from rhoai)
+
+**Parameters**: none
+
+- If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?" **WAIT for user decision.**
+- If project **does not exist**: Continue gathering remaining requirements below.
+
+**Ask the user for remaining settings:**
 - **Display name**: Human-readable project name for the RHOAI dashboard
 - **Description**: Optional project description
 - **Data connections**: Whether to configure S3 data connections (yes/no)
@@ -91,20 +102,7 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 **WAIT for user to confirm or modify the configuration.**
 
-### Step 2: Check Existing Projects
-
-**MCP Tool**: `list_data_science_projects` (from rhoai)
-
-**Parameters**: none
-
-Check if the project name already exists in the cluster.
-
-- If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?"
-- If project **does not exist**: Proceed to Step 3
-
-**WAIT for user decision if project already exists.**
-
-### Step 3: Create Data Science Project
+### Step 2: Create Data Science Project
 
 **MCP Tool**: `create_data_science_project` (from rhoai)
 
@@ -129,7 +127,7 @@ Confirm the project was created with proper RHOAI labels (`opendatahub.io/dashbo
 
 **Output to user**: "Data Science Project `[name]` created successfully."
 
-### Step 4: Configure Data Connections (Optional)
+### Step 3: Configure Data Connections (Optional)
 
 Skip this step if user declined data connections in Step 1.
 
@@ -157,7 +155,7 @@ Skip this step if user declined data connections in Step 1.
 **MCP Tool**: `create_s3_data_connection` (from rhoai)
 
 **Parameters**:
-- `namespace`: project name from Step 3 - REQUIRED
+- `namespace`: project name from Step 2 - REQUIRED
 - `name`: connection name - REQUIRED
 - `bucket`: S3 bucket name - REQUIRED
 - `endpoint`: S3 endpoint URL - REQUIRED
@@ -182,11 +180,11 @@ Confirm the data connection appears in the list.
 
 **Repeat this step** if user wants to create multiple data connections.
 
-### Step 5: Configure Pipeline Server (Optional)
+### Step 4: Configure Pipeline Server (Optional)
 
 Skip this step if user declined pipeline server in Step 1.
 
-**Prerequisite check**: A data connection must exist in the project (from Step 4 or pre-existing). If no data connections exist, inform user: "Pipeline server requires an S3 data connection for artifact storage. Would you like to create one now?" and return to Step 4.
+**Prerequisite check**: A data connection must exist in the project (from Step 3 or pre-existing). If no data connections exist, inform user: "Pipeline server requires an S3 data connection for artifact storage. Would you like to create one now?" and return to Step 3.
 
 **MCP Tool**: `get_pipeline_server` (from rhoai)
 
@@ -226,7 +224,7 @@ Confirm the pipeline server is configured and initializing.
 
 **Output to user**: "Pipeline server configured in project `[namespace]` using data connection `[data_connection]`."
 
-### Step 6: Enable Model Serving and Report
+### Step 5: Enable Model Serving and Report
 
 **MCP Tool**: `set_model_serving_mode` (from rhoai)
 
@@ -328,9 +326,9 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
+- After project name check (Step 1): if project exists, confirm whether to configure existing or choose new name
 - After gathering requirements (Step 1): confirm project configuration table
-- Before creating data connections (Step 4): display connection config with credentials REDACTED, confirm
-- Before configuring pipeline server (Step 5): confirm data connection selection
-- If project already exists (Step 2): confirm whether to configure existing or choose new name
+- Before creating data connections (Step 3): display connection config with credentials REDACTED, confirm
+- Before configuring pipeline server (Step 4): confirm data connection selection
 - **NEVER** create data connections without user confirming credential details
 - **NEVER** display actual S3 access keys or secret keys in output
