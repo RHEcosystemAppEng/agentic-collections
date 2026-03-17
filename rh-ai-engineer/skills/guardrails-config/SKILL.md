@@ -168,16 +168,22 @@ For each selected detector type, prepare detector configuration:
 
 **Detector model**: Deploy a HuggingFace content safety classifier as a separate InferenceService. Recommended: `ibm-granite/granite-guardian-3.1-2b` (1 GPU, ~8Gi memory) per [guardrails-detectors-reference.md](references/guardrails-detectors-reference.md).
 
-Check if a content safety detector model is already deployed:
+Check if a compatible content safety detector model is already deployed in the namespace:
 
 **MCP Tool**: `list_inference_services` (from rhoai)
 
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 
-If no detector model is deployed:
+Look for existing InferenceServices with `granite-guardian` or similar classifier models. If one exists, offer to reuse it.
 
-Inform user: "A content safety detector requires deploying a classifier model. I'll deploy `ibm-granite/granite-guardian-3.1-2b` as a detector InferenceService."
+**If a detector model already exists:**
+- Present it to the user: "Found existing detector InferenceService `[name]`. Reuse it or deploy a new one?"
+- **WAIT for user decision.**
+
+**If no detector model is deployed:**
+
+Inform user: "A content safety detector requires deploying a classifier model. I'll deploy `ibm-granite/granite-guardian-3.1-2b` as a detector InferenceService named `[isvc-name]-content-detector`."
 
 **Ask**: "Deploy the content safety detector model? This creates an additional InferenceService requiring 1 GPU and ~8Gi memory. (yes/no/use-existing)"
 
@@ -188,7 +194,7 @@ If yes:
 **MCP Tool**: `deploy_model` (from rhoai)
 
 **Parameters**:
-- `name`: `"content-safety-detector"` - REQUIRED
+- `name`: `"[isvc-name]-content-detector"` (derived from target model name to avoid collisions) - REQUIRED
 - `namespace`: target namespace - REQUIRED
 - `runtime`: appropriate runtime from `list_serving_runtimes` - REQUIRED
 - `model_format`: `"vLLM"` - REQUIRED
