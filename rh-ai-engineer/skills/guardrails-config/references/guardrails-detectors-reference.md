@@ -92,14 +92,3 @@ data:
 - Orchestrator pods: label includes the CR name (e.g., `app.kubernetes.io/name=guardrails-<isvc-name>`)
 - Guarded endpoint: exposed via the orchestrator's Service/Route, proxies to the target model
 
-## Detection Categories (Granite Guardian)
-
-When using `granite-guardian` models, the following detection categories are available:
-- Jailbreak attempts
-- Social bias
-- Profanity
-- Violence
-- Sexual content
-- Unethical behavior
-- Hallucinations / groundedness
-- Function calling hallucinations (for agentic use cases)
