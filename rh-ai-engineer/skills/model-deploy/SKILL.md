@@ -379,7 +379,7 @@ See [skill-conventions.md](../references/skill-conventions.md) for general HITL 
 - After pre-flight validation (Step 1): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
 - After gathering deployment details (Step 2): confirm configuration table
 - After runtime selection (Step 3): confirm runtime choice
-- Before calling deploy_model (Step 8): review and confirm deployment parameters
+- User review before deploy_model (Step 8): confirm deployment parameters
 - On deployment failure (Step 10): present diagnostic options, wait for user decision
 - **NEVER** auto-delete failed deployments or auto-select runtimes without confirmation
 
