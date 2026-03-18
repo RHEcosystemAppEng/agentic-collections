@@ -369,7 +369,7 @@ def main() -> int:
     parser.add_argument(
         "paths",
         nargs="*",
-        default=["rh-sre", "rh-developer", "ocp-admin", "rh-virt", "rh-ai-engineer"],
+        default=["rh-sre", "rh-developer", "ocp-admin", "rh-support-engineer", "rh-virt", "rh-ai-engineer", "rh-automation"],
         help="Pack directories or specific SKILL.md paths to validate",
     )
     parser.add_argument(

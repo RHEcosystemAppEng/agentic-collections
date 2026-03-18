@@ -9,6 +9,7 @@ Agentic collections to automate interaction with Red Hat platforms and products 
 | [Red Hat Support Engineer](rh-support-engineer/README.md) | Support Engineer | Claude code, Cursor, ChatGPT |
 | [Red Hat Virtualization](rh-virt/README.md) | Virt Admin | Claude code, Cursor |
 | [Red Hat AI Engineer](rh-ai-engineer/README.md) | AI/ML Engineer | Claude code, Cursor |
+| [Red Hat Automation](rh-automation/README.md) | Automation Specification Lead | Claude code, Cursor |
 
 ## Documentation Site
 

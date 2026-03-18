@@ -1,0 +1,64 @@
+{
+  "version": "2.0",
+  "last_updated": "2026-02-26",
+  "nodes": [
+    {
+      "id": "governance-readiness",
+      "path": "aap/governance-readiness.md",
+      "title": "AAP Governance Readiness Assessment"
+    },
+    {
+      "id": "execution-governance",
+      "path": "aap/execution-governance.md",
+      "title": "Execution Governance"
+    },
+    {
+      "id": "job-troubleshooting",
+      "path": "aap/job-troubleshooting.md",
+      "title": "Job Troubleshooting"
+    },
+    {
+      "id": "error-classification",
+      "path": "references/error-classification.md",
+      "title": "Error Classification Taxonomy"
+    }
+  ],
+  "edges": [
+    {
+      "from": "governance-readiness",
+      "to": "execution-governance",
+      "relationship": "precedes",
+      "description": "After assessing readiness, use execution governance for governed execution"
+    },
+    {
+      "from": "execution-governance",
+      "to": "job-troubleshooting",
+      "relationship": "follows_on_failure",
+      "description": "If execution fails, use troubleshooting for forensic analysis"
+    },
+    {
+      "from": "job-troubleshooting",
+      "to": "error-classification",
+      "relationship": "references",
+      "description": "Troubleshooting uses error classification for systematic error typing"
+    },
+    {
+      "from": "execution-governance",
+      "to": "governance-readiness",
+      "relationship": "optional_precondition",
+      "description": "First production execution may trigger readiness assessment"
+    },
+    {
+      "from": "error-classification",
+      "to": "governance-readiness",
+      "relationship": "identifies_gaps",
+      "description": "Platform errors may indicate governance gaps in readiness domains"
+    },
+    {
+      "from": "governance-readiness",
+      "to": "job-troubleshooting",
+      "relationship": "cross_reference",
+      "description": "Platform configuration issues discovered in assessment may explain job failures"
+    }
+  ]
+}
