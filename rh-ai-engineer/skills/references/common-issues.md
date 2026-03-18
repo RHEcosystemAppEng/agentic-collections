@@ -13,7 +13,7 @@ Shared troubleshooting patterns that apply to multiple rh-ai-engineer skills. In
 
 ## GPU Scheduling Failure
 
-**Applies to**: `/model-deploy`, `/debug-inference`, `/workbench-manage`
+**Applies to**: `/model-deploy`, `/debug-inference`, `/workbench-manage`, `/guardrails-config`
 
 **Error**: Pod stuck in Pending with events showing "Insufficient nvidia.com/gpu"
 
@@ -28,7 +28,7 @@ Shared troubleshooting patterns that apply to multiple rh-ai-engineer skills. In
 
 ## OOMKilled During Model or Workbench Loading
 
-**Applies to**: `/model-deploy`, `/debug-inference`
+**Applies to**: `/model-deploy`, `/debug-inference`, `/guardrails-config`
 
 **Error**: Pod terminated with OOMKilled exit code, often during initial model weight loading
 
@@ -71,7 +71,7 @@ Shared troubleshooting patterns that apply to multiple rh-ai-engineer skills. In
 
 ## RBAC / Permission Errors
 
-**Applies to**: All skills that create or modify Kubernetes resources
+**Applies to**: All skills that create or modify Kubernetes resources (including `/model-monitor`, `/guardrails-config`)
 
 **Error**: API call returns 403 Forbidden or "insufficient permissions" message
 

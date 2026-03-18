@@ -15,6 +15,8 @@ Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). 
 | `/serving-runtime-config` | Configure custom ServingRuntime CRs for model serving frameworks |
 | `/debug-inference` | Troubleshoot failed or slow InferenceService deployments |
 | `/ai-observability` | Analyze model performance, GPU utilization, cluster health, and distributed traces |
+| `/model-monitor` | Configure TrustyAI bias detection (SPD, DIR) and data drift monitoring |
+| `/guardrails-config` | Deploy TrustyAI Guardrails Orchestrator with input/output content safety detectors |
 
 ## Prerequisites
 

@@ -360,6 +360,8 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/serving-runtime-config` - Create custom ServingRuntime CRs
 - `/ds-project-setup` - Create a namespace with model serving enabled
 - `/model-registry` - Get artifact URIs for registered model versions to deploy
+- `/model-monitor` - Configure bias and drift monitoring after deployment
+- `/guardrails-config` - Add content safety guardrails to LLM deployments
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Hardware profiles for common models

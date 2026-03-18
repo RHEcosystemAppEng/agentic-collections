@@ -403,6 +403,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/debug-inference` - Troubleshoot deployment issues found during analysis
 - `/model-deploy` - Redeploy models with different configuration based on findings
 - `/serving-runtime-config` - Adjust runtime parameters if performance issues are runtime-related
+- `/model-monitor` - TrustyAI bias/drift metrics (complements infrastructure observability)
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Expected performance baselines for common models
