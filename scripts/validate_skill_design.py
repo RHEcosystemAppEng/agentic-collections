@@ -9,6 +9,7 @@ Design principles checked:
   DP4: Dependencies - section with Required MCP Servers/Tools, Related Skills, Reference Docs
   DP5: Human-in-the-Loop - critical skills should have this section
   DP6: Mandatory sections - Prerequisites, When to Use This Skill, Workflow
+  DP6 (extended): Late section order - Dependencies → Human-in-the-Loop → Example Usage
   DP7: Credential security - no echo $VAR (except in anti-pattern examples)
 
 Cannot validate: runtime behavior (AI actually reading docs), parameter correctness vs MCP schemas.
@@ -50,6 +51,19 @@ ORDERED_SECTIONS = [
     "When to Use This Skill",
     "Workflow",
 ]
+
+# Late sections: Dependencies → Human-in-the-Loop → Example Usage (when present)
+# Human-in-the-Loop matches "Critical: Human-in-the-Loop Requirements" or "Human-in-the-Loop Requirements"
+LATE_ORDERED_SECTIONS = [
+    "Dependencies",
+    "Human-in-the-Loop",
+    "Example Usage",
+]
+LATE_SECTION_PATTERNS = {
+    "Dependencies": r"^Dependencies$",
+    "Human-in-the-Loop": r"Human-in-the-Loop",
+    "Example Usage": r"^Example Usage$",
+}
 
 # Dependencies subsections (DP4)
 DEPENDENCY_SUBSECTIONS = [
@@ -270,6 +284,38 @@ def check_dp6_mandatory_sections(body: str, result: ValidationResult) -> None:
                 break
 
 
+def check_dp6_late_section_order(body: str, result: ValidationResult) -> None:
+    """
+    DP6 (extended): Late section order.
+    When present, these sections must appear in order: Dependencies → Human-in-the-Loop → Example Usage.
+    """
+    section_headings = re.findall(r"^## ([^\n#]+)", body, re.MULTILINE)
+
+    # Build (order_index, position) for each present late section
+    indices = []
+    for i, heading in enumerate(section_headings):
+        heading_stripped = heading.strip()
+        for section_key, pattern in LATE_SECTION_PATTERNS.items():
+            if re.search(pattern, heading_stripped, re.IGNORECASE):
+                order_idx = LATE_ORDERED_SECTIONS.index(section_key)
+                indices.append((order_idx, i, section_key))
+                break
+
+    if len(indices) < 2:
+        return
+
+    # Sort by document position, then verify order_index is non-decreasing
+    indices_by_pos = sorted(indices, key=lambda x: x[1])
+    for i in range(1, len(indices_by_pos)):
+        if indices_by_pos[i][0] < indices_by_pos[i - 1][0]:
+            result.warnings.append(
+                f"DP6: Late sections should appear in order: "
+                f"{' → '.join(LATE_ORDERED_SECTIONS)} "
+                f"(found {indices_by_pos[i - 1][2]} before {indices_by_pos[i][2]})"
+            )
+            break
+
+
 def check_dp7_credential_exposure(body: str, result: ValidationResult) -> None:
     """
     DP7: MCP Server Availability Verification - no credential exposure.
@@ -356,6 +402,7 @@ def validate_skill(skill_path: Path) -> ValidationResult:
         frontmatter.get("name", "") if frontmatter else "", body, result
     )
     check_dp6_mandatory_sections(body, result)
+    check_dp6_late_section_order(body, result)
     check_dp7_credential_exposure(body, result)
 
     return result
