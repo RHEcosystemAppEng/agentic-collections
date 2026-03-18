@@ -1,5 +1,7 @@
 Agentic collections to automate interaction with Red Hat platforms and products for various marketplaces.
 
+[![Validate Agentic Collections](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/compliance-check.yml/badge.svg)](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/compliance-check.yml)
+[![Skill Specification Linter](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/skill-spec-report.yml/badge.svg)](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/skill-spec-report.yml)
 
 | Agentic Pack | Persona/Role | Marketplaces |
 |--------------|--------------|--------------|
