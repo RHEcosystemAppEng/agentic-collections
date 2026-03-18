@@ -326,8 +326,8 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
-- After project name check (Step 1): if project exists, confirm whether to configure existing or choose new name
-- After gathering requirements (Step 1): confirm project configuration table
+- After project name existence check (Step 1): if project exists, confirm whether to configure existing or choose new name
+- After gathering all requirements (Step 1): confirm project configuration table before proceeding
 - Before creating data connections (Step 3): display connection config with credentials REDACTED, confirm
 - Before configuring pipeline server (Step 4): confirm data connection selection
 - **NEVER** create data connections without user confirming credential details
