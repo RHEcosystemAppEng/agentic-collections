@@ -79,7 +79,7 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 **Parameters**: none
 
-- If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?" **WAIT for user decision.**
+- If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?" **WAIT for user decision.** If user chooses (a), skip Step 2 and proceed to optional configuration steps (Steps 3-5). If user chooses (b), repeat the name check.
 - If project **does not exist**: Continue gathering remaining requirements below.
 
 **Ask the user for remaining settings:**
