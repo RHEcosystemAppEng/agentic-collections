@@ -328,6 +328,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/model-deploy` - Redeploy or modify the InferenceService after fixing issues
 - `/serving-runtime-config` - Fix or create ServingRuntime if runtime is the issue
 - `/nim-setup` - Re-run NIM platform setup if NIM credentials are the issue
+- `/model-monitor` - Check if TrustyAI monitoring detected issues before they became failures
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Correct resource sizing for common models

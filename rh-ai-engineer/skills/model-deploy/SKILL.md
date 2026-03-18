@@ -80,6 +80,8 @@ Collect the deployment target from the user, then immediately validate the envir
 **Ask the user for:**
 - **Model name**: Which model to deploy (e.g., "Llama 3.1 8B", "Granite 3.1 8B")
 - **Namespace**: Target namespace (must have model serving enabled)
+- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, NGC for NIM, or artifact URI from `/model-registry`)
+- **Deployment mode**: Serverless (Knative, default) or RawDeployment
 
 **Pre-flight Environment Validation**:
 
@@ -365,6 +367,9 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/ai-observability` - Analyze deployed model performance
 - `/serving-runtime-config` - Create custom ServingRuntime CRs
 - `/ds-project-setup` - Create a namespace with model serving enabled
+- `/model-registry` - Get artifact URIs for registered model versions to deploy
+- `/model-monitor` - Configure bias and drift monitoring after deployment
+- `/guardrails-config` - Add content safety guardrails to LLM deployments
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Hardware profiles for common models

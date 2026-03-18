@@ -206,7 +206,10 @@ If pipeline server already exists, report its status and ask if user wants to re
 
 **Parameters**:
 - `namespace`: project name - REQUIRED
-- `data_connection`: name of the S3 data connection to use for pipeline artifacts - REQUIRED
+- `object_storage_secret`: name of the S3 data connection secret - REQUIRED
+- `object_storage_bucket`: S3 bucket name (from the data connection) - REQUIRED
+- `object_storage_endpoint`: S3 endpoint URL (from the data connection) - REQUIRED
+- `object_storage_region`: S3 region - OPTIONAL (default: `"us-east-1"`)
 
 **Verify creation:**
 
@@ -252,6 +255,7 @@ Confirm the pipeline server is configured and initializing.
 - `/workbench-manage` - Create a notebook workbench in this project
 - `/model-deploy` - Deploy a model to this project
 - `/pipeline-manage` - Create and run data science pipelines
+- `/model-registry` - Register and manage models in the Model Registry
 
 ## Common Issues
 
