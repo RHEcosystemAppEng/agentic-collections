@@ -685,6 +685,156 @@ After installation completes:
 
 ---
 
+## OCM API Troubleshooting (Managed Service Clusters)
+
+### Overview
+
+The OCM (OpenShift Cluster Manager) API provides access to managed service clusters:
+- **ROSA** (Red Hat OpenShift Service on AWS)
+- **ARO** (Azure Red Hat OpenShift)
+- **OSD** (OpenShift Dedicated)
+
+The `cluster-inventory` skill queries both the Assisted Installer API and the OCM API to provide comprehensive cluster coverage.
+
+**OCM API Endpoint**: `https://api.openshift.com/api/clusters_mgmt/v1`
+
+---
+
+### Authentication for OCM Clusters
+
+**Same OFFLINE_TOKEN Works for Both APIs**:
+
+The OFFLINE_TOKEN used for Assisted Installer clusters also authenticates to the OCM API. No separate token is required.
+
+**Verification**:
+```bash
+# Check OFFLINE_TOKEN is set
+test -n "$OFFLINE_TOKEN" && echo "✓ Set" || echo "✗ Missing"
+
+# Same token works for both APIs
+```
+
+---
+
+### Common OCM API Issues
+
+#### Problem: "No OCM clusters found" but clusters exist in console
+
+**Symptoms**:
+- `ocm_list_clusters` returns empty or "No clusters found"
+- Clusters visible in https://console.redhat.com/openshift
+- Assisted Installer API works correctly
+
+**Diagnosis**:
+1. Verify OFFLINE_TOKEN is set
+2. Check account permissions for managed services
+3. Verify you're logged in with the correct Red Hat account
+
+**Resolution**:
+```bash
+# 1. Verify token
+test -n "$OFFLINE_TOKEN" && echo "✓ Token set" || echo "✗ Missing"
+
+# 2. Check account at console
+# Visit https://console.redhat.com/openshift
+# Verify you can see ROSA/ARO/OSD clusters
+
+# 3. If needed, regenerate token
+# https://cloud.redhat.com/openshift/token
+```
+
+---
+
+#### Problem: OCM API returns 403 Forbidden
+
+**Symptoms**:
+- Error: "Permission denied" when calling `ocm_list_clusters`
+- Assisted Installer API works fine
+- Status code 403 in logs
+
+**Cause**: Account lacks permissions for managed services (ROSA/ARO/OSD)
+
+**Resolution**:
+1. Contact Red Hat organization administrator
+2. Request managed services access
+3. Verify subscription includes ROSA/ARO/OSD
+4. May need separate entitlements for managed services
+
+---
+
+#### Problem: OCM cluster details incomplete or missing fields
+
+**Symptoms**:
+- `ocm_cluster_info` returns partial data
+- Missing fields: region, cloud_provider, console.url
+- Some fields show as "Unknown"
+
+**Cause**: OCM API response format varies by cluster state and configuration
+
+**Explanation**:
+- Some fields only available after cluster is fully provisioned
+- Cloud provider details may be pending during cluster creation
+- Console URL not available until cluster is installed
+
+**Not an error**: This is expected behavior for clusters in early lifecycle stages.
+
+---
+
+### Differences Between Assisted Installer and OCM APIs
+
+| Feature | Assisted Installer (OCP/SNO) | OCM (ROSA/ARO/OSD) |
+|---------|------------------------------|-------------------|
+| **Status Field** | `status` | `state` |
+| **Events API** | ✅ Available | ❌ Not available |
+| **Logs API** | ✅ Available | ❌ Use cloud provider tools |
+| **VIP Configuration** | ✅ Required for HA | ❌ Handled by cloud |
+| **Host Discovery** | ✅ Manual (boot from ISO) | ❌ Automated by cloud |
+| **Installation Control** | ✅ Manual trigger | ❌ Automated |
+
+**Key Difference**: Assisted Installer clusters require manual configuration and installation steps. OCM managed clusters are fully automated by Red Hat and cloud providers.
+
+---
+
+### OCM Cluster States
+
+OCM uses different state values than Assisted Installer:
+
+| OCM State | Meaning | Equivalent Assisted Installer Status |
+|-----------|---------|--------------------------------------|
+| `ready` | Cluster operational | `installed` |
+| `installing` | Installation in progress | `installing` |
+| `error` | Installation or operation failed | `error` |
+| `pending` | Waiting for provisioning | `pending-for-input` |
+| `hibernating` | Cluster scaled down to save costs | N/A (managed services only) |
+| `resuming` | Waking from hibernation | N/A (managed services only) |
+
+---
+
+### Troubleshooting Workflow for Mixed Cluster Environments
+
+When you have both self-managed (OCP/SNO) and managed (ROSA/ARO/OSD) clusters:
+
+1. **List all clusters**: Use `cluster-inventory` skill
+   - Automatically queries both APIs
+   - Merges results into unified view
+
+2. **If Assisted Installer clusters fail but OCM works**:
+   - Check Assisted Installer API endpoint
+   - Verify hosts are registered
+   - Review cluster events (Assisted Installer only)
+
+3. **If OCM clusters fail but Assisted Installer works**:
+   - Verify managed services permissions
+   - Check subscription entitlements
+   - Contact Red Hat support for OCM access
+
+4. **If both APIs fail**:
+   - Verify OFFLINE_TOKEN is valid
+   - Check network access to api.openshift.com
+   - Regenerate token if expired
+
+---
+
 ## Additional Resources
 
 - **Official Documentation**: https://docs.openshift.com/container-platform/latest/installing/

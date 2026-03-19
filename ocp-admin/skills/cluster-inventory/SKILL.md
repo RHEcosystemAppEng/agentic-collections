@@ -1,7 +1,9 @@
 ---
 name: cluster-inventory
 description: |
-  List and inspect OpenShift clusters with comprehensive status information.
+  List and inspect ALL OpenShift cluster types with comprehensive status information.
+
+  Supports both self-managed (OCP, SNO) and managed service clusters (ROSA, ARO, OSD).
 
   Use when:
   - "List all clusters"
@@ -16,14 +18,19 @@ color: blue
 
 # AI Metadata
 mcp_servers:
-  - openshift-installer
+  - openshift-self-managed
+  - openshift-ocm-managed
 mcp_tools:
   - list_clusters
+  - ocm_list_clusters
   - cluster_info
+  - ocm_cluster_info
   - cluster_events
   - cluster_logs_download_url
 environment_vars:
   - OFFLINE_TOKEN
+  - INVENTORY_URL
+  - OCM_URL
 documentation:
   - ../../docs/troubleshooting.md
 destructive: false
@@ -39,21 +46,34 @@ categories:
 
 ## Prerequisites
 
-**Required MCP Servers**: `openshift-installer` ([setup guide](https://console.redhat.com/openshift/assisted-installer/clusters))
+**Required MCP Servers**:
+- `openshift-self-managed` - For self-managed clusters (OCP, SNO)
+- `openshift-ocm-managed` - For managed service clusters (ROSA, ARO, OSD)
 
 **Required MCP Tools**:
-- `list_clusters` (from openshift-installer)
-- `cluster_info` (from openshift-installer)
-- `cluster_events` (from openshift-installer)
+- `list_clusters` (from openshift-self-managed) - Lists self-managed clusters (OCP, SNO)
+- `ocm_list_clusters` (from openshift-ocm-managed) - Lists managed service clusters (ROSA, ARO, OSD)
+- `cluster_info` (from openshift-self-managed) - Details for self-managed clusters
+- `ocm_cluster_info` (from openshift-ocm-managed) - Details for managed service clusters
+- `cluster_events` (from openshift-self-managed) - Events for self-managed clusters (not available for OCM)
 
-**Environment Variables**: None required (authentication handled by MCP server)
+**Environment Variables**:
+- `OFFLINE_TOKEN` - Red Hat authentication token (required)
+- `OCM_URL` - OCM API endpoint (optional, defaults to https://api.openshift.com/api/clusters_mgmt/v1)
+
+**Dual API Architecture**:
+This skill queries TWO separate Red Hat APIs to provide comprehensive cluster coverage:
+1. **Assisted Installer API** (`/api/assisted-install/v2`) - Self-managed clusters (OCP, SNO)
+2. **OCM Clusters Management API** (`/api/clusters_mgmt/v1`) - Managed service clusters (ROSA, ARO, OSD)
+
+Both APIs use the same `OFFLINE_TOKEN` for authentication.
 
 **Verification Flow**:
 
 ```
 START Prerequisites Check
   │
-  ├─→ [1] Check .mcp.json for "openshift-installer" server
+  ├─→ [1] Check .mcp.json for "openshift-self-managed" server
   │     ├─ FOUND → Continue to [2]
   │     └─ NOT FOUND → Report Error → Human Notification Protocol
   │
@@ -71,7 +91,7 @@ END Prerequisites → Begin Execution
 **Verification Steps** (Detailed):
 
 1. **Check MCP Server Configuration**
-   - Verify `openshift-installer` exists in `.mcp.json`
+   - Verify `openshift-self-managed` exists in `.mcp.json`
    - Confirm server uses Podman command (not HTTP type)
    - Check environment variable reference: `"OFFLINE_TOKEN": "${OFFLINE_TOKEN}"`
    - If missing → Proceed to Human Notification Protocol
@@ -117,13 +137,13 @@ IF Prerequisites Check FAILS at any step:
 
 1. **MCP Server Not Configured**:
    ```
-   ❌ Cannot execute cluster-inventory: MCP server `openshift-installer` is not configured
+   ❌ Cannot execute cluster-inventory: MCP server `openshift-self-managed` is not configured
 
    📋 Setup Instructions:
-   1. Add openshift-installer to .mcp.json:
+   1. Add openshift-self-managed to .mcp.json:
       {
         "mcpServers": {
-          "openshift-installer": {
+          "openshift-self-managed": {
             "command": "podman",
             "args": [...],
             "env": {"OFFLINE_TOKEN": "${OFFLINE_TOKEN}"}
@@ -152,7 +172,7 @@ IF Prerequisites Check FAILS at any step:
 
 3. **Connection Failure**:
    ```
-   ❌ Cannot connect to openshift-installer MCP server
+   ❌ Cannot connect to openshift-self-managed MCP server
 
    📋 Possible Causes:
    - OFFLINE_TOKEN is invalid or expired
@@ -179,13 +199,13 @@ IF Prerequisites Check FAILS at any step:
 
 - Missing MCP Server:
   ```
-  ❌ MCP server `openshift-installer` not configured in .mcp.json
+  ❌ MCP server `openshift-self-managed` not configured in .mcp.json
   📋 Add server configuration to .mcp.json (see Prerequisites section above)
   ```
 
 - Connection Failure:
   ```
-  ❌ Cannot connect to `openshift-installer` MCP server at http://127.0.0.1:8000/mcp
+  ❌ Cannot connect to `openshift-self-managed` MCP server at http://127.0.0.1:8000/mcp
   📋 Possible causes:
      - MCP server not running (verify server process)
      - Network issues (check http://127.0.0.1:8000/mcp is accessible)
@@ -195,17 +215,62 @@ IF Prerequisites Check FAILS at any step:
 ## When to Use This Skill
 
 Use this skill when:
-- User requests a list of all OpenShift clusters
+- User requests a list of all OpenShift clusters (any type)
 - User wants to see cluster status or installation progress
-- User needs detailed cluster information (version, configuration, hosts)
+- User needs detailed cluster information (version, configuration, hosts, cloud provider)
 - User wants to inspect cluster events for troubleshooting
-- User asks "What clusters do I have?"
+- User asks "What clusters do I have?" or "Show all my clusters"
+- User wants to see both self-managed (OCP, SNO) AND managed service clusters (ROSA, ARO, OSD)
+
+**Cluster Types Supported:**
+- **Self-Managed**: OCP (OpenShift Container Platform), SNO (Single-Node OpenShift)
+- **Managed Services**: ROSA (Red Hat OpenShift Service on AWS), ARO (Azure Red Hat OpenShift), OSD (OpenShift Dedicated)
 
 Do NOT use when:
 - User wants to create a new cluster → Use cluster-creator skill instead
 - User wants to modify cluster configuration → Use appropriate cluster management skill
 - User wants to install/start cluster installation → Use cluster-installer skill instead
 - User wants to delete a cluster → Use cluster-deletion skill instead
+
+---
+
+## MCP Server Selection Logic
+
+This skill uses **TWO MCP servers** depending on the cluster type:
+
+| MCP Server | Cluster Types | When to Use |
+|-----------|---------------|-------------|
+| `openshift-self-managed` | OCP, SNO | Self-managed clusters via Assisted Installer |
+| `openshift-ocm-managed` | ROSA, ARO, OSD | Managed service clusters via OCM API |
+
+### Decision Matrix
+
+**ALWAYS query BOTH servers** when:
+- User asks generically: "List all clusters", "Show my clusters", "What clusters do I have?"
+- No cluster type specified in request
+- User wants comprehensive view of all clusters
+
+**Query ONLY `openshift-self-managed`** when:
+- User specifically mentions: "OCP clusters", "SNO clusters", "self-managed clusters"
+- User mentions: "Assisted Installer", "baremetal", "vSphere", "Nutanix"
+- User asks about cluster installation, VIPs, or host discovery (these concepts only apply to self-managed)
+
+**Query ONLY `openshift-ocm-managed`** when:
+- User specifically mentions: "ROSA", "ARO", "OSD", "managed clusters"
+- User mentions: "AWS managed", "Azure managed", "cloud service"
+- User asks about cloud provider regions, managed services
+
+### Examples
+
+| User Request | Query Strategy | Reasoning |
+|-------------|----------------|-----------|
+| "List all my clusters" | **Both servers** | Generic request |
+| "Show me my OCP clusters" | **Self-managed only** | Specific to OCP |
+| "What ROSA clusters do I have?" | **OCM-managed only** | Specific to ROSA |
+| "List clusters in AWS" | **Both servers** | Could be OCP on AWS or ROSA |
+| "Show clusters needing VIPs" | **Self-managed only** | VIPs only for self-managed |
+
+**Default Behavior**: When in doubt, query **both servers** and merge results.
 
 ---
 
@@ -330,6 +395,17 @@ When there are **3 or more clusters**, display results in a **table format**:
 
 **Determine cluster type from available metadata**:
 
+**For OCM Clusters** (from `ocm_list_clusters`):
+
+1. **Check `cloud_provider.id` field**:
+   - `aws` → **ROSA** (Red Hat OpenShift Service on AWS)
+   - `azure` → **ARO** (Azure Red Hat OpenShift)
+   - `gcp` or other → **OSD** (OpenShift Dedicated)
+
+2. **Platform Name**: Use `cloud_provider.id` directly (AWS, Azure, GCP)
+
+**For Assisted Installer Clusters** (from `list_clusters`):
+
 1. **Check `product_id` or `cloud_provider` field** (if available from MCP tool):
    - `rosa` → **ROSA** (Red Hat OpenShift Service on AWS)
    - `aro` → **ARO** (Azure Red Hat OpenShift)
@@ -351,6 +427,7 @@ When there are **3 or more clusters**, display results in a **table format**:
 - `none` → "None" (for SNO)
 - `aws` → "AWS"
 - `azure` → "Azure"
+- `gcp` → "GCP"
 - `gcp` → "Google Cloud"
 
 ---
@@ -410,7 +487,7 @@ If ANSI codes aren't supported, use emoji and Markdown emphasis:
 
 ## Workflow
 
-### Step 1: List All Clusters
+### Step 1: List All Clusters (Dual API Query)
 
 **CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
 
@@ -418,30 +495,73 @@ If ANSI codes aren't supported, use emoji and Markdown emphasis:
 1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand common cluster status values and error conditions
 2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand cluster status interpretation."
 
-**MCP Tool**: `list_clusters` (from openshift-installer)
+**Dual API Query Process**:
+
+This step queries TWO separate APIs and merges results:
+
+**Step 1A: Query Assisted Installer API**
+
+**MCP Server**: `openshift-self-managed`
+**MCP Tool**: `list_clusters`
 
 **Parameters**: None required
 
-**Expected Output**: List of clusters with basic information:
+**Expected Output**: List of self-managed clusters (OCP, SNO) with:
 - Cluster name
 - Cluster ID (UUID)
 - OpenShift version
 - Status (ready, installing, pending-for-input, error, etc.)
 
+**Step 1B: Query OCM Clusters Management API**
+
+**MCP Server**: `openshift-ocm-managed`
+**MCP Tool**: `ocm_list_clusters`
+
+**Parameters**: None required
+
+**Expected Output**: List of managed service clusters (ROSA, ARO, OSD) with:
+- Cluster name
+- Cluster ID (UUID)
+- OpenShift version
+- State (ready, installing, error, etc.)
+- Cloud provider (AWS, Azure, GCP)
+- Region
+
+**Step 1C: Merge and Normalize Results**
+
+**Merge Process**:
+1. Parse Assisted Installer clusters → Add `source: "assisted-installer"` and `type: "OCP"` or `type: "SNO"`
+2. Parse OCM clusters → Add `source: "ocm"` and detect type from cloud_provider:
+   - AWS → `type: "ROSA"`
+   - Azure → `type: "ARO"`
+   - GCP or other → `type: "OSD"`
+3. Normalize field names:
+   - OCM `state` → `status` for consistency
+   - OCM `version.raw_id` → `openshift_version`
+4. Combine both lists into single array
+5. Sort by Type-first (OCP → ROSA → ARO → OSD → SNO), then by creation date
+
 **Error Handling**:
-- If tool returns "No clusters found": Report to user that no clusters are currently configured
-- If authentication error: Guide user to verify Red Hat Console credentials
-- If connection error: Verify MCP server is running and accessible
+- If BOTH tools return "No clusters found": Report "No clusters found in either Assisted Installer or OCM."
+- If ONE tool fails but other succeeds: Report partial results with note about which API failed
+- If BOTH tools fail: Guide user to verify credentials and MCP server connectivity
+- If authentication error: Guide user to verify OFFLINE_TOKEN
 
 **Output Format**:
 
 Follow the **Output Formatting Rules** section above:
-1. **ALWAYS** display summary header first
+1. **ALWAYS** display summary header first (include counts from both sources)
 2. **1-2 clusters**: Use detailed bullet list format
 3. **3+ clusters**: Use table format with all columns
 4. Apply color coding and status icons
 5. Sort by Type-first (OCP → ROSA → ARO → OSD → SNO), then by creation date
 6. Include smart "Next Steps" suggestions
+
+**Summary Header Format**:
+```
+📊 Found {total} cluster(s): {self_managed_count} self-managed (OCP/SNO), {managed_count} managed (ROSA/ARO/OSD)
+   Status: {installed_count} installed ✅, {installing_count} installing ⏳, {pending_count} pending ⚠️, {error_count} error ❌
+```
 
 See "Output Formatting Rules" section for complete specifications.
 
@@ -458,12 +578,28 @@ This step is executed when:
 1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand cluster configuration and network settings
 2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand cluster configuration details."
 
-**MCP Tool**: `cluster_info` (from openshift-installer)
+**Cluster Type Detection**:
+
+Before calling the appropriate tool, determine cluster type from Step 1 results:
+
+1. **Check `source` field** from merged results:
+   - If `source: "ocm"` → Use `ocm_cluster_info` tool (Step 2B)
+   - If `source: "assisted-installer"` → Use `cluster_info` tool (Step 2A)
+
+2. **Fallback detection** (if source field not available):
+   - Check for OCM-specific fields: `cloud_provider`, `region`, `console.url`
+   - If present → OCM cluster → Use `ocm_cluster_info`
+   - If absent → Assisted Installer cluster → Use `cluster_info`
+
+**Step 2A: Get Assisted Installer Cluster Details**
+
+**MCP Server**: `openshift-self-managed`
+**MCP Tool**: `cluster_info`
 
 **Parameters**:
 - `cluster_id`: "[cluster-uuid]" (exact UUID from list_clusters output)
   - Example: `"762df996-acba-4a42-9fe9-edb0a8ec8bee"`
-  - Must be valid UUID format from previous list_clusters call
+  - Must be valid UUID format
 
 **Expected Output**: Comprehensive cluster information including:
 - Cluster name, ID, and OpenShift version
@@ -472,14 +608,9 @@ This step is executed when:
 - Host information (discovered hosts, roles, status)
 - Validation results
 
-**Error Handling**:
-- If cluster_id not found: Verify cluster exists using list_clusters first
-- If cluster_id format invalid: Ensure using exact UUID from list_clusters
-- If permission denied: User may not have access to this cluster
-
 **Output Format**:
 ```
-**Cluster Details: [name]**
+**Cluster Details: [name]** (Self-Managed)
 
 **Basic Information**:
 - **Cluster ID**: [id]
@@ -502,13 +633,67 @@ This step is executed when:
 - [Host count and status summary]
 ```
 
-### Step 3: Get Cluster Events (Optional)
+**Error Handling**:
+- If cluster_id not found: Verify cluster exists using list_clusters first
+- If cluster_id format invalid: Ensure using exact UUID from list_clusters
+- If permission denied: User may not have access to this cluster
+
+**Step 2B: Get OCM Managed Cluster Details**
+
+**MCP Server**: `openshift-ocm-managed`
+**MCP Tool**: `ocm_cluster_info`
+
+**Parameters**:
+- `cluster_id`: "[cluster-uuid]" (exact UUID from ocm_list_clusters output)
+  - Example: `"1a2b3c4d5e6f"`
+  - Must be valid UUID format
+
+**Expected Output**: Comprehensive OCM cluster information including:
+- Cluster name, ID, and state
+- OpenShift version
+- Cloud provider and region
+- API and console URLs
+- Node information
+
+**Output Format**:
+```
+**Cluster Details: [name]** (Managed Service - [ROSA/ARO/OSD])
+
+**Basic Information**:
+- **Cluster ID**: [id]
+- **State**: [state]
+- **OpenShift Version**: [version.raw_id]
+- **Created**: [creation_timestamp]
+
+**Cloud Configuration**:
+- **Cloud Provider**: [cloud_provider.id]
+- **Region**: [region.id]
+- **Multi-AZ**: [multi_az]
+
+**Access**:
+- **API URL**: [api.url]
+- **Console URL**: [console.url]
+
+**Node Information**:
+- **Compute nodes**: [nodes.compute]
+- **Compute machine type**: [nodes.compute_machine_type.id]
+```
+
+**Error Handling**:
+- If cluster_id not found: Verify cluster exists using ocm_list_clusters first
+- If cluster_id format invalid: Ensure using exact UUID from ocm_list_clusters
+- If permission denied: User may not have access to this OCM cluster
+
+### Step 3: Get Cluster Events (Optional - Assisted Installer Clusters Only)
+
+**NOTE**: This step is ONLY available for Assisted Installer clusters (OCP, SNO). OCM managed clusters (ROSA, ARO, OSD) use different monitoring and event systems accessible through their respective cloud provider consoles.
 
 This step is executed when:
 - User explicitly requests cluster events
 - Cluster status indicates errors requiring investigation
 - User asks "What happened to cluster X?"
 - Troubleshooting installation or configuration issues
+- **Cluster is from Assisted Installer** (not OCM)
 
 **CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
 
@@ -516,7 +701,8 @@ This step is executed when:
 1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand event interpretation and common error patterns
 2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand cluster event patterns."
 
-**MCP Tool**: `cluster_events` (from openshift-installer)
+**MCP Server**: `openshift-self-managed`
+**MCP Tool**: `cluster_events`
 
 **Parameters**:
 - `cluster_id`: "[cluster-uuid]" (exact UUID from list_clusters output)
@@ -550,7 +736,9 @@ This step is executed when:
 - Most recent: [latest event summary]
 ```
 
-### Step 4: Get Cluster Logs (Optional)
+### Step 4: Get Cluster Logs (Optional - Assisted Installer Clusters Only)
+
+**NOTE**: This step is ONLY available for Assisted Installer clusters (OCP, SNO). OCM managed clusters (ROSA, ARO, OSD) have their own logging systems accessible through OpenShift Console or cloud provider tools.
 
 This step is executed when:
 - Cluster status is "error"
@@ -558,6 +746,7 @@ This step is executed when:
 - Cluster events don't provide sufficient diagnostic information
 - Deep troubleshooting of installation or configuration failures required
 - User asks "Can I get the logs?" or "Where are the cluster logs?"
+- **Cluster is from Assisted Installer** (not OCM)
 
 **CRITICAL**: Document consultation MUST happen BEFORE tool invocation.
 
@@ -565,7 +754,8 @@ This step is executed when:
 1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md) using the Read tool to understand log analysis and common error patterns
 2. **Output to user**: "I consulted [troubleshooting.md](../../docs/troubleshooting.md) to understand cluster log diagnostics."
 
-**MCP Tool**: `cluster_logs_download_url` (from openshift-installer)
+**MCP Server**: `openshift-self-managed`
+**MCP Tool**: `cluster_logs_download_url`
 
 **Parameters**:
 - `cluster_id`: "[cluster-uuid]" (exact UUID from list_clusters output)
@@ -616,13 +806,19 @@ This step is executed when:
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift-installer` - Red Hat Assisted Installer service access
+- `openshift-self-managed` - Red Hat Assisted Installer service for self-managed clusters
+- `openshift-ocm-managed` - Red Hat OCM (OpenShift Cluster Manager) service for managed clusters
 
 ### Required MCP Tools
-- `list_clusters` (from openshift-installer) - List all clusters
-- `cluster_info` (from openshift-installer) - Get detailed cluster information
-- `cluster_events` (from openshift-installer) - Retrieve cluster event history
-- `cluster_logs_download_url` (from openshift-installer) - Get cluster logs download URL for diagnostics
+**For Self-Managed Clusters (OCP, SNO)** - from `openshift-self-managed`:
+- `list_clusters` - List Assisted Installer clusters
+- `cluster_info` - Get detailed cluster information
+- `cluster_events` - Retrieve cluster event history
+- `cluster_logs_download_url` - Get cluster logs download URL for diagnostics
+
+**For Managed Service Clusters (ROSA, ARO, OSD)** - from `openshift-ocm-managed`:
+- `ocm_list_clusters` - List OCM managed clusters
+- `ocm_cluster_info` - Get detailed OCM cluster information
 
 ### Related Skills
 None currently. This is a foundational skill for cluster discovery.
@@ -672,30 +868,32 @@ I consulted troubleshooting.md to understand cluster status interpretation.
    • Next Steps: Configure networking
 ```
 
-### Example 1b: List All Clusters (3+ Clusters - Table Format)
+### Example 1b: List All Clusters (3+ Clusters - Dual API Query)
 
 **User Query**: "List all my OpenShift clusters"
 
 **Skill Execution**:
 1. Read troubleshooting.md for cluster status interpretation
-2. Invoke `list_clusters` tool
-3. Count clusters (5 total)
-4. Display with table format (3+ clusters)
-5. Sort by Type-first, then creation date
+2. Invoke `list_clusters` tool (Assisted Installer API) → Gets OCP/SNO clusters
+3. Invoke `ocm_list_clusters` tool (OCM API) → Gets ROSA/ARO/OSD clusters
+4. Merge and normalize results (5 total clusters)
+5. Sort by Type-first (OCP → ROSA → ARO → OSD → SNO), then creation date
+6. Display with table format (3+ clusters)
 
 **Output**:
 ```
 I consulted troubleshooting.md to understand cluster status interpretation.
 
-📊 Found 5 cluster(s): 2 installed ✅, 1 installing ⏳, 1 pending ⚠️, 1 error ❌
+📊 Found 5 cluster(s): 3 self-managed (OCP/SNO), 2 managed (ROSA/ARO/OSD)
+   Status: 3 installed ✅, 1 installing ⏳, 1 pending ⚠️, 0 error ❌
 
 | Status | Name | Type | Version | Platform | Hosts | Created | Next Steps |
 |--------|------|------|---------|----------|-------|---------|------------|
-| ❌ | prod-cluster | OCP | 4.20.0 | vSphere | 0/3 | 2024-02-12 | Check events and logs |
-| ⏳ | staging-ocp | OCP | 4.21.0 | Baremetal | 3/3 | 2024-02-11 | Monitor (65% complete) |
-| ✅ | dev-cluster | OCP | 4.20.5 | AWS | 5/5 | 2024-02-09 | Operational |
-| ✅ | rosa-prod | ROSA | 4.21.0 | AWS | 3/6 | 2024-02-08 | Operational |
-| ⚠️ | edge-01 | SNO | 4.21.0 | None | 1/1 | 2024-02-10 | Configure networking |
+| ⏳ | staging-ocp | OCP | 4.21.0 | Baremetal | 3/3 | 2024-02-12 | Monitor (65% complete) |
+| ✅ | dev-cluster | OCP | 4.20.5 | vSphere | 3/3 | 2024-02-11 | Operational |
+| ✅ | rosa-prod | ROSA | 4.21.0 | AWS | 6/6 | 2024-02-10 | Operational |
+| ✅ | aro-dev | ARO | 4.20.0 | Azure | 3/3 | 2024-02-09 | Operational |
+| ⚠️ | edge-01 | SNO | 4.21.0 | None | 1/1 | 2024-02-08 | Configure networking |
 ```
 
 ### Example 2: Get Detailed Cluster Information

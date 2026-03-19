@@ -1,6 +1,54 @@
 {
   "mcpServers": {
-    "openshift": {
+    "openshift-self-managed": {
+      "command": "podman",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "-e", "OFFLINE_TOKEN=${OFFLINE_TOKEN}",
+        "-e", "TRANSPORT=stdio",
+        "-e", "INVENTORY_URL=https://api.openshift.com/api/assisted-install/v2",
+        "-e", "PULL_SECRET_URL=https://api.openshift.com/api/accounts_mgmt/v1/access_token",
+        "-e", "SSO_URL=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token",
+        "quay.io/ecosystem-appeng/assisted-service-mcp:ocm"
+      ],
+      "env": {
+        "OFFLINE_TOKEN": "${OFFLINE_TOKEN}"
+      },
+      "description": "Red Hat Assisted Installer MCP server for self-managed clusters (OCP, SNO). Uses Assisted Installer API for cluster creation and management.",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    },
+    "openshift-ocm-managed": {
+      "command": "podman",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "-e", "OFFLINE_TOKEN=${OFFLINE_TOKEN}",
+        "-e", "TRANSPORT=stdio",
+        "-e", "INVENTORY_URL=https://api.openshift.com/api/clusters_mgmt/v1",
+        "-e", "PULL_SECRET_URL=https://api.openshift.com/api/accounts_mgmt/v1/access_token",
+        "-e", "SSO_URL=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token",
+        "quay.io/ecosystem-appeng/assisted-service-mcp:ocm"
+      ],
+      "env": {
+        "OFFLINE_TOKEN": "${OFFLINE_TOKEN}"
+      },
+      "description": "Red Hat OCM MCP server for managed service clusters (ROSA, ARO, OSD). Uses OCM API for cluster listing and management.",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    },
+    "openshift-administration": {
       "command": "bash",
       "args": [
         "-c",

@@ -37,14 +37,23 @@ This skill performs critical, irreversible operations requiring explicit user co
 
 ## Prerequisites
 
-**Required MCP Servers**: `openshift-installer` ([setup guide](../README.md#environment-setup))
+**Required MCP Servers**: `openshift-self-managed` ([setup guide](../README.md#environment-setup))
 
 **Required MCP Tools**: `list_versions`, `create_cluster`, `cluster_info`, `set_cluster_vips`, `set_host_role`, `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`, `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
 
 **Environment Variables**: `OFFLINE_TOKEN` ([obtain here](https://cloud.redhat.com/openshift/token))
 
+**Cluster Types Supported**:
+- **OCP** (OpenShift Container Platform) - Self-managed HA clusters
+- **SNO** (Single-Node OpenShift) - Self-managed single-node clusters
+
+**NOT Supported** (use cloud provider consoles instead):
+- **ROSA** (Red Hat OpenShift Service on AWS) - Use AWS Console or rosa CLI
+- **ARO** (Azure Red Hat OpenShift) - Use Azure Portal or az CLI
+- **OSD** (OpenShift Dedicated) - Use Red Hat Hybrid Cloud Console
+
 **Verification**:
-1. Check `openshift-installer` in `.mcp.json`
+1. Check `openshift-self-managed` in `.mcp.json`
 2. Verify `OFFLINE_TOKEN` set: `test -n "$OFFLINE_TOKEN"`
 3. Test connection: Call `list_versions` to verify MCP server responsive
 

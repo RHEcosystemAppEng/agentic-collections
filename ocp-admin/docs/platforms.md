@@ -15,6 +15,20 @@ OpenShift comes in multiple deployment models, each optimized for specific use c
 - **ROSA (Red Hat OpenShift Service on AWS)** - AWS-native managed service
 - **ARO (Azure Red Hat OpenShift)** - Azure-native managed service
 
+**API Access by Platform Type**:
+
+The `cluster-inventory` skill uses different Red Hat APIs depending on the platform type:
+
+| Platform Type | Management Model | API Endpoint | API Path |
+|--------------|------------------|--------------|----------|
+| **OCP** | Self-managed | Assisted Installer | `/api/assisted-install/v2` |
+| **SNO** | Self-managed | Assisted Installer | `/api/assisted-install/v2` |
+| **ROSA** | Managed Service | OCM (Clusters Management) | `/api/clusters_mgmt/v1` |
+| **ARO** | Managed Service | OCM (Clusters Management) | `/api/clusters_mgmt/v1` |
+| **OSD** | Managed Service | OCM (Clusters Management) | `/api/clusters_mgmt/v1` |
+
+**Note**: The `cluster-inventory` skill automatically queries BOTH APIs and merges results to provide a unified view of all your OpenShift clusters regardless of type.
+
 ---
 
 ## OCP (OpenShift Container Platform)

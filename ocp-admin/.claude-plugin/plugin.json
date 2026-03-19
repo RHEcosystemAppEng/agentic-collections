@@ -1,5 +1,5 @@
 {
-  "name": "ocp-admin",
+  "name": "openshift-administration",
   "version": "1.0.0",
   "description": "Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks.",
   "author": {
