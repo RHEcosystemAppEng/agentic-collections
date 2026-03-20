@@ -1,0 +1,29 @@
+version = "1.0"
+
+[metadata]
+author_name = "Guy Ziv"
+author_email = "gziv@redhat.com"
+id = "rh-virt_part_2"
+name = "RH-Virt Part 2 v2: Node Evacuation"
+difficulty = "medium"
+category = "virtualization-operations"
+tags = ["python", "red-hat", "virtualization", "mcp", "kubevirt", "skills", "migration"]
+
+[verifier]
+timeout_sec = 1800.0
+
+[verifier.env]
+ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL}"
+ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"
+LLM_JUDGE_MODEL = "claude-sonnet-4-5"
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 2
+gpus = 0
+memory = "4G"
+storage = "10G"
+allow_internet = true
