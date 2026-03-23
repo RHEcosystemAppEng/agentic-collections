@@ -16,18 +16,38 @@ description: |
 model: inherit
 color: cyan
 metadata:
-  user_invocable: "true"
+  mcp_server: openshift-administration
+  mcp_tools_priority: true
+  environment_vars:
+    - KUBECONFIG
+  destructive: false
 ---
 
-# Multi-Cluster Report Skill
+# cluster-report
 
-Generate a unified health and resource report across multiple OpenShift/Kubernetes clusters using the OpenShift MCP server's multi-cluster capabilities.
+**MCP-First Approach**: This skill uses MCP tools from `openshift-administration` server. MCP tools have **absolute priority**.
+
+**CLI Tools Policy**:
+- ✅ **ALWAYS use MCP tools** when available
+- ⚠️ **Last resort only**: CLI commands (`oc`, `kubectl`) may be attempted if no MCP alternative exists
+- ⚠️ **Assume unavailable**: CLI tools are likely not installed in the execution environment
+
+Generate a unified health and resource report across multiple OpenShift/Kubernetes clusters using the openshift-administration MCP server's multi-cluster capabilities.
 
 ## Prerequisites
 
-**Required MCP Servers**: `openshift` (configured in [.mcp.json](../../.mcp.json))
+**Required MCP Servers**: `openshift-administration` ([setup guide](../../README.md#environment-setup))
 
-**Required MCP Tools** (all from `openshift` server):
+**MCP Server Architecture**:
+This skill uses `openshift-administration` MCP server exclusively. This server provides multi-cluster administration and reporting capabilities for both OpenShift and Kubernetes clusters.
+
+| MCP Server | Used By This Skill? | Purpose | Cluster Types |
+|------------|---------------------|---------|---------------|
+| `openshift-administration` | ✅ YES | Multi-cluster reporting, resource queries | OpenShift, Kubernetes |
+| `openshift-self-managed` | ❌ NO | Cluster creation via Assisted Installer | OCP, SNO |
+| `openshift-ocm-managed` | ❌ NO | Managed service cluster listing | ROSA, ARO, OSD |
+
+**Required MCP Tools** (all from `openshift-administration` server):
 - `configuration_contexts_list` — list all kubeconfig contexts and server URLs
 - `resources_get` — get a single Kubernetes resource by apiVersion/kind/name
 - `nodes_top` — node CPU and memory usage from Metrics Server
@@ -49,24 +69,14 @@ Generate a unified health and resource report across multiple OpenShift/Kubernet
 - **NEVER** write ad-hoc Python to parse or transform MCP output
 - **NEVER** manually reconstruct data already available in MCP output
 
-**Verification Steps:**
-1. Confirm `openshift` MCP server is available in `.mcp.json`
-2. Verify `KUBECONFIG` is set: `test -n "$KUBECONFIG"` (never expose path or contents)
-3. If either check fails → Human Notification Protocol
+**Verification**:
+1. Check `openshift-administration` in `.mcp.json`
+2. Verify `KUBECONFIG` set: `test -n "$KUBECONFIG"`
+3. Test connection: Call `configuration_contexts_list` to verify MCP server responsive
 
-**Human Notification Protocol:**
+**On Failure**: Stop immediately, display setup instructions, ask "How to proceed? (setup/skip/abort)", wait for user input.
 
-When prerequisites fail:
-1. **Stop immediately** — do not make any MCP tool calls
-2. **Report error:**
-   ```
-   Cannot execute skill: [specific failure]
-   Setup: [instructions + link to .mcp.json or KUBECONFIG docs]
-   ```
-3. **Request decision:** "How to proceed? (setup/skip/abort)"
-4. **Wait for user input**
-
-**Security:** Never display KUBECONFIG path, contents, or any credential values.
+**Security**: Never expose KUBECONFIG path, contents, or any credential values in output.
 
 ## When to Use This Skill
 
@@ -80,9 +90,25 @@ When prerequisites fail:
 
 ## Workflow
 
-### Step 0: Validate Environment
+### Step 0: Prerequisites Check
 
-Check that `KUBECONFIG` is set. **Never expose the path or contents** — only confirm it is set. If not set, stop and instruct the user to `export KUBECONFIG=/path/to/kubeconfig`.
+**Execute verification from Prerequisites section.**
+
+**If MCP server unavailable**:
+1. Stop immediately
+2. Display: "Cannot execute skill: openshift-administration MCP server not configured"
+3. Display: "Setup: Configure openshift-administration in .mcp.json (see README.md#environment-setup)"
+4. Ask: "How to proceed? (setup/skip/abort)"
+5. Wait for user input
+
+**If KUBECONFIG not set**:
+1. Stop immediately
+2. Display: "Cannot execute skill: KUBECONFIG environment variable not set"
+3. Display: "Setup: export KUBECONFIG=/path/to/kubeconfig (see credentials-management.md)"
+4. Ask: "How to proceed? (setup/skip/abort)"
+5. Wait for user input
+
+**Security**: Never expose KUBECONFIG path or contents.
 
 ### Step 1: Discover and Verify Clusters
 
@@ -172,8 +198,13 @@ For each selected cluster, pass `context=<context-name>` to every tool call. Col
 |---|---|---|---|
 | `nodes_top` | `nodes_top` | — | Set null if Metrics Server unavailable |
 | `nodes_list` | `resources_list` | `apiVersion=v1`, `kind=Node` | — |
-| `projects` | `projects_list` | — | Use `namespaces_list` if fails |
+| `projects` | `projects_list` | — | OpenShift only; use `namespaces_list` for Kubernetes or if `projects_list` fails |
 | `pods` | `pods_list` | — | — |
+
+**Namespace/Project Logic**:
+- **OpenShift clusters**: Use `projects_list` (OpenShift-specific)
+- **Kubernetes clusters**: Use `namespaces_list` (standard Kubernetes API)
+- **Fallback**: If `projects_list` fails on a cluster classified as OpenShift, fall back to `namespaces_list`
 
 **Error policy**: Skip unreachable clusters. Set failed fields to `null` and append the error to the cluster's `errors` array. Never abort the entire report.
 
@@ -307,21 +338,23 @@ Would you like to:
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift` — with multi-cluster support enabled
+- `openshift-administration` - Multi-cluster administration and reporting ([setup](../../README.md#environment-setup))
+
+**Important**: This skill uses ONLY `openshift-administration` MCP server for querying cluster resources. Do NOT use cluster creation servers (`openshift-self-managed`, `openshift-ocm-managed`).
 
 ### Required MCP Tools
-- `configuration_contexts_list` (from openshift) — list all kubeconfig contexts and server URLs
-- `resources_get` (from openshift) — get a single Kubernetes resource by apiVersion/kind/name
+- `configuration_contexts_list` (from openshift-administration) — list all kubeconfig contexts and server URLs
+- `resources_get` (from openshift-administration) — get a single Kubernetes resource by apiVersion/kind/name
   - Parameters: `apiVersion`, `kind`, `name`, `context`
-- `nodes_top` (from openshift) — node CPU and memory usage from Metrics Server
+- `nodes_top` (from openshift-administration) — node CPU and memory usage from Metrics Server
   - Parameters: `context`
-- `resources_list` (from openshift) — list Kubernetes resources by apiVersion/kind
+- `resources_list` (from openshift-administration) — list Kubernetes resources by apiVersion/kind
   - Parameters: `apiVersion`, `kind`, `context`
-- `namespaces_list` (from openshift) — list all namespaces in a cluster
+- `namespaces_list` (from openshift-administration) — list all namespaces in a cluster
   - Parameters: `context`
-- `projects_list` (from openshift) — list all OpenShift projects
+- `projects_list` (from openshift-administration) — list all OpenShift projects
   - Parameters: `context`
-- `pods_list` (from openshift) — list all pods across namespaces
+- `pods_list` (from openshift-administration) — list all pods across namespaces
   - Parameters: `context`
 
 ### Helper Scripts
@@ -329,11 +362,12 @@ Would you like to:
 - [`ocp-admin/scripts/cluster-report/aggregate.py`](../../scripts/cluster-report/aggregate.py)
 
 ### Related Skills
-- None currently
+- `/cluster-inventory` - List and inspect individual clusters
 
 ### Reference Documentation
-- [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
-- [Kubernetes MCP Server Tools](https://github.com/containers/kubernetes-mcp-server#tools)
+- [Credentials Management](../../docs/credentials-management.md) - KUBECONFIG setup and multi-cluster contexts
+- [Multi-Cluster Auth](../../docs/multi-cluster-auth.md) - Service account token configuration for large deployments
+- **[Documentation Index](../../docs/INDEX.md)** - Complete guide to all ocp-admin documentation (consult for topics not explicitly referenced above)
 
 ## Error Handling
 
@@ -347,7 +381,7 @@ Would you like to:
 | User overrides to include non-OpenShift | Proceed normally; `projects_list` may fail (use `namespaces_list` fallback) |
 | Cluster unreachable | Skip, continue with remaining clusters |
 | Metrics Server missing | Set `nodes_top` to null, show N/A for CPU/memory usage |
-| Auth expired (401) | Skip cluster, suggest: re-run `build-kubeconfig.py build --verify` or `oc login <server-url>` |
+| Auth expired (401) | Skip cluster, suggest: "Re-authenticate cluster context (see credentials-management.md)" |
 | No GPUs found | Display 0 (not an error) |
 | Empty cluster | Report with all zeros (valid data) |
 

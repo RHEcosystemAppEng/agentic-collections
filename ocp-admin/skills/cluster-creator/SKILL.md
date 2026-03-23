@@ -19,9 +19,22 @@ description: |
   - Cluster upgrades (not yet supported)
 model: inherit
 color: green
+metadata:
+  mcp_server: openshift-self-managed
+  mcp_tools_priority: true
+  environment_vars:
+    - OFFLINE_TOKEN
+  destructive: true
 ---
 
 # cluster-creator
+
+**MCP-First Approach**: This skill uses MCP tools from `openshift-self-managed` server. MCP tools have **absolute priority**.
+
+**CLI Tools Policy**:
+- ✅ **ALWAYS use MCP tools** when available
+- ⚠️ **Last resort only**: CLI commands (`oc`, `kubectl`) may be attempted if no MCP alternative exists
+- ⚠️ **Assume unavailable**: CLI tools are likely not installed in the execution environment
 
 ## Critical: Human-in-the-Loop Requirements
 
@@ -39,18 +52,27 @@ This skill performs critical, irreversible operations requiring explicit user co
 
 **Required MCP Servers**: `openshift-self-managed` ([setup guide](../README.md#environment-setup))
 
-**Required MCP Tools**: `list_versions`, `create_cluster`, `cluster_info`, `set_cluster_vips`, `set_host_role`, `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`, `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
+**MCP Server Architecture**:
+This skill uses `openshift-self-managed` MCP server exclusively. This server connects to Red Hat Assisted Installer API to create self-managed OpenShift clusters.
+
+| MCP Server | Used By This Skill? | Cluster Types | API Backend |
+|------------|---------------------|---------------|-------------|
+| `openshift-self-managed` | ✅ YES | OCP, SNO | Assisted Installer API (`/api/assisted-install/v2`) |
+| `openshift-ocm-managed` | ❌ NO | ROSA, ARO, OSD | OCM API (`/api/clusters_mgmt/v1`) |
+
+**Required MCP Tools** (all from `openshift-self-managed`):
+`list_versions`, `create_cluster`, `cluster_info`, `set_cluster_vips`, `set_host_role`, `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`, `cluster_logs_download_url`, `list_static_network_config`, `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
 
 **Environment Variables**: `OFFLINE_TOKEN` ([obtain here](https://cloud.redhat.com/openshift/token))
 
 **Cluster Types Supported**:
-- **OCP** (OpenShift Container Platform) - Self-managed HA clusters
+- **OCP** (OpenShift Container Platform) - Self-managed HA clusters (3+ control plane nodes)
 - **SNO** (Single-Node OpenShift) - Self-managed single-node clusters
 
-**NOT Supported** (use cloud provider consoles instead):
-- **ROSA** (Red Hat OpenShift Service on AWS) - Use AWS Console or rosa CLI
-- **ARO** (Azure Red Hat OpenShift) - Use Azure Portal or az CLI
-- **OSD** (OpenShift Dedicated) - Use Red Hat Hybrid Cloud Console
+**NOT Supported by This Skill** (different APIs, different workflows):
+- **ROSA** (Red Hat OpenShift Service on AWS) - Use `openshift-ocm-managed` MCP server
+- **ARO** (Azure Red Hat OpenShift) - Use `openshift-ocm-managed` MCP server
+- **OSD** (OpenShift Dedicated) - Use `openshift-ocm-managed` MCP server
 
 **Verification**:
 1. Check `openshift-self-managed` in `.mcp.json`
@@ -85,7 +107,6 @@ End-to-end cluster creation with interactive guidance and validation.
 
 ### Step 1: Prerequisites and Documentation
 
-**Progress**: Step 1 of 18
 
 **Document Consultation** (REQUIRED):
 1. **Action**: Read [troubleshooting.md](../../docs/troubleshooting.md)
@@ -97,7 +118,6 @@ End-to-end cluster creation with interactive guidance and validation.
 
 ### Step 2: Gather Cluster Requirements
 
-**Progress**: Step 2 of 18
 
 Use AskUserQuestion tool to collect:
 
@@ -108,6 +128,7 @@ Use AskUserQuestion tool to collect:
 5. **Base Domain**: Valid DNS domain ([validation](../../docs/input-validation-guide.md#base-domain))
 6. **CPU Arch**: x86_64 (default), aarch64, ppc64le, s390x
 7. **SSH Key**: Valid SSH public key ([validation](../../docs/input-validation-guide.md#ssh-public-key))
+8. **Hardware Availability**: Confirm user has servers meeting [host requirements](../../docs/host-requirements.md) ready for installation
 
 **Store all values** for subsequent steps.
 
@@ -117,7 +138,6 @@ Use AskUserQuestion tool to collect:
 
 ### Step 3: Platform-Specific Configuration
 
-**Progress**: Step 3 of 18
 
 **For HA on baremetal/vsphere/nutanix**:
 - **Gather VIPs**: API VIP and Ingress VIP (IPv4, same subnet as nodes, not assigned)
@@ -138,7 +158,6 @@ Use AskUserQuestion tool to collect:
 
 ### Step 4: Configuration Briefing
 
-**Progress**: Step 4 of 18
 
 Display summary table:
 
@@ -159,7 +178,7 @@ Display summary table:
 
 ### Step 5: Confirmation Before Creation
 
-**Progress**: Step 5 of 18 - CRITICAL CHECKPOINT
+**CRITICAL CHECKPOINT**
 
 Ask: "Review configuration. Ready to create cluster definition?"
 
@@ -172,7 +191,6 @@ Ask: "Review configuration. Ready to create cluster definition?"
 
 ### Step 6: Create Cluster Definition
 
-**Progress**: Step 6 of 18
 
 **Tool**: `create_cluster`
 
@@ -186,7 +204,6 @@ Ask: "Review configuration. Ready to create cluster definition?"
 
 ### Step 7: Apply Platform Configuration
 
-**Progress**: Step 7 of 18
 
 **7a. Set VIPs** (HA + baremetal/vsphere/nutanix only):
 - **Tool**: `set_cluster_vips`
@@ -203,7 +220,6 @@ Ask: "Review configuration. Ready to create cluster definition?"
 
 ### Step 8: Generate Cluster ISO
 
-**Progress**: Step 8 of 18
 
 **Tool**: `cluster_iso_download_url`
 **Parameters**: `{cluster_id}`
@@ -226,7 +242,6 @@ Note: Hosts receive static configs in boot order.
 
 ### Step 9: Wait for User to Boot Hosts
 
-**Progress**: Step 9 of 18
 
 Display: "Waiting for you to boot hosts. When ready, say 'check for hosts'."
 
@@ -236,7 +251,6 @@ Display: "Waiting for you to boot hosts. When ready, say 'check for hosts'."
 
 ### Step 10: Check Host Discovery
 
-**Progress**: Step 10 of 18
 
 **Tool**: `cluster_info`
 **Parameters**: `{cluster_id}`
@@ -257,7 +271,6 @@ Display: "Waiting for you to boot hosts. When ready, say 'check for hosts'."
 
 ### Step 11: Host Role Assignment
 
-**Progress**: Step 11 of 18
 
 **SNO**: Single host auto-assigned "master"
 
@@ -273,7 +286,6 @@ Display: "Waiting for you to boot hosts. When ready, say 'check for hosts'."
 
 ### Step 12: Validate Cluster Readiness
 
-**Progress**: Step 12 of 18
 
 **Tool**: `cluster_info`
 
@@ -287,7 +299,7 @@ Display: "Waiting for you to boot hosts. When ready, say 'check for hosts'."
 
 ### Step 13: Final Confirmation Before Installation
 
-**Progress**: Step 13 of 18 - CRITICAL CHECKPOINT
+**CRITICAL CHECKPOINT**
 
 **Display**:
 ```
@@ -295,6 +307,7 @@ Ready to Start Installation
 
 Cluster: {cluster_name}
 Hosts: {count}
+Expected Duration: 45-60 minutes
 
 WARNING: Starting installation is irreversible!
 Cannot pause or cancel once started.
@@ -311,7 +324,6 @@ Ask: "Start installation now?"
 
 ### Step 14: Start Installation
 
-**Progress**: Step 14 of 18
 
 **Tool**: `install_cluster`
 **Parameters**: `{cluster_id}`
@@ -324,7 +336,6 @@ Ask: "Start installation now?"
 
 ### Step 15: Monitor Installation
 
-**Progress**: Step 15 of 18
 
 **Display**:
 ```
@@ -346,7 +357,10 @@ Background monitoring? (yes/no)
 
 **If manual**: Wait for "check status", then call `cluster_info`, display progress, repeat until "installed" or "error"
 
-**If fails**: Download logs (`cluster_logs_download_url`), offer diagnose/cleanup/manual options.
+**If fails**:
+1. Download logs (`cluster_logs_download_url`) for diagnosis
+2. Offer options: diagnose errors, cleanup and retry, or manual intervention
+3. **Cleanup**: Failed cluster remains in Assisted Installer - use cluster_info to verify state before deleting or retrying with same cluster_id
 
 **Reference**: [Troubleshooting](../../docs/troubleshooting.md)
 
@@ -354,7 +368,6 @@ Background monitoring? (yes/no)
 
 ### Step 16: Installation Complete
 
-**Progress**: Step 16 of 18
 
 Display: "Installation Completed! Cluster: {cluster_name}, Status: installed, Time: {duration}"
 
@@ -362,43 +375,28 @@ Display: "Installation Completed! Cluster: {cluster_name}, Status: installed, Ti
 
 ### Step 17: Retrieve Credentials
 
-**Progress**: Step 17 of 18
+**Document Consultation** (REQUIRED):
+1. **Action**: Read [credentials-management.md](../../docs/credentials-management.md)
+2. **Output**: "I consulted credentials-management.md for credential download procedures."
 
-**Security**: Credentials provide full admin access. Handle securely.
-
-**17a. Prepare Storage**:
-```bash
-mkdir -p /tmp/{cluster_name} && chmod 700 /tmp/{cluster_name}
-```
-
-**17b. Download Kubeconfig**:
-- **Tool**: `cluster_credentials_download_url`
-- **Parameters**: `{cluster_id, file_name: "kubeconfig"}`
-- **Download**: `curl -s -o /tmp/{cluster_name}/kubeconfig "{url}" && chmod 600 /tmp/{cluster_name}/kubeconfig`
-
-**17c. Download Kubeadmin Password**:
-- **Tool**: `cluster_credentials_download_url`
-- **Parameters**: `{cluster_id, file_name: "kubeadmin-password"}`
-- **Download**: `curl -s -o /tmp/{cluster_name}/kubeadmin-password "{url}" && chmod 600 /tmp/{cluster_name}/kubeadmin-password`
+**Execute**: Follow the download procedure from credentials-management.md to retrieve kubeconfig and kubeadmin-password to `/tmp/{cluster_name}/`
 
 **Display**:
 ```
-Kubeconfig: /tmp/{cluster_name}/kubeconfig
-Password: /tmp/{cluster_name}/kubeadmin-password
-Permissions: -rw------- (secure)
+✅ Credentials downloaded to /tmp/{cluster_name}/
+   - kubeconfig
+   - kubeadmin-password
+   Permissions: Secure (600)
 
-To use:
+To use cluster:
 export KUBECONFIG=/tmp/{cluster_name}/kubeconfig
-oc get nodes
 ```
 
-**Reference**: [Credentials Management](../../docs/credentials-management.md)
+**Security**: Credentials provide full admin access. Never expose presigned URLs.
 
 ---
 
 ### Step 18: Cluster Ready
-
-**Progress**: Step 18 of 18
 
 **Display**:
 ```
@@ -411,9 +409,18 @@ Console: https://console-openshift-console.apps.{cluster_name}.{base_domain}
 Credentials: /tmp/{cluster_name}/
 
 Next Steps:
-- Access cluster: oc --kubeconfig /tmp/{cluster_name}/kubeconfig get nodes
+- Verify cluster access via MCP tools (recommended):
+  Set: export KUBECONFIG=/tmp/{cluster_name}/kubeconfig
+  MCP Tool: resources_list (Parameters: {kind: "Node"})
+  Expected: List of cluster nodes
+
+- Alternative verification (if oc CLI available, unlikely):
+  oc --kubeconfig /tmp/{cluster_name}/kubeconfig get nodes
+  Note: oc CLI may not be installed; MCP tools are preferred
+
 - Web console: Use kubeadmin + password from /tmp/{cluster_name}/kubeadmin-password
-- Configure identity provider (see credentials-management.md)
+- Configure identity provider (see idp.md for HTPasswd, LDAP, OIDC, GitHub setup)
+- Configure RBAC and user permissions (see rbac.md)
 - Install operators and deploy applications
 
 Congratulations!
@@ -430,16 +437,18 @@ Congratulations!
 ## Dependencies
 
 ### Required MCP Servers
-- `openshift-installer` - Assisted Installer service ([setup](../README.md#environment-setup))
+- `openshift-self-managed` - Red Hat Assisted Installer service for self-managed clusters ([setup](../README.md#environment-setup))
+
+**Important**: This skill uses ONLY `openshift-self-managed` MCP server. Do NOT use `openshift-ocm-managed` (that server is for ROSA/ARO/OSD managed service clusters, not for OCP/SNO self-managed clusters).
 
 ### Required MCP Tools
-All from `openshift-installer`:
+All tools from `openshift-self-managed` MCP server:
 - `list_versions`, `create_cluster`, `cluster_info`, `set_cluster_vips`, `set_host_role`
-- `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`
-- `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
+- `cluster_iso_download_url`, `install_cluster`, `cluster_credentials_download_url`, `cluster_logs_download_url`
+- `list_static_network_config`, `generate_nmstate_yaml`, `validate_nmstate_yaml`, `alter_static_network_config_nmstate_for_host`
 
 ### Related Skills
-- `cluster-inventory` - List and inspect clusters
+- `/cluster-inventory` - List and inspect all cluster types (uses both MCP servers)
 
 ### Reference Documentation
 **Configuration & Validation**:
@@ -453,10 +462,17 @@ All from `openshift-installer`:
 - [Host Requirements](../../docs/host-requirements.md) - Hardware specs by cluster type
 
 **Post-Installation**:
-- [Credentials Management](../../docs/credentials-management.md) - Kubeconfig, OAuth, RBAC
+- [Credentials Management](../../docs/credentials-management.md) - Kubeconfig and authentication setup
+- [Identity Providers](../../docs/idp.md) - HTPasswd, LDAP, OIDC, GitHub authentication
+- [RBAC](../../docs/rbac.md) - Role-Based Access Control and Security Context Constraints
+- [Certificate Rotation](../../docs/certificate-rotation.md) - Certificate management and renewal
+- [Security Checklist](../../docs/security-checklist.md) - Post-installation security verification
 - [Storage](../../docs/storage.md) - Storage options by provider
 - [Examples](../../docs/examples.md) - Configuration examples
 - [Troubleshooting](../../docs/troubleshooting.md) - Common errors and resolutions
+
+**Complete Documentation Guide**:
+- **[Documentation Index](../../docs/INDEX.md)** - Navigate all ocp-admin documentation (consult for topics not explicitly referenced above)
 
 ---
 

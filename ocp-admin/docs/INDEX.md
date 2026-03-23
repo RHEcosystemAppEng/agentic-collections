@@ -2,6 +2,14 @@
 
 Complete reference guide for OpenShift cluster deployment and management using the Assisted Installer.
 
+## How to Use This Index
+
+**For AI Agents/Skills**: When you need information not explicitly referenced in a skill, consult this index first (~600 tokens) to locate the relevant documentation, then read only the specific file you need.
+
+**For Users**: Use this index to navigate documentation by topic, use case, or installation phase.
+
+**Progressive Disclosure**: Read index → identify relevant docs → read specific files (avoids reading all 18+ docs speculatively).
+
 ---
 
 ## Getting Started
@@ -94,18 +102,63 @@ See: `skills/cluster-creator/SKILL.md`
 
 ### Credentials and Access
 
-- **[Credentials Management](./credentials-management.md)** - Security and authentication
-  - Kubeconfig setup and rotation
+- **[Credentials Management](./credentials-management.md)** - Kubeconfig and authentication
+  - Downloading kubeconfig from Assisted Installer
   - Kubeadmin password handling
-  - Identity provider configuration (HTPasswd, LDAP, GitHub, OIDC)
-  - RBAC and service accounts
+  - KUBECONFIG environment variable setup
+  - Multi-cluster context management
+  - Secure storage and permissions
+
+- **[Identity Providers](./idp.md)** - User authentication configuration
+  - HTPasswd (simple username/password)
+  - LDAP/Active Directory integration
+  - OpenID Connect (OIDC) - Keycloak, Google, Azure AD
+  - GitHub/GitLab OAuth
+  - Multiple identity provider support
   - Removing kubeadmin user
+
+- **[RBAC](./rbac.md)** - Role-Based Access Control
+  - Roles and ClusterRoles
+  - RoleBindings and ClusterRoleBindings
+  - Service accounts
+  - Security Context Constraints (SCCs)
+  - User and group management
+
+### Security
+
+- **[Certificate Rotation](./certificate-rotation.md)** - Certificate management
+  - System certificates (automatic rotation)
+  - User certificates (kubeconfig renewal)
+  - Ingress certificates (custom certificates, Let's Encrypt)
+  - Troubleshooting certificate issues
+
+- **[Security Checklist](./security-checklist.md)** - Post-installation security verification
+  - Installation security (credentials, network, platform)
+  - Authentication & authorization (IDP, RBAC, SCCs)
+  - Network security (ingress/egress, certificates)
+  - Data security (secrets, storage, etcd)
+  - Container security (images, pods, runtime)
+  - Compliance and governance
+
+### Operations
+
+- **[Day 2 Operations](./day-2-operations.md)** - Ongoing cluster management
+  - Cluster updates and upgrades
+  - Node management
+  - Monitoring and alerting
+  - Capacity planning
+
+- **[Backup and Restore](./backup-restore.md)** - Data protection
+  - etcd backup procedures
+  - Application backup strategies
+  - Disaster recovery planning
 
 ### Multi-Cluster Management
 
 - **[Multi-Cluster Authentication](./multi-cluster-auth.md)** - Managing multiple clusters
   - Kubeconfig merging
   - Context switching
+  - Service account token authentication
   - Centralized authentication
 
 ---
@@ -192,6 +245,12 @@ See: `skills/cluster-creator/SKILL.md`
 3. [Examples](./examples.md#example-1-sno-for-edge-deployment) - Edge configuration
 4. [Examples](./examples.md#example-10-air-gapped-sno) - Disconnected setup
 
+**I need to secure my cluster**:
+1. [Security Checklist](./security-checklist.md) - Complete security verification
+2. [Identity Providers](./idp.md) - Configure user authentication
+3. [RBAC](./rbac.md) - Set up access control
+4. [Certificate Rotation](./certificate-rotation.md) - Manage certificates
+
 **Something went wrong**:
 1. [Troubleshooting](./troubleshooting.md) - Common errors
 2. [Quick Reference](./quick-reference.md) - Diagnostic commands
@@ -224,6 +283,6 @@ See: [Troubleshooting - Automatic Error Documentation](./troubleshooting.md#auto
 
 ---
 
-**Last Updated**: 2026-03-17
+**Last Updated**: 2026-03-23
 **OpenShift Version**: 4.18
 **Specification**: agentskills.io v1.0

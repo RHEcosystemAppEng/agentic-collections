@@ -1,584 +1,450 @@
-# Credentials and Identity Management
+# Cluster Credentials Management
 
-Comprehensive guide to managing credentials and identity providers in OpenShift.
+Guide for downloading, managing, and using OpenShift cluster credentials with MCP tools.
 
 ---
 
 ## Overview
 
-OpenShift security relies on proper credential management and identity provider configuration. This guide covers kubeconfig, kubeadmin password, OAuth, and identity provider integration.
+This guide covers kubeconfig and kubeadmin credential management for OpenShift clusters:
+- Downloading credentials from Assisted Installer
+- Secure storage and permissions
+- Connecting to clusters via MCP tools
+- Multi-cluster context management
+- MCP server configuration
 
 ---
 
-## Cluster Credentials
+## 1. Downloading Credentials from Assisted Installer
 
-### Kubeconfig File
+**Prerequisites**:
+- Cluster status: `installed`
+- `openshift-self-managed` MCP server configured
+- Valid `OFFLINE_TOKEN` environment variable
 
-**Purpose**: Authentication configuration for `oc` and `kubectl` CLI tools
+**Process**:
 
-**Location After Installation**: `/tmp/<cluster-name>/kubeconfig`
+```bash
+# 1. Create secure directory
+mkdir -p /tmp/{cluster_name}
+chmod 700 /tmp/{cluster_name}
 
-**Format**: YAML file containing:
-- Cluster API endpoint
-- Certificate authority (CA) data
-- User authentication credentials (certificates or tokens)
-- Context (cluster + user + namespace)
+# 2. Get presigned URL for kubeconfig
+# MCP Tool: cluster_credentials_download_url
+# Parameters: {cluster_id, file_name: "kubeconfig"}
+curl -s -o /tmp/{cluster_name}/kubeconfig "{presigned_url}"
+chmod 600 /tmp/{cluster_name}/kubeconfig
 
-**Example Structure**:
+# 3. Get presigned URL for password
+# MCP Tool: cluster_credentials_download_url
+# Parameters: {cluster_id, file_name: "kubeadmin-password"}
+curl -s -o /tmp/{cluster_name}/kubeadmin-password "{presigned_url}"
+chmod 600 /tmp/{cluster_name}/kubeadmin-password
+
+# 4. Verify
+ls -l /tmp/{cluster_name}/
+# Expected: drwx------ for directory, -rw------- for files
+```
+
+**Security**:
+- Presigned URLs expire after ~1 hour
+- Download immediately after installation
+- Directory: 700, Files: 600
+- Never expose presigned URLs
+
+---
+
+## 2. Kubeconfig Structure
+
+**Purpose**: Authentication for cluster access via MCP tools
+
+**Location**: `/tmp/<cluster-name>/kubeconfig` (default)
+
+**Contains**: Cluster API endpoint, CA cert, user credentials, context
+
+**Example**:
 ```yaml
 apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-    certificate-authority-data: <base64-encoded-ca-cert>
-    server: https://api.cluster-name.example.com:6443
+    certificate-authority-data: <base64>
+    server: https://api.cluster.example.com:6443
   name: cluster-name
 contexts:
 - context:
     cluster: cluster-name
-    user: admin
-    namespace: default
-  name: admin
-current-context: admin
+    user: kubeadmin
+  name: cluster-name/kubeadmin
+current-context: cluster-name/kubeadmin
 users:
-- name: admin
+- name: kubeadmin
   user:
-    client-certificate-data: <base64-encoded-client-cert>
-    client-key-data: <base64-encoded-client-key>
-```
-
-**Usage**:
-```bash
-# Set environment variable (temporary)
-export KUBECONFIG=/path/to/kubeconfig
-
-# Use with command
-oc --kubeconfig=/path/to/kubeconfig get nodes
-
-# Merge with existing kubeconfig
-KUBECONFIG=~/.kube/config:/tmp/cluster/kubeconfig kubectl config view --flatten > ~/.kube/config
+    client-certificate-data: <base64>
+    client-key-data: <base64>
 ```
 
 ---
 
-### Kubeadmin Password
+## 3. Connecting to Clusters
 
-**Purpose**: Initial administrative access to OpenShift
+### Set KUBECONFIG
+
+```bash
+# Temporary (current session)
+export KUBECONFIG=/tmp/cluster-name/kubeconfig
+
+# Persistent (add to ~/.bashrc or ~/.zshrc)
+echo 'export KUBECONFIG=/tmp/cluster-name/kubeconfig' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Verify via MCP Tools
+
+```
+MCP Tool: resources_list
+Parameters: {kind: "Node"}
+Expected: List of cluster nodes
+
+MCP Tool: resources_get
+Parameters: {kind: "ClusterVersion", name: "version"}
+Expected: OpenShift version info
+```
+
+### Kubeadmin Credentials
 
 **User**: `kubeadmin`
-**Role**: `cluster-admin` (full cluster administrative access)
+**Password**: Content of `/tmp/<cluster-name>/kubeadmin-password`
+**Role**: `cluster-admin` (full access)
 
-**Location After Installation**: `/tmp/<cluster-name>/kubeadmin-password`
-
-**Usage**:
+**Read password**:
 ```bash
-# Read password
 cat /tmp/<cluster-name>/kubeadmin-password
+```
 
-# Login via CLI
-oc login -u kubeadmin -p <password> https://api.cluster-name.example.com:6443
-
-# Login via Web Console
-URL: https://console-openshift-console.apps.cluster-name.example.com
+**Web Console**:
+```
+URL: https://console-openshift-console.apps.<cluster>.<domain>
 User: kubeadmin
 Password: <from file>
 ```
 
-**Security Considerations**:
-- ⚠️ **Temporary credential** - Should be replaced with proper identity provider
-- ⚠️ **High privileges** - Full cluster-admin access
-- ⚠️ **Delete after IDP setup** - Remove kubeadmin user once other admins exist
+**Security**:
+- ⚠️ Temporary credential - for initial setup only
+- ⚠️ Full cluster-admin access
+- ⚠️ Do NOT disable unless explicitly requested
+- ✅ Keep secure (600 permissions)
 
 ---
 
-## Security Best Practices
+## 4. Secure Storage
 
-### Kubeconfig Security
+### File Permissions
 
-**File Permissions**:
 ```bash
-# Set restrictive permissions (owner read/write only)
-chmod 600 /path/to/kubeconfig
+# Directory: 700 (owner only)
+chmod 700 /tmp/cluster-name/
 
-# Verify permissions
-ls -l /path/to/kubeconfig
-# Should show: -rw------- (600)
+# Files: 600 (owner read/write only)
+chmod 600 /tmp/cluster-name/kubeconfig
+chmod 600 /tmp/cluster-name/kubeadmin-password
+
+# Verify
+ls -la /tmp/cluster-name/
 ```
 
-**Storage Recommendations**:
-- ✅ Store in user home directory: `~/.kube/config`
-- ✅ Encrypt home directory or use encrypted disk
-- ✅ Use separate kubeconfigs for different clusters
-- ✅ Regular backup (encrypted)
-- ❌ Never commit to version control (Git, SVN, etc.)
-- ❌ Never share via email, chat, or public links
-- ❌ Never store in publicly accessible directories
-- ❌ Never use the same kubeconfig on untrusted systems
+### Storage Locations
 
-**Kubeconfig Rotation**:
-- Certificates expire after 1 year by default
-- Rotate credentials regularly (every 90 days recommended)
-- Use short-lived tokens when possible
+#### /tmp (RECOMMENDED - Default)
 
-### Password Management
+**Use for**: Initial setup, short-term access, testing
+**Characteristics**: Cleared on reboot, prevents long-term exposure
 
-**Kubeadmin Password**:
-- ✅ Store in password manager (1Password, Bitwarden, etc.)
-- ✅ Use temporary storage (/tmp) initially
-- ✅ Delete after configuring identity provider
-- ❌ Never share or expose publicly
-- ❌ Don't leave in plain text files long-term
-
-**SSH Private Keys** (for node access):
-- ✅ Permissions: 600 (read/write owner only)
-- ✅ Store in `~/.ssh/` directory
-- ✅ Use passphrase protection
-- ✅ Use separate keys per cluster
-- ❌ Never commit to version control
-- ❌ Never share private keys
-
----
-
-## Temporary vs Permanent Storage
-
-### Temporary Storage (/tmp)
-
-**Characteristics**:
-- Cleared on system reboot
-- Good for initial credential download
-- Prevents accidental long-term storage
-
-**Use Cases**:
-- Initial kubeconfig download
-- Initial kubeadmin password download
-- Temporary testing
-
-**Lifespan**: Until reboot or manual deletion
-
-**Example**:
 ```bash
-# Download to temporary storage
 mkdir -p /tmp/my-cluster && chmod 700 /tmp/my-cluster
-curl -o /tmp/my-cluster/kubeconfig <url>
-chmod 600 /tmp/my-cluster/kubeconfig
-
-# Use temporarily
 export KUBECONFIG=/tmp/my-cluster/kubeconfig
-oc get nodes
 ```
 
-### Permanent Storage (~/.kube)
+#### ~/.kube (Only if User Requests)
 
-**Characteristics**:
-- Persists across reboots
-- Standard location for kubectl/oc
-- User-specific storage
+**Use for**: Long-term management, production access
+**Characteristics**: Persists across reboots
 
-**Use Cases**:
-- Day-to-day cluster access
-- Production kubeconfig
-- Long-term usage
-
-**Example**:
 ```bash
-# Copy to permanent storage
+# Ask user: "Store credentials permanently in ~/.kube/? (yes/no)"
+# If yes:
 mkdir -p ~/.kube
-cp /tmp/my-cluster/kubeconfig ~/.kube/config
-chmod 600 ~/.kube/config
-
-# Now available for all oc/kubectl commands
-oc get nodes
+cp /tmp/cluster-name/kubeconfig ~/.kube/cluster-name.config
+chmod 600 ~/.kube/cluster-name.config
+rm -rf /tmp/cluster-name/
+export KUBECONFIG=~/.kube/cluster-name.config
 ```
 
-**Migration Prompt**:
-After installation completes, skill should ask:
+**Best Practices**:
+- ✅ Default to `/tmp/` unless requested
+- ✅ Use descriptive names
+- ❌ Never commit to git
+- ❌ Never share via email/chat
+
+---
+
+## 5. MCP Server Configuration
+
+### OpenShift Administration MCP Server
+
+Uses `KUBECONFIG` environment variable for authentication.
+
+**.mcp.json configuration**:
+```json
+{
+  "mcpServers": {
+    "openshift-administration": {
+      "command": "bash",
+      "args": ["-c", "cd ~/.claude/plugins/.../server && uv run server.py"],
+      "env": {
+        "KUBECONFIG": "${KUBECONFIG}"
+      }
+    }
+  }
+}
 ```
-⚠️ Credentials currently in /tmp/ (temporary - cleared on reboot)
 
-Would you like to copy credentials to permanent storage? (yes/no)
+**How it works**:
+1. Set `KUBECONFIG` in shell
+2. MCP server inherits variable
+3. All MCP tools use configured kubeconfig
+4. No restart needed (with multi-context setup)
 
-If yes:
-  - Kubeconfig will be copied to ~/.kube/config
-  - Kubeadmin password will be copied to ~/.kube/kubeadmin-password
-  - Permissions will be set to 600 (secure)
+**Set for MCP**:
+```bash
+export KUBECONFIG=/tmp/cluster-name/kubeconfig
+
+# Verify
+MCP Tool: resources_list
+Parameters: {kind: "Namespace"}
 ```
 
 ---
 
-## Identity Providers (OAuth)
+## 6. Multi-Cluster Management
 
-### Overview
+### Merge Multiple Kubeconfigs
 
-OpenShift uses OAuth for user authentication. After initial deployment with kubeadmin, configure identity providers for regular users.
-
-**Supported Identity Providers**:
-- HTPasswd (basic username/password file)
-- LDAP (Lightweight Directory Access Protocol)
-- GitHub / GitHub Enterprise
-- GitLab
-- Google
-- OpenID Connect
-- KeyCloak
-- Active Directory (via LDAP)
-
-### HTPasswd (Simple Username/Password)
-
-**Use Cases**:
-- Development clusters
-- Small teams
-- Proof of concept
-- When LDAP/SSO unavailable
-
-**Setup**:
 ```bash
-# Create htpasswd file
-htpasswd -c -B -b users.htpasswd admin <password>
-htpasswd -B -b users.htpasswd developer <password>
+# Merge into single file
+KUBECONFIG=/tmp/cluster-a/kubeconfig:/tmp/cluster-b/kubeconfig:/tmp/cluster-c/kubeconfig \
+  kubectl config view --flatten > ~/.kube/config
 
-# Create secret in openshift-config namespace
-oc create secret generic htpass-secret --from-file=htpasswd=users.htpasswd -n openshift-config
+export KUBECONFIG=~/.kube/config
 
-# Configure OAuth to use HTPasswd
-oc apply -f - <<EOF
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  identityProviders:
-  - name: htpasswd_provider
-    mappingMethod: claim
-    type: HTPasswd
-    htpasswd:
-      fileData:
-        name: htpass-secret
-EOF
+# Verify contexts
+kubectl config get-contexts
 ```
 
-**Limitations**:
-- Manual user management
-- No password policy enforcement
-- No self-service password reset
-- Not suitable for large organizations
-
-### LDAP Integration
-
-**Use Cases**:
-- Enterprise environments
-- Centralized user management
-- Active Directory integration
-- Large organizations
-
-**Configuration**:
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  identityProviders:
-  - name: ldap_provider
-    mappingMethod: claim
-    type: LDAP
-    ldap:
-      attributes:
-        id:
-        - dn
-        email:
-        - mail
-        name:
-        - cn
-        preferredUsername:
-        - uid
-      bindDN: "cn=admin,dc=example,dc=com"
-      bindPassword:
-        name: ldap-secret
-      insecure: false
-      ca:
-        name: ldap-ca
-      url: "ldaps://ldap.example.com:636/ou=users,dc=example,dc=com?uid"
+**Example output**:
+```
+CURRENT   NAME                  CLUSTER    AUTHINFO
+*         cluster-a/kubeadmin   cluster-a  kubeadmin
+          cluster-b/kubeadmin   cluster-b  kubeadmin
+          cluster-c/kubeadmin   cluster-c  kubeadmin
 ```
 
-**Setup Steps**:
-1. Create bind DN secret
-2. Create CA certificate configmap (if using LDAPS)
-3. Configure OAuth resource
-4. Test login
+### Switch Between Clusters
 
-**Advantages**:
-- Centralized user management
-- Password policies enforced
-- Group synchronization
-- Audit logging
+```bash
+# Switch to cluster-b
+kubectl config use-context cluster-b/kubeadmin
 
-### GitHub OAuth
+# Verify
+kubectl config current-context
 
-**Use Cases**:
-- Open source projects
-- GitHub-centric teams
-- Public repositories
-
-**Configuration**:
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  identityProviders:
-  - name: github
-    mappingMethod: claim
-    type: GitHub
-    github:
-      clientID: <github-oauth-app-client-id>
-      clientSecret:
-        name: github-secret
-      organizations:
-      - my-organization
+# MCP tools now use cluster-b
+MCP Tool: resources_list
+Parameters: {kind: "Node"}
 ```
 
-**Setup Steps**:
-1. Register OAuth App in GitHub
-2. Configure callback URL: `https://oauth-openshift.apps.<cluster>.<domain>/oauth2callback/github`
-3. Create secret with client ID and secret
-4. Configure OAuth resource
+### Context Naming
 
-### OpenID Connect (OIDC)
+**Format**: `<cluster-name>/<username>`
 
-**Use Cases**:
-- Enterprise SSO (KeyCloak, Okta, Auth0)
-- Modern authentication flows
-- Multi-factor authentication
+**Examples**:
+- `prod-ocp/kubeadmin`
+- `dev-sno/kubeadmin`
+- `staging-ocp/alice`
 
-**Configuration**:
-```yaml
-apiVersion: config.openshift.io/v1
-kind: OAuth
-metadata:
-  name: cluster
-spec:
-  identityProviders:
-  - name: oidc
-    mappingMethod: claim
-    type: OpenID
-    openID:
-      clientID: openshift
-      clientSecret:
-        name: oidc-secret
-      issuer: https://keycloak.example.com/auth/realms/master
-      claims:
-        preferredUsername:
-        - preferred_username
-        name:
-        - name
-        email:
-        - email
+**Rename**:
+```bash
+kubectl config rename-context old-name new-name
+```
+
+### MCP Context Switching
+
+**No restart needed**: MCP reads current context dynamically
+
+**Workflow**:
+1. Merge kubeconfigs → `~/.kube/config`
+2. Set `KUBECONFIG=~/.kube/config`
+3. Use `kubectl config use-context` to switch
+4. MCP tools use new context automatically
+
+---
+
+## 7. Session Management
+
+### Verify Active Session
+
+```bash
+# Check context
+kubectl config current-context
+
+# Verify via MCP
+MCP Tool: resources_get
+Parameters: {kind: "ClusterVersion", name: "version"}
+```
+
+### Switch Sessions
+
+```bash
+# Change context
+kubectl config use-context <context-name>
+
+# Or change kubeconfig entirely
+export KUBECONFIG=/path/to/different/kubeconfig
+```
+
+### Close Session
+
+```bash
+# Unset kubeconfig
+unset KUBECONFIG
+
+# Remove credentials (if temporary)
+rm -rf /tmp/cluster-name/
 ```
 
 ---
 
-## Role-Based Access Control (RBAC)
+## 8. Disabling Kubeadmin
 
-### Cluster Roles
+**⚠️ Only if explicitly requested by user**
 
-**Predefined Roles**:
-- `cluster-admin` - Full cluster administrative access
-- `admin` - Project administrative access
-- `edit` - Edit resources within project
-- `view` - Read-only access to project resources
-- `self-provisioner` - Can create new projects
+**Prerequisites**:
+- Alternative admin user configured and tested
+- Kubeadmin credentials backed up
 
-**Assigning Cluster Role**:
-```bash
-# Grant cluster-admin to user
-oc adm policy add-cluster-role-to-user cluster-admin alice
+**Process**:
 
-# Grant admin role to user in specific project
-oc adm policy add-role-to-user admin bob -n my-project
+```
+# 1. Verify alternative admin
+MCP Tool: resources_list
+Parameters: {kind: "User"}
 
-# Grant view role to group
-oc adm policy add-role-to-group view developers -n my-project
+# 2. Delete kubeadmin secret (IRREVERSIBLE)
+MCP Tool: resources_delete
+Parameters:
+  kind: "Secret"
+  name: "kubeadmin"
+  namespace: "kube-system"
 ```
 
-### Service Accounts
-
-**Purpose**: Non-human identities for applications and automation
-
-**Creating Service Account**:
-```bash
-# Create service account
-oc create serviceaccount automation -n my-project
-
-# Grant permissions
-oc adm policy add-role-to-user edit system:serviceaccount:my-project:automation -n my-project
-
-# Get service account token
-oc sa get-token automation -n my-project
-```
-
-**Usage in CI/CD**:
-```bash
-# Login with service account token
-oc login --token=<service-account-token> https://api.cluster.example.com:6443
-
-# Use in automation scripts
-TOKEN=$(oc sa get-token automation -n my-project)
-curl -H "Authorization: Bearer $TOKEN" https://api.cluster.example.com:6443/api/v1/namespaces
-```
+**Post-deletion**: Cannot be re-enabled without cluster reinstall
 
 ---
 
-## Removing Kubeadmin User
+## 9. Reconfiguring MCP Server Live
 
-**When**: After configuring identity provider and creating cluster admin users
+### Multi-Context Kubeconfig (RECOMMENDED)
 
-**Steps**:
+Switch contexts without MCP restart.
+
 ```bash
-# Verify other admin users exist
-oc get users
-oc get clusterrolebindings | grep cluster-admin
+kubectl config use-context cluster-2/kubeadmin
 
-# Ensure you have another admin
-oc adm policy add-cluster-role-to-user cluster-admin alice
-
-# Remove kubeadmin secret
-oc delete secret kubeadmin -n kube-system
-
-# Verify removal
-oc login -u kubeadmin
-# Should fail: "Login failed (401 Unauthorized)"
+# MCP tools now use cluster-2
+MCP Tool: resources_list
+Parameters: {kind: "Node"}
 ```
 
-**⚠️ WARNING**: Ensure you have alternative admin access before removing kubeadmin!
+**Why it works**: MCP reads `current-context` from kubeconfig on each tool call.
 
----
+### Change KUBECONFIG Variable (requires restart)
 
-## Credential Rotation
-
-### Certificate Rotation
-
-**Cluster Certificates**:
-- Auto-rotated by OpenShift (before expiration)
-- Manual rotation if needed:
 ```bash
-# Force certificate rotation
-oc adm certificate approve --all
+export KUBECONFIG=/tmp/cluster-2/kubeconfig
+# Claude Code restarts MCP automatically
 ```
 
-**API Client Certificates**:
-- Generated in kubeconfig
-- Expire after 24 hours (default)
-- Auto-renewed on oc login
+### Recommended Workflow
 
-### Token Rotation
+**For multiple clusters**:
+1. Merge kubeconfigs → `~/.kube/config`
+2. Set `KUBECONFIG=~/.kube/config` permanently
+3. Use `kubectl config use-context` to switch
+4. No MCP restart needed
 
-**Service Account Tokens**:
-```bash
-# Generate new token
-oc sa new-token automation -n my-project
-
-# Update automation with new token
-```
-
-**OAuth Tokens**:
-- Short-lived access tokens (auto-refresh)
-- Revoke user sessions:
-```bash
-# Delete user token secrets
-oc delete secret <token-secret-name> -n openshift-authentication
-```
-
----
-
-## Multi-Cluster Credential Management
-
-**Managing Multiple Clusters**:
-```bash
-# Merge multiple kubeconfigs
-KUBECONFIG=~/.kube/cluster-a:~/.kube/cluster-b:~/.kube/cluster-c kubectl config view --flatten > ~/.kube/config
-
-# Switch between clusters
-oc config use-context cluster-a
-oc config use-context cluster-b
-
-# View all contexts
-oc config get-contexts
-
-# Current context
-oc config current-context
-```
-
-**Best Practice**: Use separate kubeconfig files per cluster, merge as needed
+**For single cluster at a time**:
+1. Keep credentials in `/tmp/<cluster>/kubeconfig`
+2. Change `KUBECONFIG` when switching
+3. Allow automatic MCP restart
 
 ---
 
 ## Troubleshooting
 
-### Issue: "Unauthorized" Error
-**Cause**: Expired or invalid credentials
+### Authentication Failures
 
-**Resolution**:
+**Symptom**: "Unauthorized" or "Forbidden" errors
+
+**Checks**:
 ```bash
-# Check kubeconfig validity
-oc whoami
-
-# Re-login
-oc login https://api.cluster.example.com:6443
-
-# Check certificate expiration
-openssl x509 -in <cert-file> -text -noout | grep "Not After"
+echo $KUBECONFIG                    # Verify set
+ls -l $KUBECONFIG                   # Verify exists
+kubectl config view                 # Verify valid
+kubectl config current-context      # Verify context
 ```
 
-### Issue: Cannot Access Cluster After Kubeadmin Removal
-**Cause**: No alternative admin users configured
+**Solutions**:
+- File not found → Set correct path
+- Permission denied → `chmod 600 $KUBECONFIG`
+- Expired → Re-download from Assisted Installer
+- Wrong context → `kubectl config use-context`
 
-**Resolution**:
-- Access cluster via emergency kubeconfig (if available)
-- Or re-install kubeadmin (complex, requires API access)
-- Prevention: Always verify admin access before removing kubeadmin
+### MCP Not Finding Credentials
 
-### Issue: Identity Provider Not Working
-**Cause**: Misconfigured OAuth or secret
+**Symptom**: "kubeconfig not found"
 
-**Resolution**:
-```bash
-# Check OAuth configuration
-oc get oauth cluster -o yaml
+**Solutions**:
+- Export `KUBECONFIG` before starting Claude Code
+- Verify `.mcp.json` includes `"KUBECONFIG": "${KUBECONFIG}"`
+- Restart Claude Code
 
-# Check identity provider pods
-oc get pods -n openshift-authentication
+### Context Not Switching
 
-# Check OAuth server logs
-oc logs -n openshift-authentication <oauth-pod-name>
-```
+**Symptom**: MCP uses old cluster after `use-context`
+
+**Solutions**:
+- Use merged kubeconfig (recommended)
+- Restart MCP if using separate files
+- Verify `kubectl config current-context`
 
 ---
 
 ## Security Checklist
 
-**Post-Installation**:
-- ✅ Kubeconfig permissions set to 600
-- ✅ Kubeadmin password stored securely
-- ✅ Identity provider configured
-- ✅ Admin users created via IDP
-- ✅ Cluster-admin role assigned to IDP users
-- ✅ Kubeadmin user deleted
-- ✅ Service accounts created for automation
-- ✅ RBAC policies reviewed and applied
-- ✅ Credentials backed up securely
-
-**Ongoing**:
-- ✅ Regular credential rotation (90 days)
-- ✅ Review access logs
-- ✅ Audit cluster-admin assignments
-- ✅ Remove unused service accounts
-- ✅ Monitor OAuth logs
+✅ Credentials: 700 (dir), 600 (files)
+✅ Default to `/tmp/` storage
+✅ Kubeadmin enabled (unless user requests disable)
+✅ Presigned URLs not exposed
+✅ KUBECONFIG set correctly
+✅ Multi-context via merged kubeconfig
+✅ Not committed to git
+✅ Not shared insecurely
 
 ---
 
-## References
+## Related Documentation
 
-- [OpenShift Authentication Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/authentication_and_authorization/)
-- [Configuring Identity Providers](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/authentication_and_authorization/configuring-identity-providers)
-- [RBAC Documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/authentication_and_authorization/using-rbac)
-- [Service Accounts](https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/authentication_and_authorization/understanding-and-creating-service-accounts)
+- [RBAC](./rbac.md) - Access control
+- [IDP](./idp.md) - Identity Providers
+- [Certificate Rotation](./certificate-rotation.md) - Certificate renewal
+- [Security Checklist](./security-checklist.md) - Complete security verification

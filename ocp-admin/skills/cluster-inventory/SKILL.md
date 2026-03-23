@@ -34,6 +34,13 @@ metadata:
 
 # cluster-inventory
 
+**MCP-First Approach**: This skill uses MCP tools from `openshift-self-managed` and `openshift-ocm-managed` servers. MCP tools have **absolute priority**.
+
+**CLI Tools Policy**:
+- ✅ **ALWAYS use MCP tools** when available
+- ⚠️ **Last resort only**: CLI commands (`oc`, `kubectl`) may be attempted if no MCP alternative exists
+- ⚠️ **Assume unavailable**: CLI tools are likely not installed in the execution environment
+
 List and inspect OpenShift clusters across all types (OCP, SNO, ROSA, ARO, OSD).
 
 ## Prerequisites
@@ -44,6 +51,7 @@ List and inspect OpenShift clusters across all types (OCP, SNO, ROSA, ARO, OSD).
 - `list_clusters` (from both servers) - Lists clusters (auto-routes to correct API)
 - `cluster_info` (from both servers) - Gets cluster details
 - `cluster_events` (from openshift-self-managed only) - Gets events for self-managed clusters
+- `cluster_logs_download_url` (from openshift-self-managed only) - Gets log download URL for diagnostics
 
 **Environment Variables**: `OFFLINE_TOKEN` - Red Hat authentication token
 
@@ -228,7 +236,8 @@ Execute when user requests events, troubleshoots errors, or needs installation l
 - Future: cluster-installer, cluster-deletion
 
 ### Reference Documentation
-**Internal**: [troubleshooting.md](../../docs/troubleshooting.md) - Cluster status and error diagnosis
+- [troubleshooting.md](../../docs/troubleshooting.md) - Cluster status and error diagnosis
+- **[Documentation Index](../../docs/INDEX.md)** - Complete guide to all ocp-admin documentation (consult for topics not explicitly referenced above)
 
 ## Example Usage
 
