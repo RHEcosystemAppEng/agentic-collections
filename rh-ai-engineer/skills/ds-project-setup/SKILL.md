@@ -28,25 +28,30 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools** (from rhoai):
+**Required MCP Tools** (from openshift):
+- `resources_get` - Inspect namespace labels, LimitRange, ResourceQuota, DSPA status
+- `resources_list` - List namespaces, Secrets, PVCs (OpenShift fallback for RHOAI tools)
+- `resources_create_or_update` - Create namespaces, Secrets, DSPA CRs (OpenShift fallback and primary for pipeline server)
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
 - `list_data_science_projects` - List existing RHOAI projects to check for duplicates
 - `create_data_science_project` - Create namespace with RHOAI labels and dashboard integration
-- `get_project_details` - Verify project creation and inspect configuration
+- `get_project_details` - Verify project creation and inspect configuration. **Note**: use `name` parameter, not `namespace`.
 - `get_project_status` - Get comprehensive project status including components
 - `create_s3_data_connection` - Create S3-compatible data connection secret
 - `list_data_connections` - List existing data connections in the project
 - `get_pipeline_server` - Check pipeline server configuration
-- `create_pipeline_server` - Configure pipeline server with S3 data connection
 - `set_model_serving_mode` - Enable single-model or multi-model serving
 
-**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
-
-**Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Inspect namespace labels, LimitRange, ResourceQuota
+Note: `create_pipeline_server` is intentionally excluded — it constructs invalid DSPA manifests. Pipeline server creation always uses OpenShift direct.
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - Cluster admin or namespace creation privileges for the user
@@ -82,6 +87,8 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 - If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?" **WAIT for user decision.** If user chooses (a), skip Step 2 and proceed to optional configuration steps (Steps 3-5). If user chooses (b), repeat the name check.
 - If project **does not exist**: Continue gathering remaining requirements below.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true`.
+
 **Ask the user for remaining settings:**
 - **Display name**: Human-readable project name for the RHOAI dashboard
 - **Description**: Optional project description
@@ -111,6 +118,8 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 - `display_name`: human-readable display name - REQUIRED
 - `description`: project description - OPTIONAL
 
+**If rhoai unavailable or returns error**: Use `resources_create_or_update` (from openshift) to create the Namespace with RHOAI labels. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#data-science-project-namespace) for the YAML template.
+
 **Verify creation:**
 
 **MCP Tool**: `get_project_details` (from rhoai)
@@ -119,6 +128,10 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 - `name`: the created project name - REQUIRED
 
 Confirm the project was created with proper RHOAI labels (`opendatahub.io/dashboard: "true"`).
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `name: [project-name]`. Check for label `opendatahub.io/dashboard: "true"`.
+
+**Note**: The `get_project_details` tool requires a `name` parameter (not `namespace`). If the tool returns a parameter error, fall back to OpenShift.
 
 **Error Handling**:
 - If name already taken -> Offer alternative name or configure existing project
@@ -163,6 +176,8 @@ Skip this step if user declined data connections in Step 1.
 - `secret_key`: secret access key - REQUIRED
 - `region`: AWS region - OPTIONAL (omit for non-AWS S3)
 
+**If rhoai unavailable or returns error**: Use `resources_create_or_update` (from openshift) to create the Secret with S3 annotations. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#s3-data-connection-secret) for the YAML template.
+
 **Verify creation:**
 
 **MCP Tool**: `list_data_connections` (from rhoai)
@@ -171,6 +186,8 @@ Skip this step if user declined data connections in Step 1.
 - `namespace`: project name - REQUIRED
 
 Confirm the data connection appears in the list.
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Secret`, `namespace: [namespace]`, `labelSelector: opendatahub.io/dashboard=true`. Filter results by annotation `opendatahub.io/connection-type: s3`.
 
 **Error Handling**:
 - If connection name already exists -> Ask: "Data connection `[name]` already exists. Create with a different name?"
@@ -202,14 +219,26 @@ If pipeline server already exists, report its status and ask if user wants to re
 
 **WAIT for user to confirm pipeline server setup.**
 
-**MCP Tool**: `create_pipeline_server` (from rhoai)
+**Pipeline Server Creation** (OpenShift direct — the `create_pipeline_server` RHOAI tool is not used because it constructs invalid DSPA manifests):
 
-**Parameters**:
-- `namespace`: project name - REQUIRED
-- `object_storage_secret`: name of the S3 data connection secret - REQUIRED
-- `object_storage_bucket`: S3 bucket name (from the data connection) - REQUIRED
-- `object_storage_endpoint`: S3 endpoint URL (from the data connection) - REQUIRED
-- `object_storage_region`: S3 region - OPTIONAL (default: `"us-east-1"`)
+**MCP Tool**: `resources_create_or_update` (from openshift)
+
+Create a DataSciencePipelinesApplication CR using the template from [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#datasciencepipelinesapplication-dspa).
+
+**Parameters to fill in the template:**
+- `namespace`: target namespace
+- `bucket`: S3 bucket name from the data connection
+- `host`: S3 endpoint without protocol prefix (e.g., `minio.namespace.svc:9000`)
+- `scheme`: `http` or `https`
+- `secretName`: name of the S3 data connection secret created in Step 3
+- `region`: AWS region or empty string for MinIO
+
+**Verify DSPA is ready:**
+
+**MCP Tool**: `resources_get` (from openshift)
+- `apiVersion`: `datasciencepipelinesapplications.opendatahub.io/v1alpha1`, `kind`: `DataSciencePipelinesApplication`, `name`: `dspa`, `namespace`: [namespace]
+
+Check `.status.conditions` for `Ready=True`. Poll every 15 seconds until ready or timeout (5 minutes).
 
 **Verify creation:**
 
@@ -219,6 +248,8 @@ If pipeline server already exists, report its status and ask if user wants to re
 - `namespace`: project name - REQUIRED
 
 Confirm the pipeline server is configured and initializing.
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) for the DSPA CR as described above.
 
 **Error Handling**:
 - If data connection not found -> Report: "Data connection `[name]` not found in namespace. Create it first."
@@ -234,6 +265,8 @@ Confirm the pipeline server is configured and initializing.
 **Parameters**:
 - `namespace`: project name - REQUIRED
 - `mode`: "single" or "multi" - REQUIRED (default: "single")
+
+**If rhoai unavailable or returns error**: Patch the namespace annotation via `resources_create_or_update` (from openshift). Set annotation `opendatahub.io/model-serving-mode` to `single` or `multi` on the Namespace.
 
 **Final validation:**
 

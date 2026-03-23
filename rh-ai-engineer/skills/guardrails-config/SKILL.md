@@ -34,9 +34,9 @@ color: blue
 - `pods_log` (from openshift) - Retrieve orchestrator pod logs for troubleshooting
 - `events_list` (from openshift) - Check events for deployment issues
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
 
-**Required MCP Tools** (from rhoai):
+**Preferred MCP Tools** (from rhoai):
 - `list_inference_services` - List deployed models to identify guardrail targets
 - `get_inference_service` - Get InferenceService details (endpoint, runtime, status)
 - `get_model_endpoint` - Get the model endpoint URL for orchestrator routing
@@ -52,6 +52,8 @@ color: blue
 - `analyze_vllm` - Verify guarded endpoint performance impact
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - TrustyAI operator installed with guardrails support (RHOAI 2.14+)
@@ -105,6 +107,8 @@ If user is unsure about target model, use `list_inference_services` (from rhoai)
 - `namespace`: user-specified namespace - REQUIRED
 - `verbosity`: `"standard"` - OPTIONAL
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `namespace: [namespace]`.
+
 Verify the selected InferenceService is Ready:
 
 **MCP Tool**: `get_inference_service` (from rhoai)
@@ -114,6 +118,8 @@ Verify the selected InferenceService is Ready:
 - `namespace`: target namespace - REQUIRED
 - `verbosity`: `"full"` - REQUIRED
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `name: [name]`, `namespace: [namespace]`. Extract status from `.status.conditions`.
+
 **If not Ready**: Warn user and offer options: (1) Proceed anyway, (2) Invoke `/debug-inference`, (3) Abort. **WAIT for user decision.**
 
 **MCP Tool**: `get_model_endpoint` (from rhoai)
@@ -121,6 +127,8 @@ Verify the selected InferenceService is Ready:
 **Parameters**:
 - `name`: selected InferenceService name - REQUIRED
 - `namespace`: target namespace - REQUIRED
+
+**If rhoai unavailable or returns error**: Extract endpoint from `.status.url` of the InferenceService obtained via `resources_get` (from openshift).
 
 Store the endpoint URL for orchestrator routing. Present configuration summary for confirmation. **WAIT for user to confirm or modify.**
 
@@ -138,6 +146,8 @@ Recommended model: `ibm-granite/granite-guardian-3.1-2b` (1 GPU, ~8Gi memory) pe
 
 Check if a compatible detector model is already deployed using `list_inference_services` (from rhoai). If one exists, offer to reuse it. **WAIT for user decision.**
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `namespace: [namespace]` to check for existing detector models. To list available runtimes when `list_serving_runtimes` is unavailable: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1alpha1`, `kind: ServingRuntime`, `namespace: [namespace]`.
+
 If deploying a new detector:
 
 **MCP Tool**: `deploy_model` (from rhoai)
@@ -150,6 +160,8 @@ If deploying a new detector:
 - `storage_uri`: `"hf://ibm-granite/granite-guardian-3.1-2b"` - REQUIRED
 - `gpu_count`: `1` - OPTIONAL
 - `memory_request`: `"8Gi"` - OPTIONAL
+
+**If rhoai unavailable or returns error**: Use `resources_create_or_update` (from openshift) to create the detector InferenceService CR directly with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`.
 
 **Ask**: "Deploy the content safety detector model? This creates an additional InferenceService. (yes/no/use-existing)"
 
@@ -228,6 +240,8 @@ First, verify the original model still responds correctly:
 - `name`: the original InferenceService name - REQUIRED
 - `namespace`: target namespace - REQUIRED
 
+**If rhoai unavailable or returns error**: Note that `test_model_endpoint` only checks reachability, not actual inference. For a real inference test, use an in-cluster curl command: `curl -X POST [endpoint]/v1/completions -H 'Content-Type: application/json' -d '{"model":"[model]","prompt":"Hello","max_tokens":10}'`
+
 Then test the **guarded endpoint** directly. The guarded endpoint is a different URL from the original — obtain it from the GuardrailsOrchestrator CR status (Step 6). If the guarded endpoint is only available cluster-internally, set up port-forwarding to the orchestrator service first:
 
 ```
@@ -269,7 +283,15 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
 4. Check detector model pods are running if using model-based detectors
 5. Check network policies that might block pod-to-pod communication
 
-### Issue 3: High Latency or False Positives
+### Issue 3: GuardrailsOrchestrator RBAC Denied
+
+**Error**: Cannot create `guardrailsorchestrators` resource — 403 Forbidden
+
+**Cause**: The user lacks RBAC for the GuardrailsOrchestrator CRD, which is typically cluster-admin only.
+
+**Solution**: Provide the user with the complete GuardrailsOrchestrator CR YAML and instruct them to ask a cluster administrator to apply it. The detectors ConfigMap (which only requires namespace `edit` role) can still be created by the skill.
+
+### Issue 4: High Latency or False Positives
 
 **Error**: Guarded endpoint is significantly slower than direct endpoint, or legitimate requests are blocked
 

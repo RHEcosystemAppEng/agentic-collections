@@ -34,9 +34,9 @@ color: blue
 - `events_list` (from openshift) - Check events for TrustyAI deployment issues
 - `prometheus_query` (from openshift) - Query TrustyAI metrics (trustyai_spd, trustyai_dir, drift metrics)
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
 
-**Required MCP Tools** (from rhoai):
+**Preferred MCP Tools** (from rhoai):
 - `list_inference_services` - List deployed models to identify monitoring targets
 - `get_inference_service` - Get InferenceService details (model format, runtime, status)
 - `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
@@ -47,6 +47,8 @@ color: blue
 - `execute_promql` - Custom PromQL queries for TrustyAI metrics validation
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - TrustyAI operator enabled in the DataScienceCluster CR
@@ -98,6 +100,14 @@ If user is unsure about target model, use `list_inference_services` (from rhoai)
 **Parameters**:
 - `namespace`: user-specified namespace - REQUIRED
 - `verbosity`: `"standard"` - OPTIONAL
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `namespace: [namespace]`.
+
+To validate namespace is a Data Science Project when `list_data_science_projects` (from rhoai) is unavailable: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true`.
+
+To get InferenceService details when `get_inference_service` (from rhoai) is unavailable: Use `resources_get` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `name: [name]`, `namespace: [namespace]`. Extract status from `.status.conditions`.
+
+**Important**: TrustyAI payload logging requires **Knative/Serverless** deployment mode. In RawDeployment mode, inference data does not reach TrustyAI for bias/drift analysis. If the InferenceService uses `serving.kserve.io/deploymentMode: RawDeployment`, warn the user that payload logging will not work and suggest switching to Serverless mode if Knative is available.
 
 Present configuration summary for confirmation. **WAIT for user to confirm or modify.**
 

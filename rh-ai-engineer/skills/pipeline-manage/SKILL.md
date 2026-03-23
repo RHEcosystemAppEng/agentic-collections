@@ -26,12 +26,22 @@ Create, run, schedule, and monitor Data Science Pipelines (Kubeflow Pipelines 2.
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools** (from rhoai):
+**Required MCP Tools** (from openshift):
+- `resources_create_or_update` - Create DSPA CR (pipeline server), PipelineRun and ScheduledWorkflow CRs
+- `resources_list` - List PipelineRun resources, DSPA status
+- `resources_get` - Get PipelineRun status, DSPA details
+- `resources_delete` - Delete pipeline run resources, DSPA
+- `events_list` - Check pipeline pod events for errors
+- `pods_list` - List pipeline step pods
+- `pods_log` - Retrieve pipeline step container logs
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
 - `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
 - `get_pipeline_server` - Check pipeline server (DSPA) status in a project
-- `create_pipeline_server` - Create DSPA with S3 storage configuration
 - `delete_pipeline_server` - Delete pipeline server and all pipeline infrastructure
 - `list_resources` - List pipeline resources in a namespace (resource_type="pipelines")
 - `get_resource` - Get pipeline resource details (resource_type="pipeline")
@@ -41,18 +51,9 @@ Create, run, schedule, and monitor Data Science Pipelines (Kubeflow Pipelines 2.
 - `list_data_connections` - Verify S3 data connections for pipeline artifact storage
 - `project_summary` - Project overview including pipeline status
 
-**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
-
-**Required MCP Tools** (from openshift):
-- `resources_create_or_update` (from openshift) - Create PipelineRun and ScheduledWorkflow CRs
-- `resources_list` (from openshift) - List PipelineRun resources by apiVersion/kind
-- `resources_get` (from openshift) - Get PipelineRun status and task details
-- `resources_delete` (from openshift) - Delete pipeline run resources
-- `events_list` (from openshift) - Check pipeline pod events for errors
-- `pods_list` (from openshift) - List pipeline step pods
-- `pods_log` (from openshift) - Retrieve pipeline step container logs
-
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - Target namespace is an RHOAI Data Science Project (label: `opendatahub.io/dashboard: "true"`)
@@ -84,26 +85,42 @@ Ask the user what they want to do: **Setup** server, **List** pipelines/runs, **
 
 Ask for target namespace. Validate via `list_data_science_projects` (from rhoai). If invalid, suggest `/ds-project-setup`.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true`.
+
 Route: Setup -> Step 2, List -> Step 3, Run -> Step 4, Schedule -> Step 5, Monitor -> Step 6, Logs -> Step 7, Delete -> Step 8.
 
 ### Step 2: Verify / Setup Pipeline Server
 
 Check via `get_pipeline_server` (from rhoai) with `namespace`. If healthy, proceed. If unhealthy, offer diagnostics via `diagnose_resource`. If not exists, offer setup.
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: datasciencepipelinesapplications.opendatahub.io/v1alpha1`, `kind: DataSciencePipelinesApplication`, `name: dspa`, `namespace: [namespace]`. Check `.status.conditions` for `Ready=True`.
+
 **For setup**: Check data connections via `list_data_connections` (from rhoai). If none exist, offer to delegate to `/ds-project-setup`.
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Secret`, `namespace: [namespace]`, `labelSelector: opendatahub.io/dashboard=true`. Filter by annotation `opendatahub.io/connection-type: s3`.
 
 **Gather:** Select from available data connections (the data connection name is the S3 secret name). The bucket, endpoint, and region can be extracted from the data connection secret. Present configuration for review. **WAIT for confirmation.**
 
-**MCP Tool**: `create_pipeline_server` (from rhoai)
+**Pipeline Server Creation** (OpenShift direct — `create_pipeline_server` from rhoai is not used because it constructs invalid DSPA manifests):
 
-**Parameters**:
-- `namespace`: target namespace - REQUIRED
-- `object_storage_secret`: S3 credentials secret name - REQUIRED
-- `object_storage_bucket`: S3 bucket name - REQUIRED
-- `object_storage_endpoint`: S3 endpoint URL - REQUIRED
-- `object_storage_region`: S3 region - OPTIONAL (default: `"us-east-1"`)
+**MCP Tool**: `resources_create_or_update` (from openshift)
 
-Poll `get_pipeline_server` until ready or timeout.
+Create a DataSciencePipelinesApplication CR. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#datasciencepipelinesapplication-dspa) for the YAML template.
+
+**Parameters to fill in the template:**
+- `namespace`: target namespace
+- `bucket`: S3 bucket name from the data connection
+- `host`: S3 endpoint without protocol prefix (e.g., `minio.namespace.svc:9000`)
+- `scheme`: `http` or `https`
+- `secretName`: name of the S3 data connection secret
+- `region`: AWS region or empty string for MinIO
+
+**Verify DSPA is ready:**
+
+**MCP Tool**: `resources_get` (from openshift)
+- `apiVersion`: `datasciencepipelinesapplications.opendatahub.io/v1alpha1`, `kind`: `DataSciencePipelinesApplication`, `name`: `dspa`, `namespace`: [namespace]
+
+Check `.status.conditions` for `Ready=True`. Poll every 15 seconds until ready or timeout (5 minutes).
 
 **Error Handling**:
 - If S3 secret not found -> Suggest creating via `/ds-project-setup`
@@ -116,6 +133,8 @@ Use `list_resources` (from rhoai) with `resource_type="pipelines"`, `namespace` 
 For specific run status: `resource_status` (from rhoai) with `resource_type="pipeline"`, `name`, `namespace`.
 
 For project-wide overview: `project_summary` (from rhoai) with `namespace`.
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: tekton.dev/v1`, `kind: PipelineRun`, `namespace: [namespace]` to list pipeline runs directly.
 
 If pipeline server not configured, suggest setup via Step 2.
 
@@ -157,6 +176,8 @@ Convert natural language to cron if needed. Present schedule configuration for r
 **Get run status** via `get_resource` (from rhoai) with `resource_type="pipeline"`, `name`, `namespace`, `verbosity="full"`.
 
 **For deeper diagnostics**: `diagnose_resource` (from rhoai) with `resource_type="pipeline"`, `name`, `namespace`.
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: tekton.dev/v1`, `kind: PipelineRun`, `name: [run-name]`, `namespace: [namespace]`. Extract task status from `.status.childReferences` or `.status.taskRuns`.
 
 **Track step-level progress** via `resources_get` (from openshift) with apiVersion `tekton.dev/v1`, kind `PipelineRun`. Extract task statuses from `.status.childReferences` or `.status.taskRuns`.
 

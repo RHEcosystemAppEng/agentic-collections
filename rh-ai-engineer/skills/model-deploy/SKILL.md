@@ -24,25 +24,26 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools** (from rhoai):
-- `deploy_model` - Create InferenceService with high-level parameters (no YAML construction needed)
+**Required MCP Tools** (from openshift):
+- `resources_get` - Check NIM Account CR, LimitRange, GPU node taints, InferenceService status
+- `resources_list` - Check Knative availability, GPU nodes, existing deployments, ServingRuntimes
+- `resources_create_or_update` - Create/patch InferenceService, add tolerations (OpenShift fallback)
+- `pods_list` - Check predictor pod status during rollout
+- `pods_log` - Retrieve pod logs for debugging
+- `events_list` - Check events for errors
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
+- `deploy_model` - Create InferenceService with high-level parameters (no YAML construction needed). **Known limitation**: does not support tolerations or NIM-specific env vars — see fallback patterns below.
 - `list_inference_services` - List deployed models with structured status data
 - `get_inference_service` - Get detailed model deployment status (conditions, endpoint, ready state)
 - `get_model_endpoint` - Get inference endpoint URL directly
 - `list_serving_runtimes` - List available runtimes including platform templates with supported model formats
 - `list_data_science_projects` - Discover RHOAI projects for namespace validation
 - `list_data_connections` - Verify model storage access (S3 data connections)
-
-**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
-
-**Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Check NIM Account CR, LimitRange, GPU node taints
-- `resources_list` (from openshift) - Check Knative availability, GPU nodes, existing deployments
-- `pods_list` (from openshift) - Check predictor pod status during rollout
-- `pods_log` (from openshift) - Retrieve pod logs for debugging
-- `events_list` (from openshift) - Check events for errors
 
 **Optional MCP Server**: `ai-observability` ([AI Observability MCP](https://github.com/rh-ai-quickstart/ai-observability-summarizer))
 
@@ -52,6 +53,8 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 - `analyze_vllm` - Verify metrics are flowing after deployment
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - For NIM runtime: NIM platform set up via `/nim-setup`
@@ -95,6 +98,8 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 - GPU node taints (auto-generate tolerations)
 - Existing deployments (reference configuration)
 - Model source accessibility (OCI registry entitlements)
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true` to find RHOAI projects.
 
 **Present pre-flight results** in a summary table and note any adjustments made. **WAIT for user confirmation if significant changes were needed** (e.g., deployment mode switch, resource adjustments, tolerations added).
 
@@ -195,6 +200,8 @@ Offer options: (1) Run `/nim-setup` now, (2) Switch to vLLM, (3) Abort. **WAIT f
 
 The response shows existing runtimes and available templates with their supported model formats and `requires_instantiation` flag.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1alpha1`, `kind: ServingRuntime`, `namespace: [target]` to list namespace runtimes, and `kind: ClusterServingRuntime` for platform templates. Filter by label `opendatahub.io/dashboard=true`.
+
 If the needed runtime shows `requires_instantiation: true`, it must first be instantiated via `/serving-runtime-config` or the rhoai `create_serving_runtime` tool.
 
 Use the runtime list to select the correct `runtime` name for the deployment.
@@ -254,6 +261,38 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 
 **Note**: For NIM deployments, ensure the NGC API key secret is referenced. If `deploy_model` does not support NIM-specific env vars, fall back to `resources_create_or_update` (from openshift) with a NIM InferenceService YAML that includes `spec.predictor.env` referencing the `ngc-api-key` secretKeyRef.
 
+#### GPU Toleration Handling
+
+After `deploy_model` succeeds (or after creating InferenceService via OpenShift fallback), check if GPU tolerations are needed:
+
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `v1`, `kind`: `Node`, `labelSelector`: `nvidia.com/gpu.present=true`
+
+If GPU nodes have taints (check `.spec.taints[]`), patch the InferenceService to add matching tolerations:
+
+**MCP Tool**: `resources_create_or_update` (from openshift)
+
+Add tolerations to `spec.predictor.tolerations` matching the discovered taints. Common GPU taints include:
+- `nvidia.com/gpu` (Exists/NoSchedule)
+- `ai-app=true` (Equal/NoSchedule)
+- `ai-node=big` (Equal/NoSchedule)
+
+After patching, delete the stuck Pending pod to force rescheduling with the new tolerations.
+
+See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#toleration-post-deploy-patch) for the complete pattern.
+
+#### NIM Deployment via OpenShift
+
+When deploying with NIM runtime and `deploy_model` does not support NIM-specific env vars (NGC_API_KEY secretKeyRef, NIM_MAX_MODEL_LEN, image pull secrets):
+
+Use `resources_create_or_update` (from openshift) with the NIM InferenceService template from [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#inferenceservice-nim).
+
+**Key NIM-specific fields:**
+- `spec.predictor.containers[0].env` with NGC_API_KEY from secretKeyRef
+- `spec.predictor.imagePullSecrets` referencing `ngc-image-pull-secret`
+- Use a specific image tag (e.g., `1.8.3`) — the `latest` tag may have CUDA driver incompatibility
+- Set `NIM_MAX_MODEL_LEN` to prevent KV cache OOM (use `16384` for T4 GPUs)
+
 **Error Handling**:
 - If namespace not found -> Report error, suggest creating namespace or using `/ds-project-setup`
 - If ServingRuntime not found -> Report error, verify runtime name, suggest `/serving-runtime-config`
@@ -266,6 +305,8 @@ Poll InferenceService status until ready or timeout (10 minutes).
 
 **MCP Tool**: `get_inference_service` (from rhoai)
 - `name`: deployment name, `namespace`: target namespace, `verbosity`: `"full"`
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `name: [model-name]`, `namespace: [namespace]`. Check `.status.conditions` for `Ready=True`.
 
 Check the Ready condition and status. Repeat every 15-30 seconds until Ready=True or timeout.
 
@@ -284,6 +325,8 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 
 **MCP Tool**: `get_model_endpoint` (from rhoai)
 - `name`: deployment name, `namespace`: target namespace
+
+**If rhoai unavailable or returns error**: Extract endpoint from `resources_get` (from openshift) on the InferenceService — the URL is in `.status.url`.
 
 **Report success** showing: model name, runtime, namespace, GPUs, inference endpoint URL, API type (OpenAI-compatible REST), and next steps (`/ai-observability`, `/model-monitor`, `/guardrails-config`).
 
@@ -355,6 +398,30 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
            effect: "NoSchedule"
    ```
 3. **Prevention**: Step 1 pre-flight validation now auto-discovers GPU node taints and generates tolerations
+
+### Issue: Pod Stuck Pending Due to GPU Node Taints
+
+**Error**: Pod shows "0/N nodes are available: node(s) had untolerated taint" in events
+
+**Cause**: `deploy_model` does not support tolerations. GPU nodes in production clusters are almost always tainted.
+
+**Solution**: Patch InferenceService with tolerations matching the GPU node taints, then delete the stuck pod. See [common-issues.md](../references/common-issues.md#deploy-model-missing-gpu-tolerations) for details.
+
+### Issue: NIM CUDA Driver Incompatibility
+
+**Error**: NIM container crashes with error code 803 or CUDA-related errors
+
+**Cause**: The `latest` NIM image tag may bundle a CUDA version incompatible with the GPU node's driver.
+
+**Solution**: Pin NIM image to a specific tag compatible with the cluster's GPU driver version (e.g., `1.8.3` for T4 nodes with older drivers). Check the NVIDIA NIM release notes for driver compatibility.
+
+### Issue: Stale ReplicaSets After InferenceService Patch
+
+**Error**: Multiple ReplicaSets exist after patching the InferenceService (e.g., adding tolerations), causing duplicate Pending pods
+
+**Cause**: Each InferenceService spec change triggers a new ReplicaSet. Old ReplicaSets are not automatically cleaned up.
+
+**Solution**: Scale down stale ReplicaSets to 0 replicas via `resources_create_or_update` (from openshift), or delete them. Identify the current ReplicaSet by checking which one has the latest creation timestamp.
 
 ## Dependencies
 

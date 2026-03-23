@@ -28,30 +28,37 @@ Create and manage Jupyter notebook workbenches on Red Hat OpenShift AI. Handles 
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools** (from rhoai):
+**Required MCP Tools** (from openshift):
+- `resources_get` - Inspect Notebook CR details, ImageStream details, check node GPU availability
+- `resources_list` - List ImageStreams for notebook image discovery, list PVCs, list Notebooks
+- `resources_create_or_update` - Create/update Notebook CR, PVC, patch annotations for start/stop (OpenShift fallback)
+- `resources_delete` - Delete Notebook CR, PVC (OpenShift fallback for delete operations)
+- `events_list` - Check pod events when workbench is stuck
+- `pods_list` - Check workbench pod status
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
 - `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
-- `list_notebook_images` - List available notebook container images (PyTorch, TensorFlow, Standard DS, etc.)
 - `list_workbenches` - List existing workbenches in a project
 - `get_workbench` - Get workbench details (status, image, resources, storage)
 - `create_workbench` - Create a new Notebook CR with image, resources, and storage
-- `start_workbench` - Start a stopped workbench
-- `stop_workbench` - Stop a running workbench
-- `delete_workbench` - Delete a workbench
+- `start_workbench` - Start a stopped workbench. **Known issue**: may fail with "Unsupported Media Type" — use annotation patch fallback.
+- `stop_workbench` - Stop a running workbench. **Known issue**: may fail — use annotation patch fallback.
+- `delete_workbench` - Delete a workbench. **Known issue**: may return "Dangerous operations are disabled" — use `resources_delete` fallback.
 - `get_workbench_url` - Get the OAuth-protected notebook URL
 - `list_storage` - List PVCs in the project
 - `create_storage` - Create a PVC for workbench storage
 - `delete_storage` - Delete a PVC
 - `list_data_connections` - List data connections available to attach
 
-**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
-
-**Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Inspect Notebook CR details, check node GPU availability
-- `events_list` (from openshift) - Check pod events when workbench is stuck
-
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
+
+**Important**: Do NOT use `list_notebook_images` (from rhoai) — it returns incorrect hardcoded image names that cause broken deployments. Always use the ImageStream lookup pattern described below.
 
 **Additional cluster requirements**:
 - Target namespace is an RHOAI Data Science Project (label: `opendatahub.io/dashboard: "true"`)
@@ -95,22 +102,37 @@ Verify the user-specified namespace appears in the project list. If not, report:
 **Route to the appropriate sub-workflow:**
 - Create -> Step 2
 - Start/Stop -> Step 5
-- List -> Use `list_workbenches`, display results, done
+- List -> Use `list_workbenches` (fallback: `resources_list` from openshift), display results, done
 - Delete -> Step 6
 
 ### Step 2: Gather Configuration (Create)
 
-**List available notebook images:**
+**Notebook Image Discovery** (replaces `list_notebook_images` which returns incorrect names):
 
-**MCP Tool**: `list_notebook_images` (from rhoai)
+**Step 1**: List notebook ImageStreams:
 
-**Parameters**: none
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `image.openshift.io/v1`, `kind`: `ImageStream`, `namespace`: `redhat-ods-applications`, `labelSelector`: `opendatahub.io/notebook-image=true`
+
+**Step 2**: For each ImageStream, get details:
+
+**MCP Tool**: `resources_get` (from openshift)
+
+Extract from each ImageStream:
+- `.metadata.name` — the actual image name (e.g., `pytorch`, NOT `jupyter-pytorch-notebook`)
+- `.spec.tags[].name` — available tags (e.g., `2024.1`)
+- `.spec.tags[].annotations["opendatahub.io/notebook-image-name"]` — display name
+- `.spec.tags[].from.name` — the full image reference to use in the Notebook CR
+
+**Present to user** as a selection table showing Image Name, Tag, and Display Name.
+
+See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#notebook-image-discovery-imagestream-lookup) for the complete pattern.
 
 **Present available images** in a table:
 
-| Image Name | Description |
-|------------|-------------|
-| [name] | [description] |
+| Image Name | Tag | Display Name |
+|------------|-----|--------------|
+| [name] | [tag] | [display_name] |
 
 **Ask the user for workbench configuration:**
 - **Workbench name**: DNS-compatible name (lowercase, hyphens, max 63 chars)
@@ -143,6 +165,8 @@ Verify the user-specified namespace appears in the project list. If not, report:
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 
+**If rhoai unavailable or returns error**: Use `resources_list`/`resources_create_or_update`/`resources_delete` (from openshift) for PersistentVolumeClaim resources. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#pvc-for-workbench-storage).
+
 If a suitable PVC already exists, ask user if they want to reuse it or create a new one.
 
 **Create PVC for workbench storage:**
@@ -154,6 +178,8 @@ If a suitable PVC already exists, ask user if they want to reuse it or create a 
 - `name`: PVC name (default: `[workbench-name]-storage`) - REQUIRED
 - `size`: storage size from Step 2 (e.g., `"20Gi"`) - REQUIRED
 - `access_mode`: `"ReadWriteOnce"` - REQUIRED (default, single-pod access)
+
+**If rhoai unavailable or returns error**: Use `resources_list`/`resources_create_or_update`/`resources_delete` (from openshift) for PersistentVolumeClaim resources. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#pvc-for-workbench-storage).
 
 **Verify creation:**
 
@@ -201,7 +227,7 @@ Check until status shows the workbench is running. If status does not become rea
 
 **Error Handling**:
 - If workbench name already exists -> Report: "Workbench `[name]` already exists. Choose a different name or manage the existing one."
-- If image not found -> Re-run `list_notebook_images` and suggest available alternatives
+- If image not found -> Re-run the ImageStream lookup pattern and suggest available alternatives
 - If RBAC error -> Report insufficient permissions to create Notebook CRs
 - If GPU unavailable -> Report: "Requested GPU resources not available on cluster nodes. Reduce GPU count or wait for resources."
 
@@ -230,6 +256,8 @@ Check until status shows the workbench is running. If status does not become rea
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: kubeflow.org/v1`, `kind: Notebook`, `namespace: [namespace]`.
+
 If user did not specify a workbench name, present the list and ask which one to manage.
 
 **For Start:**
@@ -241,6 +269,8 @@ Confirm the workbench is currently stopped. If already running, report its URL a
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 - `name`: workbench name - REQUIRED
+
+**If rhoai unavailable or returns error (e.g., "Unsupported Media Type")**: Patch the Notebook CR annotation via `resources_create_or_update` (from openshift) to remove the `kubeflow-resource-stopped` annotation (set to null or empty). See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#workbench-startstop-annotation-patch).
 
 **MCP Tool**: `get_workbench_url` (from rhoai)
 
@@ -260,6 +290,8 @@ Confirm the workbench is currently stopped. If already running, report its URL a
 - `namespace`: target namespace - REQUIRED
 - `name`: workbench name - REQUIRED
 
+**If rhoai unavailable or returns error**: Patch the Notebook CR via `resources_create_or_update` (from openshift) to set annotation `kubeflow-resource-stopped: "true"`. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#workbench-startstop-annotation-patch).
+
 **Verify state change:**
 
 **MCP Tool**: `get_workbench` (from rhoai)
@@ -267,6 +299,8 @@ Confirm the workbench is currently stopped. If already running, report its URL a
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 - `name`: workbench name - REQUIRED
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: kubeflow.org/v1`, `kind: Notebook`, `name: [name]`, `namespace: [namespace]`.
 
 **Output to user**: "Workbench `[name]` stopped. Persistent storage is preserved. Use `/workbench-manage` to start it again."
 
@@ -283,6 +317,8 @@ Confirm the workbench is currently stopped. If already running, report its URL a
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 - `name`: workbench name - REQUIRED
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: kubeflow.org/v1`, `kind: Notebook`, `name: [name]`, `namespace: [namespace]`.
 
 **Display workbench details and data loss warning:**
 
@@ -305,6 +341,8 @@ Confirm the workbench is currently stopped. If already running, report its URL a
 - `namespace`: target namespace - REQUIRED
 - `name`: workbench name - REQUIRED
 
+**If rhoai unavailable or returns error (e.g., "Dangerous operations are disabled")**: Use `resources_delete` (from openshift) with `apiVersion: kubeflow.org/v1`, `kind: Notebook`, `name: [workbench-name]`, `namespace: [namespace]`. WAIT for user confirmation before deleting — warn about data loss.
+
 **Associated storage cleanup** (separate confirmation):
 
 **Ask**: "The PVC `[pvc_name]` ([size]) associated with this workbench still exists. Delete it too? WARNING: All data in this volume will be permanently lost. (yes/no)"
@@ -318,6 +356,8 @@ If user confirms PVC deletion:
 **Parameters**:
 - `namespace`: target namespace - REQUIRED
 - `name`: PVC name - REQUIRED
+
+**If rhoai unavailable or returns error**: Use `resources_list`/`resources_create_or_update`/`resources_delete` (from openshift) for PersistentVolumeClaim resources. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#pvc-for-workbench-storage).
 
 If user declines, report: "PVC `[pvc_name]` preserved. It can be reattached to a new workbench."
 
@@ -334,9 +374,19 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
 **Cause**: The selected image name does not match any available notebook image, or the image registry is unreachable.
 
 **Solution:**
-1. Run `list_notebook_images` to see current available images
+1. Run the ImageStream lookup pattern to see current available images
 2. Verify the exact image name (case-sensitive)
 3. If no images are listed, the RHOAI operator may not have imported notebook images -- contact cluster administrator
+
+### Issue: Workbench Created with Wrong Image (ImagePullBackOff)
+
+**Error**: Workbench pod stuck in `ImagePullBackOff` after creation
+
+**Cause**: The `list_notebook_images` tool returned incorrect image names (e.g., `jupyter-pytorch-notebook` instead of the actual ImageStream name `pytorch`).
+
+**Solution**: This tool has been replaced. Use the ImageStream lookup pattern via OpenShift MCP to discover correct image names. Patch the stuck Notebook CR with the correct image reference from the ImageStream, then delete the stuck pod to force rescheduling.
+
+See [common-issues.md](../references/common-issues.md#notebook-image-names-mismatch) for details.
 
 ### Issue 2: PVC Binding Failure
 

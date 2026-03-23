@@ -24,18 +24,19 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
-
-**Required MCP Tools** (from rhoai):
-- `list_serving_runtimes` - List available runtimes and platform templates with supported model formats
-- `create_serving_runtime` - Instantiate a serving runtime from a platform template (no YAML needed)
-- `list_data_science_projects` - Validate namespace is an RHOAI project
-
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
 **Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Inspect existing ServingRuntime CRs in detail
-- `resources_create_or_update` (from openshift) - Create fully custom ServingRuntime CR (when not using templates)
+- `resources_get` - Inspect existing ServingRuntime CRs in detail
+- `resources_list` - List ServingRuntime and ClusterServingRuntime CRs (OpenShift fallback)
+- `resources_create_or_update` - Create fully custom ServingRuntime CR (when not using templates, or as fallback)
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
+- `list_serving_runtimes` - List available runtimes and platform templates with supported model formats
+- `create_serving_runtime` - Instantiate a serving runtime from a platform template (no YAML needed)
+- `list_data_science_projects` - Validate namespace is an RHOAI project
 
 **Optional MCP Server**: `ai-observability` ([AI Observability MCP](https://github.com/rh-ai-quickstart/ai-observability-summarizer))
 
@@ -43,6 +44,8 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 - `list_models` - Verify deployed models use the new runtime
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 ## When to Use This Skill
 
@@ -70,6 +73,8 @@ Configure custom ServingRuntime custom resources on Red Hat OpenShift AI. Use wh
 
 Verify the user-specified namespace is an RHOAI Data Science Project.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true`.
+
 **Error Handling**:
 - If namespace not found in project list -> Report: "Namespace `[namespace]` is not an RHOAI Data Science Project. Use `/ds-project-setup` to create one, or specify a different namespace." **WAIT for user decision.**
 
@@ -88,6 +93,8 @@ Verify the user-specified namespace is an RHOAI Data Science Project.
 **Parameters**:
 - `namespace`: validated namespace from Step 1 - REQUIRED
 - `include_templates`: `true` - REQUIRED (shows both existing runtimes and platform templates)
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1alpha1`, `kind: ServingRuntime`, `namespace: [namespace]` for namespace runtimes, and `kind: ClusterServingRuntime` for platform templates. Filter by label `opendatahub.io/dashboard=true` and check `spec.supportedModelFormats` for compatibility.
 
 **Present findings** in a table:
 
@@ -204,6 +211,8 @@ Display the ServingRuntime YAML to the user, **redacting any sensitive values**.
 
 The response includes the created runtime name, display name, and supported model formats.
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) to fetch the ClusterServingRuntime template, copy its spec to a namespace-scoped ServingRuntime, and create via `resources_create_or_update` (from openshift). See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#servingruntime) for the pattern.
+
 **If creating a fully custom runtime** (custom container image, non-template configuration):
 
 **MCP Tool**: `resources_create_or_update` (from openshift)
@@ -227,6 +236,8 @@ The response includes the created runtime name, display name, and supported mode
 - `include_templates`: `false`
 
 Verify the runtime appears in the namespace runtime list.
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1alpha1`, `kind: ServingRuntime`, `namespace: [namespace]` for namespace runtimes, and `kind: ClusterServingRuntime` for platform templates. Filter by label `opendatahub.io/dashboard=true` and check `spec.supportedModelFormats` for compatibility.
 
 For detailed inspection:
 

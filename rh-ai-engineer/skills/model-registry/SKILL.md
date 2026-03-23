@@ -24,20 +24,6 @@ Register, version, and manage ML models in the Red Hat OpenShift AI Model Regist
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
-
-**Required MCP Tools** (from rhoai):
-- `list_registered_models` - List registered models with pagination, auto-detects Registry vs Catalog
-- `get_registered_model` - Get model details by ID, optionally with all versions
-- `list_model_versions` - List versions of a registered model with pagination
-- `get_model_version` - Get specific version details (state, author, custom properties)
-- `get_model_artifacts` - Get artifacts (storage URIs) for a model version
-- `get_model_benchmarks` - Get benchmark data (latency, throughput, GPU memory)
-- `list_catalog_sources` - List Model Catalog source categories
-- `get_catalog_model_artifacts` - Get artifacts from Model Catalog entries
-- `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
-- `list_data_connections` - Verify S3 data connections exist in target namespace (for promotion)
-
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
 **Required MCP Tools** (from openshift):
@@ -45,7 +31,27 @@ Register, version, and manage ML models in the Red Hat OpenShift AI Model Regist
 - `resources_get` (from openshift) - Inspect Model Registry instance and CRs
 - `resources_list` (from openshift) - List Model Registry instances and resources
 
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
+- `list_registered_models` - List registered models with pagination, auto-detects Registry vs Catalog
+- `get_registered_model` - Get model details by ID, optionally with all versions
+- `list_model_versions` - List versions of a registered model with pagination
+- `get_model_version` - Get specific version details (state, author, custom properties)
+- `get_model_artifacts` - Get artifacts (storage URIs) for a model version
+- `get_model_benchmarks` - Get benchmark data (latency, throughput, GPU memory)
+- `get_catalog_model_artifacts` - Get artifacts from Model Catalog entries
+- `list_data_science_projects` - Validate namespace is an RHOAI Data Science Project
+- `list_data_connections` - Verify S3 data connections exist in target namespace (for promotion)
+
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
+
+**Important**: Model Registry RHOAI tools may fail with DNS/connection errors because the RHOAI MCP server runs outside the cluster and cannot resolve internal service DNS names. If this happens:
+1. Check if an external Route exists: `resources_list` (from openshift) Routes in the model registry namespace
+2. If no Route: set up port-forwarding — `oc port-forward svc/modelregistry-sample 8085:8085 -n rhoai-model-registries`
+3. For registry CRUD: use `resources_create_or_update` / `resources_get` / `resources_list` via OpenShift MCP for RegisteredModel, ModelVersion, and ModelArtifact CRs
 
 **Additional cluster requirements**:
 - Model Registry operator installed and a ModelRegistry instance deployed in the cluster
@@ -76,11 +82,13 @@ Ask the user what they want to do: **Browse** catalog, **List** models, **View**
 
 Ask for the target namespace (required except for catalog browsing). Validate via `list_data_science_projects` (from rhoai). If invalid, suggest `/ds-project-setup`.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true` to validate namespace is a Data Science Project.
+
 Route: Browse/List -> Step 2, View -> Step 3, Register -> Step 4, Version -> Step 5, Promote -> Step 6, Deploy -> Step 7.
 
 ### Step 2: Browse Model Catalog / List Registered Models
 
-For catalog browsing, first use `list_catalog_sources` (from rhoai) to show available sources.
+For catalog browsing, use `resources_list` (from openshift) with the appropriate catalog source CRD to show available sources.
 
 **MCP Tool**: `list_registered_models` (from rhoai)
 
@@ -88,6 +96,8 @@ For catalog browsing, first use `list_catalog_sources` (from rhoai) to show avai
 - `source_label`: catalog source filter (e.g., `"Red Hat AI validated"`) - OPTIONAL (Model Catalog only)
 - `limit`: number of models to return - OPTIONAL
 - `verbosity`: `"standard"` or `"minimal"` - OPTIONAL
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: modelregistry.opendatahub.io/v1alpha1`, `kind: RegisteredModel`.
 
 For catalog model artifacts, use `get_catalog_model_artifacts` (from rhoai) with `model_name` (REQUIRED).
 
@@ -98,7 +108,11 @@ For catalog model artifacts, use `get_catalog_model_artifacts` (from rhoai) with
 
 Use `get_registered_model` (from rhoai) with `model_id` and `include_versions=true` to get model details with version summary.
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: modelregistry.opendatahub.io/v1alpha1`, `kind: RegisteredModel`, `name: [name]`, `namespace: [namespace]`.
+
 For version listing, use `list_model_versions` (from rhoai) with `model_id` (REQUIRED).
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: modelregistry.opendatahub.io/v1alpha1`, `kind: ModelVersion`.
 
 For specific version details: `get_model_version` (from rhoai) with `version_id` (REQUIRED).
 
@@ -184,7 +198,15 @@ Delegate to `/model-deploy` with the extracted storage URI and model format.
 **Cause**: Model Registry operator not installed or no ModelRegistry instance created.
 **Solution**: Check via `resources_list` (from openshift) for `ModelRegistry` CRs. If missing, install via OperatorHub.
 
-### Issue 2: Artifact Storage Inaccessible During Promotion
+### Issue 2: Model Registry Unreachable from MCP
+
+**Error**: RHOAI MCP tools for model registry return connection errors or 404
+
+**Cause**: The RHOAI MCP server runs outside the cluster and cannot resolve cluster-internal DNS. External routes may also be behind an OAuth proxy.
+
+**Solution**: See [common-issues.md](../references/common-issues.md#model-registry-internal-dns-unreachable) for port-forwarding and Route-based solutions.
+
+### Issue 3: Artifact Storage Inaccessible During Promotion
 **Cause**: PVC-based storage is namespace-local; S3 credentials may not exist in the target namespace.
 **Solution**: For S3, verify data connection exists in target namespace via `list_data_connections`. For PVCs, recommend migrating to S3 for cross-namespace portability.
 

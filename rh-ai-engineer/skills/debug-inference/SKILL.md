@@ -24,20 +24,21 @@ Troubleshoot failed, stuck, or slow InferenceService deployments on Red Hat Open
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
-
-**Required MCP Tools** (from rhoai):
-- `list_inference_services` - List deployed models with structured status data
-- `get_inference_service` - Get detailed deployment status (conditions, endpoint, ready state)
-- `get_model_endpoint` - Quick check if endpoint is available (early diagnostic)
-
 **Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
 **Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Get ServingRuntime, NIM Account CR details
-- `pods_list` (from openshift) - Find predictor/transformer pods
-- `pods_log` (from openshift) - Retrieve container logs
-- `events_list` (from openshift) - Check events for errors
+- `resources_get` - Get ServingRuntime, NIM Account CR, InferenceService details
+- `resources_list` - List InferenceServices (OpenShift fallback)
+- `pods_list` - Find predictor/transformer pods
+- `pods_log` - Retrieve container logs
+- `events_list` - Check events for errors
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
+- `list_inference_services` - List deployed models with structured status data
+- `get_inference_service` - Get detailed deployment status (conditions, endpoint, ready state)
+- `get_model_endpoint` - Quick check if endpoint is available (early diagnostic)
 
 **Optional MCP Server**: `ai-observability` ([AI Observability MCP](https://github.com/rh-ai-quickstart/ai-observability-summarizer))
 
@@ -53,6 +54,8 @@ Troubleshoot failed, stuck, or slow InferenceService deployments on Red Hat Open
 - `korrel8r_get_correlated` - Correlate signals (logs, traces, metrics, alerts) across a pod/namespace for root cause analysis
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - An existing InferenceService deployment to debug
@@ -88,6 +91,8 @@ If user says "list all" or is unsure:
 - `namespace`: user-specified namespace - REQUIRED
 - `verbosity`: `"standard"` - OPTIONAL
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `namespace: [namespace]`.
+
 Present InferenceServices with their status:
 
 | Name | Runtime | Ready | URL | Age |
@@ -105,10 +110,14 @@ Present InferenceServices with their status:
 - `namespace`: user-specified namespace - REQUIRED
 - `verbosity`: `"full"` - REQUIRED
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `name: [name]`, `namespace: [namespace]`. Extract status from `.status.conditions`.
+
 **Early endpoint check:**
 
 **MCP Tool**: `get_model_endpoint` (from rhoai)
 - `name`: the InferenceService name, `namespace`: user-specified namespace
+
+**If rhoai unavailable or returns error**: Extract endpoint from `.status.url` of the InferenceService obtained via `resources_get` (from openshift).
 
 An empty or error URL indicates deployment issues. Report endpoint availability status.
 
