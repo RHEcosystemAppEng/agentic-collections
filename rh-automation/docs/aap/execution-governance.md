@@ -11,7 +11,7 @@ sources:
     sections: "Ch. 15: Sec. 15.1.4 Remove user access to credentials, Sec. 15.1.5 Enforce separation of duties"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.5 - Workflows"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows
     sections: "Ch. 9: Workflow RBAC, approval nodes, failure handling"
     date_accessed: 2026-02-20
   - title: "Red Hat Ansible Best Practices - Check Mode"
@@ -19,7 +19,7 @@ sources:
     sections: "Check mode, diff mode, limitations with shell/command modules"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP Controller Best Practices"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-best-practices
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-tips-and-tricks
     sections: "Inventory management, environment separation"
     date_accessed: 2026-02-20
 tags: [execution, governance, check-mode, risk-classification, rollback, phased-rollout, extra-vars, secret-scanning]
@@ -547,9 +547,9 @@ The complete governed execution workflow:
 
 2. Red Hat AAP 2.5, Configuring Automation Execution -- Security Best Practices (Ch. 15). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-security-best-practices. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-3. Red Hat AAP 2.5, Automation Controller User Guide -- Workflows (Ch. 9). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+3. Red Hat AAP 2.5, Automation Controller User Guide -- Workflows (Ch. 9). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-4. Red Hat AAP 2.5, Configuring Automation Execution -- Controller Best Practices. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-best-practices. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+4. Red Hat AAP 2.5, Configuring Automation Execution -- Controller Best Practices. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-tips-and-tricks. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
 5. Ansible Playbook Guide -- Check Mode. https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_checkmode.html. Accessed 2026-02-20.
 
