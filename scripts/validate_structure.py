@@ -177,6 +177,63 @@ def validate_agents(pack_dir: str) -> List[str]:
     return errors
 
 
+CLAUDE_MD_REQUIRED_SECTIONS = [
+    "Skill-First Rule",
+    "Intent Routing",
+    "MCP Servers",
+    "Global Rules",
+]
+
+
+def validate_claude_md(pack_dir: str) -> List[str]:
+    """
+    Validate CLAUDE.md presence and structure.
+
+    Required for any pack that has skills. Checks for required sections
+    and verifies that all skills appear in the intent routing content.
+
+    Args:
+        pack_dir: Pack directory name
+
+    Returns:
+        List of error messages (empty if valid)
+    """
+    errors = []
+    claude_path = Path(pack_dir) / 'CLAUDE.md'
+    skills_dir = Path(pack_dir) / 'skills'
+
+    has_skills = skills_dir.exists() and any(skills_dir.glob('*/SKILL.md'))
+
+    if not claude_path.exists():
+        if has_skills:
+            errors.append(f"{pack_dir}: Missing CLAUDE.md (required for packs with skills)")
+        return errors
+
+    try:
+        with open(claude_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Check required sections
+        headings = re.findall(r'^## (.+)$', content, re.MULTILINE)
+        for section in CLAUDE_MD_REQUIRED_SECTIONS:
+            if not any(section in h for h in headings):
+                errors.append(f"{pack_dir}: CLAUDE.md missing required section '## {section}'")
+
+        # Check intent routing completeness
+        if has_skills:
+            skill_names = [p.parent.name for p in skills_dir.glob('*/SKILL.md')]
+            for skill_name in skill_names:
+                if skill_name not in content:
+                    errors.append(
+                        f"{pack_dir}: CLAUDE.md intent routing missing skill '{skill_name}'"
+                    )
+
+    except Exception as e:
+        errors.append(f"{pack_dir}: Error reading CLAUDE.md: {e}")
+
+    return errors
+
+
 def validate_pack(pack_dir: str) -> List[str]:
     """
     Validate a single pack.
@@ -199,6 +256,9 @@ def validate_pack(pack_dir: str) -> List[str]:
 
     # Validate .mcp.json
     errors.extend(validate_mcp_json(pack_dir))
+
+    # Validate CLAUDE.md
+    errors.extend(validate_claude_md(pack_dir))
 
     # Validate skills
     errors.extend(validate_skills(pack_dir))
