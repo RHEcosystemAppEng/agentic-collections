@@ -151,7 +151,7 @@ jobs:
             echo "*Automated review by Gemini 3.1 Pro | Rules: CLAUDE.md, SKILL_DESIGN_PRINCIPLES.md*"
           } > /tmp/comment.md
 
-          EXISTING_COMMENT_ID=$(gh api \
+          EXISTING_COMMENT_ID=$(gh api --paginate \
             "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
             --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
             | head -1)
