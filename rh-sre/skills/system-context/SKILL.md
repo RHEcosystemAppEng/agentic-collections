@@ -3,9 +3,15 @@ name: system-context
 description: |
   **CRITICAL**: This skill must be used for system inventory and context gathering. DO NOT use raw MCP tools like get_cve_systems or get_host_details directly.
 
-  Gather comprehensive system inventory and deployment context for CVE-affected systems, including RHEL version detection, environment classification, and deployment analysis. Use this skill when you need to understand system infrastructure before planning remediation.
+  Gather system inventory and deployment context for CVE-affected systems, including RHEL version detection, environment classification, and deployment analysis.
 
-  This skill orchestrates MCP tools (get_cve_systems, get_host_details) to provide comprehensive system analysis with RHEL version detection, environment classification, and remediation strategy determination.
+  Use when:
+  - "What systems are affected by CVE-X?"
+  - "Gather system context for remediation planning"
+  - "Analyze deployment architecture for CVE"
+  - "Detect RHEL versions across affected systems"
+
+  This skill orchestrates MCP tools (get_cve_systems, get_host_details) for system analysis.
 
   **IMPORTANT**: ALWAYS use this skill instead of calling get_cve_systems or get_host_details directly for system context gathering.
 ---

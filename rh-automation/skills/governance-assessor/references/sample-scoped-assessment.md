@@ -70,4 +70,4 @@ Would you like me to run the full 7-domain assessment for complete coverage?
 ### Sources Consulted
 
 - Red Hat AAP 2.5 - Security Best Practices: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-security-best-practices
-- Red Hat AAP 2.5 - RBAC: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-role-based-access-controls
+- Red Hat AAP 2.5 - RBAC: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/access_management_and_authentication/gw-managing-access
