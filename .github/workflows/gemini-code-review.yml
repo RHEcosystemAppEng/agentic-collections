@@ -68,6 +68,22 @@ jobs:
 
           head -c 50000 /tmp/project_rules.txt > /tmp/project_rules_truncated.txt
 
+      - name: Build system instruction
+        if: steps.diff.outputs.diff_size != '0'
+        run: |
+          cp .github/gemini-review-prompt.md /tmp/system_instruction.txt
+
+          if [ "${{ steps.diff.outputs.truncated }}" = "true" ]; then
+            printf '\n\nNote: This diff was truncated due to size. Review covers the first ~200KB only.' \
+              >> /tmp/system_instruction.txt
+          fi
+
+          {
+            cat /tmp/system_instruction.txt
+            printf '\n\n---\n\nPROJECT RULES REFERENCE:\n\n'
+            cat /tmp/project_rules_truncated.txt
+          } > /tmp/system_full.txt
+
       - name: Review with Gemini
         if: steps.diff.outputs.diff_size != '0'
         env:
@@ -78,25 +94,16 @@ jobs:
             exit 1
           fi
 
-          SYSTEM_PROMPT=$(cat .github/gemini-review-prompt.md)
-
-          if [ "${{ steps.diff.outputs.truncated }}" = "true" ]; then
-            SYSTEM_PROMPT="${SYSTEM_PROMPT}
-
-          Note: This diff was truncated due to size. Review covers the first ~200KB only."
-          fi
-
-          RULES_CONTEXT=$(cat /tmp/project_rules_truncated.txt)
-          DIFF_CONTENT=$(cat /tmp/pr_truncated.diff)
-
           jq -n \
-            --arg system "$SYSTEM_PROMPT" \
-            --arg rules "$RULES_CONTEXT" \
-            --arg diff "$DIFF_CONTENT" \
+            --rawfile system /tmp/system_full.txt \
+            --rawfile diff /tmp/pr_truncated.diff \
             '{
+              "systemInstruction": {
+                "parts": [{ "text": $system }]
+              },
               "contents": [{
                 "parts": [{
-                  "text": ($system + "\n\n---\n\nPROJECT RULES REFERENCE:\n\n" + $rules + "\n\n---\n\nPULL REQUEST DIFF:\n\n" + $diff)
+                  "text": ("Review the following pull request diff:\n\n" + $diff)
                 }]
               }],
               "generationConfig": {
@@ -127,12 +134,15 @@ jobs:
 
           echo "$REVIEW" > /tmp/review.md
 
-      - name: Post review comment
+      - name: Post or update review comment
         if: steps.diff.outputs.diff_size != '0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          MARKER="<!-- gemini-code-review -->"
+
           {
+            echo "$MARKER"
             echo "## Gemini Code Review"
             echo ""
             cat /tmp/review.md
@@ -141,6 +151,18 @@ jobs:
             echo "*Automated review by Gemini 3.1 Pro | Rules: CLAUDE.md, SKILL_DESIGN_PRINCIPLES.md*"
           } > /tmp/comment.md
 
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --repo "${{ github.repository }}" \
-            --body-file /tmp/comment.md
+          EXISTING_COMMENT_ID=$(gh api \
+            "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
+            | head -1)
+
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT_ID" \
+              -f body="$(cat /tmp/comment.md)"
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --repo "${{ github.repository }}" \
+              --body-file /tmp/comment.md
+          fi
