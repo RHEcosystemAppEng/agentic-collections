@@ -39,7 +39,7 @@ Shared troubleshooting patterns that apply to multiple rh-ai-engineer skills. In
 2. Reduce `--max-model-len` to lower KV cache memory usage
 3. Use a quantized model variant (AWQ/GPTQ/FP8) to reduce memory footprint
 4. Verify GPU VRAM is sufficient using `get_gpu_info`
-5. Consult [known-model-profiles.md](known-model-profiles.md) for correct resource sizing
+5. Consult [known-model-profiles.md](../../docs/references/known-model-profiles.md) for correct resource sizing
 
 ## Image Pull Error from nvcr.io (NIM)
 
