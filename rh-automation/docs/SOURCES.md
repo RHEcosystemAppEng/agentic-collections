@@ -23,7 +23,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 2. Red Hat AAP 2.5 - Automation Controller User Guide: Workflows (Ch. 9)
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows
 
 **Sections Used**:
 - Workflow job templates
@@ -38,7 +38,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 3. Red Hat AAP 2.5 - Automation Controller User Guide: Notifications (Ch. 25)
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-notifications
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-notifications
 
 **Sections Used**:
 - Notification templates
@@ -53,7 +53,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 4. Red Hat AAP 2.5 - Automation Controller User Guide: RBAC (Ch. 4)
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-role-based-access-controls
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/access_management_and_authentication/gw-managing-access
 
 **Sections Used**:
 - Role-based access controls
@@ -68,7 +68,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 5. Red Hat AAP 2.5 - Configuring Automation Execution: Instance Groups (Ch. 17)
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-instance-groups
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-instance-groups
 
 **Sections Used**:
 - Instance groups for workload isolation
@@ -83,7 +83,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 6. Red Hat AAP 2.5 - Automation Controller User Guide: Activity Stream
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-activity-stream
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/assembly-controller-activity-stream
 
 **Sections Used**:
 - Activity stream audit logging
@@ -112,7 +112,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 8. Red Hat AAP 2.6 - Hardening Guide
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/hardening_guide
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/hardening_and_compliance/index
 
 **Sections Used**:
 - Platform hardening
@@ -159,7 +159,7 @@ All documentation in this collection is derived from or references official Red 
 
 ### 11. Red Hat AAP 2.5 - Configuring Automation Execution: Controller Best Practices
 
-**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-best-practices
+**URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-tips-and-tricks
 
 **Sections Used**:
 - Inventory management

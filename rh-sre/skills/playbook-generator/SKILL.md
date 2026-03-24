@@ -3,7 +3,12 @@ name: playbook-generator
 description: |
   **CRITICAL**: This skill ONLY GENERATES playbooks. It does NOT EXECUTE them. For execution, use /playbook-executor skill.
 
-  Generate production-ready Ansible remediation playbooks for CVE vulnerabilities with Red Hat best practices, error handling, and Kubernetes safety patterns. Use this skill when you need to create remediation playbooks that follow Red Hat Lightspeed patterns and incorporate RHEL-specific considerations.
+  Generate production-ready Ansible remediation playbooks for CVE vulnerabilities with Red Hat best practices, error handling, and Kubernetes safety patterns.
+
+  Use when:
+  - "Generate a remediation playbook for CVE-X"
+  - "Create playbook for these CVEs"
+  - "Get remediation playbook from Lightspeed"
 
   This skill calls the MCP tool (remediations__create_vuln_playbook) and returns the playbook **AS IS**. Do NOT modify, enhance, or add to the generated playbook. Any change requires explicit user validation first.
 
@@ -122,6 +127,26 @@ Before returning, verify only:
 - No modifications were applied
 
 Do NOT validate for "best practices" or add missing elements—return AS IS.
+
+## Dependencies
+
+### Required MCP Servers
+- `lightspeed-mcp` - Red Hat Lightspeed platform access
+
+### Required MCP Tools
+- `remediations__create_vuln_playbook` (from lightspeed-mcp) - Generate remediation playbook from Red Hat Lightspeed
+  - Parameters: playbook_name, cves (array), uuids (array of system UUIDs)
+  - Returns: Ansible playbook YAML—**return AS IS**, do not modify
+
+### Related Skills
+- `cve-impact` - Provides CVE severity and risk assessment to inform playbook complexity
+- `system-context` - Provides system inventory and deployment context for playbook targeting
+- `remediation-verifier` - Verifies playbook execution success after deployment
+- `playbook-executor` - Executes generated playbooks and tracks job status
+
+### Reference Documentation
+- [cve-remediation-templates.md](../../docs/ansible/cve-remediation-templates.md) - Ansible playbook templates for different CVE types
+- [package-management.md](../../docs/rhel/package-management.md) - RHEL package management best practices (DNF vs YUM, reboot detection)
 
 ## Critical: Human-in-the-Loop Requirements
 
@@ -327,26 +352,6 @@ To generate Kubernetes-safe playbooks, ensure:
 
 Proceeding with standard playbook (without pod eviction). Add pod eviction manually if needed.
 ```
-
-## Dependencies
-
-### Required MCP Servers
-- `lightspeed-mcp` - Red Hat Lightspeed platform access
-
-### Required MCP Tools
-- `remediations__create_vuln_playbook` (from lightspeed-mcp) - Generate remediation playbook from Red Hat Lightspeed
-  - Parameters: playbook_name, cves (array), uuids (array of system UUIDs)
-  - Returns: Ansible playbook YAML—**return AS IS**, do not modify
-
-### Related Skills
-- `cve-impact` - Provides CVE severity and risk assessment to inform playbook complexity
-- `system-context` - Provides system inventory and deployment context for playbook targeting
-- `remediation-verifier` - Verifies playbook execution success after deployment
-- `playbook-executor` - Executes generated playbooks and tracks job status
-
-### Reference Documentation
-- [cve-remediation-templates.md](../../docs/ansible/cve-remediation-templates.md) - Ansible playbook templates for different CVE types
-- [package-management.md](../../docs/rhel/package-management.md) - RHEL package management best practices (DNF vs YUM, reboot detection)
 
 ## Best Practices
 

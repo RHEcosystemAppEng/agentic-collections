@@ -57,10 +57,17 @@ Use ✅ for success, ❌ for failure, ⚠️ for partial (e.g. one server OK, on
 
 ## Dependencies
 
+### Required MCP Servers
+- `aap-mcp-job-management` - AAP job template and execution
+- `aap-mcp-inventory-management` - AAP inventory management
+
 ### Required MCP Tools
 - `job_templates_list` (from aap-mcp-job-management) - Connectivity test
 - `inventories_list` (from aap-mcp-inventory-management) - Connectivity test
 
-### Required MCP Servers
-- `aap-mcp-job-management` - AAP job template and execution
-- `aap-mcp-inventory-management` - AAP inventory management
+### Related Skills
+- `/playbook-executor` - Requires AAP MCP validation before execution
+- `/job-template-creator` - Requires AAP MCP validation before template operations
+
+### Reference Documentation
+- [AAP Integration Test Guide](../../docs/testing/aap-integration-test-guide.md) - AAP MCP setup, env vars, connectivity verification

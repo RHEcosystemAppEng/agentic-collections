@@ -3,9 +3,15 @@ name: remediation-verifier
 description: |
   **CRITICAL**: This skill must be used for remediation verification. DO NOT use raw MCP tools like get_cve or get_host_details directly for verification.
 
-  Verify CVE remediation success by checking Red Hat Lightspeed CVE status, validating package versions, and confirming service health. Use this skill after executing remediation playbooks to ensure vulnerabilities are properly fixed.
+  Verify CVE remediation success by checking Red Hat Lightspeed CVE status, validating package versions, and confirming service health.
 
-  This skill orchestrates MCP tools (get_cve, get_cve_systems, get_host_details) to provide comprehensive remediation verification including CVE status checking, package version validation, and service health confirmation.
+  Use when:
+  - "Verify CVE remediation was successful"
+  - "Confirm package updates were applied"
+  - "Check if CVE-X is fixed on target systems"
+  - "Validate remediation after playbook execution"
+
+  This skill orchestrates MCP tools (get_cve, get_cve_systems, get_host_details) for remediation verification.
 
   **IMPORTANT**: ALWAYS use this skill instead of calling verification MCP tools directly.
 ---
@@ -365,6 +371,10 @@ When completing verification, provide output in this format:
 
 ### Reference Documentation
 - None required (verification skill uses MCP tool data)
+
+## Critical: Human-in-the-Loop Requirements
+
+Verification is read-only (no execution or modification). Report verification results to the user and wait for confirmation before concluding remediation workflow. On partial or failed verification, present troubleshooting options and wait for user decision.
 
 ## Best Practices
 
