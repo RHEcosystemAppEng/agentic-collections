@@ -92,8 +92,10 @@ Shared troubleshooting patterns that apply to multiple rh-ai-engineer skills. In
 **Cause**: The RHOAI MCP server may use a different authentication mechanism than the user's `oc` token, or the token may have expired. This was observed to cause a 78% failure rate across RHOAI tool calls in testing.
 
 **Solution:**
-1. Skills automatically fall back to OpenShift MCP tools when RHOAI tools fail — no user action needed
-2. If you want to restore RHOAI MCP functionality:
+1. Skills attempt OpenShift MCP fallback automatically when RHOAI tools fail
+2. **Inform the user** about the auth failure and suggest verifying their token:
+   - "Note: RHOAI tool returned Unauthorized. Falling back to OpenShift direct API. If you experience further issues, try `oc login` to refresh your token."
+3. If you want to restore RHOAI MCP functionality:
    - Re-login with `oc login` to refresh the token
    - Verify `RHOAI_MCP_KUBECONFIG_PATH` points to a valid, current kubeconfig
    - Restart Claude Code to reload MCP server connections

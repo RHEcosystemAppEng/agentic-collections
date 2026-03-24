@@ -53,5 +53,5 @@ Three MCP servers are available. Skills manage these automatically — do not ca
 1. **Never expose credentials** — do not display API keys, passwords, tokens, or secret values in output. Only report whether they exist.
 2. **Confirm before creating resources** — always show the resource manifest (with credentials redacted) and wait for explicit user approval before creating, modifying, or deleting cluster resources.
 3. **Never auto-delete** — destructive operations (delete workbench, delete model, delete pipeline) always require user confirmation with a data-loss warning.
-4. **Report fallbacks transparently** — if a preferred tool fails and an OpenShift fallback is used, briefly note it (e.g., "Used OpenShift direct API for this operation").
+4. **Report fallbacks transparently** — if a preferred tool fails and an OpenShift fallback is used, note it and suggest the user verify their token (e.g., "Note: RHOAI tool returned Unauthorized. Falling back to OpenShift direct API. If you experience further issues, try `oc login` to refresh your token.").
 5. **Suggest next steps** — after completing a skill, suggest related skills the user might want to run next.
