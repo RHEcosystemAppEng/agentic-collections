@@ -54,8 +54,15 @@ Use ✅ for success, ❌ for failure, ⚠️ for partial (e.g. connected but err
 
 ## Dependencies
 
+### Required MCP Servers
+- `lightspeed-mcp` - Red Hat Lightspeed vulnerability and inventory data
+
 ### Required MCP Tools
 - `vulnerability__get_cves` or `get_cves` (from lightspeed-mcp) - Connectivity test
 
-### Required MCP Servers
-- `lightspeed-mcp` - Red Hat Lightspeed vulnerability and inventory data
+### Related Skills
+- `/remediation` - Requires Lightspeed MCP validation before CVE operations
+- `/cve-validation`, `/cve-impact`, `/fleet-inventory` - All require Lightspeed MCP
+
+### Reference Documentation
+- [Red Hat Lightspeed Documentation Overview](../../docs/insights/README.md) - Lightspeed setup, CVE assessment, vulnerability logic

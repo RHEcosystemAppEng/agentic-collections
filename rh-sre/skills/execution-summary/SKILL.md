@@ -1,7 +1,14 @@
 ---
 name: execution-summary
 description: |
-  This skill should be used when the user asks to "generate execution summary", "create execution report", "summarize what was used", "show execution summary", or "what agents/skills/tools were used". Generates a concise report of agents, skills, tools, and documentation accessed during a workflow for audit and learning purposes.
+  Generates a concise report of agents, skills, tools, and documentation accessed during a workflow for audit and learning purposes.
+
+  Use when:
+  - "Generate execution summary"
+  - "Create execution report"
+  - "Summarize what was used"
+  - "Show execution summary"
+  - "What agents/skills/tools were used?"
 model: haiku
 color: blue
 ---
@@ -148,8 +155,11 @@ This summary shows all agents, skills, tools, and documentation used during the 
 
 ## Dependencies
 
-### Required Files
-- None (analyzes conversation history only)
+### Required MCP Servers
+None (analyzes conversation history only)
+
+### Required MCP Tools
+None (analyzes conversation history only)
 
 ### Related Skills
 - None (standalone reporting skill)

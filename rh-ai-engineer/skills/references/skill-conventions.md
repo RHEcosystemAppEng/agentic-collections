@@ -35,7 +35,7 @@ Skills MUST use this structure in their Prerequisites section:
 
 When an RHOAI MCP tool fails (Unauthorized, Unsupported Media Type, Unprocessable Entity, connection error, or any non-success response):
 
-1. **Do NOT prompt the user** about the failure — immediately attempt the OpenShift fallback
+1. **Attempt the OpenShift fallback immediately**, but **inform the user** about the auth issue — do not block on user input, proceed with the fallback while noting the issue
 2. **Use the equivalent operation** from [openshift-fallback-templates.md](openshift-fallback-templates.md)
 3. **Report the fallback transparently** in the output: "Note: Used OpenShift direct API (RHOAI tool returned [brief error description])."
 4. **Never fail a skill workflow** solely because an RHOAI tool is unavailable — always have an OpenShift alternative

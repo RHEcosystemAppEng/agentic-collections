@@ -7,19 +7,19 @@ sources:
     sections: "Ch. 15: Sec. 15.1.2 Minimize administrative accounts, Sec. 15.1.4 Remove user access to credentials, Sec. 15.1.5 Enforce separation of duties, Sec. 15.2.1 Use teams for role-based access, Sec. 15.2.2 External authentication"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.5 - Workflows"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows
     sections: "Ch. 9: Workflow job templates, Sec. 9.4 Workflow RBAC, approval nodes"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.5 - Notifications"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-notifications
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-notifications
     sections: "Ch. 25: Notification templates, inheritance hierarchy, notification types"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.5 - Instance Groups"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-instance-groups
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-instance-groups
     sections: "Ch. 17: Instance groups, policies, max_forks, resource isolation"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.5 - Activity Stream"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-activity-stream
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/assembly-controller-activity-stream
     sections: "Activity stream audit logging, event filtering"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.6 - Execution Environments"
@@ -27,11 +27,11 @@ sources:
     sections: "Custom EE creation, dependency pinning, ansible-builder"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.6 - Hardening Guide"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/hardening_guide
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/hardening_and_compliance/index
     sections: "Platform hardening, credential rotation, audit requirements"
     date_accessed: 2026-02-20
   - title: "Red Hat AAP 2.5 - RBAC"
-    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-role-based-access-controls
+    url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/access_management_and_authentication/gw-managing-access
     sections: "Ch. 4: Role-based access controls, role definitions, team assignments"
     date_accessed: 2026-02-20
 tags: [governance, readiness, assessment, rbac, credentials, workflows, notifications, execution-environments, instance-groups, audit, compliance]
@@ -929,19 +929,19 @@ Domains that can be addressed in parallel: [list independent domains]
 
 1. Red Hat AAP 2.5, Configuring Automation Execution -- Security Best Practices (Ch. 15). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-security-best-practices. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-2. Red Hat AAP 2.5, Automation Controller User Guide -- Workflows (Ch. 9). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+2. Red Hat AAP 2.5, Automation Controller User Guide -- Workflows (Ch. 9). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-3. Red Hat AAP 2.5, Automation Controller User Guide -- Notifications (Ch. 25). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-notifications. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+3. Red Hat AAP 2.5, Automation Controller User Guide -- Notifications (Ch. 25). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-notifications. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-4. Red Hat AAP 2.5, Automation Controller User Guide -- RBAC (Ch. 4). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-role-based-access-controls. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+4. Red Hat AAP 2.5, Automation Controller User Guide -- RBAC (Ch. 4). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/access_management_and_authentication/gw-managing-access. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-5. Red Hat AAP 2.5, Configuring Automation Execution -- Instance Groups (Ch. 17). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-instance-groups. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+5. Red Hat AAP 2.5, Configuring Automation Execution -- Instance Groups (Ch. 17). https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-instance-groups. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-6. Red Hat AAP 2.5, Automation Controller User Guide -- Activity Stream. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-activity-stream. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+6. Red Hat AAP 2.5, Automation Controller User Guide -- Activity Stream. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/assembly-controller-activity-stream. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
 7. Red Hat AAP 2.6, Creating and Consuming Execution Environments. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/creating_and_consuming_execution_environments. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
-8. Red Hat AAP 2.6, Hardening Guide. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/hardening_guide. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
+8. Red Hat AAP 2.6, Hardening Guide. https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/hardening_and_compliance/index. Accessed 2026-02-20. Content used under CC BY-SA 4.0.
 
 ---
 

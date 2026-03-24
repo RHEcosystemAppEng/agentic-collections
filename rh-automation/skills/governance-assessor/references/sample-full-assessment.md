@@ -25,7 +25,7 @@ Per Red Hat's *Automation Controller User Guide* (Ch. 9: Workflows):
 **Finding**: Found 0 workflow job templates and 14 standalone job templates. Workflow coverage ratio: 0%.
 **Status**: GAP -- no workflow job templates exist
 **Recommendation**: Per Red Hat's *Workflows* (Ch. 9): Create workflow job templates to wrap production job templates with approval nodes and failure-handling paths.
-**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows
+**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows
 
 ---
 
@@ -37,7 +37,7 @@ Per Red Hat's *Automation Controller User Guide* (Ch. 25: Notifications):
 **Finding**: Found 2 notification templates (1 Email, 1 Slack). However, neither is bound to any job template -- notifications exist but are unused.
 **Status**: WARN -- notification templates exist but are not bound to job templates (depth query downgrade from initial PASS)
 **Recommendation**: Per Red Hat's *Notifications* (Ch. 25): Bind notification templates to production job templates, at minimum for failure events.
-**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-notifications
+**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-notifications
 
 ---
 
@@ -91,7 +91,7 @@ Per Red Hat's *Configuring Automation Execution* (Ch. 17: Instance Groups):
 **Finding**: 3 instance groups (`default`, `production`, `development`). Production and development workloads are separated.
 **Status**: PASS -- workload isolation implemented between environments
 **Recommendation**: No action needed. Consider setting `max_forks` limits on instance groups for capacity management.
-**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-instance-groups
+**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-instance-groups
 
 ---
 
@@ -103,7 +103,7 @@ Per Red Hat's *Activity Stream* documentation:
 **Finding**: 247 activity stream entries. Most recent: 2026-03-15T14:22:00Z. Active logging confirmed.
 **Status**: PASS -- activity stream is operational with recent entries
 **Recommendation**: No action needed. Consider configuring external log aggregation for long-term retention per Red Hat's *Hardening Guide*.
-**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-activity-stream
+**Source URL**: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/assembly-controller-activity-stream
 
 ---
 
@@ -155,9 +155,9 @@ Per Red Hat's *Security Best Practices* (Ch. 15, Sec. 15.2.2):
 ### Sources Consulted
 
 - Red Hat AAP 2.5 - Security Best Practices: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-security-best-practices
-- Red Hat AAP 2.5 - Workflows: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-workflows
-- Red Hat AAP 2.5 - Notifications: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-notifications
-- Red Hat AAP 2.5 - Instance Groups: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/configuring_automation_execution/controller-instance-groups
-- Red Hat AAP 2.5 - Activity Stream: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-activity-stream
+- Red Hat AAP 2.5 - Workflows: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-workflows
+- Red Hat AAP 2.5 - Notifications: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_execution/controller-notifications
+- Red Hat AAP 2.5 - Instance Groups: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-instance-groups
+- Red Hat AAP 2.5 - Activity Stream: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/assembly-controller-activity-stream
 - Red Hat AAP 2.6 - Execution Environments: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/creating_and_consuming_execution_environments
-- Red Hat AAP 2.5 - RBAC: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/automation_controller_user_guide/controller-role-based-access-controls
+- Red Hat AAP 2.5 - RBAC: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/access_management_and_authentication/gw-managing-access
