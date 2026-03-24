@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-Validate agentic collection structure before documentation generation.
+Validate agentic collection pack structure (plugin.json, .mcp.json, CLAUDE.md).
+
+Skill-level validation (frontmatter, sections, security) is handled by
+validate-skills.sh and run-skill-linter.sh.
 """
 
 import json
 import sys
 from pathlib import Path
-from typing import List, Tuple
-import yaml
+from typing import List
 import re
 
 # List of agentic collections to validate
@@ -82,107 +84,6 @@ def validate_mcp_json(pack_dir: str) -> List[str]:
         errors.append(f"{pack_dir}: Invalid JSON in .mcp.json: {e}")
     except Exception as e:
         errors.append(f"{pack_dir}: Error reading .mcp.json: {e}")
-
-    return errors
-
-
-def validate_yaml_frontmatter(
-    file_path: Path, extra_required_fields: List[str] = None
-) -> Tuple[bool, str]:
-    """
-    Validate YAML frontmatter in a markdown file.
-
-    Args:
-        file_path: Path to the markdown file
-        extra_required_fields: Additional fields to require beyond name/description
-
-    Returns:
-        Tuple of (is_valid, error_message)
-    """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # Match YAML frontmatter
-        match = re.match(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
-        if not match:
-            return False, "Missing YAML frontmatter (should start with --- and end with ---)"
-
-        frontmatter_text = match.group(1)
-        data = yaml.safe_load(frontmatter_text)
-
-        if data is None:
-            return False, "Empty YAML frontmatter"
-
-        # Check required fields
-        if 'name' not in data:
-            return False, "Missing required field 'name' in frontmatter"
-        if 'description' not in data:
-            return False, "Missing required field 'description' in frontmatter"
-
-        # Check extra required fields (e.g. model, color for skills)
-        for field in (extra_required_fields or []):
-            if field not in data:
-                return False, f"Missing required field '{field}' in frontmatter"
-
-        return True, ""
-
-    except yaml.YAMLError as e:
-        return False, f"Invalid YAML: {e}"
-    except Exception as e:
-        return False, f"Error reading file: {e}"
-
-
-def validate_skills(pack_dir: str) -> List[str]:
-    """
-    Validate skills in a pack.
-
-    Args:
-        pack_dir: Pack directory name
-
-    Returns:
-        List of error messages (empty if valid)
-    """
-    errors = []
-    skills_dir = Path(pack_dir) / 'skills'
-
-    if not skills_dir.exists():
-        # Skills directory is optional
-        return errors
-
-    # Find all SKILL.md files
-    for skill_file in skills_dir.glob('*/SKILL.md'):
-        is_valid, error_msg = validate_yaml_frontmatter(
-            skill_file, extra_required_fields=['model', 'color']
-        )
-        if not is_valid:
-            errors.append(f"{skill_file}: {error_msg}")
-
-    return errors
-
-
-def validate_agents(pack_dir: str) -> List[str]:
-    """
-    Validate agents in a pack.
-
-    Args:
-        pack_dir: Pack directory name
-
-    Returns:
-        List of error messages (empty if valid)
-    """
-    errors = []
-    agents_dir = Path(pack_dir) / 'agents'
-
-    if not agents_dir.exists():
-        # Agents directory is optional
-        return errors
-
-    # Find all .md files
-    for agent_file in agents_dir.glob('*.md'):
-        is_valid, error_msg = validate_yaml_frontmatter(agent_file)
-        if not is_valid:
-            errors.append(f"{agent_file}: {error_msg}")
 
     return errors
 
@@ -269,12 +170,6 @@ def validate_pack(pack_dir: str) -> List[str]:
 
     # Validate CLAUDE.md
     errors.extend(validate_claude_md(pack_dir))
-
-    # Validate skills
-    errors.extend(validate_skills(pack_dir))
-
-    # Validate agents
-    errors.extend(validate_agents(pack_dir))
 
     return errors
 
