@@ -1,0 +1,147 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-20T00:00:00Z",
+  "description": "Document relationship graph for intelligent follow-up doc discovery. Enables 'if you read X, you probably also need Y' inference.",
+  "graph": {
+    "ansible/cve-remediation-templates.md": {
+      "complements": [
+        {
+          "doc": "rhel/package-management.md",
+          "reason": "Templates reference DNF/YUM patterns and reboot detection methods",
+          "confidence": 0.95,
+          "use_when": "Any package update template (1, 4, 6)"
+        },
+        {
+          "doc": "ansible/error-handling.md",
+          "reason": "Templates should include error handling and rollback strategies",
+          "confidence": 0.85,
+          "use_when": "Batch remediation or complex workflows"
+        }
+      ],
+      "prerequisites": [
+        {
+          "doc": "ansible/README.md",
+          "reason": "Overview of Ansible documentation structure",
+          "confidence": 0.50,
+          "use_when": "First-time users or orientation needed"
+        }
+      ],
+      "specializations": [
+        {
+          "doc": "rhel/selinux-context.md",
+          "condition": "if selinux_cve",
+          "reason": "SELinux CVEs need context restoration patterns",
+          "confidence": 0.90,
+          "use_when": "Template 5 (SELinux update)"
+        }
+      ]
+    },
+    "rhel/package-management.md": {
+      "complements": [
+        {
+          "doc": "ansible/cve-remediation-templates.md",
+          "reason": "Playbook templates implement these package management patterns",
+          "confidence": 0.95,
+          "use_when": "Creating or modifying remediation playbooks"
+        },
+        {
+          "doc": "rhel/version-compatibility.md",
+          "reason": "Multi-version environments need compatibility guidance",
+          "confidence": 0.75,
+          "use_when": "Managing RHEL 7, 8, and 9 simultaneously"
+        },
+        {
+          "doc": "rhel/systemd-services.md",
+          "reason": "Package updates often require service restarts",
+          "confidence": 0.70,
+          "use_when": "Service restart needed after package update"
+        }
+      ],
+      "prerequisites": [],
+      "specializations": []
+    },
+    "ansible/README.md": {
+      "leads_to": [
+        {
+          "doc": "ansible/cve-remediation-templates.md",
+          "reason": "Primary Ansible documentation for CVE remediation",
+          "confidence": 0.95,
+          "use_when": "User navigating from overview to detailed templates"
+        },
+        {
+          "doc": "ansible/error-handling.md",
+          "reason": "Error handling patterns for production playbooks",
+          "confidence": 0.70,
+          "use_when": "Need advanced error handling beyond templates"
+        }
+      ]
+    },
+    "rhel/README.md": {
+      "leads_to": [
+        {
+          "doc": "rhel/package-management.md",
+          "reason": "Primary RHEL documentation for CVE remediation",
+          "confidence": 0.95,
+          "use_when": "User navigating from overview to package management"
+        },
+        {
+          "doc": "rhel/version-compatibility.md",
+          "reason": "RHEL version differences and compatibility",
+          "confidence": 0.75,
+          "use_when": "Multi-version environment"
+        }
+      ]
+    },
+    "insights/vulnerability-logic.md": {
+      "complements": [
+        {
+          "doc": "references/cvss-scoring.md",
+          "reason": "CVSS scoring complements Red Hat vulnerability assessment",
+          "confidence": 0.90,
+          "use_when": "Performing risk assessment"
+        },
+        {
+          "doc": "ansible/cve-remediation-templates.md",
+          "reason": "After assessment, create remediation playbook",
+          "confidence": 0.85,
+          "use_when": "Proceeding from assessment to remediation"
+        }
+      ],
+      "prerequisites": [],
+      "specializations": []
+    },
+    "references/cvss-scoring.md": {
+      "complements": [
+        {
+          "doc": "insights/vulnerability-logic.md",
+          "reason": "Red Hat-specific risk assessment methodology",
+          "confidence": 0.90,
+          "use_when": "Understanding Red Hat severity ratings"
+        },
+        {
+          "doc": "references/compliance-frameworks.md",
+          "reason": "Compliance requirements often tied to CVSS scores",
+          "confidence": 0.70,
+          "use_when": "Compliance-driven remediation"
+        }
+      ],
+      "prerequisites": [],
+      "specializations": []
+    }
+  },
+  "relationship_types": {
+    "complements": "Documents that enhance each other when read together. High confidence indicates strong recommendation.",
+    "prerequisites": "Documents that should be read before the current document. Lower confidence = optional background.",
+    "specializations": "Documents needed only under specific conditions. Check condition field before loading.",
+    "leads_to": "Natural navigation path from overview to detailed content."
+  },
+  "usage_instructions": {
+    "for_agents": "After reading a document, check its graph entry for related docs. Load 'complements' with confidence > 0.80. Check 'specializations' conditions against current task context.",
+    "confidence_thresholds": {
+      "high": ">= 0.90 - Always load if relevant",
+      "medium": "0.70-0.89 - Load if task complexity warrants it",
+      "low": "< 0.70 - Optional, load only if explicitly needed"
+    },
+    "condition_evaluation": "Evaluate specializations conditions using task context. Common conditions: kubernetes_system, selinux_cve, package_update, kernel_update, batch_remediation."
+  }
+}

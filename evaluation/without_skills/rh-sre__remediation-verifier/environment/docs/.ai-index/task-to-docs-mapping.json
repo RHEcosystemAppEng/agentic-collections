@@ -1,0 +1,230 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-20T00:00:00Z",
+  "description": "Pre-computed document mappings for common CVE remediation workflows. Eliminates search overhead by providing direct doc access based on task type.",
+  "task_mappings": {
+    "kernel_cve_bare_metal": {
+      "description": "Kernel CVE on bare metal or VM RHEL systems",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "optional_docs": [],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 4: Kernel Update with Reboot",
+        "rhel/package-management.md": "Pattern 3: Kernel Package Updates, Reboot Detection Patterns"
+      },
+      "prerequisites": [
+        "System backup created",
+        "Maintenance window scheduled"
+      ]
+    },
+    "package_update_rhel": {
+      "description": "Standard package update CVE on RHEL systems (non-Kubernetes)",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "optional_docs": [],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 1: Package Update",
+        "rhel/package-management.md": "Pattern 1: Single Package Update, Pattern 2: Multiple Related Packages"
+      },
+      "prerequisites": [
+        "RHEL subscription active",
+        "Repository access verified"
+      ]
+    },
+    "service_restart_cve": {
+      "description": "CVE requiring service configuration changes and restart",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md"
+      ],
+      "optional_docs": [
+        "rhel/package-management.md"
+      ],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 2: Service Restart",
+        "rhel/package-management.md": "Service Restart After Package Updates"
+      },
+      "prerequisites": [
+        "Service configuration backup",
+        "Config syntax validation available"
+      ]
+    },
+    "config_file_cve": {
+      "description": "CVE requiring system configuration file updates",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md"
+      ],
+      "optional_docs": [
+        "rhel/package-management.md"
+      ],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md"
+      ],
+      "estimated_tokens": 2500,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 3: Configuration File Update"
+      },
+      "prerequisites": [
+        "Configuration backup created",
+        "Changes reviewed and approved"
+      ]
+    },
+    "selinux_remediation": {
+      "description": "CVE affecting SELinux file contexts or policies",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md"
+      ],
+      "optional_docs": [
+        "rhel/selinux-context.md"
+      ],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/selinux-context.md"
+      ],
+      "estimated_tokens": 2500,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 5: SELinux Context Update"
+      },
+      "prerequisites": [
+        "SELinux enabled and enforcing",
+        "AVC denials reviewed"
+      ]
+    },
+    "batch_remediation": {
+      "description": "Multiple CVEs across fleet of RHEL systems",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md"
+      ],
+      "optional_docs": [
+        "ansible/error-handling.md",
+        "rhel/version-compatibility.md",
+        "rhel/package-management.md"
+      ],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md",
+        "ansible/error-handling.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 6: Batch Remediation",
+        "rhel/package-management.md": "Pattern 2: Multiple Related Packages"
+      },
+      "prerequisites": [
+        "Inventory grouped by environment",
+        "Batch size determined",
+        "Rollback plan documented"
+      ]
+    },
+    "risk_assessment": {
+      "description": "Analyze CVE impact without creating remediation",
+      "required_docs": [
+        "insights/vulnerability-logic.md",
+        "references/cvss-scoring.md"
+      ],
+      "optional_docs": [
+        "references/compliance-frameworks.md"
+      ],
+      "workflow_order": [
+        "insights/vulnerability-logic.md",
+        "references/cvss-scoring.md"
+      ],
+      "estimated_tokens": 1000,
+      "critical_sections": {
+        "insights/vulnerability-logic.md": "CVE Risk Assessment Methodology",
+        "references/cvss-scoring.md": "Red Hat Severity Mappings"
+      },
+      "prerequisites": [
+        "CVE ID known",
+        "Red Hat Lightspeed access"
+      ]
+    },
+    "httpd_cve": {
+      "description": "Apache httpd package CVE remediation",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "optional_docs": [],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 1: Package Update (httpd example)",
+        "rhel/package-management.md": "Pattern 2: Multiple Related Packages (httpd + httpd-tools)"
+      },
+      "prerequisites": [
+        "httpd service can be restarted",
+        "Web traffic can tolerate brief interruption"
+      ]
+    },
+    "openssl_cve": {
+      "description": "OpenSSL library CVE requiring service restarts",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "optional_docs": [],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 1: Package Update (service restart patterns)",
+        "rhel/package-management.md": "Pattern 2: Multiple Related Packages (openssl + openssl-libs), Service Restart After Package Updates"
+      },
+      "prerequisites": [
+        "All services using openssl identified",
+        "Service restart order planned (dependencies)"
+      ]
+    },
+    "glibc_cve": {
+      "description": "glibc CVE requiring reboot",
+      "required_docs": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "optional_docs": [],
+      "workflow_order": [
+        "ansible/cve-remediation-templates.md",
+        "rhel/package-management.md"
+      ],
+      "estimated_tokens": 4100,
+      "critical_sections": {
+        "ansible/cve-remediation-templates.md": "Template 1: Package Update (reboot handling)",
+        "rhel/package-management.md": "Reboot Detection Patterns (needs-restarting)"
+      },
+      "prerequisites": [
+        "Reboot can be scheduled",
+        "Maintenance window available"
+      ]
+    }
+  },
+  "usage_guide": {
+    "how_to_use": "Agents should check this mapping first for common task patterns. If exact match found, load docs in workflow_order. If no match, fall back to semantic-index.json keyword search.",
+    "token_savings": "Pre-computed mappings eliminate navigation overhead. Agents skip INDEX.md and category READMEs, directly loading relevant docs.",
+    "workflow_order_importance": "Order matters for context building. Load docs sequentially in specified order for optimal comprehension.",
+    "prerequisites_check": "Verify prerequisites before starting remediation. Prevents failures mid-workflow."
+  }
+}

@@ -1,0 +1,72 @@
+---
+# cluster-reporter-rbac.yaml
+# One-time per-cluster setup for multi-cluster reporting with SA tokens.
+# Apply with: oc apply -f cluster-reporter-rbac.yaml
+#
+# Creates a read-only ServiceAccount with the minimum permissions required
+# by the cluster-report skill. The token Secret does not expire until deleted.
+#
+# After applying, extract the token:
+#   oc get secret cluster-reporter-token -n cluster-reporter-system \
+#     -o jsonpath='{.data.token}' | base64 -d
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cluster-reporter-system
+  labels:
+    app.kubernetes.io/part-of: cluster-reporter
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-reporter
+  namespace: cluster-reporter-system
+  labels:
+    app.kubernetes.io/part-of: cluster-reporter
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-reporter-readonly
+  labels:
+    app.kubernetes.io/part-of: cluster-reporter
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "namespaces", "pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["config.openshift.io"]
+    resources: ["clusterversions"]
+    verbs: ["get"]
+  - apiGroups: ["project.openshift.io"]
+    resources: ["projects"]
+    verbs: ["list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-reporter-binding
+  labels:
+    app.kubernetes.io/part-of: cluster-reporter
+subjects:
+  - kind: ServiceAccount
+    name: cluster-reporter
+    namespace: cluster-reporter-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-reporter-readonly
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-reporter-token
+  namespace: cluster-reporter-system
+  annotations:
+    kubernetes.io/service-account.name: cluster-reporter
+  labels:
+    app.kubernetes.io/part-of: cluster-reporter
+type: kubernetes.io/service-account-token

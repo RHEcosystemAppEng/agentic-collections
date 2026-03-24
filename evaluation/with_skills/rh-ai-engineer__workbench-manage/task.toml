@@ -1,0 +1,26 @@
+version = "1.0"
+
+[metadata]
+id = "rh-ai-engineer__workbench-manage"
+name = "rh-ai-engineer Workbench Management Skill Evaluation"
+difficulty = "medium"
+category = "per-skill-eval"
+tags = ["rh-ai-engineer", "workbench-manage", "per-skill-eval"]
+
+[verifier]
+timeout_sec = 900.0
+
+[verifier.env]
+ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL}"
+ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"
+LLM_JUDGE_MODEL = "claude-sonnet-4-5"
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 2
+gpus = 0
+memory = "5.5G"
+storage = "10G"
