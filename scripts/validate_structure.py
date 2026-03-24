@@ -86,12 +86,15 @@ def validate_mcp_json(pack_dir: str) -> List[str]:
     return errors
 
 
-def validate_yaml_frontmatter(file_path: Path) -> Tuple[bool, str]:
+def validate_yaml_frontmatter(
+    file_path: Path, extra_required_fields: List[str] = None
+) -> Tuple[bool, str]:
     """
     Validate YAML frontmatter in a markdown file.
 
     Args:
         file_path: Path to the markdown file
+        extra_required_fields: Additional fields to require beyond name/description
 
     Returns:
         Tuple of (is_valid, error_message)
@@ -116,6 +119,11 @@ def validate_yaml_frontmatter(file_path: Path) -> Tuple[bool, str]:
             return False, "Missing required field 'name' in frontmatter"
         if 'description' not in data:
             return False, "Missing required field 'description' in frontmatter"
+
+        # Check extra required fields (e.g. model, color for skills)
+        for field in (extra_required_fields or []):
+            if field not in data:
+                return False, f"Missing required field '{field}' in frontmatter"
 
         return True, ""
 
@@ -144,7 +152,9 @@ def validate_skills(pack_dir: str) -> List[str]:
 
     # Find all SKILL.md files
     for skill_file in skills_dir.glob('*/SKILL.md'):
-        is_valid, error_msg = validate_yaml_frontmatter(skill_file)
+        is_valid, error_msg = validate_yaml_frontmatter(
+            skill_file, extra_required_fields=['model', 'color']
+        )
         if not is_valid:
             errors.append(f"{skill_file}: {error_msg}")
 
