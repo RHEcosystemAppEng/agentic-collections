@@ -94,8 +94,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$GEMINI_API_KEY" ]; then
-            echo "::error::GEMINI_API_KEY secret is not set"
-            exit 1
+            echo "::warning::GEMINI_API_KEY not available (expected for fork PRs). Skipping review."
+            exit 0
           fi
 
           jq -n \
