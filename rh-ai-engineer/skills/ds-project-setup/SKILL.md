@@ -28,25 +28,30 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools** (from rhoai):
+**Required MCP Tools** (from openshift):
+- `resources_get` - Inspect namespace labels, LimitRange, ResourceQuota, DSPA status
+- `resources_list` - List namespaces, Secrets, PVCs (OpenShift fallback for RHOAI tools)
+- `resources_create_or_update` - Create namespaces, Secrets, DSPA CRs (OpenShift fallback and primary for pipeline server)
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
 - `list_data_science_projects` - List existing RHOAI projects to check for duplicates
 - `create_data_science_project` - Create namespace with RHOAI labels and dashboard integration
-- `get_project_details` - Verify project creation and inspect configuration
+- `get_project_details` - Verify project creation and inspect configuration. **Note**: use `name` parameter, not `namespace`.
 - `get_project_status` - Get comprehensive project status including components
 - `create_s3_data_connection` - Create S3-compatible data connection secret
 - `list_data_connections` - List existing data connections in the project
 - `get_pipeline_server` - Check pipeline server configuration
-- `create_pipeline_server` - Configure pipeline server with S3 data connection
 - `set_model_serving_mode` - Enable single-model or multi-model serving
 
-**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
-
-**Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Inspect namespace labels, LimitRange, ResourceQuota
+Note: `create_pipeline_server` is intentionally excluded — it constructs invalid DSPA manifests. Pipeline server creation always uses OpenShift direct.
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - Cluster admin or namespace creation privileges for the user
@@ -70,8 +75,21 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 ### Step 1: Gather Requirements
 
-**Ask the user for:**
+**Ask the user for the project name first:**
 - **Project name**: DNS-compatible name for the namespace (lowercase, no spaces, max 63 chars)
+
+**Immediately check if the project name already exists:**
+
+**MCP Tool**: `list_data_science_projects` (from rhoai)
+
+**Parameters**: none
+
+- If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?" **WAIT for user decision.** If user chooses (a), skip Step 2 and proceed to optional configuration steps (Steps 3-5). If user chooses (b), repeat the name check.
+- If project **does not exist**: Continue gathering remaining requirements below.
+
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true`.
+
+**Ask the user for remaining settings:**
 - **Display name**: Human-readable project name for the RHOAI dashboard
 - **Description**: Optional project description
 - **Data connections**: Whether to configure S3 data connections (yes/no)
@@ -91,20 +109,7 @@ Bootstrap a Red Hat OpenShift AI Data Science Project from scratch. Creates a na
 
 **WAIT for user to confirm or modify the configuration.**
 
-### Step 2: Check Existing Projects
-
-**MCP Tool**: `list_data_science_projects` (from rhoai)
-
-**Parameters**: none
-
-Check if the project name already exists in the cluster.
-
-- If project **exists**: Report to user and offer options: "Project `[name]` already exists. Would you like to: (a) configure additional components on it, or (b) choose a different name?"
-- If project **does not exist**: Proceed to Step 3
-
-**WAIT for user decision if project already exists.**
-
-### Step 3: Create Data Science Project
+### Step 2: Create Data Science Project
 
 **MCP Tool**: `create_data_science_project` (from rhoai)
 
@@ -112,6 +117,8 @@ Check if the project name already exists in the cluster.
 - `name`: project name from Step 1 - REQUIRED (DNS-compatible: lowercase alphanumeric and hyphens, max 63 chars)
 - `display_name`: human-readable display name - REQUIRED
 - `description`: project description - OPTIONAL
+
+**If rhoai unavailable or returns error**: Use `resources_create_or_update` (from openshift) to create the Namespace with RHOAI labels. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#data-science-project-namespace) for the YAML template.
 
 **Verify creation:**
 
@@ -122,6 +129,10 @@ Check if the project name already exists in the cluster.
 
 Confirm the project was created with proper RHOAI labels (`opendatahub.io/dashboard: "true"`).
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `name: [project-name]`. Check for label `opendatahub.io/dashboard: "true"`.
+
+**Note**: The `get_project_details` tool requires a `name` parameter (not `namespace`). If the tool returns a parameter error, fall back to OpenShift.
+
 **Error Handling**:
 - If name already taken -> Offer alternative name or configure existing project
 - If RBAC error -> Report: "Insufficient permissions to create namespaces. Contact your cluster administrator."
@@ -129,7 +140,7 @@ Confirm the project was created with proper RHOAI labels (`opendatahub.io/dashbo
 
 **Output to user**: "Data Science Project `[name]` created successfully."
 
-### Step 4: Configure Data Connections (Optional)
+### Step 3: Configure Data Connections (Optional)
 
 Skip this step if user declined data connections in Step 1.
 
@@ -157,13 +168,15 @@ Skip this step if user declined data connections in Step 1.
 **MCP Tool**: `create_s3_data_connection` (from rhoai)
 
 **Parameters**:
-- `namespace`: project name from Step 3 - REQUIRED
+- `namespace`: project name from Step 2 - REQUIRED
 - `name`: connection name - REQUIRED
 - `bucket`: S3 bucket name - REQUIRED
 - `endpoint`: S3 endpoint URL - REQUIRED
 - `access_key`: access key ID - REQUIRED
 - `secret_key`: secret access key - REQUIRED
 - `region`: AWS region - OPTIONAL (omit for non-AWS S3)
+
+**If rhoai unavailable or returns error**: Use `resources_create_or_update` (from openshift) to create the Secret with S3 annotations. See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#s3-data-connection-secret) for the YAML template.
 
 **Verify creation:**
 
@@ -174,6 +187,8 @@ Skip this step if user declined data connections in Step 1.
 
 Confirm the data connection appears in the list.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Secret`, `namespace: [namespace]`, `labelSelector: opendatahub.io/dashboard=true`. Filter results by annotation `opendatahub.io/connection-type: s3`.
+
 **Error Handling**:
 - If connection name already exists -> Ask: "Data connection `[name]` already exists. Create with a different name?"
 - If RBAC error -> Report insufficient permissions to create Secrets in namespace
@@ -182,11 +197,11 @@ Confirm the data connection appears in the list.
 
 **Repeat this step** if user wants to create multiple data connections.
 
-### Step 5: Configure Pipeline Server (Optional)
+### Step 4: Configure Pipeline Server (Optional)
 
 Skip this step if user declined pipeline server in Step 1.
 
-**Prerequisite check**: A data connection must exist in the project (from Step 4 or pre-existing). If no data connections exist, inform user: "Pipeline server requires an S3 data connection for artifact storage. Would you like to create one now?" and return to Step 4.
+**Prerequisite check**: A data connection must exist in the project (from Step 3 or pre-existing). If no data connections exist, inform user: "Pipeline server requires an S3 data connection for artifact storage. Would you like to create one now?" and return to Step 3.
 
 **MCP Tool**: `get_pipeline_server` (from rhoai)
 
@@ -204,11 +219,26 @@ If pipeline server already exists, report its status and ask if user wants to re
 
 **WAIT for user to confirm pipeline server setup.**
 
-**MCP Tool**: `create_pipeline_server` (from rhoai)
+**Pipeline Server Creation** (OpenShift direct — the `create_pipeline_server` RHOAI tool is not used because it constructs invalid DSPA manifests):
 
-**Parameters**:
-- `namespace`: project name - REQUIRED
-- `data_connection`: name of the S3 data connection to use for pipeline artifacts - REQUIRED
+**MCP Tool**: `resources_create_or_update` (from openshift)
+
+Create a DataSciencePipelinesApplication CR using the template from [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#datasciencepipelinesapplication-dspa).
+
+**Parameters to fill in the template:**
+- `namespace`: target namespace
+- `bucket`: S3 bucket name from the data connection
+- `host`: S3 endpoint without protocol prefix (e.g., `minio.namespace.svc:9000`)
+- `scheme`: `http` or `https`
+- `secretName`: name of the S3 data connection secret created in Step 3
+- `region`: AWS region or empty string for MinIO
+
+**Verify DSPA is ready:**
+
+**MCP Tool**: `resources_get` (from openshift)
+- `apiVersion`: `datasciencepipelinesapplications.opendatahub.io/v1alpha1`, `kind`: `DataSciencePipelinesApplication`, `name`: `dspa`, `namespace`: [namespace]
+
+Check `.status.conditions` for `Ready=True`. Poll every 15 seconds until ready or timeout (5 minutes).
 
 **Verify creation:**
 
@@ -219,6 +249,8 @@ If pipeline server already exists, report its status and ask if user wants to re
 
 Confirm the pipeline server is configured and initializing.
 
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) for the DSPA CR as described above.
+
 **Error Handling**:
 - If data connection not found -> Report: "Data connection `[name]` not found in namespace. Create it first."
 - If pipeline server already exists -> Ask user whether to reconfigure or keep existing
@@ -226,13 +258,15 @@ Confirm the pipeline server is configured and initializing.
 
 **Output to user**: "Pipeline server configured in project `[namespace]` using data connection `[data_connection]`."
 
-### Step 6: Enable Model Serving and Report
+### Step 5: Enable Model Serving and Report
 
 **MCP Tool**: `set_model_serving_mode` (from rhoai)
 
 **Parameters**:
 - `namespace`: project name - REQUIRED
 - `mode`: "single" or "multi" - REQUIRED (default: "single")
+
+**If rhoai unavailable or returns error**: Patch the namespace annotation via `resources_create_or_update` (from openshift). Set annotation `opendatahub.io/model-serving-mode` to `single` or `multi` on the Namespace.
 
 **Final validation:**
 
@@ -254,6 +288,7 @@ Confirm the pipeline server is configured and initializing.
 - `/workbench-manage` - Create a notebook workbench in this project
 - `/model-deploy` - Deploy a model to this project
 - `/pipeline-manage` - Create and run data science pipelines
+- `/model-registry` - Register and manage models in the Model Registry
 
 ## Common Issues
 
@@ -328,9 +363,9 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
-- After gathering requirements (Step 1): confirm project configuration table
-- Before creating data connections (Step 4): display connection config with credentials REDACTED, confirm
-- Before configuring pipeline server (Step 5): confirm data connection selection
-- If project already exists (Step 2): confirm whether to configure existing or choose new name
+- After project name existence check (Step 1): if project exists, confirm whether to configure existing or choose new name
+- After gathering all requirements (Step 1): confirm project configuration table before proceeding
+- Before creating data connections (Step 3): display connection config with credentials REDACTED, confirm
+- Before configuring pipeline server (Step 4): confirm data connection selection
 - **NEVER** create data connections without user confirming credential details
 - **NEVER** display actual S3 access keys or secret keys in output

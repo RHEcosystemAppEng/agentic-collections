@@ -351,6 +351,15 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/model-deploy` - Deploy a model using NIM runtime after setup is complete
 - `/serving-runtime-config` - Configure custom serving runtimes if NIM doesn't fit
 
+### NIM Deployment Handoff to /model-deploy
+
+When handing off to `/model-deploy` after NIM setup, note these NIM-specific considerations:
+
+- **NIM URI scheme**: NIM models may use a `nim://` URI scheme which the `deploy_model` RHOAI tool may not recognize. If this happens, `/model-deploy` will fall back to creating the InferenceService via OpenShift direct with the NIM container image, NGC credentials, and NIM-specific env vars.
+- **CUDA driver compatibility**: The `latest` NIM image tag may bundle a CUDA version incompatible with the cluster's GPU drivers. Always recommend a specific tag (e.g., `1.8.3`) matched to the GPU driver version.
+- **NIM_MAX_MODEL_LEN**: NIM defaults to a very large context length that can cause KV cache OOM on smaller GPUs. Recommend setting `NIM_MAX_MODEL_LEN=16384` for T4/A10 GPUs.
+- **GPU tolerations**: GPU nodes are almost always tainted in production. `/model-deploy` will automatically detect and add tolerations after deployment.
+
 ### Reference Documentation
 - [supported-runtimes.md](../../docs/references/supported-runtimes.md) - NIM runtime capabilities and requirements
 - [live-doc-lookup.md](../references/live-doc-lookup.md) - Protocol for fetching current RHOAI/NIM documentation

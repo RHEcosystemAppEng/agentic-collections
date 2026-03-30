@@ -38,7 +38,7 @@ echo ""
 # Determine which skills to validate
 if [ $# -eq 0 ]; then
   # No arguments: validate ALL collection skills (exclude .claude/ internal tooling)
-  SKILL_PATHS=$(find . -name "SKILL.md" -type f | grep -E "(rh-sre|rh-developer|rh-virt|ocp-admin|rh-ai-engineer)/skills/" | sort)
+  SKILL_PATHS=$(find . -name "SKILL.md" -type f | grep -E "(rh-sre|rh-developer|rh-virt|ocp-admin|rh-support-engineer|rh-ai-engineer|rh-automation)/skills/" | sort)
   VALIDATION_MODE="all"
 else
   # Arguments provided: validate only specified skill directories

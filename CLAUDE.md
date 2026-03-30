@@ -22,6 +22,7 @@ agentic-collections/
 Each pack follows this structure:
 ```
 <pack-name>/
+├── CLAUDE.md            # Claude Code instruction routing (persona, skills, rules)
 ├── README.md            # Pack description, persona, target marketplaces
 ├── .claude-plugin/      # Claude Code plugin metadata
 │   └── plugin.json      # Name, version, description, author, license
@@ -150,10 +151,11 @@ last_updated: YYYY-MM-DD
 
 1. Create pack folder: `<pack-name>/`
 2. Add `README.md` with description, persona, marketplaces
-3. Create `skills/` directory
-4. Optional: Add `.claude-plugin/plugin.json` for Claude Code
-5. Optional: Add `.mcp.json` for MCP server integrations
-6. Update main `README.md` table with link
+3. Add `CLAUDE.md` with persona, skill-first rule, intent routing table, MCP servers, and global rules (see [rh-ai-engineer/CLAUDE.md](rh-ai-engineer/CLAUDE.md) for reference)
+4. Create `skills/` directory
+5. Optional: Add `.claude-plugin/plugin.json` for Claude Code
+6. Optional: Add `.mcp.json` for MCP server integrations
+7. Update main `README.md` table with link
 
 ### Adding a Skill
 
@@ -168,8 +170,9 @@ last_updated: YYYY-MM-DD
    - Workflow with precise parameters
    - Dependencies declaration
 4. Include concrete examples and complete error handling
-5. Test with `Skill` tool invocation
-6. Validate with `./scripts/run-skill-linter.sh skills/<skill-name>/`
+5. Update the pack's `CLAUDE.md` intent routing table to include the new skill
+6. Test with `Skill` tool invocation
+7. Validate with `./scripts/run-skill-linter.sh skills/<skill-name>/`
 
 **Collection-Specific Standards:**
 - **rh-virt**: Follow `rh-virt/SKILL_TEMPLATE.md` for enhanced quality standards including mandatory Common Issues and Example Usage sections
