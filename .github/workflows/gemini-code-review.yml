@@ -3,6 +3,12 @@ name: Gemini Code Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -11,9 +17,17 @@ permissions:
 jobs:
   gemini-review:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
 
     steps:
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -27,7 +41,7 @@ jobs:
           set -euo pipefail
           gh api \
             -H "Accept: application/vnd.github.v3.diff" \
-            "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}" \
+            "/repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.number }}" \
             > /tmp/pr.diff
 
           DIFF_SIZE=$(wc -c < /tmp/pr.diff)
@@ -157,7 +171,7 @@ jobs:
           } > /tmp/comment.md
 
           EXISTING_COMMENT_ID=$(gh api --paginate \
-            "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            "/repos/${{ github.repository }}/issues/${{ steps.pr.outputs.number }}/comments" \
             --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
             | head -1)
 
@@ -167,7 +181,7 @@ jobs:
               "/repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT_ID" \
               -f body="$(cat /tmp/comment.md)"
           else
-            gh pr comment "${{ github.event.pull_request.number }}" \
+            gh pr comment "${{ steps.pr.outputs.number }}" \
               --repo "${{ github.repository }}" \
               --body-file /tmp/comment.md
           fi
