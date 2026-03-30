@@ -1,0 +1,101 @@
+{
+  "version": "2.0",
+  "last_updated": "2026-02-26",
+  "documents": [
+    {
+      "path": "aap/governance-readiness.md",
+      "title": "AAP Governance Readiness Assessment",
+      "category": "aap",
+      "token_estimate": 3500,
+      "semantic_keywords": [
+        "platform readiness assessment",
+        "governance audit",
+        "AAP best practices check",
+        "RBAC compliance",
+        "credential hygiene",
+        "workflow governance",
+        "notification coverage",
+        "execution environment review",
+        "workload isolation",
+        "audit trail verification",
+        "production readiness",
+        "cross-domain correlation",
+        "compound risk analysis",
+        "adaptive depth queries",
+        "prioritized remediation",
+        "scale calibration"
+      ],
+      "use_cases": ["governance_readiness_assessment", "platform_audit", "pre_execution_check", "compound_risk_analysis"],
+      "mcp_servers_used": ["job-management", "inventory-management", "configuration", "security-compliance", "system-monitoring", "user-management"],
+      "red_hat_sources": 8,
+      "skills_that_read": ["governance-readiness-assessor"]
+    },
+    {
+      "path": "aap/execution-governance.md",
+      "title": "Execution Governance",
+      "category": "aap",
+      "token_estimate": 2500,
+      "semantic_keywords": [
+        "execute on production",
+        "check mode dry run",
+        "inventory risk classification",
+        "secret scanning extra_vars",
+        "rollback failed job",
+        "phased rollout",
+        "job template launch",
+        "diff mode",
+        "execution safety",
+        "production governance",
+        "job history analysis",
+        "template launch configuration",
+        "notification bindings",
+        "workflow coverage check",
+        "module analysis",
+        "adaptive risk elevation"
+      ],
+      "use_cases": ["governed_execution", "risk_analysis", "check_mode_execution", "rollback", "pre_execution_context"],
+      "mcp_servers_used": ["job-management", "inventory-management"],
+      "red_hat_sources": 5,
+      "skills_that_read": ["execution-risk-analyzer", "governed-job-launcher"]
+    },
+    {
+      "path": "aap/job-troubleshooting.md",
+      "title": "Job Troubleshooting",
+      "category": "aap",
+      "token_estimate": 2000,
+      "semantic_keywords": [
+        "job failed",
+        "why did the job fail",
+        "analyze failure",
+        "job events",
+        "host unreachable",
+        "module failure",
+        "error analysis",
+        "root cause",
+        "failure correlation"
+      ],
+      "use_cases": ["job_failure_analysis", "forensic_troubleshooting", "host_correlation"],
+      "mcp_servers_used": ["job-management", "inventory-management"],
+      "red_hat_sources": 3,
+      "skills_that_read": ["job-failure-analyzer", "host-fact-inspector"]
+    },
+    {
+      "path": "references/error-classification.md",
+      "title": "Error Classification Taxonomy",
+      "category": "references",
+      "token_estimate": 1500,
+      "semantic_keywords": [
+        "error classification",
+        "platform vs code error",
+        "resolution path",
+        "error taxonomy",
+        "failure type determination",
+        "troubleshooting decision tree"
+      ],
+      "use_cases": ["error_classification", "resolution_path_determination"],
+      "mcp_servers_used": [],
+      "red_hat_sources": 3,
+      "skills_that_read": ["resolution-advisor"]
+    }
+  ]
+}

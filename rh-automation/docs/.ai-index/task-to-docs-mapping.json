@@ -1,0 +1,73 @@
+{
+  "version": "2.0",
+  "last_updated": "2026-02-26",
+  "workflows": {
+    "governance_assessment": {
+      "description": "Assess AAP platform governance readiness across 7 domains",
+      "trigger_phrases": [
+        "assess governance readiness",
+        "is my AAP ready for production",
+        "audit platform configuration",
+        "check governance",
+        "what should I fix before executing jobs"
+      ],
+      "documents": [
+        {
+          "path": "aap/governance-readiness.md",
+          "role": "primary",
+          "reason": "7-domain assessment framework with Red Hat citations"
+        }
+      ],
+      "agent": "governance-assessor",
+      "skills": ["aap-mcp-validator", "governance-readiness-assessor", "execution-summary"]
+    },
+    "governed_execution": {
+      "description": "Execute with risk analysis, check mode, and governance controls",
+      "trigger_phrases": [
+        "execute on production",
+        "push to prod",
+        "launch job template",
+        "execute security patch",
+        "release to production"
+      ],
+      "documents": [
+        {
+          "path": "aap/execution-governance.md",
+          "role": "primary",
+          "reason": "Risk classification, check mode, rollback, phased rollout"
+        },
+        {
+          "path": "aap/governance-readiness.md",
+          "role": "optional",
+          "reason": "Optional pre-execution readiness check"
+        }
+      ],
+      "agent": "governance-executor",
+      "skills": ["aap-mcp-validator", "execution-risk-analyzer", "governed-job-launcher", "execution-summary"]
+    },
+    "forensic_troubleshooting": {
+      "description": "Analyze failed jobs with event extraction, host correlation, and resolution advisory",
+      "trigger_phrases": [
+        "job failed",
+        "why did the execution fail",
+        "analyze the failure",
+        "what went wrong",
+        "root cause analysis"
+      ],
+      "documents": [
+        {
+          "path": "aap/job-troubleshooting.md",
+          "role": "primary",
+          "reason": "Event parsing, failure patterns, host correlation"
+        },
+        {
+          "path": "references/error-classification.md",
+          "role": "secondary",
+          "reason": "Error taxonomy and resolution path mapping"
+        }
+      ],
+      "agent": "forensic-troubleshooter",
+      "skills": ["aap-mcp-validator", "job-failure-analyzer", "host-fact-inspector", "resolution-advisor", "execution-summary"]
+    }
+  }
+}

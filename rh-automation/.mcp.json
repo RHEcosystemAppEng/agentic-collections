@@ -1,0 +1,76 @@
+{
+  "mcpServers": {
+    "aap-mcp-job-management": {
+      "type": "http",
+      "url": "https://${AAP_MCP_SERVER}/job_management/mcp",
+      "headers": {
+        "Authorization": "Bearer ${AAP_API_TOKEN}"
+      },
+      "env": {
+        "AAP_MCP_SERVER": "${AAP_MCP_SERVER}",
+        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
+      },
+      "description": "AAP job management: job templates, launches, events, status, workflows, and workflow approvals"
+    },
+    "aap-mcp-inventory-management": {
+      "type": "http",
+      "url": "https://${AAP_MCP_SERVER}/inventory_management/mcp",
+      "headers": {
+        "Authorization": "Bearer ${AAP_API_TOKEN}"
+      },
+      "env": {
+        "AAP_MCP_SERVER": "${AAP_MCP_SERVER}",
+        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
+      },
+      "description": "AAP inventory management: inventories, hosts, groups, and host facts (ansible_facts)"
+    },
+    "aap-mcp-configuration": {
+      "type": "http",
+      "url": "https://${AAP_MCP_SERVER}/configuration/mcp",
+      "headers": {
+        "Authorization": "Bearer ${AAP_API_TOKEN}"
+      },
+      "env": {
+        "AAP_MCP_SERVER": "${AAP_MCP_SERVER}",
+        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
+      },
+      "description": "AAP configuration: notification templates, execution environments, and platform settings"
+    },
+    "aap-mcp-security-compliance": {
+      "type": "http",
+      "url": "https://${AAP_MCP_SERVER}/security_compliance/mcp",
+      "headers": {
+        "Authorization": "Bearer ${AAP_API_TOKEN}"
+      },
+      "env": {
+        "AAP_MCP_SERVER": "${AAP_MCP_SERVER}",
+        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
+      },
+      "description": "AAP security and compliance: credentials, credential types, and credential testing"
+    },
+    "aap-mcp-system-monitoring": {
+      "type": "http",
+      "url": "https://${AAP_MCP_SERVER}/system_monitoring/mcp",
+      "headers": {
+        "Authorization": "Bearer ${AAP_API_TOKEN}"
+      },
+      "env": {
+        "AAP_MCP_SERVER": "${AAP_MCP_SERVER}",
+        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
+      },
+      "description": "AAP system monitoring: instance groups, instances, activity stream, platform status, and mesh topology"
+    },
+    "aap-mcp-user-management": {
+      "type": "http",
+      "url": "https://${AAP_MCP_SERVER}/user_management/mcp",
+      "headers": {
+        "Authorization": "Bearer ${AAP_API_TOKEN}"
+      },
+      "env": {
+        "AAP_MCP_SERVER": "${AAP_MCP_SERVER}",
+        "AAP_API_TOKEN": "${AAP_API_TOKEN}"
+      },
+      "description": "AAP user management: users, teams, organizations, role assignments, role definitions, and authenticators"
+    }
+  }
+}

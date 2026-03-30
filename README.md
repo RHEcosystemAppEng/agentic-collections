@@ -1,14 +1,128 @@
-Agentic collections to automate interaction with Red Hat platforms and products for various marketplaces.
+# Red Hat Agentic Collections
 
+**Production-ready AI skills and automation for Red Hat platforms** - Install specialized plugins for SREs, developers, platform administrators, and AI engineers working with RHEL, OpenShift, and Red Hat automation platforms.
 
-| Agentic Pack | Persona/Role | Marketplaces |
-|--------------|--------------|--------------|
-| [Red Hat SRE](rh-sre/README.md) | SRE | Claude code, Cursor |
-| [Red Hat Developer](rh-developer/README.md) | Developer | Claude code, Cursor |
-| [OpenShift Administration](ocp-admin/README.md) | OpenShift Administration | Claude code, Cursor |
-| [Red Hat Support Engineer](rh-support-engineer/README.md) | Support Engineer | Claude code, Cursor, ChatGPT |
-| [Red Hat Virtualization](rh-virt/README.md) | Virt Admin | Claude code, Cursor |
-| [Red Hat AI Engineer](rh-ai-engineer/README.md) | AI/ML Engineer | Claude code, Cursor |
+[![Validate Agentic Collections](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/compliance-check.yml/badge.svg)](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/compliance-check.yml)
+[![Skill Specification Linter](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/skill-spec-report.yml/badge.svg)](https://github.com/RHEcosystemAppEng/agentic-collections/actions/workflows/skill-spec-report.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-purple)](https://github.com/RHEcosystemAppEng/agentic-collections)
+
+---
+
+## 🚀 Quick Start
+
+### 1. Add the Marketplace
+
+```bash
+/plugin marketplace add RHEcosystemAppEng/agentic-collections
+```
+
+### 2. Install a Plugin
+
+```bash
+# For Site Reliability Engineers
+/plugin install rh-sre@redhat-agentic-collections
+
+# For Developers
+/plugin install rh-developer@redhat-agentic-collections
+
+# For OpenShift Administrators
+/plugin install ocp-admin@redhat-agentic-collections
+
+# For Virtualization Administrators
+/plugin install openshift-virtualization@redhat-agentic-collections
+
+# For AI/ML Engineers
+/plugin install rh-ai-engineer@redhat-agentic-collections
+
+# For Ansible Automation Platform Engineers
+/plugin install rh-automation@redhat-agentic-collections
+```
+
+See each plugin's README for available skills and usage examples.
+
+### 3. Update
+
+```bash
+# Update the marketplace to get latest plugin versions
+/plugin marketplace update redhat-agentic-collections
+
+# Update a specific plugin to the latest version
+/plugin update rh-sre@redhat-agentic-collections
+```
+
+**Note:** Claude Code automatically checks for marketplace updates at startup. Manual updates are useful when you want the latest skills immediately.
+
+### 4. Uninstall
+
+```bash
+# Uninstall a specific plugin
+/plugin uninstall rh-sre@redhat-agentic-collections
+
+# Remove the marketplace (this will uninstall all plugins from this marketplace)
+/plugin marketplace remove redhat-agentic-collections
+```
+
+---
+
+## 📦 Available Plugins
+
+7 persona-focused plugins with **100+ production-ready skills**:
+
+| Plugin | Version | Skills | Description | Personas |
+|--------|---------|--------|-------------|----------|
+| **[rh-sre](rh-sre/README.md)** | 1.0.0 | 38 | CVE remediation, system compliance, RHEL automation | Site Reliability Engineers |
+| **[rh-developer](rh-developer/README.md)** | 1.0.0 | 14 | Application deployment, S2I builds, Helm charts | Application Developers |
+| **[openshift-virtualization](rh-virt/README.md)** | 1.0.0 | 16 | VM lifecycle, snapshots, migrations, cloning | Virtualization Admins |
+| **[ocp-admin](ocp-admin/README.md)** | 1.0.0 | 1 | Multi-cluster management, health reports, monitoring | OpenShift Administrators |
+| **[rh-ai-engineer](rh-ai-engineer/README.md)** | 1.0.0 | 18 | Model serving, vLLM, KServe, NVIDIA NIM | AI/ML Engineers |
+| **[rh-automation](rh-automation/README.md)** | 1.0.0 | 13 | Ansible Automation Platform governance, safety checks | Automation Leads |
+| **[rh-support-engineer](rh-support-engineer/README.md)** | 1.0.0 | 0* | Technical support and troubleshooting | Support Engineers |
+
+**Total:** 100 skills across 7 plugins | **License:** Apache 2.0 | **Status:** Production Ready
+
+<sub>* Coming soon</sub>
+
+---
+
+## 📋 Prerequisites
+
+### General Requirements
+
+1. **Claude Code** (latest version recommended)
+   - Desktop app ([claude.ai/code](https://claude.ai/code))
+   - VS Code extension, JetBrains extension, or Web app
+   - CLI tool
+
+2. **Container Runtime** (Podman or Docker)
+   - Required for MCP servers used by most plugins
+   - Podman (recommended for Linux): `sudo dnf install podman`
+   - Docker Desktop (macOS/Windows): [docker.com](https://docker.com)
+
+3. **Network Access**
+   - Internet connectivity for marketplace installation
+   - Access to container registries (quay.io, registry.redhat.io)
+   - Access to Red Hat platforms (depending on plugins used)
+
+### Plugin-Specific Requirements
+
+Each plugin has additional requirements:
+- **Credentials**: Red Hat API keys, cluster kubeconfigs, service tokens
+- **Platform Access**: OpenShift clusters, RHEL systems, Ansible Automation Platform
+- **Permissions**: Cluster admin, namespace edit, or view roles
+
+**See each plugin's README for detailed requirements and setup instructions.**
+
+---
+
+### Key Features
+
+- **🎯 Role-Specific**: Each plugin is designed for specific personas and workflows
+- **🔒 Security First**: Credential handling, human-in-the-loop for destructive operations
+- **🔧 Production Ready**: 100+ skills validated against [design principles](SKILL_DESIGN_PRINCIPLES.md)
+- **📚 Documentation**: AI-optimized docs with semantic indexing (rh-sre reference)
+- **🔌 MCP Integration**: Red Hat Lightspeed, Ansible Automation Platform servers
+- **✅ Quality Assured**: Automated compliance checks and specification linting
 
 ## Documentation Site
 
@@ -304,3 +418,107 @@ The documentation site will automatically update via GitHub Actions.
 - Ensure all env values use `${VAR}` format
 - Review security isolation settings
 
+---
+
+## 🧪 Local Testing
+
+Test the marketplace locally before publishing:
+
+### Add Local Marketplace
+
+```bash
+cd /path/to/agentic-collections
+/plugin marketplace add .
+```
+
+### Install Plugin Locally
+
+```bash
+/plugin install rh-sre@redhat-agentic-collections
+```
+
+### Validate Marketplace
+
+```bash
+# Validate marketplace.json and all plugins
+claude plugin validate .
+
+# Or from within Claude Code
+/plugin validate .
+```
+
+This will check:
+- ✅ Marketplace.json schema compliance
+- ✅ All plugin.json files syntax
+- ✅ YAML frontmatter in skills
+- ✅ Duplicate names
+- ✅ Invalid paths
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to add or improve skills:
+
+### Adding a New Skill
+
+1. Follow the [Skill Design Principles](SKILL_DESIGN_PRINCIPLES.md)
+2. Use the appropriate template:
+   - General: See SKILL_DESIGN_PRINCIPLES.md
+   - rh-virt collection: Use `rh-virt/SKILL_TEMPLATE.md`
+3. Create `skills/<skill-name>/SKILL.md` with proper YAML frontmatter
+4. Validate with the linter:
+   ```bash
+   make validate-skill-design-changed
+   ```
+5. Update the pack's `CLAUDE.md` intent routing table
+
+### Adding a New Plugin
+
+1. Create plugin directory: `<pack-name>/`
+2. Add `.claude-plugin/plugin.json` with metadata
+3. Add `skills/` directory
+4. Add `CLAUDE.md` with persona and skill routing (see [rh-ai-engineer/CLAUDE.md](rh-ai-engineer/CLAUDE.md))
+5. Add `README.md` with plugin description
+6. Update marketplace.json:
+   ```json
+   {
+     "name": "your-plugin",
+     "description": "Plugin description",
+     "version": "1.0.0",
+     "author": {...},
+     "source": "./your-plugin",
+     "category": "your-category",
+     "skills": "./skills"
+   }
+   ```
+7. Validate: `make validate && claude plugin validate .`
+
+### Pull Request Guidelines
+
+- Run `make validate-skill-design-changed` before committing
+- Ensure CI checks pass (compliance + linter)
+- Follow conventional commits format
+- Update relevant documentation
+
+---
+
+## 📚 Additional Resources
+
+- **[Documentation Site](https://rhecosystemappeng.github.io/agentic-collections)**: Browse all collections, skills, and MCP servers
+- **[CLAUDE.md](CLAUDE.md)**: Repository structure and development workflow
+- **[Skill Design Principles](SKILL_DESIGN_PRINCIPLES.md)**: Quality guidelines for skills
+- **[VALIDATION_REPORT.md](VALIDATION_REPORT.md)**: Marketplace compliance verification
+- **[Security Policy](SECURITY.md)**: Credential handling and vulnerability reporting
+
+---
+
+## 📄 License
+
+Apache License 2.0 - see [LICENSE](LICENSE) for details.
+
+---
+
+**Maintained by:** [Red Hat Ecosystem Engineering](https://github.com/RHEcosystemAppEng)
+
+**Questions?** Open an [issue](https://github.com/RHEcosystemAppEng/agentic-collections/issues) or check the [documentation site](https://rhecosystemappeng.github.io/agentic-collections).

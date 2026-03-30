@@ -280,6 +280,16 @@ recommended_checks.append(("Ask Inventory on Launch", template.get("ask_inventor
 - [job-template-creator/SKILL.md](../job-template-creator/SKILL.md) - Template configuration for remediation
 - [AAP Job Templates](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-job-templates)
 
+## Critical: Human-in-the-Loop Requirements
+
+This skill performs **read-only validation** only. It does not modify AAP resources or execute playbooks.
+
+**When user input is needed**:
+- **Template selection**: If multiple templates match a search, present the list and ask user to select by number or ID before proceeding
+- **Template not found**: If template ID invalid, report error and ask user for correct ID or "list" to see available templates
+
+**No confirmation required** for validation execution - the skill only reads and reports.
+
 ## Example Usage
 
 ### Example 1: Validate Template by ID
@@ -394,16 +404,6 @@ To fix: AAP Web UI → Templates → [Template] → Edit → Options → ✓ Ena
 [job-template-remediation-validator] → Returns PASSED
 [playbook-executor] → Proceeds with execution
 ```
-
-## Critical: Human-in-the-Loop Requirements
-
-This skill performs **read-only validation** only. It does not modify AAP resources or execute playbooks.
-
-**When user input is needed**:
-- **Template selection**: If multiple templates match a search, present the list and ask user to select by number or ID before proceeding
-- **Template not found**: If template ID invalid, report error and ask user for correct ID or "list" to see available templates
-
-**No confirmation required** for validation execution - the skill only reads and reports.
 
 ## Best Practices
 

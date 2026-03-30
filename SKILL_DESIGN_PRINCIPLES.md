@@ -361,6 +361,24 @@ One clear purpose per skill.
 
 ---
 
+### 11. Pack-Level CLAUDE.md
+
+Every pack with skills MUST have a `CLAUDE.md` in its root directory. This file acts as the instruction router for Claude Code.
+
+**Required Sections:**
+- `## Skill-First Rule` — enforce skill invocation over direct MCP tool calls
+- `## Intent Routing` — table mapping user intents to skill names
+- `## MCP Servers` — list available MCP servers with descriptions
+- `## Global Rules` — credential safety, confirmation requirements, next-step suggestions
+
+**When adding a new skill**, update the pack's `CLAUDE.md` intent routing table to include it.
+
+**Reference:** [rh-ai-engineer/CLAUDE.md](rh-ai-engineer/CLAUDE.md)
+
+**Validated by:** `scripts/validate_structure.py` (automated — checks existence, required sections, and intent routing completeness)
+
+---
+
 ## Root-Level Frontmatter (2026 Standard)
 
 UI/runtime fields at root; custom fields in `metadata`.
@@ -530,6 +548,7 @@ Ask: "Proceed?" Wait for confirmation.
 8. **Single Responsibility** - One purpose per skill
 9. **Naming Conventions** - kebab-case
 10. **Content Quality** - Production-ready examples
+11. **Pack-Level CLAUDE.md** - Instruction routing for every pack with skills
 
 ---
 

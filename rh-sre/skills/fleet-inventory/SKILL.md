@@ -1,9 +1,9 @@
 ---
 name: fleet-inventory
 description: |
-  Query and display Red Hat Lightspeed managed system inventory. Use this skill for information-gathering requests about the fleet, registered systems, or inventory queries. This skill focuses on discovery and listing only - for remediation actions, transition to the `/remediation` skill.
+  Query and display Red Hat Lightspeed managed system inventory. This skill focuses on discovery and listing only - for remediation actions, transition to the `/remediation` skill.
 
-  **When to use this skill**:
+  Use when:
   - "Show the managed fleet"
   - "List all systems registered in Lightspeed"
   - "What systems are affected by CVE-X?"
@@ -15,7 +15,7 @@ description: |
   - "Create a playbook for..."
   - "Patch system Y"
 
-  This skill orchestrates MCP tools from lightspeed-mcp to provide comprehensive fleet visibility and system inventory management.
+  This skill orchestrates MCP tools from lightspeed-mcp for fleet visibility and system inventory management.
 model: inherit
 color: blue
 ---

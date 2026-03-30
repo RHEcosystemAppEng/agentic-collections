@@ -1,11 +1,12 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "redhat-agentic-collections",
-  "version": "1.0.0",
-  "description": "Validated Agentic Collections from Red Hat Ecosystem Engineering",
   "owner": {
     "name": "Red Hat Ecosystem Engineering",
     "email": "eco-engineering@redhat.com"
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Validated Agentic Collections from Red Hat Ecosystem Engineering"
   },
   "plugins": [
     {
@@ -16,9 +17,12 @@
         "name": "Red Hat Ecosystem Engineering",
         "email": "eco-engineering@redhat.com"
       },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["sre", "red-hat", "platforms", "products", "automation"],
       "source": "./rh-sre",
       "category": "sre",
-      "agents": [],
       "skills": "./skills"
     },
     {
@@ -29,9 +33,12 @@
         "name": "Red Hat Ecosystem Engineering",
         "email": "eco-engineering@redhat.com"
       },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["developer", "openshift", "rhel", "s2i", "containerization", "deployment", "helm", "podman"],
       "source": "./rh-developer",
       "category": "developer",
-      "agents": [],
       "skills": "./skills"
     },
     {
@@ -42,6 +49,10 @@
         "name": "Red Hat Ecosystem Engineering",
         "email": "eco-engineering@redhat.com"
       },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["red-hat", "kubevirt", "openshift", "virtualization"],
       "source": "./rh-virt",
       "category": "virtualization",
       "skills": "./skills"
@@ -54,6 +65,10 @@
         "name": "Red Hat Ecosystem Engineering",
         "email": "eco-engineering@redhat.com"
       },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["red-hat", "openshift", "administration", "management"],
       "source": "./ocp-admin",
       "category": "openshift",
       "skills": "./skills"
@@ -66,8 +81,44 @@
         "name": "Red Hat Ecosystem Engineering",
         "email": "eco-engineering@redhat.com"
       },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["ai-engineer", "openshift-ai", "rhoai", "kserve", "vllm", "nvidia-nim", "model-serving", "inference", "gpu"],
       "source": "./rh-ai-engineer",
       "category": "ai-engineering",
+      "skills": "./skills"
+    },
+    {
+      "name": "rh-support-engineer",
+      "description": "Technical support and troubleshooting tools for Red Hat products and platforms.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["red-hat", "support", "troubleshooting", "engineering"],
+      "source": "./rh-support-engineer",
+      "category": "support",
+      "skills": "./skills"
+    },
+    {
+      "name": "rh-automation",
+      "description": "Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation engineers.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Red Hat Ecosystem Engineering",
+        "email": "eco-engineering@redhat.com"
+      },
+      "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+      "license": "Apache-2.0",
+      "keywords": ["ansible", "aap", "automation", "red-hat", "governance", "troubleshooting", "execution"],
+      "source": "./rh-automation",
+      "category": "automation",
       "skills": "./skills"
     }
   ]

@@ -24,25 +24,26 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 
 ## Prerequisites
 
-**Required MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp))
+**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
-**Required MCP Tools** (from rhoai):
-- `deploy_model` - Create InferenceService with high-level parameters (no YAML construction needed)
+**Required MCP Tools** (from openshift):
+- `resources_get` - Check NIM Account CR, LimitRange, GPU node taints, InferenceService status
+- `resources_list` - Check Knative availability, GPU nodes, existing deployments, ServingRuntimes
+- `resources_create_or_update` - Create/patch InferenceService, add tolerations (OpenShift fallback)
+- `pods_list` - Check predictor pod status during rollout
+- `pods_log` - Retrieve pod logs for debugging
+- `events_list` - Check events for errors
+
+**Preferred MCP Server**: `rhoai` ([RHOAI MCP Server](https://github.com/opendatahub-io/rhoai-mcp)) — used when available, automatic OpenShift fallback on failure
+
+**Preferred MCP Tools** (from rhoai):
+- `deploy_model` - Create InferenceService with high-level parameters (no YAML construction needed). **Known limitation**: does not support tolerations or NIM-specific env vars — see fallback patterns below.
 - `list_inference_services` - List deployed models with structured status data
 - `get_inference_service` - Get detailed model deployment status (conditions, endpoint, ready state)
 - `get_model_endpoint` - Get inference endpoint URL directly
 - `list_serving_runtimes` - List available runtimes including platform templates with supported model formats
 - `list_data_science_projects` - Discover RHOAI projects for namespace validation
 - `list_data_connections` - Verify model storage access (S3 data connections)
-
-**Required MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
-
-**Required MCP Tools** (from openshift):
-- `resources_get` (from openshift) - Check NIM Account CR, LimitRange, GPU node taints
-- `resources_list` (from openshift) - Check Knative availability, GPU nodes, existing deployments
-- `pods_list` (from openshift) - Check predictor pod status during rollout
-- `pods_log` (from openshift) - Retrieve pod logs for debugging
-- `events_list` (from openshift) - Check events for errors
 
 **Optional MCP Server**: `ai-observability` ([AI Observability MCP](https://github.com/rh-ai-quickstart/ai-observability-summarizer))
 
@@ -52,6 +53,8 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 - `analyze_vllm` - Verify metrics are flowing after deployment
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, KServe, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
+
+**Fallback templates**: See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md) for OpenShift YAML templates used when RHOAI tools are unavailable.
 
 **Additional cluster requirements**:
 - For NIM runtime: NIM platform set up via `/nim-setup`
@@ -73,32 +76,19 @@ Deploy AI/ML models on Red Hat OpenShift AI using KServe. Supports vLLM, NVIDIA 
 
 ## Workflow
 
-### Step 1: Gather Deployment Information
+### Step 1: Gather Target and Validate Environment
 
-Collect the following from the user. Use defaults where sensible, but always confirm.
+Collect the deployment target from the user, then immediately validate the environment before gathering remaining details.
 
 **Ask the user for:**
 - **Model name**: Which model to deploy (e.g., "Llama 3.1 8B", "Granite 3.1 8B")
-- **Runtime preference**: vLLM (default), NIM, or Caikit+TGIS (auto-detect if not specified)
 - **Namespace**: Target namespace (must have model serving enabled)
-- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, or NGC for NIM)
+- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, NGC for NIM, or artifact URI from `/model-registry`)
 - **Deployment mode**: Serverless (Knative, default) or RawDeployment
 
-**Present configuration table for review:**
+**Pre-flight Environment Validation**:
 
-| Setting | Value | Source |
-|---------|-------|--------|
-| Model | [model-name] | user input |
-| Runtime | [to be determined in Step 2] | auto-detect / user input |
-| Namespace | [namespace] | user input |
-| Model Source | [source-uri] | user input |
-| Deployment Mode | [Serverless/RawDeployment] | user input / default: Serverless |
-
-**WAIT for user to confirm or modify these settings.**
-
-### Step 1.5: Pre-flight Environment Validation
-
-**CRITICAL**: Run these checks BEFORE deploying to avoid repeated deployment failures.
+**CRITICAL**: Run these checks BEFORE gathering remaining deployment details to avoid wasted configuration effort.
 
 Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-checklist.md) for the full pre-flight protocol. The checklist validates:
 - Namespace is an RHOAI Data Science Project
@@ -109,9 +99,32 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 - Existing deployments (reference configuration)
 - Model source accessibility (OCI registry entitlements)
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true` to find RHOAI projects.
+
 **Present pre-flight results** in a summary table and note any adjustments made. **WAIT for user confirmation if significant changes were needed** (e.g., deployment mode switch, resource adjustments, tolerations added).
 
-### Step 2: Determine Runtime
+### Step 2: Gather Deployment Details
+
+After the environment is validated, collect remaining deployment configuration. Use pre-flight findings to inform defaults (e.g., if Knative is unavailable, default to RawDeployment).
+
+**Ask the user for:**
+- **Runtime preference**: vLLM (default), NIM, or Caikit+TGIS (auto-detect if not specified)
+- **Model source**: Where the model weights are stored (S3, OCI registry, PVC, or NGC for NIM)
+- **Deployment mode**: Serverless (Knative, default) or RawDeployment
+
+**Present configuration table for review:**
+
+| Setting | Value | Source |
+|---------|-------|--------|
+| Model | [model-name] | user input (Step 1) |
+| Runtime | [to be determined in Step 3] | auto-detect / user input |
+| Namespace | [namespace] | user input (Step 1) |
+| Model Source | [source-uri] | user input |
+| Deployment Mode | [Serverless/RawDeployment] | user input / default (informed by pre-flight) |
+
+**WAIT for user to confirm or modify these settings.**
+
+### Step 3: Determine Runtime
 
 **Document Consultation** (read before selecting runtime):
 1. **Action**: Read [supported-runtimes.md](../../docs/references/supported-runtimes.md) using the Read tool to understand runtime capabilities and selection criteria
@@ -127,7 +140,7 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 
 **Present recommendation** with rationale. **WAIT for user confirmation.**
 
-### Step 3: Look Up Model Hardware Profile
+### Step 4: Look Up Model Hardware Profile
 
 **Document Consultation** (read before determining hardware requirements):
 1. **Action**: Read [known-model-profiles.md](../../docs/references/known-model-profiles.md) using the Read tool to find hardware profile for the requested model
@@ -148,19 +161,19 @@ Read [model-deploy-preflight-checklist.md](references/model-deploy-preflight-che
 
 **Present hardware requirements** in a table (GPUs, VRAM, Key Args).
 
-### Step 4: Pre-flight GPU Check (Optional)
+### Step 5: Pre-flight GPU Check (Optional)
 
 **Condition**: Only if `ai-observability` MCP server is available.
 
 **MCP Tool**: `get_gpu_info` (from ai-observability)
 
-Compare available GPUs against model requirements from Step 3:
+Compare available GPUs against model requirements from Step 4:
 - If sufficient GPUs available -> Report match and proceed
 - If insufficient -> Warn user with options: smaller model, quantized version, different cluster, or proceed at user's risk
 
 **If ai-observability not available**: Skip with note: "GPU pre-flight check skipped (ai-observability MCP not configured)."
 
-### Step 5: Verify NIM Platform (NIM Runtime Only)
+### Step 6: Verify NIM Platform (NIM Runtime Only)
 
 **Condition**: Only when the selected runtime is NIM.
 
@@ -175,7 +188,7 @@ Compare available GPUs against model requirements from Step 3:
 **If Account CR not found or not ready:**
 Offer options: (1) Run `/nim-setup` now, (2) Switch to vLLM, (3) Abort. **WAIT for user decision.**
 
-### Step 6: Select ServingRuntime and Prepare Deployment Parameters
+### Step 7: Select ServingRuntime and Prepare Deployment Parameters
 
 **Verify available ServingRuntimes:**
 
@@ -187,20 +200,22 @@ Offer options: (1) Run `/nim-setup` now, (2) Switch to vLLM, (3) Abort. **WAIT f
 
 The response shows existing runtimes and available templates with their supported model formats and `requires_instantiation` flag.
 
+**If rhoai unavailable or returns error**: Use `resources_list` (from openshift) with `apiVersion: serving.kserve.io/v1alpha1`, `kind: ServingRuntime`, `namespace: [target]` to list namespace runtimes, and `kind: ClusterServingRuntime` for platform templates. Filter by label `opendatahub.io/dashboard=true`.
+
 If the needed runtime shows `requires_instantiation: true`, it must first be instantiated via `/serving-runtime-config` or the rhoai `create_serving_runtime` tool.
 
 Use the runtime list to select the correct `runtime` name for the deployment.
 
-**Prepare deployment parameters** from Steps 1-3 and environment data from Step 1.5:
+**Prepare deployment parameters** from Steps 1-4 and environment data from Step 1:
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
 | `name` | [model-deployment-name] | user input (DNS-compatible) |
 | `namespace` | [namespace] | user input |
-| `runtime` | [serving-runtime-name] | selected from `list_serving_runtimes` |
+| `runtime` | [serving-runtime-name] | selected from `list_serving_runtimes` (Step 7) |
 | `model_format` | [vLLM/pytorch/onnx/caikit/etc.] | runtime selection |
 | `storage_uri` | [model-source-uri] | user input (prefer `hf://` for public models) |
-| `gpu_count` | [gpu-count] | from hardware profile (Step 3) |
+| `gpu_count` | [gpu-count] | from hardware profile (Step 4) |
 | `cpu_request` | [cpu] | from profile, adjusted for LimitRange |
 | `memory_request` | [memory] | from profile, adjusted for LimitRange |
 | `min_replicas` | [1] | default 1 (0 for scale-to-zero) |
@@ -213,7 +228,7 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 
 **Scale-to-zero note**: Setting `min_replicas=0` saves resources but introduces cold start latency (30s-2min for model loading).
 
-### Step 7: User Review and Confirmation
+### Step 8: User Review and Confirmation
 
 **Display the deployment parameters table** and a configuration summary to the user.
 
@@ -221,18 +236,18 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 
 **WAIT for explicit confirmation.**
 
-- If **yes** -> Proceed to Step 8
+- If **yes** -> Proceed to Step 9
 - If **no** -> Abort
 - If **modify** -> Ask what to change, update parameters, return to this step
 
-### Step 8: Deploy Model
+### Step 9: Deploy Model
 
 **MCP Tool**: `deploy_model` (from rhoai)
 
 **Parameters**:
 - `name`: deployment name (DNS-compatible) - REQUIRED
 - `namespace`: target namespace - REQUIRED
-- `runtime`: serving runtime name from Step 6 - REQUIRED
+- `runtime`: serving runtime name from Step 7 - REQUIRED
 - `model_format`: model format string (e.g., `"vLLM"`, `"pytorch"`, `"onnx"`) - REQUIRED
 - `storage_uri`: model location (e.g., `"hf://ibm-granite/granite-3.1-2b-instruct"`, `"s3://bucket/path"`, `"pvc://pvc-name/path"`) - REQUIRED
 - `display_name`: human-readable display name - OPTIONAL
@@ -246,18 +261,52 @@ Use the runtime list to select the correct `runtime` name for the deployment.
 
 **Note**: For NIM deployments, ensure the NGC API key secret is referenced. If `deploy_model` does not support NIM-specific env vars, fall back to `resources_create_or_update` (from openshift) with a NIM InferenceService YAML that includes `spec.predictor.env` referencing the `ngc-api-key` secretKeyRef.
 
+#### GPU Toleration Handling
+
+After `deploy_model` succeeds (or after creating InferenceService via OpenShift fallback), check if GPU tolerations are needed:
+
+**MCP Tool**: `resources_list` (from openshift)
+- `apiVersion`: `v1`, `kind`: `Node`, `labelSelector`: `nvidia.com/gpu.present=true`
+
+If GPU nodes have taints (check `.spec.taints[]`), patch the InferenceService to add matching tolerations:
+
+**MCP Tool**: `resources_create_or_update` (from openshift)
+
+Add tolerations to `spec.predictor.tolerations` matching the discovered taints. Common GPU taints include:
+- `nvidia.com/gpu` (Exists/NoSchedule)
+- `ai-app=true` (Equal/NoSchedule)
+- `ai-node=big` (Equal/NoSchedule)
+
+After patching, delete the stuck Pending pod to force rescheduling with the new tolerations.
+
+See [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#toleration-post-deploy-patch) for the complete pattern.
+
+#### NIM Deployment via OpenShift
+
+When deploying with NIM runtime and `deploy_model` does not support NIM-specific env vars (NGC_API_KEY secretKeyRef, NIM_MAX_MODEL_LEN, image pull secrets):
+
+Use `resources_create_or_update` (from openshift) with the NIM InferenceService template from [openshift-fallback-templates.md](../references/openshift-fallback-templates.md#inferenceservice-nim).
+
+**Key NIM-specific fields:**
+- `spec.predictor.containers[0].env` with NGC_API_KEY from secretKeyRef
+- `spec.predictor.imagePullSecrets` referencing `ngc-image-pull-secret`
+- Use a specific image tag (e.g., `1.8.3`) — the `latest` tag may have CUDA driver incompatibility
+- Set `NIM_MAX_MODEL_LEN` to prevent KV cache OOM (use `16384` for T4 GPUs)
+
 **Error Handling**:
 - If namespace not found -> Report error, suggest creating namespace or using `/ds-project-setup`
 - If ServingRuntime not found -> Report error, verify runtime name, suggest `/serving-runtime-config`
 - If quota exceeded -> Report error, suggest reducing resource requests
 - If RBAC error -> Report insufficient permissions
 
-### Step 9: Monitor Rollout
+### Step 10: Monitor Rollout
 
 Poll InferenceService status until ready or timeout (10 minutes).
 
 **MCP Tool**: `get_inference_service` (from rhoai)
 - `name`: deployment name, `namespace`: target namespace, `verbosity`: `"full"`
+
+**If rhoai unavailable or returns error**: Use `resources_get` (from openshift) with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService`, `name: [model-name]`, `namespace: [namespace]`. Check `.status.conditions` for `Ready=True`.
 
 Check the Ready condition and status. Repeat every 15-30 seconds until Ready=True or timeout.
 
@@ -270,12 +319,14 @@ Show deployment progress tracking: Pod Scheduled, Image Pulled, Container Starte
 
 **On failure:** Check pod logs (`pods_log`) and events (`events_list`) for diagnostics. Present options: (1) View full pod logs, (2) Check namespace events, (3) Invoke `/debug-inference`, (4) Delete and retry, (5) Continue waiting. **WAIT for user decision. NEVER auto-delete failed deployments.**
 
-### Step 10: Deployment Complete
+### Step 11: Deployment Complete
 
 **Get endpoint URL:**
 
 **MCP Tool**: `get_model_endpoint` (from rhoai)
 - `name`: deployment name, `namespace`: target namespace
+
+**If rhoai unavailable or returns error**: Extract endpoint from `resources_get` (from openshift) on the InferenceService — the URL is in `.status.url`.
 
 **Report success** showing: model name, runtime, namespace, GPUs, inference endpoint URL, API type (OpenAI-compatible REST), and next steps (`/ai-observability`, `/model-monitor`, `/guardrails-config`).
 
@@ -326,7 +377,7 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
 1. Check LimitRange: `resources_list` for `LimitRange` in the namespace
 2. If LimitRange minimum CPU > 10m or minimum memory > 15Mi, the LimitRange must be adjusted
 3. Options: (a) Lower LimitRange minimums to accommodate sidecars (min CPU ≤ 10m, min memory ≤ 15Mi), (b) Remove the LimitRange entirely, (c) Deploy in a different namespace without restrictive LimitRanges
-4. **Prevention**: Step 1.5 pre-flight validation now checks for this conflict before deployment
+4. **Prevention**: Step 1 pre-flight validation now checks for this conflict before deployment
 
 ### Issue 4: GPU Node Taints Prevent Scheduling
 
@@ -346,7 +397,31 @@ For common issues (GPU scheduling, OOMKilled, image pull errors, RBAC), see [com
            value: "true"
            effect: "NoSchedule"
    ```
-3. **Prevention**: Step 1.5 pre-flight validation now auto-discovers GPU node taints and generates tolerations
+3. **Prevention**: Step 1 pre-flight validation now auto-discovers GPU node taints and generates tolerations
+
+### Issue: Pod Stuck Pending Due to GPU Node Taints
+
+**Error**: Pod shows "0/N nodes are available: node(s) had untolerated taint" in events
+
+**Cause**: `deploy_model` does not support tolerations. GPU nodes in production clusters are almost always tainted.
+
+**Solution**: Patch InferenceService with tolerations matching the GPU node taints, then delete the stuck pod. See [common-issues.md](../references/common-issues.md#deploy-model-missing-gpu-tolerations) for details.
+
+### Issue: NIM CUDA Driver Incompatibility
+
+**Error**: NIM container crashes with error code 803 or CUDA-related errors
+
+**Cause**: The `latest` NIM image tag may bundle a CUDA version incompatible with the GPU node's driver.
+
+**Solution**: Pin NIM image to a specific tag compatible with the cluster's GPU driver version (e.g., `1.8.3` for T4 nodes with older drivers). Check the NVIDIA NIM release notes for driver compatibility.
+
+### Issue: Stale ReplicaSets After InferenceService Patch
+
+**Error**: Multiple ReplicaSets exist after patching the InferenceService (e.g., adding tolerations), causing duplicate Pending pods
+
+**Cause**: Each InferenceService spec change triggers a new ReplicaSet. Old ReplicaSets are not automatically cleaned up.
+
+**Solution**: Scale down stale ReplicaSets to 0 replicas via `resources_create_or_update` (from openshift), or delete them. Identify the current ReplicaSet by checking which one has the latest creation timestamp.
 
 ## Dependencies
 
@@ -359,6 +434,9 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/ai-observability` - Analyze deployed model performance
 - `/serving-runtime-config` - Create custom ServingRuntime CRs
 - `/ds-project-setup` - Create a namespace with model serving enabled
+- `/model-registry` - Get artifact URIs for registered model versions to deploy
+- `/model-monitor` - Configure bias and drift monitoring after deployment
+- `/guardrails-config` - Add content safety guardrails to LLM deployments
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Hardware profiles for common models
@@ -370,11 +448,11 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 See [skill-conventions.md](../references/skill-conventions.md) for general HITL and security conventions.
 
 **Skill-specific checkpoints:**
-- After gathering settings (Step 1): confirm configuration table
-- After pre-flight validation (Step 1.5): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
-- After runtime selection (Step 2): confirm runtime choice
-- Before calling deploy_model (Step 7): review and confirm deployment parameters
-- On deployment failure (Step 9): present diagnostic options, wait for user decision
+- After pre-flight validation (Step 1): confirm if significant adjustments were needed (deployment mode, tolerations, resource changes)
+- After gathering deployment details (Step 2): confirm configuration table
+- After runtime selection (Step 3): confirm runtime choice
+- User review before deploy_model (Step 8): confirm deployment parameters
+- On deployment failure (Step 10): present diagnostic options, wait for user decision
 - **NEVER** auto-delete failed deployments or auto-select runtimes without confirmation
 
 ## Example Usage

@@ -1,0 +1,187 @@
+name: Gemini Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gemini-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+
+    steps:
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Get PR diff
+        id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api \
+            -H "Accept: application/vnd.github.v3.diff" \
+            "/repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.number }}" \
+            > /tmp/pr.diff
+
+          DIFF_SIZE=$(wc -c < /tmp/pr.diff)
+          echo "diff_size=$DIFF_SIZE" >> "$GITHUB_OUTPUT"
+
+          if [ "$DIFF_SIZE" -gt 200000 ]; then
+            head -c 200000 /tmp/pr.diff > /tmp/pr_truncated.diff
+            echo "truncated=true" >> "$GITHUB_OUTPUT"
+          else
+            cp /tmp/pr.diff /tmp/pr_truncated.diff
+            echo "truncated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if empty diff
+        if: steps.diff.outputs.diff_size == '0'
+        run: echo "No diff found, skipping review."
+
+      - name: Build review context
+        if: steps.diff.outputs.diff_size != '0'
+        run: |
+          set -euo pipefail
+          {
+            echo "=== PROJECT RULES: CLAUDE.md ==="
+            cat CLAUDE.md 2>/dev/null || echo "(not found)"
+            echo ""
+            echo "=== PROJECT RULES: SKILL_DESIGN_PRINCIPLES.md ==="
+            cat SKILL_DESIGN_PRINCIPLES.md 2>/dev/null || echo "(not found)"
+          } > /tmp/project_rules.txt
+
+          CHANGED_PACKS=$(grep -oP '^diff --git a/([^/]+)/' /tmp/pr.diff | sort -u | sed 's|diff --git a/||;s|/||')
+          for pack in $CHANGED_PACKS; do
+            if [ -f "$pack/CLAUDE.md" ]; then
+              {
+                echo ""
+                echo "=== PACK RULES: $pack/CLAUDE.md ==="
+                cat "$pack/CLAUDE.md"
+              } >> /tmp/project_rules.txt
+            fi
+          done
+
+          head -c 50000 /tmp/project_rules.txt > /tmp/project_rules_truncated.txt
+
+      - name: Build system instruction
+        if: steps.diff.outputs.diff_size != '0'
+        run: |
+          set -euo pipefail
+          cp .github/gemini-review-prompt.md /tmp/system_instruction.txt
+
+          if [ "${{ steps.diff.outputs.truncated }}" = "true" ]; then
+            printf '\n\nNote: This diff was truncated due to size. Review covers the first ~200KB only.' \
+              >> /tmp/system_instruction.txt
+          fi
+
+          {
+            cat /tmp/system_instruction.txt
+            printf '\n\n---\n\nPROJECT RULES REFERENCE:\n\n'
+            cat /tmp/project_rules_truncated.txt
+          } > /tmp/system_full.txt
+
+      - name: Review with Gemini
+        if: steps.diff.outputs.diff_size != '0'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::warning::GEMINI_API_KEY not available (expected for fork PRs). Skipping review."
+            exit 0
+          fi
+
+          jq -n \
+            --rawfile system /tmp/system_full.txt \
+            --rawfile diff /tmp/pr_truncated.diff \
+            '{
+              "systemInstruction": {
+                "parts": [{ "text": $system }]
+              },
+              "contents": [{
+                "parts": [{
+                  "text": ("Review the following pull request diff:\n\n" + $diff)
+                }]
+              }],
+              "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 8192
+              }
+            }' > /tmp/request.json
+
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" -X POST \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent" \
+            -H "Content-Type: application/json" \
+            -H "x-goog-api-key: ${GEMINI_API_KEY}" \
+            -d @/tmp/request.json)
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Gemini API returned HTTP $HTTP_CODE"
+            jq '{error: .error, status: .status}' /tmp/response.json
+            exit 1
+          fi
+
+          REVIEW=$(jq -r '.candidates[0].content.parts[0].text // empty' /tmp/response.json)
+
+          if [ -z "$REVIEW" ]; then
+            echo "::error::Gemini returned empty review"
+            jq '{promptFeedback: .promptFeedback, finishReason: .candidates[0].finishReason}' /tmp/response.json
+            exit 1
+          fi
+
+          echo "$REVIEW" > /tmp/review.md
+
+      - name: Post or update review comment
+        if: steps.diff.outputs.diff_size != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MARKER="<!-- gemini-code-review -->"
+
+          {
+            echo "$MARKER"
+            echo "## Gemini Code Review"
+            echo ""
+            cat /tmp/review.md
+            echo ""
+            echo "---"
+            echo "*Automated review by Gemini 3.1 Pro | Rules: CLAUDE.md, SKILL_DESIGN_PRINCIPLES.md*"
+          } > /tmp/comment.md
+
+          EXISTING_COMMENT_ID=$(gh api --paginate \
+            "/repos/${{ github.repository }}/issues/${{ steps.pr.outputs.number }}/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
+            | head -1)
+
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT_ID" \
+              -f body="$(cat /tmp/comment.md)"
+          else
+            gh pr comment "${{ steps.pr.outputs.number }}" \
+              --repo "${{ github.repository }}" \
+              --body-file /tmp/comment.md
+          fi

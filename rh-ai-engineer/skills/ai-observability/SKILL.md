@@ -50,10 +50,13 @@ Analyze AI model inference performance, GPU utilization, OpenShift cluster healt
 - `list_inference_services` - List deployed models with structured status for context
 - `get_inference_service` - Get InferenceService status for context
 
+**If rhoai is unavailable or returns errors**: Use `openshift` tools as fallback — `resources_list` with `apiVersion: serving.kserve.io/v1beta1`, `kind: InferenceService` replaces `list_inference_services`; `resources_list` with `apiVersion: v1`, `kind: Namespace`, `labelSelector: opendatahub.io/dashboard=true` replaces `list_data_science_projects`.
+
 **Optional MCP Server**: `openshift` ([OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server))
 
 **Optional MCP Tools** (from openshift):
 - `resources_get` (from openshift) - Get raw resource details for context
+- `resources_list` (from openshift) - List InferenceServices, Namespaces (fallback for rhoai tools)
 - `pods_list` (from openshift) - List predictor pods for correlation context
 
 **Common prerequisites** (KUBECONFIG, OpenShift+RHOAI cluster, verification protocol): See [skill-conventions.md](../references/skill-conventions.md).
@@ -403,6 +406,7 @@ See [Prerequisites](#prerequisites) for the complete list of required and option
 - `/debug-inference` - Troubleshoot deployment issues found during analysis
 - `/model-deploy` - Redeploy models with different configuration based on findings
 - `/serving-runtime-config` - Adjust runtime parameters if performance issues are runtime-related
+- `/model-monitor` - TrustyAI bias/drift metrics (complements infrastructure observability)
 
 ### Reference Documentation
 - [known-model-profiles.md](../../docs/references/known-model-profiles.md) - Expected performance baselines for common models

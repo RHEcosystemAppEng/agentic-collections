@@ -1,0 +1,21 @@
+{
+  "name": "rh-automation",
+  "version": "1.0.0",
+  "description": "Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation engineers.",
+  "author": {
+    "name": "Red Hat Ecosystem Engineering",
+    "email": "eco-engineering@redhat.com"
+  },
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "license": "Apache-2.0",
+  "keywords": [
+    "ansible",
+    "aap",
+    "automation",
+    "red-hat",
+    "governance",
+    "troubleshooting",
+    "execution"
+  ]
+}

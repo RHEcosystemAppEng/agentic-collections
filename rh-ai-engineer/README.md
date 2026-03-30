@@ -1,16 +1,22 @@
 # Red Hat AI Engineer Agentic Pack
 
-Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). Deploy and manage models using KServe with vLLM, NVIDIA NIM, and Caikit+TGIS serving runtimes.
+Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). Deploy and manage models, pipelines, registries, workbenches, and serving runtimes on OpenShift AI.
 
 ## Skills
 
 | Command | Description |
 |---------|-------------|
-| `/nim-setup` | Configure NVIDIA NIM platform on OpenShift AI (NGC credentials, Account CR) |
+| `/ds-project-setup` | Create and configure Data Science Projects with namespace, data connections, pipeline server, and model serving |
+| `/workbench-manage` | Create and manage Jupyter notebook workbenches with image selection, resources, and lifecycle |
 | `/model-deploy` | Deploy AI/ML models with vLLM, NIM, or Caikit+TGIS runtimes |
+| `/model-registry` | Register, version, and promote ML models in the Model Registry across environments |
+| `/pipeline-manage` | Create, run, schedule, and monitor Data Science Pipelines (Kubeflow Pipelines 2.0) |
+| `/nim-setup` | Configure NVIDIA NIM platform on OpenShift AI (NGC credentials, Account CR) |
 | `/serving-runtime-config` | Configure custom ServingRuntime CRs for model serving frameworks |
 | `/debug-inference` | Troubleshoot failed or slow InferenceService deployments |
 | `/ai-observability` | Analyze model performance, GPU utilization, cluster health, and distributed traces |
+| `/model-monitor` | Configure TrustyAI bias detection (SPD, DIR) and data drift monitoring |
+| `/guardrails-config` | Deploy TrustyAI Guardrails Orchestrator with input/output content safety detectors |
 
 ## Prerequisites
 
@@ -34,13 +40,15 @@ Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). 
 
 ## MCP Servers
 
-| Server | Type | Required | Description |
-|--------|------|----------|-------------|
-| `openshift` | Container (podman) | Yes | Kubernetes resource CRUD, pod management, logs, events |
-| `rhoai` | Local process (uvx) | Yes | RHOAI-specific operations: model deployment, serving runtimes, data connections, project management |
-| `ai-observability` | Remote HTTP | No | vLLM metrics, GPU monitoring, distributed tracing |
+| Server | Type | Requirement | Description |
+|--------|------|-------------|-------------|
+| `openshift` | Container (podman) | **Required** | Kubernetes resource CRUD, pod management, logs, events. The only hard-required server — all RHOAI operations have OpenShift equivalents. |
+| `rhoai` | Local process (uvx) | **Preferred** | RHOAI-specific convenience tools: model deployment, serving runtimes, data connections, project management. Automatic fallback to OpenShift when unavailable or returning errors. |
+| `ai-observability` | Remote HTTP | **Optional** | vLLM metrics, GPU monitoring, distributed tracing. Skipped when unavailable. |
 
-The `rhoai` MCP server provides high-level, RHOAI-domain-specific tools that simplify model deployment (no YAML construction needed), runtime management (including platform template discovery), and project validation. See [rhoai-mcp](https://github.com/opendatahub-io/rhoai-mcp) for details.
+The `openshift` MCP server is the foundation for all skills. It provides reliable Kubernetes resource CRUD operations that serve as automatic fallbacks when RHOAI MCP tools are unavailable or return errors.
+
+The `rhoai` MCP server provides high-level, RHOAI-domain-specific tools that simplify model deployment (no YAML construction needed), runtime management (including platform template discovery), and project validation. When these tools fail (auth errors, API inconsistencies), skills transparently fall back to equivalent OpenShift operations. See [rhoai-mcp](https://github.com/opendatahub-io/rhoai-mcp) for details.
 
 The `ai-observability` MCP server is optional. When available, it enables GPU pre-flight checks before deployment and post-deployment performance validation. See [ai-observability-summarizer](https://github.com/rh-ai-quickstart/ai-observability-summarizer/tree/main/src/mcp_server) for deployment instructions.
 

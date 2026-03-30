@@ -5,6 +5,12 @@ description: |
 
   Execute remediation playbooks with job management, dry-run, and reporting. Use after playbook-generator.
 
+  Use when:
+  - "Execute the remediation playbook"
+  - "Launch the playbook on AAP"
+  - "Run the CVE remediation job"
+  - "Dry-run the playbook first"
+
   **Git Flow**: If template playbook path ≠ generated playbook, perform Git Flow (commit, push, sync) BEFORE launch.
 ---
 
@@ -185,16 +191,7 @@ After `/job-template-creator` completes, retrieve the template ID (from skill ou
 
 ### Phase 2: Git Flow (MANDATORY before Phase 3)
 
-**BLOCKING**: You MUST NOT proceed to Phase 3 (Dry-Run) until Git Flow is complete.
-
-**When**: Scenario 1 (same path, update content) or Scenario 2 (different path). See Phase 1 Step 1.3.
-
-**Checkpoint**: Before Phase 3, confirm:
-- [ ] Playbook written to repo at target path
-- [ ] Git commit and push completed (with user confirmation)
-- [ ] User confirmed "sync complete" after AAP project sync
-
-**If any unchecked**: STOP. Do Git Flow. Do NOT launch the job.
+**BLOCKING**: Git Flow must be complete before Phase 3. See Phase 1 Step 1.3. Confirm: playbook written, commit/push done, user confirmed "sync complete". If not, STOP.
 
 ### Phase 3: Dry-Run Execution (Recommended)
 
@@ -324,9 +321,9 @@ Recent Events:
 
 ### Phase 5: Execution Report
 
-**Goal**: Generate comprehensive report with job details, per-host results, and full output.
+**Goal**: Generate report with job details, per-host results, and full output.
 
-**Read [references/01-execution-report-templates.md](references/01-execution-report-templates.md)** for JSON examples, comprehensive report template, and Success/Partial Success/Failure output templates.
+**Read [references/01-execution-report-templates.md](references/01-execution-report-templates.md)** for JSON examples, report template, and Success/Partial Success/Failure output templates.
 
 #### Step 5.1–5.4: Gather Data
 
@@ -466,7 +463,7 @@ This skill executes code on production systems. **Explicit user confirmation is 
 5. **Recommend dry-run** - Offer check mode before production execution
 6. **Filter compatible templates** - Check inventory, project, and credentials match
 7. **Monitor in real-time** - Display task progress during execution
-8. **Comprehensive reporting** - Include per-host stats, task timeline, full output
+8. **Full reporting** - Include per-host stats, task timeline, full output
 9. **Error categorization** - Parse errors and provide specific troubleshooting
 10. **Relaunch capability** - Offer to retry failed hosts
 11. **Link to AAP** - Provide direct URL to job in AAP Web UI
