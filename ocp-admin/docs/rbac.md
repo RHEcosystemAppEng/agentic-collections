@@ -256,11 +256,8 @@ rules:
 
 **Check what you can do**:
 
-```
-MCP Tool: resources_list
-Parameters: {kind: "SelfSubjectAccessReview"}
-
-Or use kubectl plugin approach:
+```bash
+# Check permissions for current user
 kubectl auth can-i <verb> <resource>
 ```
 
@@ -358,19 +355,15 @@ kubectl auth can-i <verb> <resource> --as system:serviceaccount:<namespace>:<sa-
 5. API group is specified correctly in role
 
 **Debugging**:
-```
+```bash
 # Check what user can do
 kubectl auth can-i <verb> <resource> --as <user>
 
 # List user's role bindings
-MCP Tool: resources_list
-Parameters: {kind: "RoleBinding", namespace: "<namespace>"}
-Filter: subjects contain user
+oc get rolebindings -n <namespace> -o yaml | grep -A5 <username>
 
 # List user's cluster role bindings
-MCP Tool: resources_list
-Parameters: {kind: "ClusterRoleBinding"}
-Filter: subjects contain user
+oc get clusterrolebindings -o yaml | grep -A5 <username>
 ```
 
 ### Service Account Can't Access Resources
@@ -439,22 +432,16 @@ Filter: subjects contain user
 
 ### Granting SCC to Service Account
 
-```
-MCP Tool: resources_create
-Parameters:
-  apiVersion: "rbac.authorization.k8s.io/v1"
-  kind: "RoleBinding"  # or ClusterRoleBinding
-  metadata:
-    name: "sa-anyuid"
-    namespace: "<namespace>"
-  roleRef:
-    apiGroup: "rbac.authorization.k8s.io"
-    kind: "ClusterRole"
-    name: "system:openshift:scc:anyuid"
-  subjects:
-  - kind: "ServiceAccount"
-    name: "<sa-name>"
-    namespace: "<namespace>"
+```bash
+# Grant anyuid SCC to service account
+oc adm policy add-scc-to-user anyuid \
+  system:serviceaccount:<namespace>:<sa-name>
+
+# Or create RoleBinding manually
+oc create rolebinding sa-anyuid \
+  --clusterrole=system:openshift:scc:anyuid \
+  --serviceaccount=<namespace>:<sa-name> \
+  -n <namespace>
 ```
 
 **Pattern**: Bind service account to `system:openshift:scc:<scc-name>` ClusterRole

@@ -91,22 +91,24 @@ OpenShift uses OAuth for user authentication. After initial deployment with kube
 
 ### General Structure
 
+**Note**: Identity provider configuration is a Day-2 operation requiring direct cluster access via `oc` CLI or the `openshift-administration` MCP server when using Claude Code with KUBECONFIG set.
+
 All identity providers configured via OAuth custom resource:
 
+```yaml
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: "<provider-name>"
+    type: "<provider-type>"
+    mappingMethod: "claim"  # or "add", "lookup", "generate"
+    <provider-specific-config>
 ```
-MCP Tool: resources_create (or resources_update)
-Parameters:
-  apiVersion: "config.openshift.io/v1"
-  kind: "OAuth"
-  metadata:
-    name: "cluster"
-  spec:
-    identityProviders:
-    - name: "<provider-name>"
-      type: "<provider-type>"
-      mappingMethod: "claim"  # or "add", "lookup", "generate"
-      <provider-specific-config>
-```
+
+Apply with: `oc apply -f oauth.yaml`
 
 ### Mapping Methods
 
@@ -133,30 +135,22 @@ cat users.htpasswd
 
 ### Uploading to OpenShift
 
-```
+```bash
 # 1. Create secret with htpasswd file
-MCP Tool: resources_create
-Parameters:
-  apiVersion: "v1"
-  kind: "Secret"
-  metadata:
-    name: "htpass-secret"
-    namespace: "openshift-config"
-  type: "Opaque"
-  stringData:
-    htpasswd: "<base64-encoded-htpasswd-content>"
+oc create secret generic htpass-secret \
+  --from-file=htpasswd=users.htpasswd \
+  -n openshift-config
 
 # 2. Configure OAuth to use HTPasswd
-MCP Tool: resources_update
-Parameters:
-  apiVersion: "config.openshift.io/v1"
-  kind: "OAuth"
-  metadata:
-    name: "cluster"
-  spec:
-    identityProviders:
-    - name: "htpasswd_provider"
-      type: "HTPasswd"
+oc apply -f - <<EOF
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: htpasswd_provider
+    type: HTPasswd
       mappingMethod: "claim"
       htpasswd:
         fileData:
@@ -179,31 +173,31 @@ htpasswd -B -b users.htpasswd newuser <password>
 
 ### Basic Structure
 
-```
-MCP Tool: resources_update
-Parameters:
-  apiVersion: "config.openshift.io/v1"
-  kind: "OAuth"
-  metadata:
-    name: "cluster"
-  spec:
-    identityProviders:
-    - name: "ldap_provider"
-      type: "LDAP"
-      mappingMethod: "claim"
-      ldap:
-        url: "ldap://ldap.example.com:389/dc=example,dc=com?uid"
-        bindDN: "cn=admin,dc=example,dc=com"
-        bindPassword:
-          name: "ldap-secret"  # Secret in openshift-config
-        insecure: false  # Set true only for testing
-        ca:
-          name: "ldap-ca-cert"  # Secret with LDAP CA certificate
-        attributes:
-          id: ["dn"]
-          preferredUsername: ["uid"]
-          name: ["cn"]
-          email: ["mail"]
+```bash
+oc apply -f - <<EOF
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: ldap_provider
+    type: LDAP
+    mappingMethod: claim
+    ldap:
+      url: "ldap://ldap.example.com:389/dc=example,dc=com?uid"
+      bindDN: "cn=admin,dc=example,dc=com"
+      bindPassword:
+        name: ldap-secret  # Secret in openshift-config
+      insecure: false  # Set true only for testing
+      ca:
+        name: ldap-ca-cert  # Secret with LDAP CA certificate
+      attributes:
+        id: ["dn"]
+        preferredUsername: ["uid"]
+        name: ["cn"]
+        email: ["mail"]
+EOF
 ```
 
 ### LDAP URL Format
@@ -216,17 +210,10 @@ Parameters:
 
 ### Creating LDAP Bind Secret
 
-```
-MCP Tool: resources_create
-Parameters:
-  apiVersion: "v1"
-  kind: "Secret"
-  metadata:
-    name: "ldap-secret"
-    namespace: "openshift-config"
-  type: "Opaque"
-  stringData:
-    bindPassword: "<ldap-bind-password>"
+```bash
+oc create secret generic ldap-secret \
+  --from-literal=bindPassword='<ldap-bind-password>' \
+  -n openshift-config
 ```
 
 ---
@@ -235,24 +222,23 @@ Parameters:
 
 ### Keycloak Example
 
-```
-MCP Tool: resources_update
-Parameters:
-  apiVersion: "config.openshift.io/v1"
-  kind: "OAuth"
-  metadata:
-    name: "cluster"
-  spec:
-    identityProviders:
-    - name: "keycloak"
-      type: "OpenID"
-      mappingMethod: "claim"
-      openID:
-        clientID: "openshift"
-        clientSecret:
-          name: "oidc-secret"  # Secret with client secret
-        issuer: "https://keycloak.example.com/auth/realms/master"
-        claims:
+```bash
+oc apply -f - <<EOF
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: keycloak
+    type: OpenID
+    mappingMethod: claim
+    openID:
+      clientID: openshift
+      clientSecret:
+        name: oidc-secret  # Secret with client secret
+      issuer: "https://keycloak.example.com/auth/realms/master"
+      claims:
           preferredUsername: ["preferred_username"]
           name: ["name"]
           email: ["email"]
@@ -276,26 +262,26 @@ openID:
 
 ## GitHub OAuth Configuration
 
-```
-MCP Tool: resources_update
-Parameters:
-  apiVersion: "config.openshift.io/v1"
-  kind: "OAuth"
-  metadata:
-    name: "cluster"
-  spec:
-    identityProviders:
-    - name: "github"
-      type: "GitHub"
-      mappingMethod: "claim"
-      github:
-        clientID: "<github-oauth-app-client-id>"
-        clientSecret:
-          name: "github-secret"
-        organizations:  # Optional: restrict to org members
-        - "my-org"
-        teams:  # Optional: restrict to specific teams
-        - "my-org/team-name"
+```bash
+oc apply -f - <<EOF
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: github
+    type: GitHub
+    mappingMethod: claim
+    github:
+      clientID: "<github-oauth-app-client-id>"
+      clientSecret:
+        name: github-secret
+      organizations:  # Optional: restrict to org members
+      - my-org
+      teams:  # Optional: restrict to specific teams
+      - my-org/team-name
+EOF
 ```
 
 ### Creating GitHub OAuth App
@@ -343,14 +329,12 @@ spec:
 
 ### Viewing Users and Identities
 
-```
-MCP Tool: resources_list
-Parameters: {kind: "User"}
-Expected: List of all users
+```bash
+# List all users
+oc get users
 
-MCP Tool: resources_list
-Parameters: {kind: "Identity"}
-Expected: List of all identities with provider info
+# List all identities with provider info
+oc get identities
 ```
 
 ---
@@ -368,16 +352,11 @@ Expected: List of all identities with provider info
 
 ```
 # Verify alternative admin
-MCP Tool: resources_list
-Parameters: {kind: "User"}
-Filter: Non-kubeadmin users exist
+# Verify non-kubeadmin users exist
+oc get users
 
 # Delete kubeadmin secret
-MCP Tool: resources_delete
-Parameters:
-  kind: "Secret"
-  name: "kubeadmin"
-  namespace: "kube-system"
+oc delete secret kubeadmin -n kube-system
 ```
 
 **Post-deletion**: Kubeadmin cannot be re-enabled without cluster reinstall
@@ -391,22 +370,19 @@ Parameters:
 **Check**:
 1. Identity provider configured correctly in OAuth
 2. Provider-specific secrets exist in openshift-config
-3. OAuth pods running: `resources_list` with `kind: Pod, namespace: openshift-authentication`
+3. OAuth pods running in openshift-authentication namespace
 4. Network connectivity to external provider (LDAP, GitHub, etc.)
 
 **Debug**:
-```
+```bash
 # Check OAuth configuration
-MCP Tool: resources_get
-Parameters: {kind: "OAuth", name: "cluster"}
+oc get oauth cluster -o yaml
 
 # Check authentication pods
-MCP Tool: resources_list
-Parameters: {kind: "Pod", namespace: "openshift-authentication"}
+oc get pods -n openshift-authentication
 
 # Check pod logs
-MCP Tool: pods_log
-Parameters: {namespace: "openshift-authentication", pod: "<oauth-pod-name>"}
+oc logs -n openshift-authentication <oauth-pod-name>
 ```
 
 ### Identity Provider Not Showing on Login Page

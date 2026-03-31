@@ -76,22 +76,9 @@ OpenShift uses certificates for secure communication between cluster components 
 
 ### Viewing Certificate Dates
 
-```
-# Check API server certificates
-MCP Tool: resources_get
-Parameters:
-  kind: "APIServer"
-  name: "cluster"
-
-# Check ingress certificates
-MCP Tool: resources_get
-Parameters:
-  kind: "IngressController"
-  name: "default"
-  namespace: "openshift-ingress-operator"
-```
-
-### Using kubectl/oc (reference)
+**Note**: Certificate management operations are Day-2 operations requiring direct cluster access. These can be performed via:
+- `oc` CLI commands with valid kubeconfig
+- `openshift-administration` MCP server when using Claude Code with KUBECONFIG set
 
 ```bash
 # Check API server cert
@@ -117,10 +104,9 @@ echo | openssl s_client -connect console-openshift-console.apps.<cluster>.<domai
 **User action required**: None (fully automatic)
 
 **Monitoring**:
-```
-MCP Tool: resources_list
-Parameters:
-  kind: "ClusterOperator"
+```bash
+# Check cluster operator status for certificate rotation issues
+oc get clusteroperators
 
 # Look for operators with degraded=true
 # Certificate rotation issues show in operator status
@@ -135,15 +121,10 @@ Parameters:
 **When needed**: Certificate compromised or expiration imminent
 
 **API Server Certificates**:
-```
+```bash
 # Force rotation by deleting certificate secrets
-MCP Tool: resources_delete
-Parameters:
-  kind: "Secret"
-  namespace: "openshift-kube-apiserver"
-  name: "aggregator-client-signer"
-
 # Cluster operator regenerates automatically
+oc delete secret aggregator-client-signer -n openshift-kube-apiserver
 ```
 
 **⚠️ Warning**: This triggers service restart; brief API unavailability
@@ -154,17 +135,7 @@ Parameters:
 
 **Solution**: Download new kubeconfig
 
-**For Assisted Installer clusters**:
-```
-# Use cluster-credentials-download-url MCP tool
-MCP Tool: cluster_credentials_download_url
-Parameters:
-  cluster_id: "<cluster-id>"
-  file_name: "kubeconfig"
-
-# Download to /tmp/<cluster-name>/kubeconfig
-# Replace old kubeconfig
-```
+**For Assisted Installer clusters**: Use the `cluster-creator` skill's credential download functionality or download from Red Hat Hybrid Cloud Console.
 
 **For production clusters**: Contact cluster administrator or use alternative authentication
 
@@ -183,31 +154,18 @@ Parameters:
 
 **Process**:
 
-```
+```bash
 # 1. Create secret with certificate
-MCP Tool: resources_create
-Parameters:
-  apiVersion: "v1"
-  kind: "Secret"
-  metadata:
-    name: "custom-ingress-cert"
-    namespace: "openshift-ingress"
-  type: "kubernetes.io/tls"
-  data:
-    tls.crt: "<base64-encoded-certificate>"
-    tls.key: "<base64-encoded-private-key>"
+oc create secret tls custom-ingress-cert \
+  --cert=path/to/tls.crt \
+  --key=path/to/tls.key \
+  -n openshift-ingress
 
 # 2. Update IngressController to use custom cert
-MCP Tool: resources_update
-Parameters:
-  apiVersion: "operator.openshift.io/v1"
-  kind: "IngressController"
-  metadata:
-    name: "default"
-    namespace: "openshift-ingress-operator"
-  spec:
-    defaultCertificate:
-      name: "custom-ingress-cert"
+oc patch ingresscontroller default \
+  -n openshift-ingress-operator \
+  --type=merge \
+  -p '{"spec":{"defaultCertificate":{"name":"custom-ingress-cert"}}}'
 ```
 
 **Result**: All routes use custom certificate
@@ -243,17 +201,11 @@ Parameters:
 **Auto-renewal**: Application must request new token before expiration
 
 **Creating time-bound token**:
-```
-MCP Tool: resources_create
-Parameters:
-  apiVersion: "authentication.k8s.io/v1"
-  kind: "TokenRequest"
-  metadata:
-    name: "<service-account-name>"
-    namespace: "<namespace>"
-  spec:
-    audiences: ["https://kubernetes.default.svc"]
-    expirationSeconds: 3600  # 1 hour
+```bash
+# Create time-bound token for service account
+oc create token <service-account-name> \
+  -n <namespace> \
+  --duration=1h
 ```
 
 **Best practice**: Use projected volumes in pods (automatic rotation)
@@ -269,13 +221,9 @@ Parameters:
 **User action**: None required
 
 **Monitoring**:
-```
-MCP Tool: resources_get
-Parameters:
-  kind: "ClusterOperator"
-  name: "etcd"
-
-# Check status for certificate rotation progress
+```bash
+# Check etcd operator status for certificate rotation progress
+oc get clusteroperator etcd -o yaml
 ```
 
 ### Manual Rotation (Recovery)
@@ -301,11 +249,9 @@ Parameters:
 
 ### Checking API Server Cert Status
 
-```
-MCP Tool: resources_get
-Parameters:
-  kind: "APIServer"
-  name: "cluster"
+```bash
+# Check API server status
+oc get apiserver cluster -o yaml
 
 # Look in status.conditions for certificate-related messages
 ```
@@ -323,15 +269,12 @@ Parameters:
 **Renewal**: Automatic via kubelet certificate rotation
 
 **Monitoring**:
-```
-MCP Tool: nodes_stats_summary
-Parameters: {node: "<node-name>"}
+```bash
+# Check node status and conditions
+oc get node <node-name> -o yaml
 
-# Or check node conditions
-MCP Tool: resources_get
-Parameters:
-  kind: "Node"
-  name: "<node-name>"
+# Check node certificate expiration
+oc get node <node-name> -o jsonpath='{.status.conditions[?(@.type=="Ready")].message}'
 ```
 
 ### Failed Rotation Recovery
@@ -339,21 +282,12 @@ Parameters:
 **Symptom**: Node shows "NotReady" due to expired certificate
 
 **Solution**:
-```
-# Approve pending certificate signing requests
-MCP Tool: resources_list
-Parameters: {kind: "CertificateSigningRequest"}
+```bash
+# List pending certificate signing requests
+oc get csr
 
 # Approve CSRs for the node
-MCP Tool: resources_update
-Parameters:
-  kind: "CertificateSigningRequest"
-  name: "<csr-name>"
-  status:
-    conditions:
-    - type: "Approved"
-      status: "True"
-      reason: "NodeCertificateRotation"
+oc adm certificate approve <csr-name>
 ```
 
 ---
@@ -369,11 +303,9 @@ OpenShift provides built-in alerts for certificate expiration:
 - `KubeAPIServerClientCertificateExpiration`
 
 **Check alerts**:
-```
-MCP Tool: resources_list
-Parameters:
-  kind: "PrometheusRule"
-  namespace: "openshift-monitoring"
+```bash
+# View PrometheusRule for certificate alerts
+oc get prometheusrules -n openshift-monitoring
 ```
 
 ### Manual Checks
@@ -409,11 +341,9 @@ Parameters:
 **Symptom**: Cluster operator degraded, certificate not rotating
 
 **Checks**:
-```
-MCP Tool: resources_get
-Parameters:
-  kind: "ClusterOperator"
-  name: "<operator-name>"
+```bash
+# Check operator status for error messages
+oc get clusteroperator <operator-name> -o yaml
 
 # Check status.conditions for error messages
 ```

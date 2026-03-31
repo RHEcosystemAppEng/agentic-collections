@@ -294,55 +294,52 @@ This checklist provides security verification steps for OpenShift clusters acros
 
 ---
 
-## Verification Commands (via MCP)
+## Verification Commands
+
+**Note**: These verification commands require direct cluster access via `oc` CLI or the `openshift-administration` MCP server when using Claude Code with KUBECONFIG set.
 
 ### Check ClusterOperators Status
 
-```
-MCP Tool: resources_list
-Parameters: {kind: "ClusterOperator"}
-Expected: All operators available=true, degraded=false
+```bash
+oc get clusteroperators
+# Expected: All operators available=true, degraded=false
 ```
 
 ### Check Node Security
 
-```
-MCP Tool: resources_list
-Parameters: {kind: "Node"}
-Verify: All nodes Ready, SELinux enforcing
+```bash
+oc get nodes
+# Verify: All nodes Ready, SELinux enforcing
 ```
 
 ### List ServiceAccounts with Elevated Privileges
 
-```
-MCP Tool: resources_list
-Parameters: {kind: "ClusterRoleBinding"}
-Filter: roleRef.name = "cluster-admin"
-Review: Ensure only necessary accounts listed
+```bash
+oc get clusterrolebindings -o json | \
+  jq '.items[] | select(.roleRef.name=="cluster-admin") | .metadata.name'
+# Review: Ensure only necessary accounts listed
 ```
 
 ### Check Certificate Expiration
 
-```
-MCP Tool: resources_get
-Parameters: {kind: "APIServer", name: "cluster"}
-Review: Certificate dates in status
+```bash
+oc get apiserver cluster -o yaml
+# Review: Certificate dates in status
 ```
 
 ### Verify Audit Logging
 
-```
-MCP Tool: resources_get
-Parameters: {kind: "APIServer", name: "cluster"}
-Verify: spec.audit configuration present
+```bash
+oc get apiserver cluster -o yaml
+# Verify: spec.audit configuration present
 ```
 
 ### List Privileged Pods
 
-```
-MCP Tool: pods_list
-Filter: securityContext.privileged = true
-Review: Ensure justified
+```bash
+oc get pods --all-namespaces -o json | \
+  jq '.items[] | select(.spec.containers[].securityContext.privileged==true) | .metadata.name'
+# Review: Ensure privileged access is justified
 ```
 
 ---

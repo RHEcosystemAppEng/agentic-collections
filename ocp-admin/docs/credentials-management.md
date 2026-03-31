@@ -116,16 +116,16 @@ echo 'export KUBECONFIG=/tmp/cluster-name/kubeconfig' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Verify via MCP Tools
+### Verify Cluster Access
 
-```
-MCP Tool: resources_list
-Parameters: {kind: "Node"}
-Expected: List of cluster nodes
+**Note**: These verification commands are available via `oc` CLI or the `openshift-administration` MCP server when using Claude Code with KUBECONFIG set.
 
-MCP Tool: resources_get
-Parameters: {kind: "ClusterVersion", name: "version"}
-Expected: OpenShift version info
+```bash
+# List cluster nodes
+oc get nodes
+
+# Get OpenShift version info
+oc get clusterversion version -o yaml
 ```
 
 ### Kubeadmin Credentials
@@ -232,13 +232,12 @@ Uses `KUBECONFIG` environment variable for authentication.
 3. All MCP tools use configured kubeconfig
 4. No restart needed (with multi-context setup)
 
-**Set for MCP**:
+**Set for cluster operations**:
 ```bash
 export KUBECONFIG=/tmp/cluster-name/kubeconfig
 
-# Verify
-MCP Tool: resources_list
-Parameters: {kind: "Namespace"}
+# Verify cluster access
+oc get namespaces
 ```
 
 ---
@@ -272,12 +271,11 @@ CURRENT   NAME                  CLUSTER    AUTHINFO
 # Switch to cluster-b
 kubectl config use-context cluster-b/kubeadmin
 
-# Verify
+# Verify active context
 kubectl config current-context
 
-# MCP tools now use cluster-b
-MCP Tool: resources_list
-Parameters: {kind: "Node"}
+# Verify cluster-b access
+oc get nodes
 ```
 
 ### Context Naming
@@ -296,13 +294,13 @@ kubectl config rename-context old-name new-name
 
 ### MCP Context Switching
 
-**No restart needed**: MCP reads current context dynamically
+**No restart needed**: Changes to KUBECONFIG context are immediate
 
 **Workflow**:
 1. Merge kubeconfigs → `~/.kube/config`
 2. Set `KUBECONFIG=~/.kube/config`
 3. Use `kubectl config use-context` to switch
-4. MCP tools use new context automatically
+4. `oc` commands and cluster operations use new context automatically
 
 ---
 
@@ -311,12 +309,11 @@ kubectl config rename-context old-name new-name
 ### Verify Active Session
 
 ```bash
-# Check context
+# Check active context
 kubectl config current-context
 
-# Verify via MCP
-MCP Tool: resources_get
-Parameters: {kind: "ClusterVersion", name: "version"}
+# Verify cluster access
+oc get clusterversion
 ```
 
 ### Switch Sessions
@@ -351,17 +348,12 @@ rm -rf /tmp/cluster-name/
 
 **Process**:
 
-```
-# 1. Verify alternative admin
-MCP Tool: resources_list
-Parameters: {kind: "User"}
+```bash
+# 1. Verify alternative admin exists
+oc get users
 
 # 2. Delete kubeadmin secret (IRREVERSIBLE)
-MCP Tool: resources_delete
-Parameters:
-  kind: "Secret"
-  name: "kubeadmin"
-  namespace: "kube-system"
+oc delete secret kubeadmin -n kube-system
 ```
 
 **Post-deletion**: Cannot be re-enabled without cluster reinstall
@@ -377,12 +369,11 @@ Switch contexts without MCP restart.
 ```bash
 kubectl config use-context cluster-2/kubeadmin
 
-# MCP tools now use cluster-2
-MCP Tool: resources_list
-Parameters: {kind: "Node"}
+# Verify access to cluster-2
+oc get nodes
 ```
 
-**Why it works**: MCP reads `current-context` from kubeconfig on each tool call.
+**Why it works**: Context changes are immediate for all cluster operations.
 
 ### Change KUBECONFIG Variable (requires restart)
 
