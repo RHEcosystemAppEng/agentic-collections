@@ -36,16 +36,6 @@ metadata:
 - ⚠️ **Last resort only**: CLI commands (`oc`, `kubectl`) may be attempted if no MCP alternative exists
 - ⚠️ **Assume unavailable**: CLI tools are likely not installed in the execution environment
 
-## Critical: Human-in-the-Loop Requirements
-
-This skill performs critical, irreversible operations requiring explicit user confirmation:
-
-1. **Cluster Definition Creation** (Step 5): Display configuration, ask "Ready to create?"
-2. **Starting Installation** (Step 13): Display summary, emphasize "WARNING: Irreversible!", wait for explicit "YES"
-3. **After Major Steps**: Report VIP/network/role configuration results
-
-**Never Assume Approval** - Always wait for explicit confirmation.
-
 ---
 
 ## Prerequisites
@@ -471,6 +461,18 @@ All tools from `openshift-self-managed` MCP server:
 
 **Complete Documentation Guide**:
 - **[Documentation Index](../../docs/INDEX.md)** - Navigate all ocp-admin documentation (consult for topics not explicitly referenced above)
+
+---
+
+## Human-in-the-Loop
+
+This skill performs critical, irreversible operations requiring explicit user confirmation:
+
+1. **Cluster Definition Creation** (Step 5): Display configuration, ask "Ready to create?"
+2. **Starting Installation** (Step 13): Display summary, emphasize "WARNING: Irreversible!", wait for explicit "YES"
+3. **After Major Steps**: Report VIP/network/role configuration results
+
+**Never Assume Approval** - Always wait for explicit confirmation.
 
 ---
 
