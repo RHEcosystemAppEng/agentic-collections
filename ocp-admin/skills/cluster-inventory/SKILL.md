@@ -56,7 +56,7 @@ List and inspect OpenShift clusters across all types (OCP, SNO, ROSA, ARO, OSD).
 **Environment Variables**: `OFFLINE_TOKEN` - Red Hat authentication token
 
 **Verification Steps**:
-1. Verify both MCP servers exist in `.mcp.json`
+1. Verify both MCP servers exist in `mcps.json`
 2. Check `OFFLINE_TOKEN` is set: `test -n "$OFFLINE_TOKEN" && echo "✓" || echo "✗"`
 3. If missing → Stop and report error with setup instructions
 

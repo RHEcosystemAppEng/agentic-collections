@@ -18,7 +18,7 @@ Check the diff against the project rules injected in PROJECT RULES REFERENCE (fr
 - **Skill invocation**: use `/skill-name` slash format, never call MCP tools directly
 - **Human-in-the-Loop**: required for create/delete/modify/restore/execute ops, not for read-only
 - **New packs**: must add pack name to `PACK_DIRS` in `scripts/validate_structure.py`; `docs/data.json` must NOT be committed
-- **Build reminder**: if skills, agents, or `.mcp.json` changed, remind author to run `make validate`
+- **Build reminder**: if skills, agents, or `mcps.json` changed, remind author to run `make validate`
 
 ### 3. Code Quality Issues
 Any bugs, security concerns, logic errors, or broken links (with file:line references).

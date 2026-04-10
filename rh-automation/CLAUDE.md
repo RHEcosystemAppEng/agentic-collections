@@ -55,7 +55,7 @@ Six HTTP MCP servers are configured for this pack. Skills wrap these — do not 
 - **aap-mcp-system-monitoring** (Required for full governance readiness) — Instance groups, activity stream, mesh topology, platform status.
 - **aap-mcp-user-management** (Required for full governance readiness) — Users, teams, organizations, roles, RBAC.
 
-Environment variables `AAP_MCP_SERVER` and `AAP_API_TOKEN` are defined in `.mcp.json` using `${...}` placeholders only; never expose secret values in chat output.
+Environment variables `AAP_MCP_SERVER` and `AAP_API_TOKEN` are defined in `mcps.json` using `${...}` placeholders only; never expose secret values in chat output.
 
 ## Global Rules
 

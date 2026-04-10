@@ -89,7 +89,7 @@ Before executing any skill, verify MCP server availability:
 **OpenShift MCP Server** (universally required):
 - Source: https://github.com/openshift/openshift-mcp-server
 - Required env var: `KUBECONFIG`
-- Setup: Add to `.mcp.json`, set `KUBECONFIG`, restart Claude Code
+- Setup: Add to `mcps.json`, set `KUBECONFIG`, restart Claude Code
 
 ## Common Prerequisites
 

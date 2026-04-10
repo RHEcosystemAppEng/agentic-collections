@@ -118,7 +118,7 @@ If OFFLINE_TOKEN is missing or invalid:
 
 **Security Best Practices**:
 - ✓ Set OFFLINE_TOKEN in shell profile (`.bashrc`, `.zshrc`) for persistence
-- ✓ Use environment variable reference `${OFFLINE_TOKEN}` in `.mcp.json`
+- ✓ Use environment variable reference `${OFFLINE_TOKEN}` in `mcps.json`
 - ✓ Never commit `.env` files containing tokens to version control
 - ✗ NEVER echo or print the token value in commands
 - ✗ NEVER include token in code, scripts, or documentation examples
@@ -160,7 +160,7 @@ If OFFLINE_TOKEN is missing or invalid:
    ```
 
 2. **Verify environment variable is passed to container**:
-   - Ensure `.mcp.json` has `"env": {"OFFLINE_TOKEN": "${OFFLINE_TOKEN}"}`
+   - Ensure `mcps.json` has `"env": {"OFFLINE_TOKEN": "${OFFLINE_TOKEN}"}`
    - Ensure shell session has `OFFLINE_TOKEN` exported before starting Claude Code
 
 3. **Test manual container execution**:

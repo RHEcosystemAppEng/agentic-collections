@@ -100,7 +100,7 @@ See [docs/INDEX.md](docs/INDEX.md) for the complete documentation map and [docs/
 
 ```
 rh-automation/
-├── .mcp.json                        # 6 AAP MCP servers
+├── mcps.json                        # 6 AAP MCP servers
 ├── skills/
 │   ├── governance-assessor/         # UC1: Orchestrates governance audit
 │   ├── governance-executor/         # UC2: Orchestrates governed execution

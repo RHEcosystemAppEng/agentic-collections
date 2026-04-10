@@ -70,7 +70,7 @@ This skill uses `openshift-administration` MCP server exclusively. This server p
 - **NEVER** manually reconstruct data already available in MCP output
 
 **Verification**:
-1. Check `openshift-administration` in `.mcp.json`
+1. Check `openshift-administration` in `mcps.json`
 2. Verify `KUBECONFIG` set: `test -n "$KUBECONFIG"`
 3. Test connection: Call `configuration_contexts_list` to verify MCP server responsive
 
@@ -97,7 +97,7 @@ This skill uses `openshift-administration` MCP server exclusively. This server p
 **If MCP server unavailable**:
 1. Stop immediately
 2. Display: "Cannot execute skill: openshift-administration MCP server not configured"
-3. Display: "Setup: Configure openshift-administration in .mcp.json (see README.md#environment-setup)"
+3. Display: "Setup: Configure openshift-administration in mcps.json (see README.md#environment-setup)"
 4. Ask: "How to proceed? (setup/skip/abort)"
 5. Wait for user input
 
@@ -122,7 +122,7 @@ Collect all context names and server URLs. Do NOT present results to the user ye
 
 **Error Handling**:
 - If no contexts found: Stop and instruct user to verify KUBECONFIG points to a valid file with cluster contexts
-- If tool call fails: Report MCP server connectivity issue, suggest checking `.mcp.json` configuration
+- If tool call fails: Report MCP server connectivity issue, suggest checking `mcps.json` configuration
 
 #### Step 1b: Verify OpenShift Clusters
 

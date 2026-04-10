@@ -52,7 +52,7 @@ Three MCP server families are configured for this pack. Skills wrap these — do
 - **aap-mcp-job-management** (Required for execution paths) — AAP job templates, projects, job runs.
 - **aap-mcp-inventory-management** (Required for execution paths) — AAP inventories and hosts.
 
-Environment variables are defined in `.mcp.json` using `${...}` placeholders only; never expose secret values in chat output.
+Environment variables are defined in `mcps.json` using `${...}` placeholders only; never expose secret values in chat output.
 
 ## Global Rules
 

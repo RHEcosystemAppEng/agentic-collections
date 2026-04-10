@@ -67,7 +67,7 @@ This skill uses `openshift-self-managed` MCP server exclusively. This server con
 - **OSD** (OpenShift Dedicated) - Use `openshift-ocm-managed` MCP server
 
 **Verification**:
-1. Check `openshift-self-managed` in `.mcp.json`
+1. Check `openshift-self-managed` in `mcps.json`
 2. Verify `OFFLINE_TOKEN` set: `test -n "$OFFLINE_TOKEN"`
 3. Test connection: Call `list_versions` to verify MCP server responsive
 

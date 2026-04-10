@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validate agentic collection pack structure (plugin.json, .mcp.json, CLAUDE.md).
+Validate agentic collection pack structure (plugin.json, mcps.json, CLAUDE.md).
 
 Skill-level validation (frontmatter, sections, security) is handled by
 validate-skills.sh and run-skill-linter.sh.

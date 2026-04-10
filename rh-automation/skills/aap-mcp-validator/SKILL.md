@@ -114,7 +114,7 @@ If any server fails:
 ## Dependencies
 
 ### Required MCP Servers
-- All 6 AAP MCP servers (as configured in `.mcp.json`)
+- All 6 AAP MCP servers (as configured in `mcps.json`)
 
 ### Required MCP Tools
 - `job_templates_list` (from aap-mcp-job-management)
@@ -128,7 +128,7 @@ If any server fails:
 - All skills requiring AAP MCP access (this skill validates connectivity before they run)
 
 ### Reference Documentation
-- AAP MCP server configuration in `.mcp.json`
+- AAP MCP server configuration in `mcps.json`
 
 ## Example Usage
 

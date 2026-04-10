@@ -211,7 +211,7 @@ export KUBECONFIG=~/.kube/cluster-name.config
 
 Uses `KUBECONFIG` environment variable for authentication.
 
-**.mcp.json configuration**:
+**mcps.json configuration**:
 ```json
 {
   "mcpServers": {
@@ -423,7 +423,7 @@ kubectl config current-context      # Verify context
 
 **Solutions**:
 - Export `KUBECONFIG` before starting Claude Code
-- Verify `.mcp.json` includes `"KUBECONFIG": "${KUBECONFIG}"`
+- Verify `mcps.json` includes `"KUBECONFIG": "${KUBECONFIG}"`
 - Restart Claude Code
 
 ### Context Not Switching

@@ -45,7 +45,7 @@ A Claude Code plugin for building and deploying applications on Red Hat platform
 - **github** - Repository browsing and code analysis
 - **lightspeed** - Red Hat Insights data (vulnerability, advisor, inventory, planning) — optional
 
-> **Container UID mapping**: The openshift MCP server uses `--userns=keep-id:uid=65532,gid=65532` to map the host user to the container's non-root UID (65532). This allows the container to read `chmod 600` files like `KUBECONFIG` without weakening file permissions. **macOS users**: Podman runs inside a VM on macOS — this flag may cause startup failures. If the MCP server fails to start, remove the `--userns` line from `.mcp.json`.
+> **Container UID mapping**: The openshift MCP server uses `--userns=keep-id:uid=65532,gid=65532` to map the host user to the container's non-root UID (65532). This allows the container to read `chmod 600` files like `KUBECONFIG` without weakening file permissions. **macOS users**: Podman runs inside a VM on macOS — this flag may cause startup failures. If the MCP server fails to start, remove the `--userns` line from `mcps.json`.
 
 ## Supported Languages
 

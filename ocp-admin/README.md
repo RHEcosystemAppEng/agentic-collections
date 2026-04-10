@@ -59,7 +59,7 @@ claude plugin list
 
 ### Important: MCP Server Configuration
 
-**⚠️ CRITICAL**: The `.mcp.json` file in this plugin is for **reference only**. MCP servers are **NOT automatically installed** by Claude Code plugins.
+**⚠️ CRITICAL**: The `mcps.json` file in this plugin is for **reference only**. MCP servers are **NOT automatically installed** by Claude Code plugins.
 
 **You must manually configure MCP servers** in your Claude Code settings using **one of these methods**:
 
@@ -68,7 +68,7 @@ claude plugin list
 1. Open Claude Code
 2. Type `/mcp` to open MCP Server Manager
 3. Click "Add Server" for each server below
-4. Copy the configuration from `.mcp.json`
+4. Copy the configuration from `mcps.json`
 
 #### Option B: Manual Settings Configuration
 
@@ -81,10 +81,10 @@ Add the MCP servers to your settings file:
 {
   "mcpServers": {
     "openshift-self-managed": {
-      // ... copy from .mcp.json
+      // ... copy from mcps.json
     },
     "openshift-ocm-managed": {
-      // ... copy from .mcp.json
+      // ... copy from mcps.json
     }
   }
 }
@@ -131,9 +131,9 @@ source ~/.bashrc
 
 ### 3. Configure MCP Servers in Claude Code
 
-Copy the **entire configuration** from `ocp-admin/.mcp.json` to your Claude Code settings:
+Copy the **entire configuration** from `ocp-admin/mcps.json` to your Claude Code settings:
 
-**From**: `ocp-admin/.mcp.json` (reference)
+**From**: `ocp-admin/mcps.json` (reference)
 **To**: `~/.claude/settings.json` (active configuration)
 
 **Full Configuration** (copy this to your settings):
@@ -398,7 +398,7 @@ Provides access to Red Hat Assisted Installer API for cluster lifecycle operatio
 - **Versions**: list_versions, list_operator_bundles
 - **Operators**: add_operator_bundle_to_cluster
 
-**Configuration** (in `.mcp.json`):
+**Configuration** (in `mcps.json`):
 ```json
 {
   "mcpServers": {
@@ -447,7 +447,7 @@ Provides access to Kubernetes/OpenShift cluster operations for multi-cluster man
 - **Namespaces**: namespaces_list, projects_list
 - **Events**: events_list
 
-**Configuration** (in `.mcp.json`):
+**Configuration** (in `mcps.json`):
 ```json
 {
   "mcpServers": {
@@ -587,7 +587,7 @@ The pack includes 17 comprehensive reference documents covering all aspects of O
 **Solutions**:
 1. Verify `uv` is installed: `uv --version`
 2. Check OFFLINE_TOKEN is set: `echo "OFFLINE_TOKEN is ${OFFLINE_TOKEN:+set}"`
-3. Verify path in `.mcp.json` points to your local `assisted-service-mcp` clone
+3. Verify path in `mcps.json` points to your local `assisted-service-mcp` clone
 4. Test manually:
    ```bash
    cd /path/to/assisted-service-mcp
@@ -644,7 +644,7 @@ ocp-admin/
 ├── README.md                    # This file
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin metadata
-├── .mcp.json                    # MCP server configurations
+├── mcps.json                    # MCP server configurations
 ├── docs/                        # Comprehensive reference documentation (17 files)
 │   ├── INDEX.md                 # Master documentation navigation
 │   ├── input-validation-guide.md
