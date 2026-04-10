@@ -13,6 +13,10 @@ import yaml
 # List of agentic packs to parse
 PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt', 'rh-ai-engineer', 'rh-automation']
 
+# Packs omitted from docs/data.json and the static documentation site
+DOCS_EXCLUDED_PACKS = frozenset({'rh-support-engineer'})
+DOCS_PACK_DIRS = [d for d in PACK_DIRS if d not in DOCS_EXCLUDED_PACKS]
+
 
 def parse_yaml_frontmatter(file_path: Path) -> Dict[str, Any]:
     """
@@ -280,7 +284,7 @@ def generate_pack_data() -> List[Dict[str, Any]]:
     # Load plugin title mappings from docs/plugins.json
     plugin_titles = load_plugin_titles()
 
-    for pack_dir in PACK_DIRS:
+    for pack_dir in DOCS_PACK_DIRS:
         pack_path = Path(pack_dir)
 
         if not pack_path.exists():

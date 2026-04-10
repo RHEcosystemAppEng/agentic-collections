@@ -21,7 +21,7 @@ lola install -f rh-sre
 ### Install all modules at once
 
 ```bash
-for m in ocp-admin rh-developer rh-sre rh-support-engineer rh-virt; do lola install -f $m; done
+for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do lola install -f $m; done
 ```
 
 ### Install to a specific assistant only

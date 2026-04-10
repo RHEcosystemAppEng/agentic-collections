@@ -9,8 +9,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Any
 
-# List of agentic packs to parse
-PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt', 'rh-ai-engineer', 'rh-automation']
+from generate_pack_data import DOCS_PACK_DIRS
 
 MCP_FILENAME = "mcps.json"
 MCP_DEPRECATED = ".mcp.json"
@@ -174,7 +173,7 @@ def generate_mcp_data() -> List[Dict[str, Any]]:
     # Load custom data (repository URLs and tool descriptions)
     custom_data = load_custom_mcp_data()
 
-    for pack_dir in PACK_DIRS:
+    for pack_dir in DOCS_PACK_DIRS:
         pack_path = Path(pack_dir)
 
         if not pack_path.exists():
