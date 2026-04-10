@@ -1,13 +1,13 @@
 name: "RH Agentic Collections Marketplace"
 description: "Official curated collection of RH Agentic Collections modules"
-url: "https://github.com/RHEcosystemAppEng/agentic-collections"
+url: "https://github.com/dmartinol/agentic-collections-fork"
 version: "0.0.1"
 
 modules:
   - name: "ocp-admin"
     description: "Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks."
     version: "0.0.1"
-    repository: "https://github.com/RHEcosystemAppEng/agentic-collections"
+    repository: "https://github.com/dmartinol/agentic-collections-fork"
     path: "ocp-admin"
     tags:
       - "red-hat"
@@ -18,7 +18,7 @@ modules:
   - name: "rh-developer"
     description: "Plugins for building and deploying applications on Red Hat platforms."
     version: "0.0.1"
-    repository: "https://github.com/RHEcosystemAppEng/agentic-collections"
+    repository: "https://github.com/dmartinol/agentic-collections-fork"
     path: "rh-developer"
     tags:
       - "developer"
@@ -33,7 +33,7 @@ modules:
   - name: "rh-sre"
     description: "Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure."
     version: "0.0.1"
-    repository: "https://github.com/RHEcosystemAppEng/agentic-collections"
+    repository: "https://github.com/dmartinol/agentic-collections-fork"
     path: "rh-sre"
     tags:
       - "sre"
@@ -45,7 +45,7 @@ modules:
   - name: "rh-support-engineer"
     description: "Technical support and troubleshooting tools for Red Hat products and platforms."
     version: "0.0.1"
-    repository: "https://github.com/RHEcosystemAppEng/agentic-collections"
+    repository: "https://github.com/dmartinol/agentic-collections-fork"
     path: "rh-support-engineer"
     tags:
       - "red-hat"
@@ -56,7 +56,7 @@ modules:
   - name: "rh-virt"
     description: "Virtual machine management and automation for OpenShift Virtualization and KubeVirt workloads."
     version: "0.0.1"
-    repository: "https://github.com/RHEcosystemAppEng/agentic-collections"
+    repository: "https://github.com/dmartinol/agentic-collections-fork"
     path: "rh-virt"
     tags:
       - "red-hat"
