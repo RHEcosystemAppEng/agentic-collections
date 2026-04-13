@@ -34,8 +34,8 @@ check-uv:
 
 install: check-uv
 	@echo "Installing Python dependencies with uv..."
-	@uv sync
-	@echo "Dependencies installed in isolated environment!"
+	@uv sync --group dev
+	@echo "Dependencies installed in isolated environment (includes dev: pre-commit for git hooks)!"
 
 validate: check-uv
 	@echo "Validating agentic collection structure..."

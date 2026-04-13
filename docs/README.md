@@ -12,6 +12,8 @@ This directory contains the generated GitHub Pages site for agentic-collections.
 
 ## Local Development
 
+From the repository root, install git hooks once (`make install` then `scripts/install-hooks.sh`) so commits run [pre-commit](https://pre-commit.com/) (gitleaks + scoped `make validate` / skill design checks); see the main [README.md](../README.md#security).
+
 Run locally:
 ```bash
 python -m http.server 8000
