@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agentic Skills packs</title>
-    <link rel="stylesheet" href="styles.css?v=23">
+    <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
     <header>
@@ -60,6 +60,17 @@
     </div>
 
     <main>
+        <!-- Per-collection catalog view (hash: #collection/<pack>) -->
+        <section id="collection-page" class="collection-page" hidden aria-hidden="true">
+            <div class="collection-page-inner">
+                <nav class="collection-nav">
+                    <a href="#" id="collection-back" class="collection-back">← All collections</a>
+                    <a id="collection-yaml-link" href="#" target="_blank" rel="noopener noreferrer" class="collection-meta-link">catalog YAML →</a>
+                </nav>
+                <div id="collection-page-body" class="collection-page-body"></div>
+            </div>
+        </section>
+
         <!-- Section 1: Agentic Packs -->
         <section id="packs-section">
             <h2 onclick="toggleSection('packs')">
@@ -102,6 +113,6 @@
         <div class="modal-content" id="mcp-details"></div>
     </div>
 
-    <script src="app.js?v=23"></script>
+    <script src="app.js?v=24"></script>
 </body>
 </html>

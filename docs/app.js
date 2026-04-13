@@ -70,6 +70,17 @@ async function init() {
         // Setup modal close handlers
         setupModals();
 
+        const back = document.getElementById('collection-back');
+        if (back) {
+            back.addEventListener('click', (e) => {
+                e.preventDefault();
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+                hideCollectionView();
+            });
+        }
+        window.addEventListener('hashchange', applyHashRoute);
+        applyHashRoute();
+
     } catch (error) {
         console.error('Failed to load data:', error);
         showError('Failed to load documentation data. Please try refreshing the page.');
@@ -195,15 +206,11 @@ function createPackCard(pack) {
 
     div.appendChild(stats);
 
-    // View details link
+    // Collection catalog page (hash route; XSS-safe href)
     const link = document.createElement('a');
     link.className = 'card-link';
-    link.textContent = 'View details';
-    link.href = '#';
-    link.onclick = (e) => {
-        e.preventDefault();
-        showPackDetails(pack.name);
-    };
+    link.textContent = 'View collection';
+    link.href = `#collection/${encodeURIComponent(pack.name)}`;
     div.appendChild(link);
 
     return div;
@@ -356,6 +363,11 @@ function createMCPCard(server) {
 function handleSearch(event) {
     const query = event.target.value.toLowerCase().trim();
 
+    if (query && window.location.hash.startsWith('#collection/')) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        hideCollectionView();
+    }
+
     if (!query) {
         // Reset to show all
         updateToolbarCounters(allPacks, allMCPServers, allCommunityMCPServers);
@@ -368,11 +380,28 @@ function handleSearch(event) {
     // Filter packs
     const filteredPacks = allPacks.filter(pack => {
         // Search in pack name, title, description, skills, agents
+        let catalogSearch = '';
+        if (pack.collection) {
+            const co = pack.collection;
+            const skills = (co.contents && co.contents.skills) || [];
+            const orch = (co.contents && co.contents.orchestration_skills) || [];
+            catalogSearch = [
+                co.name,
+                co.summary,
+                co.description,
+                co.contents && co.contents.description,
+                ...(co.categories || []),
+                ...(co.personas || []),
+                ...skills.map(s => `${s.name} ${s.description || ''} ${s.summary_markdown || ''}`),
+                ...orch.map(s => `${s.name} ${s.description || ''} ${s.summary_markdown || ''}`)
+            ].filter(Boolean).join(' ');
+        }
         const searchText = [
             pack.name,
             pack.plugin.name,
             pack.plugin.title,
             pack.plugin.description,
+            catalogSearch,
             ...pack.skills.map(s => s.name + ' ' + s.description),
             ...pack.agents.map(a => a.name + ' ' + a.description)
         ].join(' ').toLowerCase();
@@ -1352,15 +1381,346 @@ function setupModals() {
         }
     });
 
-    // ESC key to close
+    // ESC key to close modals or collection view
     window.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
+            const col = document.getElementById('collection-page');
+            if (col && !col.hidden) {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+                hideCollectionView();
+                return;
+            }
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.style.display = 'none';
             });
             document.body.style.overflow = ''; // Restore background scrolling
         }
     });
+}
+
+/**
+ * GitHub blob URL base (main branch) for deep links from repository.url in data.json
+ */
+function githubBlobBase() {
+    const u = data && data.repository && data.repository.url
+        ? String(data.repository.url).replace(/\/$/, '')
+        : '';
+    return u ? `${u}/blob/main` : '';
+}
+
+function hideCollectionView() {
+    const page = document.getElementById('collection-page');
+    const packs = document.getElementById('packs-section');
+    const mcp = document.getElementById('mcp-section');
+    const cmcp = document.getElementById('community-mcp-section');
+    const foot = document.querySelector('footer');
+    if (page) {
+        page.hidden = true;
+        page.setAttribute('aria-hidden', 'true');
+    }
+    [packs, mcp, cmcp, foot].forEach(el => {
+        if (el) {
+            el.removeAttribute('hidden');
+            el.removeAttribute('aria-hidden');
+        }
+    });
+    const installCallout = document.getElementById('install-callout');
+    if (installCallout) {
+        installCallout.removeAttribute('hidden');
+    }
+}
+
+function showCollectionView(packName) {
+    const pack = allPacks.find(p => p.name === packName);
+    const page = document.getElementById('collection-page');
+    const packs = document.getElementById('packs-section');
+    const mcp = document.getElementById('mcp-section');
+    const cmcp = document.getElementById('community-mcp-section');
+    const foot = document.querySelector('footer');
+    [packs, mcp, cmcp, foot].forEach(el => {
+        if (el) {
+            el.setAttribute('hidden', '');
+            el.setAttribute('aria-hidden', 'true');
+        }
+    });
+    const installCallout = document.getElementById('install-callout');
+    if (installCallout) {
+        installCallout.setAttribute('hidden', '');
+    }
+
+    if (!pack) {
+        const yamlLink = document.getElementById('collection-yaml-link');
+        if (yamlLink) {
+            yamlLink.setAttribute('hidden', '');
+        }
+        const body = document.getElementById('collection-page-body');
+        if (body) {
+            body.textContent = '';
+            const p = document.createElement('p');
+            p.className = 'collection-missing';
+            p.textContent = `Unknown collection: ${packName}`;
+            body.appendChild(p);
+        }
+        if (page) {
+            page.removeAttribute('hidden');
+            page.setAttribute('aria-hidden', 'false');
+        }
+        window.scrollTo(0, 0);
+        return;
+    }
+
+    renderCollectionPage(pack);
+    if (page) {
+        page.removeAttribute('hidden');
+        page.setAttribute('aria-hidden', 'false');
+    }
+    window.scrollTo(0, 0);
+}
+
+function applyHashRoute() {
+    if (!data) return;
+    const raw = (window.location.hash || '').replace(/^#/, '');
+    const m = raw.match(/^collection\/([^/]+)\/?$/);
+    if (m) {
+        const packName = decodeURIComponent(m[1]);
+        showCollectionView(packName);
+    } else {
+        hideCollectionView();
+    }
+}
+
+function collectionSectionHeader(label) {
+    const d = document.createElement('div');
+    d.className = 'modal-section-header';
+    d.textContent = label;
+    return d;
+}
+
+function renderCollectionPage(pack) {
+    const body = document.getElementById('collection-page-body');
+    if (!body) return;
+    body.textContent = '';
+
+    const yamlLink = document.getElementById('collection-yaml-link');
+    const blob = githubBlobBase();
+    if (yamlLink) {
+        if (blob) {
+            yamlLink.href = `${blob}/${pack.name}/.catalog/collection.yaml`;
+            yamlLink.removeAttribute('hidden');
+        } else {
+            yamlLink.href = '#';
+            yamlLink.setAttribute('hidden', '');
+        }
+    }
+
+    const c = pack.collection;
+    const titleText = (c && c.name) ? c.name : (pack.plugin.title || pack.plugin.name || pack.name);
+    const h2 = document.createElement('h2');
+    h2.className = 'collection-page-title';
+    h2.textContent = titleText;
+    body.appendChild(h2);
+
+    const sub = document.createElement('p');
+    sub.className = 'collection-page-sub';
+    const bits = [`Module: ${pack.name}`];
+    if (pack.plugin && pack.plugin.version) {
+        bits.push(`v${pack.plugin.version}`);
+    }
+    if (c && Array.isArray(c.personas) && c.personas.length) {
+        bits.push(c.personas.join(', '));
+    }
+    sub.textContent = bits.join(' · ');
+    body.appendChild(sub);
+
+    if (!c) {
+        const note = document.createElement('p');
+        note.className = 'collection-missing';
+        note.textContent =
+            'Structured catalog metadata is not included in the published site data for this pack yet. See the repository README on GitHub.';
+        body.appendChild(note);
+        if (pack.has_readme && blob) {
+            const a = document.createElement('a');
+            a.href = `${blob}/${pack.name}/README.md`;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = 'README on GitHub →';
+            a.className = 'collection-meta-link';
+            body.appendChild(a);
+        }
+        return;
+    }
+
+    if (c.categories && c.categories.length) {
+        const catRow = document.createElement('p');
+        catRow.className = 'collection-tags';
+        catRow.textContent = `Categories: ${c.categories.join(', ')}`;
+        body.appendChild(catRow);
+    }
+
+    if (c.summary) {
+        body.appendChild(collectionSectionHeader('SUMMARY'));
+        const wrap = document.createElement('div');
+        wrap.className = 'collection-prose';
+        wrap.appendChild(renderMarkdown(String(c.summary)));
+        body.appendChild(wrap);
+    }
+
+    if (c.contents && c.contents.description) {
+        body.appendChild(collectionSectionHeader('ABOUT THIS COLLECTION'));
+        const wrap = document.createElement('div');
+        wrap.className = 'collection-prose';
+        wrap.appendChild(createExpandableText(String(c.contents.description), 400));
+        body.appendChild(wrap);
+    }
+
+    if (c.deploy_and_use) {
+        body.appendChild(collectionSectionHeader('DEPLOY AND USE'));
+        const wrap = document.createElement('div');
+        wrap.className = 'collection-prose';
+        wrap.appendChild(createExpandableText(String(c.deploy_and_use), 1200));
+        body.appendChild(wrap);
+    }
+
+    function appendSkillGroup(skills, label) {
+        if (!skills || !skills.length) return;
+        body.appendChild(collectionSectionHeader(label));
+        const list = document.createElement('div');
+        list.className = 'item-list';
+        skills.forEach(skill => {
+            const row = document.createElement('div');
+            row.className = 'skill-definition';
+
+            const syn = document.createElement('div');
+            syn.className = 'definition-syntax';
+            const code = document.createElement('code');
+            code.textContent = skill.name || '';
+            syn.appendChild(code);
+            row.appendChild(syn);
+
+            if (skill.description) {
+                const desc = document.createElement('div');
+                desc.className = 'definition-description';
+                desc.appendChild(createExpandableText(String(skill.description), 220));
+                row.appendChild(desc);
+            }
+            if (skill.summary_markdown) {
+                const sm = document.createElement('div');
+                sm.className = 'definition-description collection-prose-tight';
+                sm.appendChild(createExpandableText(String(skill.summary_markdown), 400));
+                row.appendChild(sm);
+            }
+            if (blob && skill.name) {
+                const gh = document.createElement('a');
+                gh.href = `${blob}/${pack.name}/skills/${encodeURIComponent(skill.name)}/SKILL.md`;
+                gh.target = '_blank';
+                gh.rel = 'noopener noreferrer';
+                gh.textContent = 'View SKILL.md on GitHub →';
+                gh.className = 'collection-inline-link';
+                row.appendChild(gh);
+            }
+            list.appendChild(row);
+        });
+        body.appendChild(list);
+    }
+
+    appendSkillGroup(c.contents && c.contents.skills, 'SKILLS');
+    appendSkillGroup(c.contents && c.contents.orchestration_skills, 'ORCHESTRATION SKILLS');
+
+    const guide = c.contents && c.contents.skills_decision_guide;
+    if (guide && guide.length) {
+        body.appendChild(collectionSectionHeader('SKILLS DECISION GUIDE'));
+        const gwrap = document.createElement('div');
+        gwrap.className = 'collection-guide';
+        guide.forEach((row, i) => {
+            if (!row || typeof row !== 'object') return;
+            const card = document.createElement('div');
+            card.className = 'collection-guide-row';
+            if (row.user_quote) {
+                const uq = document.createElement('p');
+                uq.className = 'collection-guide-user';
+                uq.appendChild(renderMarkdown(String(row.user_quote)));
+                card.appendChild(uq);
+            }
+            if (row.skill_to_use) {
+                const sk = document.createElement('p');
+                sk.className = 'collection-guide-skill';
+                const strong = document.createElement('strong');
+                strong.textContent = 'Skill: ';
+                sk.appendChild(strong);
+                sk.appendChild(document.createTextNode(String(row.skill_to_use)));
+                card.appendChild(sk);
+            }
+            if (row.reason) {
+                const rs = document.createElement('p');
+                rs.className = 'collection-guide-reason';
+                rs.appendChild(renderMarkdown(String(row.reason)));
+                card.appendChild(rs);
+            }
+            gwrap.appendChild(card);
+        });
+        body.appendChild(gwrap);
+    }
+
+    const workflows = c.sample_workflows;
+    if (workflows && workflows.length) {
+        body.appendChild(collectionSectionHeader('SAMPLE WORKFLOWS'));
+        workflows.forEach(wf => {
+            if (!wf || typeof wf !== 'object') return;
+            const block = document.createElement('div');
+            block.className = 'collection-workflow';
+            if (wf.title) {
+                const wt = document.createElement('h3');
+                wt.className = 'collection-workflow-title';
+                wt.textContent = String(wf.title);
+                block.appendChild(wt);
+            }
+            if (wf.workflow) {
+                const prose = document.createElement('div');
+                prose.className = 'collection-prose';
+                prose.appendChild(renderMarkdown(String(wf.workflow)));
+                block.appendChild(prose);
+            }
+            body.appendChild(block);
+        });
+    }
+
+    const resources = c.resources;
+    if (resources && resources.length) {
+        body.appendChild(collectionSectionHeader('RESOURCES'));
+        const ul = document.createElement('ul');
+        ul.className = 'simple-list collection-resources';
+        resources.forEach(r => {
+            if (!r || typeof r !== 'object') return;
+            const li = document.createElement('li');
+            if (r.title) {
+                const t = document.createElement('strong');
+                t.textContent = `${String(r.title)} — `;
+                li.appendChild(t);
+            }
+            if (r.url) {
+                const a = document.createElement('a');
+                a.href = String(r.url);
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = String(r.url);
+                li.appendChild(a);
+            } else if (r.description) {
+                li.appendChild(document.createTextNode(String(r.description)));
+            }
+            ul.appendChild(li);
+        });
+        body.appendChild(ul);
+    }
+
+    if (c.license || c.repository) {
+        const meta = document.createElement('p');
+        meta.className = 'collection-footer-meta';
+        const parts = [];
+        if (c.license) parts.push(`License: ${c.license}`);
+        if (c.repository) parts.push(String(c.repository));
+        meta.textContent = parts.join(' · ');
+        body.appendChild(meta);
+    }
 }
 
 // Initialize on page load

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Import our data generators
+from catalog_site_bundle import bundle_catalog_for_site
 from generate_pack_data import generate_pack_data
 from generate_mcp_data import generate_mcp_data
 
@@ -51,11 +52,18 @@ def build_website():
     print("📦 Parsing agentic collections...")
     pack_data = generate_pack_data()
     
-    # Merge pack icons
+    root = Path(__file__).resolve().parent.parent
+
+    # Merge pack icons and optional resolved collection catalog (for Pages UI)
     for pack in pack_data:
         pack_name = pack['name']
         pack['icon'] = icons['packs'].get(pack_name, '')
-    
+        cat_bundle, cat_warns = bundle_catalog_for_site(pack_name, root)
+        for w in cat_warns:
+            print(f"⚠️  {w}")
+        if cat_bundle is not None:
+            pack['collection'] = cat_bundle
+
     print()
 
     # Generate MCP server data
