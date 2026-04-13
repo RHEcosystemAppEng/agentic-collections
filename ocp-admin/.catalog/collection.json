@@ -1,0 +1,75 @@
+{
+  "categories": [
+    "Red Hat",
+    "Openshift",
+    "Administration",
+    "Management"
+  ],
+  "contents": {
+    "description": "The pack provides 3 skills under `ocp-admin` for Red Hat platforms.",
+    "orchestration_skills": [],
+    "skills": [
+      {
+        "description": "End-to-end OpenShift cluster creation using Red Hat Assisted Installer. Handles Single-Node OpenShift (SNO) and HA multi-node clusters on baremetal, vsphere, oci, nutanix. Use when: - \"Create a new OpenShift cluster\" ...",
+        "name": "cluster-creator",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** End-to-end OpenShift cluster creation using Red Hat Assisted Installer. Handles Single-Node OpenShift (SNO) and HA multi-node clusters on baremetal, vsphere, oci, nutanix. Use when: - \"Create a new OpenShift cluster\" ..."
+      },
+      {
+        "description": "List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD) deployments. Returns cluster name, ID, version, status, platform, and creation date. Use when: - \"List all cluste...",
+        "name": "cluster-inventory",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD) deployments. Returns cluster name, ID, version, status, platform, and creation date. Use when: - \"List all cluste..."
+      },
+      {
+        "description": "Generate a consolidated health report across multiple OpenShift clusters. Verifies each kubeconfig context is a genuine OpenShift cluster before reporting. Non-OpenShift contexts are skipped by default. Collects node ...",
+        "name": "cluster-report",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Generate a consolidated health report across multiple OpenShift clusters. Verifies each kubeconfig context is a genuine OpenShift cluster before reporting. Non-OpenShift contexts are skipped by default. Collects node ..."
+      }
+    ],
+    "skills_decision_guide": [
+      {
+        "reason": "Use `cluster-creator` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "cluster-creator",
+        "user_request": "User: \"I need help related to cluster-creator\""
+      },
+      {
+        "reason": "Use `cluster-inventory` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "cluster-inventory",
+        "user_request": "User: \"I need help related to cluster-inventory\""
+      },
+      {
+        "reason": "Use `cluster-report` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "cluster-report",
+        "user_request": "User: \"I need help related to cluster-report\""
+      }
+    ]
+  },
+  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `ocp-admin`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "description": "Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks.",
+  "id": "openshift-administration",
+  "license": "Apache-2.0",
+  "marketplaces": [
+    "Claude Code",
+    "Cursor"
+  ],
+  "name": "Red Hat OpenShift Administration Agentic Skills Collection",
+  "personas": [
+    "Red Hat platform engineer"
+  ],
+  "provider": "Red Hat",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "resources": [
+    {
+      "description": "Source repository for these packs and skills.",
+      "title": "agentic-collections repository",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+    }
+  ],
+  "sample_workflows": [
+    {
+      "name": "Choose the right skill",
+      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+    }
+  ],
+  "summary": "- **Pack:** `ocp-admin`\n- **Focus:** Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "version": "0.1.0"
+}

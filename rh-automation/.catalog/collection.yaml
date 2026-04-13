@@ -1,0 +1,160 @@
+# Catalog: maintained via create-collection workflow (assistant + maintainer + PR review).
+# Golden sources: skills/*/SKILL.md, README.md, CLAUDE.md, marketplace/rh-agentic-collection.yml
+# Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
+
+id: rh-automation
+name: Red Hat Automation Agentic Skills Collection
+provider: Red Hat
+version: 0.1.0
+categories:
+- Ansible
+- Aap
+- Automation
+- Red Hat
+- Governance
+- Troubleshooting
+personas:
+- Red Hat platform engineer
+marketplaces:
+- Claude Code
+- Cursor
+description: Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation
+  engineers.
+summary: '- **Pack:** `rh-automation`
+
+  - **Focus:** Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation
+  engineers.
+
+  - **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.
+
+  '
+contents:
+  description: The pack provides 8 skills and 3 orchestration skills under `rh-automation` for Red Hat platforms.
+  skills:
+  - name: aap-mcp-validator
+    description: 'Validate that required AAP MCP servers are accessible before executing automation skills. Use when: - Before
+      any skill that requires AAP MCP access - "Validate AAP MCP", "Check if AAP is configured" - "Verify AAP conn...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Validate that required AAP MCP servers are accessible before executing automation skills. Use when:
+      - Before any skill that requires AAP MCP access - "Validate AAP MCP", "Check if AAP is configured" - "Verify AAP conn...'
+  - name: execution-risk-analyzer
+    description: 'Analyze execution risk by classifying inventory, scanning extra_vars for secrets, and assessing scope. Use
+      when: - "Execute on production", "Deploy to production" (as first step before launch) - "Is this execution saf...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Analyze execution risk by classifying inventory, scanning extra_vars for secrets, and assessing scope.
+      Use when: - "Execute on production", "Deploy to production" (as first step before launch) - "Is this execution saf...'
+  - name: execution-summary
+    description: 'Generate concise execution audit reports tracking documents consulted, MCP tools used, decisions made, and
+      outcomes. Use when: - "Generate execution summary" - "Create execution report" - "Show workflow audit trail" -...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Generate concise execution audit reports tracking documents consulted, MCP tools used, decisions made,
+      and outcomes. Use when: - "Generate execution summary" - "Create execution report" - "Show workflow audit trail" -...'
+  - name: governance-readiness-assessor
+    description: 'Assess AAP platform governance readiness -- full 7-domain audit or scoped to specific domains. Use when:
+      - Full assessment: "Is my AAP ready for production?", "Audit my platform governance" - Scoped assessment: "Asses...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Assess AAP platform governance readiness -- full 7-domain audit or scoped to specific domains. Use
+      when: - Full assessment: "Is my AAP ready for production?", "Audit my platform governance" - Scoped assessment: "Asses...'
+  - name: governed-job-launcher
+    description: 'Execute governed job launches with check mode, approval gates, phased rollout, and rollback. Use when: -
+      After execution-risk-analyzer has classified the execution risk - "Launch with check mode first", "Run the dry r...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Execute governed job launches with check mode, approval gates, phased rollout, and rollback. Use when:
+      - After execution-risk-analyzer has classified the execution risk - "Launch with check mode first", "Run the dry r...'
+  - name: host-fact-inspector
+    description: 'Correlate job failures with host system facts to determine platform drift and resource issues. Use when:
+      - After job failure analysis identifies affected hosts - "Check the system facts for failed hosts" - "Is the hos...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Correlate job failures with host system facts to determine platform drift and resource issues. Use
+      when: - After job failure analysis identifies affected hosts - "Check the system facts for failed hosts" - "Is the hos...'
+  - name: job-failure-analyzer
+    description: 'Extract and analyze failure events from AAP jobs to classify errors and reconstruct failure timelines. Use
+      when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failed job", "What went wrong?" - "Show ...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Extract and analyze failure events from AAP jobs to classify errors and reconstruct failure timelines.
+      Use when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failed job", "What went wrong?" - "Show ...'
+  - name: resolution-advisor
+    description: 'Provide Red Hat documentation-backed resolution recommendations for classified job errors. Use when: - After
+      failure analysis and host fact inspection: "How do I fix this?" - "What does Red Hat recommend for this erro...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Provide Red Hat documentation-backed resolution recommendations for classified job errors. Use when:
+      - After failure analysis and host fact inspection: "How do I fix this?" - "What does Red Hat recommend for this erro...'
+  orchestration_skills:
+  - name: forensic-troubleshooter
+    description: 'Orchestrates forensic analysis of failed jobs with event extraction, host correlation, and resolution advisory.
+      Use when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failure", "What went wrong?" - ...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Orchestrates forensic analysis of failed jobs with event extraction, host correlation, and resolution
+      advisory. Use when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failure", "What went wrong?" - ...'
+  - name: governance-assessor
+    description: 'Orchestrates AAP governance readiness assessments -- full platform audit or scoped to specific domains.
+      Assesses 7 governance domains + 1 bonus: 1. Workflow Governance (approval gates, workflow coverage) 2. Notificati...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Orchestrates AAP governance readiness assessments -- full platform audit or scoped to specific domains.
+      Assesses 7 governance domains + 1 bonus: 1. Workflow Governance (approval gates, workflow coverage) 2. Notificati...'
+  - name: governance-executor
+    description: 'Orchestrates governed job execution with risk analysis, check mode, approval, and rollback. Use when: -
+      "Execute job template X", "Deploy to production", "Push to prod", "Launch job template" - Any execution request t...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Orchestrates governed job execution with risk analysis, check mode, approval, and rollback. Use when:
+      - "Execute job template X", "Deploy to production", "Push to prod", "Launch job template" - Any execution request t...'
+  skills_decision_guide:
+  - user_request: 'User: "I need help related to forensic-troubleshooter"'
+    skill_to_use: forensic-troubleshooter
+    reason: Use `forensic-troubleshooter` for workflows described in that skill and in CLAUDE.md.
+  - user_request: 'User: "I need help related to governance-assessor"'
+    skill_to_use: governance-assessor
+    reason: Use `governance-assessor` for workflows described in that skill and in CLAUDE.md.
+  - user_request: 'User: "I need help related to governance-executor"'
+    skill_to_use: governance-executor
+    reason: Use `governance-executor` for workflows described in that skill and in CLAUDE.md.
+  - user_request: 'User: "I need help related to aap-mcp-validator"'
+    skill_to_use: aap-mcp-validator
+    reason: Use `aap-mcp-validator` for workflows described in that skill and in CLAUDE.md.
+  - user_request: 'User: "I need help related to execution-risk-analyzer"'
+    skill_to_use: execution-risk-analyzer
+    reason: Use `execution-risk-analyzer` for workflows described in that skill and in CLAUDE.md.
+deploy_and_use: '## Install (Lola)
+
+
+  Add the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-automation`). See the
+  pack `README.md` for prerequisites, MCP env vars, and safety notes.
+
+  '
+sample_workflows:
+- name: Choose the right skill
+  workflow: 'User: "I have a task for this collection"
+
+    - Open CLAUDE.md intent routing and match your request to a skill name.
+
+    - Invoke that skill and follow its workflow and prerequisites.
+
+    '
+resources:
+- title: agentic-collections repository
+  description: Source repository for these packs and skills.
+  url: https://github.com/RHEcosystemAppEng/agentic-collections
+repository: https://github.com/RHEcosystemAppEng/agentic-collections
+license: Apache-2.0

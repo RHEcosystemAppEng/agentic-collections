@@ -1,0 +1,89 @@
+# Catalog: maintained via create-collection workflow (assistant + maintainer + PR review).
+# Golden sources: skills/*/SKILL.md, README.md, CLAUDE.md, marketplace/rh-agentic-collection.yml
+# Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
+
+id: openshift-administration
+name: Red Hat OpenShift Administration Agentic Skills Collection
+provider: Red Hat
+version: 0.1.0
+categories:
+- Red Hat
+- Openshift
+- Administration
+- Management
+personas:
+- Red Hat platform engineer
+marketplaces:
+- Claude Code
+- Cursor
+description: Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security
+  policies, and operational tasks.
+summary: '- **Pack:** `ocp-admin`
+
+  - **Focus:** Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security
+  policies, and operational tasks.
+
+  - **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.
+
+  '
+contents:
+  description: The pack provides 3 skills under `ocp-admin` for Red Hat platforms.
+  skills:
+  - name: cluster-creator
+    description: 'End-to-end OpenShift cluster creation using Red Hat Assisted Installer. Handles Single-Node OpenShift (SNO)
+      and HA multi-node clusters on baremetal, vsphere, oci, nutanix. Use when: - "Create a new OpenShift cluster" ...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** End-to-end OpenShift cluster creation using Red Hat Assisted Installer. Handles Single-Node OpenShift
+      (SNO) and HA multi-node clusters on baremetal, vsphere, oci, nutanix. Use when: - "Create a new OpenShift cluster" ...'
+  - name: cluster-inventory
+    description: 'List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD)
+      deployments. Returns cluster name, ID, version, status, platform, and creation date. Use when: - "List all cluste...'
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO,
+      OSD) deployments. Returns cluster name, ID, version, status, platform, and creation date. Use when: - "List all cluste...'
+  - name: cluster-report
+    description: Generate a consolidated health report across multiple OpenShift clusters. Verifies each kubeconfig context
+      is a genuine OpenShift cluster before reporting. Non-OpenShift contexts are skipped by default. Collects node ...
+    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
+
+
+      **What it does:** Generate a consolidated health report across multiple OpenShift clusters. Verifies each kubeconfig
+      context is a genuine OpenShift cluster before reporting. Non-OpenShift contexts are skipped by default. Collects node
+      ...'
+  orchestration_skills: []
+  skills_decision_guide:
+  - user_request: 'User: "I need help related to cluster-creator"'
+    skill_to_use: cluster-creator
+    reason: Use `cluster-creator` for workflows described in that skill and in CLAUDE.md.
+  - user_request: 'User: "I need help related to cluster-inventory"'
+    skill_to_use: cluster-inventory
+    reason: Use `cluster-inventory` for workflows described in that skill and in CLAUDE.md.
+  - user_request: 'User: "I need help related to cluster-report"'
+    skill_to_use: cluster-report
+    reason: Use `cluster-report` for workflows described in that skill and in CLAUDE.md.
+deploy_and_use: '## Install (Lola)
+
+
+  Add the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `ocp-admin`). See the pack
+  `README.md` for prerequisites, MCP env vars, and safety notes.
+
+  '
+sample_workflows:
+- name: Choose the right skill
+  workflow: 'User: "I have a task for this collection"
+
+    - Open CLAUDE.md intent routing and match your request to a skill name.
+
+    - Invoke that skill and follow its workflow and prerequisites.
+
+    '
+resources:
+- title: agentic-collections repository
+  description: Source repository for these packs and skills.
+  url: https://github.com/RHEcosystemAppEng/agentic-collections
+repository: https://github.com/RHEcosystemAppEng/agentic-collections
+license: Apache-2.0

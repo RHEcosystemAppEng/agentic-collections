@@ -1,11 +1,14 @@
-.PHONY: help install validate validate-skill-design validate-skill-design-changed generate serve clean test test-full check-uv
+.PHONY: help install validate validate-collection-schema validate-collection-compliance catalog-mirror-json validate-skill-design validate-skill-design-changed generate serve clean test test-full check-uv
 
 help:
 	@echo "agentic-collections Documentation Generator"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  install                       - Install Python dependencies (requires uv)"
-	@echo "  validate                      - Validate pack structure (mcps.json, CLAUDE.md, frontmatter; plugin.json if present)"
+	@echo "  validate                      - Pack structure + collection compliance (.catalog/)"
+	@echo "  validate-collection-schema    - Schema + roster + banners (subset of compliance)"
+	@echo "  validate-collection-compliance - Full .catalog compliance (includes collection.json drift)"
+	@echo "  catalog-mirror-json           - Regenerate all .catalog/collection.json from YAML"
 	@echo "  validate-skill-design         - Validate all skills (use PACK=rh-sre for a specific pack)"
 	@echo "  validate-skill-design-changed - Validate only changed skills (staged + unstaged, for local dev)"
 	@echo "  generate    - Generate docs/data.json"
@@ -37,7 +40,18 @@ install: check-uv
 validate: check-uv
 	@echo "Validating agentic collection structure..."
 	@uv run python scripts/validate_structure.py
+	@echo "Validating collection compliance (.catalog/)..."
+	@uv run python scripts/validate_collection_compliance.py
 	@echo "✓ Validation passed!"
+
+validate-collection-schema: check-uv
+	@uv run python scripts/validate_collection_schema.py
+
+validate-collection-compliance: check-uv
+	@uv run python scripts/validate_collection_compliance.py
+
+catalog-mirror-json: check-uv
+	@uv run python scripts/catalog_yaml_to_json.py --all
 
 validate-skill-design: check-uv
 	@uv run python scripts/validate_skill_design.py $(if $(PACK),$(PACK))

@@ -1,0 +1,128 @@
+{
+  "categories": [
+    "Ai Engineer",
+    "Openshift Ai",
+    "Rhoai",
+    "Kserve",
+    "Vllm",
+    "Nvidia Nim"
+  ],
+  "contents": {
+    "description": "The pack provides 10 skills and 1 orchestration skills under `rh-ai-engineer` for Red Hat platforms.",
+    "orchestration_skills": [
+      {
+        "description": "Configure TrustyAI Guardrails Orchestrator for LLM input/output content safety on OpenShift AI. Use when: - \"Add guardrails to my LLM endpoint\" - \"Set up content safety for my model\" - \"Configure PII detection on my i...",
+        "name": "guardrails-config",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Configure TrustyAI Guardrails Orchestrator for LLM input/output content safety on OpenShift AI. Use when: - \"Add guardrails to my LLM endpoint\" - \"Set up content safety for my model\" - \"Configure PII detection on my i..."
+      }
+    ],
+    "skills": [
+      {
+        "description": "Analyze AI model performance, GPU utilization, and cluster health on OpenShift AI. Use when: - \"How is my model performing?\" - \"What GPUs are available in the cluster?\" - \"Show me inference latency for Llama\" - \"Check...",
+        "name": "ai-observability",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Analyze AI model performance, GPU utilization, and cluster health on OpenShift AI. Use when: - \"How is my model performing?\" - \"What GPUs are available in the cluster?\" - \"Show me inference latency for Llama\" - \"Check..."
+      },
+      {
+        "description": "Troubleshoot failed or slow InferenceService deployments on OpenShift AI. Use when: - \"My InferenceService won't start\" - \"Model deployment is stuck\" - \"Inference endpoint returns errors\" - \"Model is slow / high laten...",
+        "name": "debug-inference",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Troubleshoot failed or slow InferenceService deployments on OpenShift AI. Use when: - \"My InferenceService won't start\" - \"Model deployment is stuck\" - \"Inference endpoint returns errors\" - \"Model is slow / high laten..."
+      },
+      {
+        "description": "Create and configure Data Science Projects on OpenShift AI with namespace setup, S3 data connections, pipeline server, and model serving enablement. Use when: - \"Create a data science project\" - \"Set up a new namespac...",
+        "name": "ds-project-setup",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create and configure Data Science Projects on OpenShift AI with namespace setup, S3 data connections, pipeline server, and model serving enablement. Use when: - \"Create a data science project\" - \"Set up a new namespac..."
+      },
+      {
+        "description": "Deploy AI/ML models on OpenShift AI using KServe with vLLM, NVIDIA NIM, or Caikit+TGIS runtimes. Use when: - \"Deploy Llama 3 on my cluster\" - \"Set up a vLLM inference endpoint\" - \"Deploy a model with NIM\" - \"Create an...",
+        "name": "model-deploy",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Deploy AI/ML models on OpenShift AI using KServe with vLLM, NVIDIA NIM, or Caikit+TGIS runtimes. Use when: - \"Deploy Llama 3 on my cluster\" - \"Set up a vLLM inference endpoint\" - \"Deploy a model with NIM\" - \"Create an..."
+      },
+      {
+        "description": "Configure TrustyAI model monitoring for bias detection and data drift on deployed InferenceServices. Use when: - \"Monitor my model for bias\" - \"Set up drift detection on my inference endpoint\" - \"Configure TrustyAI fo...",
+        "name": "model-monitor",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Configure TrustyAI model monitoring for bias detection and data drift on deployed InferenceServices. Use when: - \"Monitor my model for bias\" - \"Set up drift detection on my inference endpoint\" - \"Configure TrustyAI fo..."
+      },
+      {
+        "description": "Register, version, and manage ML models in the OpenShift AI Model Registry. Browse the Model Catalog, track model metadata, and promote models across environments. Use when: - \"Register a new model in the registry\" - ...",
+        "name": "model-registry",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Register, version, and manage ML models in the OpenShift AI Model Registry. Browse the Model Catalog, track model metadata, and promote models across environments. Use when: - \"Register a new model in the registry\" - ..."
+      },
+      {
+        "description": "Configure NVIDIA NIM platform on OpenShift AI for optimized model inference. Use when: - \"Set up NIM on my cluster\" - \"Configure NGC credentials for NIM\" - \"I want to deploy a NIM model but haven't set up the platform...",
+        "name": "nim-setup",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Configure NVIDIA NIM platform on OpenShift AI for optimized model inference. Use when: - \"Set up NIM on my cluster\" - \"Configure NGC credentials for NIM\" - \"I want to deploy a NIM model but haven't set up the platform..."
+      },
+      {
+        "description": "Create, run, schedule, and monitor Data Science Pipelines (Kubeflow Pipelines 2.0) on OpenShift AI. Use when: - \"Run a pipeline in my project\" - \"Schedule a recurring pipeline\" - \"Check my pipeline run status\" - \"List...",
+        "name": "pipeline-manage",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create, run, schedule, and monitor Data Science Pipelines (Kubeflow Pipelines 2.0) on OpenShift AI. Use when: - \"Run a pipeline in my project\" - \"Schedule a recurring pipeline\" - \"Check my pipeline run status\" - \"List..."
+      },
+      {
+        "description": "Configure custom ServingRuntime CRs on OpenShift AI for model serving frameworks not covered by built-in runtimes. Use when: - \"Create a custom serving runtime\" - \"I need a runtime for ONNX / Triton / custom framework...",
+        "name": "serving-runtime-config",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Configure custom ServingRuntime CRs on OpenShift AI for model serving frameworks not covered by built-in runtimes. Use when: - \"Create a custom serving runtime\" - \"I need a runtime for ONNX / Triton / custom framework..."
+      },
+      {
+        "description": "Create and manage Jupyter notebook workbenches on OpenShift AI with image selection, resource configuration, PVC storage, and lifecycle management. Use when: - \"Create a notebook workbench\" - \"Spin up a Jupyter enviro...",
+        "name": "workbench-manage",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create and manage Jupyter notebook workbenches on OpenShift AI with image selection, resource configuration, PVC storage, and lifecycle management. Use when: - \"Create a notebook workbench\" - \"Spin up a Jupyter enviro..."
+      }
+    ],
+    "skills_decision_guide": [
+      {
+        "reason": "Use `guardrails-config` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "guardrails-config",
+        "user_request": "User: \"I need help related to guardrails-config\""
+      },
+      {
+        "reason": "Use `ai-observability` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "ai-observability",
+        "user_request": "User: \"I need help related to ai-observability\""
+      },
+      {
+        "reason": "Use `debug-inference` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "debug-inference",
+        "user_request": "User: \"I need help related to debug-inference\""
+      },
+      {
+        "reason": "Use `ds-project-setup` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "ds-project-setup",
+        "user_request": "User: \"I need help related to ds-project-setup\""
+      },
+      {
+        "reason": "Use `model-deploy` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "model-deploy",
+        "user_request": "User: \"I need help related to model-deploy\""
+      }
+    ]
+  },
+  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-ai-engineer`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "description": "Red Hat OpenShift AI Engineering Agentic Collection",
+  "id": "rh-ai-engineer",
+  "license": "Apache-2.0",
+  "marketplaces": [
+    "Claude Code",
+    "Cursor"
+  ],
+  "name": "Red Hat OpenShift AI Engineering Agentic Collection",
+  "personas": [
+    "Red Hat platform engineer"
+  ],
+  "provider": "Red Hat",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "resources": [
+    {
+      "description": "Source repository for these packs and skills.",
+      "title": "agentic-collections repository",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+    }
+  ],
+  "sample_workflows": [
+    {
+      "name": "Choose the right skill",
+      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+    }
+  ],
+  "summary": "- **Pack:** `rh-ai-engineer`\n- **Focus:** Red Hat OpenShift AI Engineering Agentic Collection\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "version": "0.1.0"
+}

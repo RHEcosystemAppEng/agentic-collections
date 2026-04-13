@@ -1,0 +1,51 @@
+# Catalog: maintained via create-collection workflow (assistant + maintainer + PR review).
+# Golden sources: skills/*/SKILL.md, README.md, CLAUDE.md, marketplace/rh-agentic-collection.yml
+# Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
+
+id: rh-support-engineer
+name: Red Hat Support Engineer Agentic Skills Collection
+provider: Red Hat
+version: 0.1.0
+categories:
+- Red Hat
+- Automation
+personas:
+- Red Hat platform engineer
+marketplaces:
+- Claude Code
+- Cursor
+description: Agentic collection `rh-support-engineer`.
+summary: '- **Pack:** `rh-support-engineer`
+
+  - **Focus:** Agentic collection `rh-support-engineer`.
+
+  - **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.
+
+  '
+contents:
+  description: The pack provides 0 skills under `rh-support-engineer` for Red Hat platforms.
+  skills: []
+  orchestration_skills: []
+  skills_decision_guide: []
+deploy_and_use: '## Install (Lola)
+
+
+  Add the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-support-engineer`). See
+  the pack `README.md` for prerequisites, MCP env vars, and safety notes.
+
+  '
+sample_workflows:
+- name: Choose the right skill
+  workflow: 'User: "I have a task for this collection"
+
+    - Open CLAUDE.md intent routing and match your request to a skill name.
+
+    - Invoke that skill and follow its workflow and prerequisites.
+
+    '
+resources:
+- title: agentic-collections repository
+  description: Source repository for these packs and skills.
+  url: https://github.com/RHEcosystemAppEng/agentic-collections
+repository: https://github.com/RHEcosystemAppEng/agentic-collections
+license: Apache-2.0

@@ -1,0 +1,41 @@
+{
+  "categories": [
+    "Red Hat",
+    "Automation"
+  ],
+  "contents": {
+    "description": "The pack provides 0 skills under `rh-support-engineer` for Red Hat platforms.",
+    "orchestration_skills": [],
+    "skills": [],
+    "skills_decision_guide": []
+  },
+  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-support-engineer`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "description": "Agentic collection `rh-support-engineer`.",
+  "id": "rh-support-engineer",
+  "license": "Apache-2.0",
+  "marketplaces": [
+    "Claude Code",
+    "Cursor"
+  ],
+  "name": "Red Hat Support Engineer Agentic Skills Collection",
+  "personas": [
+    "Red Hat platform engineer"
+  ],
+  "provider": "Red Hat",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "resources": [
+    {
+      "description": "Source repository for these packs and skills.",
+      "title": "agentic-collections repository",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+    }
+  ],
+  "sample_workflows": [
+    {
+      "name": "Choose the right skill",
+      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+    }
+  ],
+  "summary": "- **Pack:** `rh-support-engineer`\n- **Focus:** Agentic collection `rh-support-engineer`.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "version": "0.1.0"
+}

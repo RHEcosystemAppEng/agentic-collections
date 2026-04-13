@@ -1,0 +1,137 @@
+{
+  "categories": [
+    "Sre",
+    "Red Hat",
+    "Platforms",
+    "Products",
+    "Automation"
+  ],
+  "contents": {
+    "description": "The pack provides 8 skills and 5 orchestration skills under `rh-sre` for Red Hat platforms.",
+    "orchestration_skills": [
+      {
+        "description": "**CRITICAL**: This skill must be used for CVE validation queries. DO NOT use raw MCP tools like get_cve directly. Validate CVE identifiers and check remediation availability in Red Hat Lightspeed. Use when: - \"Is CVE-...",
+        "name": "cve-validation",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: This skill must be used for CVE validation queries. DO NOT use raw MCP tools like get_cve directly. Validate CVE identifiers and check remediation availability in Red Hat Lightspeed. Use when: - \"Is CVE-..."
+      },
+      {
+        "description": "Query and display Red Hat Lightspeed managed system inventory. This skill focuses on discovery and listing only - for remediation actions, transition to the `/remediation` skill. Use when: - \"Show the managed fleet\" -...",
+        "name": "fleet-inventory",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Query and display Red Hat Lightspeed managed system inventory. This skill focuses on discovery and listing only - for remediation actions, transition to the `/remediation` skill. Use when: - \"Show the managed fleet\" -..."
+      },
+      {
+        "description": "**CRITICAL**: Use this skill for ALL CVE remediation workflows. DO NOT use individual skills piecemeal for end-to-end remediation. Use when users request: - CVE remediation playbooks or security patch deployment - Mul...",
+        "name": "remediation",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: Use this skill for ALL CVE remediation workflows. DO NOT use individual skills piecemeal for end-to-end remediation. Use when users request: - CVE remediation playbooks or security patch deployment - Mul..."
+      },
+      {
+        "description": "**CRITICAL**: This skill must be used for remediation verification. DO NOT use raw MCP tools like get_cve or get_host_details directly for verification. Verify CVE remediation success by checking Red Hat Lightspeed CV...",
+        "name": "remediation-verifier",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: This skill must be used for remediation verification. DO NOT use raw MCP tools like get_cve or get_host_details directly for verification. Verify CVE remediation success by checking Red Hat Lightspeed CV..."
+      },
+      {
+        "description": "**CRITICAL**: This skill must be used for system inventory and context gathering. DO NOT use raw MCP tools like get_cve_systems or get_host_details directly. Gather system inventory and deployment context for CVE-affe...",
+        "name": "system-context",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: This skill must be used for system inventory and context gathering. DO NOT use raw MCP tools like get_cve_systems or get_host_details directly. Gather system inventory and deployment context for CVE-affe..."
+      }
+    ],
+    "skills": [
+      {
+        "description": "**CRITICAL**: Use for ALL CVE discovery and listing. DO NOT call get_cves directly. Use when: \"show critical CVEs\", \"CVEs on hostname X\", \"remediatable vulnerabilities\", \"impact of CVE-X\", risk assessment. NOT for rem...",
+        "name": "cve-impact",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: Use for ALL CVE discovery and listing. DO NOT call get_cves directly. Use when: \"show critical CVEs\", \"CVEs on hostname X\", \"remediatable vulnerabilities\", \"impact of CVE-X\", risk assessment. NOT for rem..."
+      },
+      {
+        "description": "Generates a concise report of agents, skills, tools, and documentation accessed during a workflow for audit and learning purposes. Use when: - \"Generate execution summary\" - \"Create execution report\" - \"Summarize what...",
+        "name": "execution-summary",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Generates a concise report of agents, skills, tools, and documentation accessed during a workflow for audit and learning purposes. Use when: - \"Generate execution summary\" - \"Create execution report\" - \"Summarize what..."
+      },
+      {
+        "description": "Create AAP (Ansible Automation Platform) job templates for executing playbooks. Use when users request: - \"Create a job template for this playbook\" - \"Set up a template to run remediation playbooks\" - \"Configure AAP t...",
+        "name": "job-template-creator",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create AAP (Ansible Automation Platform) job templates for executing playbooks. Use when users request: - \"Create a job template for this playbook\" - \"Set up a template to run remediation playbooks\" - \"Configure AAP t..."
+      },
+      {
+        "description": "Verify an AAP job template meets requirements for executing CVE remediation playbooks. Use when: - \"Does this job template support remediation playbooks?\" - \"Validate job template X for CVE remediation\" - \"Check if te...",
+        "name": "job-template-remediation-validator",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Verify an AAP job template meets requirements for executing CVE remediation playbooks. Use when: - \"Does this job template support remediation playbooks?\" - \"Validate job template X for CVE remediation\" - \"Check if te..."
+      },
+      {
+        "description": "Validate AAP (Ansible Automation Platform) MCP server connectivity. Use when the user asks to \"validate AAP MCP\", \"check AAP connection\", or when other skills need to verify AAP MCP availability before job management ...",
+        "name": "mcp-aap-validator",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Validate AAP (Ansible Automation Platform) MCP server connectivity. Use when the user asks to \"validate AAP MCP\", \"check AAP connection\", or when other skills need to verify AAP MCP availability before job management ..."
+      },
+      {
+        "description": "Validate Red Hat Lightspeed MCP server connectivity. Use when the user asks to \"validate Lightspeed MCP\", \"check Lightspeed connection\", or when other skills need to verify lightspeed-mcp availability before CVE opera...",
+        "name": "mcp-lightspeed-validator",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Validate Red Hat Lightspeed MCP server connectivity. Use when the user asks to \"validate Lightspeed MCP\", \"check Lightspeed connection\", or when other skills need to verify lightspeed-mcp availability before CVE opera..."
+      },
+      {
+        "description": "**CRITICAL**: Use for Ansible playbook execution via AAP. DO NOT call AAP MCP tools directly. Execute remediation playbooks with job management, dry-run, and reporting. Use after playbook-generator. Use when: - \"Execu...",
+        "name": "playbook-executor",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: Use for Ansible playbook execution via AAP. DO NOT call AAP MCP tools directly. Execute remediation playbooks with job management, dry-run, and reporting. Use after playbook-generator. Use when: - \"Execu..."
+      },
+      {
+        "description": "**CRITICAL**: This skill ONLY GENERATES playbooks. It does NOT EXECUTE them. For execution, use /playbook-executor skill. Generate production-ready Ansible remediation playbooks for CVE vulnerabilities with Red Hat be...",
+        "name": "playbook-generator",
+        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** **CRITICAL**: This skill ONLY GENERATES playbooks. It does NOT EXECUTE them. For execution, use /playbook-executor skill. Generate production-ready Ansible remediation playbooks for CVE vulnerabilities with Red Hat be..."
+      }
+    ],
+    "skills_decision_guide": [
+      {
+        "reason": "Use `cve-validation` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "cve-validation",
+        "user_request": "User: \"I need help related to cve-validation\""
+      },
+      {
+        "reason": "Use `fleet-inventory` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "fleet-inventory",
+        "user_request": "User: \"I need help related to fleet-inventory\""
+      },
+      {
+        "reason": "Use `remediation` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "remediation",
+        "user_request": "User: \"I need help related to remediation\""
+      },
+      {
+        "reason": "Use `remediation-verifier` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "remediation-verifier",
+        "user_request": "User: \"I need help related to remediation-verifier\""
+      },
+      {
+        "reason": "Use `system-context` for workflows described in that skill and in CLAUDE.md.",
+        "skill_to_use": "system-context",
+        "user_request": "User: \"I need help related to system-context\""
+      }
+    ]
+  },
+  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-sre`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "description": "Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.",
+  "id": "rh-sre",
+  "license": "Apache-2.0",
+  "marketplaces": [
+    "Claude Code",
+    "Cursor"
+  ],
+  "name": "Red Hat SRE Agentic Skills Collection",
+  "personas": [
+    "Red Hat platform engineer"
+  ],
+  "provider": "Red Hat",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "resources": [
+    {
+      "description": "Source repository for these packs and skills.",
+      "title": "agentic-collections repository",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+    }
+  ],
+  "sample_workflows": [
+    {
+      "name": "Choose the right skill",
+      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+    }
+  ],
+  "summary": "- **Pack:** `rh-sre`\n- **Focus:** Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "version": "0.1.0"
+}

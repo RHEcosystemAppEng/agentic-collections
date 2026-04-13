@@ -184,8 +184,13 @@ Generate and view documentation locally:
 # Install dependencies (first time only)
 make install
 
-# Validate pack structure (mcps.json, CLAUDE.md, frontmatter; plugin.json if present)
+# Validate pack structure + collection compliance (see COLLECTION_SPEC.md)
 make validate
+
+# Optional: collection-only targets
+# make validate-collection-schema
+# make validate-collection-compliance
+# make catalog-mirror-json   # refresh .catalog/collection.json from YAML
 
 # Validate skills against Design Principles (SKILL_DESIGN_PRINCIPLES.md)
 # Validate only changed skills (staged + unstaged) - recommended for local dev:
