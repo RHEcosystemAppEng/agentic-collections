@@ -1,4 +1,8 @@
 {
+  "author": {
+    "email": "eco-engineering@redhat.com",
+    "name": "Red Hat Ecosystem Engineering"
+  },
   "categories": [
     "Red Hat",
     "Openshift",
@@ -6,46 +10,58 @@
     "Management"
   ],
   "contents": {
-    "description": "The pack provides 3 skills under `ocp-admin` for Red Hat platforms.",
+    "description": "The pack provides three skills for cluster lifecycle and fleet visibility on OpenShift, using Assisted Installer and OCM APIs\nwhere applicable and read-only cluster APIs for consolidated reports.\n",
     "orchestration_skills": [],
     "skills": [
       {
-        "description": "End-to-end OpenShift cluster creation using Red Hat Assisted Installer. Handles Single-Node OpenShift (SNO) and HA multi-node clusters on baremetal, vsphere, oci, nutanix. Use when: - \"Create a new OpenShift cluster\" ...",
+        "description": "End-to-end OpenShift cluster creation using Red Hat Assisted Installer (SNO and HA; bare metal, vSphere, OCI, Nutanix).",
         "name": "cluster-creator",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** End-to-end OpenShift cluster creation using Red Hat Assisted Installer. Handles Single-Node OpenShift (SNO) and HA multi-node clusters on baremetal, vsphere, oci, nutanix. Use when: - \"Create a new OpenShift cluster\" ..."
+        "summary_markdown": "Create and install OpenShift clusters through Assisted Installer with validation, host networking, and progress monitoring.\n**Use when:**\n- \"Create a new OpenShift cluster\"\n- \"Install OpenShift on my servers\"\n- \"Set up a single-node cluster\"\n**What it does:**\n- Drives Assisted Installer flows with explicit approval for VIPs, host roles, and install triggers.\n- Surfaces installation events and validation errors until the cluster reaches ready state.\n"
       },
       {
-        "description": "List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD) deployments. Returns cluster name, ID, version, status, platform, and creation date. Use when: - \"List all cluste...",
+        "description": "List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD) deployments.",
         "name": "cluster-inventory",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD) deployments. Returns cluster name, ID, version, status, platform, and creation date. Use when: - \"List all cluste..."
+        "summary_markdown": "List clusters, versions, platforms, and status from OCM and Assisted Installer contexts using a single offline token workflow.\n**Use when:**\n- \"List all clusters\"\n- \"Show cluster status\"\n- \"What clusters are available?\"\n**What it does:**\n- Returns identifiers, versions, platforms, and creation metadata for fleet visibility.\n- Separates self-managed versus managed-service clusters for the right API path.\n"
       },
       {
-        "description": "Generate a consolidated health report across multiple OpenShift clusters. Verifies each kubeconfig context is a genuine OpenShift cluster before reporting. Non-OpenShift contexts are skipped by default. Collects node ...",
+        "description": "Consolidated health report across kubeconfig contexts, skipping non-OpenShift contexts by default.",
         "name": "cluster-report",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Generate a consolidated health report across multiple OpenShift clusters. Verifies each kubeconfig context is a genuine OpenShift cluster before reporting. Non-OpenShift contexts are skipped by default. Collects node ..."
+        "summary_markdown": "Aggregate node, namespace, and workload signals across contexts that resolve to real OpenShift clusters.\n**Use when:**\n- \"Health report across clusters\"\n- \"Fleet summary from kubeconfig\"\n- \"Compare resource usage between contexts\"\n**What it does:**\n- Verifies each context is OpenShift before collecting metrics to avoid kube API errors.\n- Summarizes capacity, GPU presence, and pod health for operations review.\n"
       }
     ],
     "skills_decision_guide": [
       {
-        "reason": "Use `cluster-creator` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Provisions SNO or HA clusters and monitors install through completion.",
         "skill_to_use": "cluster-creator",
-        "user_request": "User: \"I need help related to cluster-creator\""
+        "user_request": "\"Create cluster\" or \"install OpenShift with Assisted Installer\""
       },
       {
-        "reason": "Use `cluster-inventory` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Inventory across managed and self-managed targets with consistent fields.",
         "skill_to_use": "cluster-inventory",
-        "user_request": "User: \"I need help related to cluster-inventory\""
+        "user_request": "\"List clusters\" or \"cluster status in OCM/ROSA\""
       },
       {
-        "reason": "Use `cluster-report` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Read-only aggregation after OpenShift context verification.",
         "skill_to_use": "cluster-report",
-        "user_request": "User: \"I need help related to cluster-report\""
+        "user_request": "\"Fleet health\" or \"multi-cluster report from kubeconfig\""
       }
     ]
   },
-  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `ocp-admin`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "deploy_and_use": "#deploy_and_use.md",
   "description": "Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks.",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "id": "openshift-administration",
+  "keywords": [
+    "openshift",
+    "assisted-installer",
+    "ocm",
+    "fleet",
+    "kubeconfig"
+  ],
+  "legal_resources": {
+    "license_agreement_url": "https://www.redhat.com/en/about/agreements",
+    "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
+  },
   "license": "Apache-2.0",
   "marketplaces": [
     "Claude Code",
@@ -53,23 +69,37 @@
   ],
   "name": "Red Hat OpenShift Administration Agentic Skills Collection",
   "personas": [
-    "Red Hat platform engineer"
+    "OpenShift Administrator"
   ],
   "provider": "Red Hat",
   "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "resources": [
     {
-      "description": "Source repository for these packs and skills.",
+      "description": "Platform guides for administrators installing and operating OpenShift.",
+      "title": "OpenShift documentation",
+      "url": "https://docs.redhat.com/en/documentation/openshift_container_platform/"
+    },
+    {
+      "description": "Source repository for these packs, skills, and catalog metadata.",
       "title": "agentic-collections repository",
       "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
     }
   ],
   "sample_workflows": [
     {
-      "name": "Choose the right skill",
-      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+      "name": "Assisted install then verify",
+      "workflow": "User: \"Create an HA cluster on bare metal and tell me when it is ready\"\n- `/cluster-creator` walks prerequisites, manifests, and installation monitoring with approvals at critical steps\n- `/cluster-inventory` confirms version and state once the API shows the new cluster\n"
+    },
+    {
+      "name": "Fleet visibility",
+      "workflow": "User: \"List everything in my Red Hat account and flag stale check-ins\"\n- `/cluster-inventory` returns self-managed and managed clusters with metadata for triage\n"
+    },
+    {
+      "name": "Multi-cluster health",
+      "workflow": "User: \"Summarize node and pod health for every OpenShift context in my kubeconfig\"\n- `/cluster-report` skips non-OpenShift contexts and aggregates signals for operators\n"
     }
   ],
-  "summary": "- **Pack:** `ocp-admin`\n- **Focus:** Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies, and operational tasks.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "summary": "The ocp-admin collection covers Assisted Installer cluster creation, multi-cluster discovery across self-managed and managed\nOpenShift, and kubeconfig-backed fleet health reporting. Use CLAUDE.md intent routing to pick `/cluster-creator`,\n`/cluster-inventory`, or `/cluster-report`.\n",
+  "support_level": "Unknown",
   "version": "0.1.0"
 }

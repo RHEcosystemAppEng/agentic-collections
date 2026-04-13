@@ -1,41 +1,56 @@
 {
+  "author": {
+    "email": "eco-engineering@redhat.com",
+    "name": "Red Hat Ecosystem Engineering"
+  },
   "categories": [
-    "Red Hat",
-    "Automation"
+    "Support",
+    "Red Hat"
   ],
   "contents": {
-    "description": "The pack provides 0 skills under `rh-support-engineer` for Red Hat platforms.",
+    "description": "The pack has no `skills/` directory yet. When skills land, list each exactly once under `contents.skills` or\n`contents.orchestration_skills` and extend this catalog from SKILL.md, README, and CLAUDE sources.\n",
     "orchestration_skills": [],
     "skills": [],
     "skills_decision_guide": []
   },
-  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-support-engineer`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
-  "description": "Agentic collection `rh-support-engineer`.",
+  "deploy_and_use": "## Install (Lola)\nThis path is listed in `docs/plugins.json` for discoverability. When a marketplace module is published with `path:\nrh-support-engineer`, install from `marketplace/rh-agentic-collection.yml` and follow the pack `README.md` for prerequisites.\n",
+  "description": "Technical support and troubleshooting tools for Red Hat products and platforms, including diagnostics, issue resolution, knowledge workflows, and customer-ready guidance.",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "id": "rh-support-engineer",
+  "keywords": [
+    "support",
+    "red-hat"
+  ],
+  "legal_resources": {
+    "license_agreement_url": "https://www.redhat.com/en/about/agreements",
+    "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
+  },
   "license": "Apache-2.0",
   "marketplaces": [
     "Claude Code",
-    "Cursor"
+    "Cursor",
+    "ChatGPT"
   ],
   "name": "Red Hat Support Engineer Agentic Skills Collection",
   "personas": [
-    "Red Hat platform engineer"
+    "Support Engineer"
   ],
   "provider": "Red Hat",
   "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "resources": [
     {
-      "description": "Source repository for these packs and skills.",
+      "description": "Source repository for Red Hat agentic packs and contribution guidelines.",
       "title": "agentic-collections repository",
       "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
     }
   ],
   "sample_workflows": [
     {
-      "name": "Choose the right skill",
-      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+      "name": "Adopt the pack when skills exist",
+      "workflow": "User: \"I want to use the support engineer pack in my assistant\"\n- Read `README.md` for persona and marketplace targets\n- After skills are added, follow CLAUDE intent routing and invoke `/skill-name` via the Skill tool\n"
     }
   ],
-  "summary": "- **Pack:** `rh-support-engineer`\n- **Focus:** Agentic collection `rh-support-engineer`.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "summary": "The rh-support-engineer pack is reserved for future support-focused skills. It currently ships documentation-only metadata\nso the union registry and docs site stay aligned; add `skills/<name>/SKILL.md` before advertising automation here.\n",
+  "support_level": "Unknown",
   "version": "0.1.0"
 }

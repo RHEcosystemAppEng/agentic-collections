@@ -1,143 +1,227 @@
 {
+  "author": {
+    "email": "eco-engineering@redhat.com",
+    "name": "Red Hat Ecosystem Engineering"
+  },
   "categories": [
-    "Developer",
-    "Openshift",
-    "Rhel",
-    "S2I",
-    "Containerization",
-    "Deployment"
+    "Application development",
+    "OpenShift",
+    "Containers",
+    "Automation"
   ],
   "contents": {
-    "description": "The pack provides 13 skills and 1 orchestration skills under `rh-developer` for Red Hat platforms.",
+    "description": "The pack provides 14 skills for developer workflows on OpenShift and RHEL, including one orchestration skill\nfor end-to-end containerize-and-deploy.\n",
     "orchestration_skills": [
       {
-        "description": "Complete end-to-end workflow for containerizing and deploying applications to OpenShift or standalone RHEL systems. Orchestrates /detect-project, /s2i-build, /deploy, /helm-deploy, and /rhel-deploy skills with user co...",
+        "description": "End-to-end containerize and deploy",
         "name": "containerize-deploy",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Complete end-to-end workflow for containerizing and deploying applications to OpenShift or standalone RHEL systems. Orchestrates /detect-project, /s2i-build, /deploy, /helm-deploy, and /rhel-deploy skills with user co..."
+        "summary_markdown": "Guided workflow from source to running application on OpenShift or RHEL with checkpoints.\n**Use when:**\n- \"Deploy my app end to end\"\n- \"Take me from repo to running service\"\n**What it does:**\n- Phase: detect project and target environment.\n- Phase: choose OpenShift (S2I / Helm / Podman) or RHEL path.\n- Invokes specialized skills with explicit user approvals between phases.\n"
       }
     ],
     "skills": [
       {
-        "description": "Diagnose OpenShift build failures including S2I builds, Docker/Podman builds, and BuildConfig issues. Automates multi-step diagnosis: BuildConfig validation, build pod logs, registry authentication, and source reposit...",
-        "name": "debug-build",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Diagnose OpenShift build failures including S2I builds, Docker/Podman builds, and BuildConfig issues. Automates multi-step diagnosis: BuildConfig validation, build pod logs, registry authentication, and source reposit..."
-      },
-      {
-        "description": "Diagnose local container issues with Podman/Docker including image pull errors, container startup failures, OOM kills, and networking problems. Automates multi-step diagnosis: container inspect, logs retrieval, image ...",
-        "name": "debug-container",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Diagnose local container issues with Podman/Docker including image pull errors, container startup failures, OOM kills, and networking problems. Automates multi-step diagnosis: container inspect, logs retrieval, image ..."
-      },
-      {
-        "description": "Diagnose OpenShift service connectivity issues including DNS resolution, service endpoints, route ingress, and network policies. Automates multi-step diagnosis: service endpoint verification, pod selector matching, ro...",
-        "name": "debug-network",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Diagnose OpenShift service connectivity issues including DNS resolution, service endpoints, route ingress, and network policies. Automates multi-step diagnosis: service endpoint verification, pod selector matching, ro..."
-      },
-      {
-        "description": "Diagnose OpenShift Pipelines (Tekton) CI/CD failures including PipelineRun failures, TaskRun step errors, workspace/PVC binding issues, and authentication problems. Automates multi-step diagnosis: PipelineRun status, ...",
-        "name": "debug-pipeline",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Diagnose OpenShift Pipelines (Tekton) CI/CD failures including PipelineRun failures, TaskRun step errors, workspace/PVC binding issues, and authentication problems. Automates multi-step diagnosis: PipelineRun status, ..."
-      },
-      {
-        "description": "Diagnose pod failures on OpenShift including CrashLoopBackOff, ImagePullBackOff, OOMKilled, and pending pods. Automates multi-step diagnosis: pod status, events, logs (current + previous), and resource constraint anal...",
-        "name": "debug-pod",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Diagnose pod failures on OpenShift including CrashLoopBackOff, ImagePullBackOff, OOMKilled, and pending pods. Automates multi-step diagnosis: pod status, events, logs (current + previous), and resource constraint anal..."
-      },
-      {
-        "description": "Diagnose RHEL system issues including systemd service failures, SELinux denials, firewall blocking, and system resource problems. Automates multi-step diagnosis: journalctl log analysis, SELinux denial detection (ause...",
-        "name": "debug-rhel",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Diagnose RHEL system issues including systemd service failures, SELinux denials, firewall blocking, and system resource problems. Automates multi-step diagnosis: journalctl log analysis, SELinux denial detection (ause..."
-      },
-      {
-        "description": "Create Kubernetes Deployment, Service, and Route resources on OpenShift to deploy and expose an application. Use this skill after /s2i-build to make the built image accessible. Handles port detection, replica configur...",
-        "name": "deploy",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create Kubernetes Deployment, Service, and Route resources on OpenShift to deploy and expose an application. Use this skill after /s2i-build to make the built image accessible. Handles port detection, replica configur..."
-      },
-      {
-        "description": "Analyze a project folder or GitHub repository to detect programming language, framework, and version requirements. Use this skill when containerizing an application, selecting an S2I builder image, deploying to OpenSh...",
+        "description": "Project and runtime detection",
         "name": "detect-project",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Analyze a project folder or GitHub repository to detect programming language, framework, and version requirements. Use this skill when containerizing an application, selecting an S2I builder image, deploying to OpenSh..."
+        "summary_markdown": "Analyze repositories and local trees to detect language, framework, and runtime signals.\n**Use when:**\n- \"What language is this repo?\"\n- \"Scan my project for frameworks\"\n- \"Identify runtime from source\"\n**What it does:**\n- Reads project files and optional GitHub context.\n- Summarizes stack signals for build and deploy skills.\n"
       },
       {
-        "description": "Deploy applications to OpenShift using Helm charts. Use this skill when user wants to deploy with Helm, when a Helm chart is detected in the project, or when /helm-deploy command is invoked. Supports both existing cha...",
-        "name": "helm-deploy",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Deploy applications to OpenShift using Helm charts. Use this skill when user wants to deploy with Helm, when a Helm chart is detected in the project, or when /helm-deploy command is invoked. Supports both existing cha..."
-      },
-      {
-        "description": "Intelligently recommend the optimal S2I builder image or container base image for a project based on detected language/framework, use-case requirements, security posture, and deployment target. Supports GitHub URLs fo...",
+        "description": "Image and builder recommendations",
         "name": "recommend-image",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Intelligently recommend the optimal S2I builder image or container base image for a project based on detected language/framework, use-case requirements, security posture, and deployment target. Supports GitHub URLs fo..."
+        "summary_markdown": "Recommend S2I builder or base images aligned with Red Hat guidance.\n**Use when:**\n- \"Which S2I image for Node?\"\n- \"Best UBI image for this app?\"\n**What it does:**\n- Uses image selection criteria and builder catalog patterns.\n- Prepares inputs for `/s2i-build`.\n"
       },
       {
-        "description": "CRITICAL: When user types /rhel-deploy, use THIS skill immediately. This skill deploys applications to standalone RHEL/Fedora/CentOS systems (NOT OpenShift) using Podman containers with systemd, or native dnf builds. ...",
-        "name": "rhel-deploy",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** CRITICAL: When user types /rhel-deploy, use THIS skill immediately. This skill deploys applications to standalone RHEL/Fedora/CentOS systems (NOT OpenShift) using Podman containers with systemd, or native dnf builds. ..."
-      },
-      {
-        "description": "Create BuildConfig and ImageStream resources on OpenShift and trigger a Source-to-Image (S2I) build. Use this skill after /detect-project to build container images from source code on the cluster. Handles namespace ve...",
+        "description": "Source-to-image builds",
         "name": "s2i-build",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create BuildConfig and ImageStream resources on OpenShift and trigger a Source-to-Image (S2I) build. Use this skill after /detect-project to build container images from source code on the cluster. Handles namespace ve..."
+        "summary_markdown": "Build container images on OpenShift using S2I / BuildConfig flows.\n**Use when:**\n- \"S2I build this repo\"\n- \"Create a BuildConfig\"\n- \"Build image from source\"\n**What it does:**\n- Validates inputs, drives build logs, surfaces common build failures.\n- Pairs with `/debug-build` on failure.\n"
       },
       {
-        "description": "Check and report the status of required tools and environment for rh-developer skills. Validates tool installation (oc, helm, podman, git, skopeo, etc.), cluster connectivity, and permissions. Use this skill before ru...",
+        "description": "OpenShift deployment",
+        "name": "deploy",
+        "summary_markdown": "Deploy images to OpenShift with Deployment, Service, and Route.\n**Use when:**\n- \"Deploy to OpenShift\"\n- \"Expose my app with a Route\"\n**What it does:**\n- Generates manifests with approval gates.\n- Coordinates with cluster MCP safely.\n"
+      },
+      {
+        "description": "Helm-based deployment",
+        "name": "helm-deploy",
+        "summary_markdown": "Install or upgrade Helm charts on OpenShift.\n**Use when:**\n- \"Helm install my chart\"\n- \"Upgrade release with new values\"\n**What it does:**\n- Validates chart paths and values.\n- Reports release status and common Helm errors.\n"
+      },
+      {
+        "description": "RHEL / SSH deployment",
+        "name": "rhel-deploy",
+        "summary_markdown": "Deploy to standalone RHEL/Fedora hosts via SSH and systemd/Podman patterns.\n**Use when:**\n- \"Deploy on RHEL over SSH\"\n- \"systemd unit for my container\"\n**What it does:**\n- Uses SSH and host workflows from pack docs.\n- Optional Lightspeed context when configured.\n"
+      },
+      {
+        "description": "Environment validation",
         "name": "validate-environment",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Check and report the status of required tools and environment for rh-developer skills. Validates tool installation (oc, helm, podman, git, skopeo, etc.), cluster connectivity, and permissions. Use this skill before ru..."
+        "summary_markdown": "Verify local tools and cluster connectivity before deploy or debug work.\n**Use when:**\n- \"Check oc and helm\"\n- \"Validate my environment\"\n**What it does:**\n- Checks binaries, kubeconfig reachability, and common misconfigurations.\n"
+      },
+      {
+        "description": "OpenShift build diagnostics",
+        "name": "debug-build",
+        "summary_markdown": "Diagnose BuildConfig / S2I / image build failures.\n**Use when:**\n- \"Build failed on OpenShift\"\n- \"ImagePullBackOff during build\"\n**What it does:**\n- Collects build logs and events.\n- Suggests fixes and retries with `/s2i-build`.\n"
+      },
+      {
+        "description": "Pod diagnostics",
+        "name": "debug-pod",
+        "summary_markdown": "Diagnose running pod failures on OpenShift.\n**Use when:**\n- \"CrashLoopBackOff\"\n- \"Pod pending\"\n- \"OOMKilled pod\"\n**What it does:**\n- Inspects status, events, current/previous logs.\n- Coordinates with `/debug-network` when needed.\n"
+      },
+      {
+        "description": "Tekton / pipeline diagnostics",
+        "name": "debug-pipeline",
+        "summary_markdown": "Diagnose PipelineRun and TaskRun failures.\n**Use when:**\n- \"PipelineRun failed\"\n- \"Tekton step error\"\n**What it does:**\n- Surfaces pipeline logs and workspace issues.\n- Guides toward green reruns.\n"
+      },
+      {
+        "description": "Cluster networking diagnostics",
+        "name": "debug-network",
+        "summary_markdown": "Diagnose Services, Routes, DNS, and NetworkPolicy issues.\n**Use when:**\n- \"Service not reachable\"\n- \"Route returns 503\"\n**What it does:**\n- Traces endpoints and policies.\n- Feeds back into `/deploy` verification.\n"
+      },
+      {
+        "description": "Local container diagnostics",
+        "name": "debug-container",
+        "summary_markdown": "Diagnose Podman/Docker local container failures.\n**Use when:**\n- \"Container exits immediately locally\"\n- \"Cannot pull image locally\"\n**What it does:**\n- Inspects local container state and logs.\n- Complements OpenShift debug skills.\n"
+      },
+      {
+        "description": "RHEL host diagnostics",
+        "name": "debug-rhel",
+        "summary_markdown": "Diagnose systemd, SELinux, firewall, and resource issues on RHEL hosts.\n**Use when:**\n- \"SELinux denial\"\n- \"systemd service failed on host\"\n**What it does:**\n- Uses journal and policy signals.\n- Optional Lightspeed insights when available.\n"
       }
     ],
     "skills_decision_guide": [
       {
-        "reason": "Use `containerize-deploy` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Creates workload, Service, and Route with confirmation gates.",
+        "skill_to_use": "deploy",
+        "user_request": "\"Deploy to OpenShift\" or \"expose my image\""
+      },
+      {
+        "reason": "Helm-focused install/upgrade with values and release checks.",
+        "skill_to_use": "helm-deploy",
+        "user_request": "\"Helm install\" or \"upgrade my chart\""
+      },
+      {
+        "reason": "OpenShift-native build flow before `/deploy`.",
+        "skill_to_use": "s2i-build",
+        "user_request": "\"S2I build\" or \"BuildConfig from source\""
+      },
+      {
+        "reason": "Orchestrates detect → strategy → deploy with checkpoints.",
         "skill_to_use": "containerize-deploy",
-        "user_request": "User: \"I need help related to containerize-deploy\""
+        "user_request": "\"From repo to running app\" or \"full deploy workflow\""
       },
       {
-        "reason": "Use `debug-build` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Pod logs, events, and resource pressure analysis.",
+        "skill_to_use": "debug-pod",
+        "user_request": "\"CrashLoopBackOff\" or \"pod not starting\""
+      },
+      {
+        "reason": "Build logs and BuildConfig diagnosis.",
         "skill_to_use": "debug-build",
-        "user_request": "User: \"I need help related to debug-build\""
+        "user_request": "\"Build failed\" or \"S2I error\""
       },
       {
-        "reason": "Use `debug-container` for workflows described in that skill and in CLAUDE.md.",
-        "skill_to_use": "debug-container",
-        "user_request": "User: \"I need help related to debug-container\""
-      },
-      {
-        "reason": "Use `debug-network` for workflows described in that skill and in CLAUDE.md.",
-        "skill_to_use": "debug-network",
-        "user_request": "User: \"I need help related to debug-network\""
-      },
-      {
-        "reason": "Use `debug-pipeline` for workflows described in that skill and in CLAUDE.md.",
-        "skill_to_use": "debug-pipeline",
-        "user_request": "User: \"I need help related to debug-pipeline\""
+        "reason": "Pre-flight before deploy or heavy debug.",
+        "skill_to_use": "validate-environment",
+        "user_request": "\"Check my tools\" or \"validate cluster access\""
       }
     ]
   },
-  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-developer`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "deploy_and_use": "#deploy_and_use.md",
   "description": "Plugins for building and deploying applications on Red Hat platforms.",
+  "documentation_section_file": "#documentation_section.md",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "id": "rh-developer",
+  "keywords": [
+    "developer",
+    "openshift",
+    "rhel",
+    "s2i",
+    "containerization",
+    "deployment",
+    "helm",
+    "podman"
+  ],
+  "legal_resources": {
+    "license_agreement_url": "https://www.redhat.com/en/about/agreements",
+    "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
+  },
   "license": "Apache-2.0",
   "marketplaces": [
     "Claude Code",
     "Cursor"
   ],
-  "name": "Red Hat Developer Agentic Skills Collection",
+  "mcp_section_file": "#mcp_section.md",
+  "name": "Red Hat Developer Agentic Collection",
   "personas": [
-    "Red Hat platform engineer"
+    "Application developer"
   ],
   "provider": "Red Hat",
   "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "resources": [
     {
-      "description": "Source repository for these packs and skills.",
-      "title": "agentic-collections repository",
+      "description": "OpenShift platform guides for developers and administrators.",
+      "embedded_doc": "docs/prerequisites.md",
+      "title": "OpenShift documentation",
+      "url": "https://docs.redhat.com/en/documentation/openshift_container_platform/"
+    },
+    {
+      "description": "Helm install, upgrade, and chart authoring.",
+      "embedded_doc": "docs/dynamic-validation.md",
+      "title": "Helm documentation",
+      "url": "https://helm.sh/docs/"
+    },
+    {
+      "description": "OpenShift builds and S2I concepts.",
+      "embedded_doc": "docs/builder-images.md",
+      "title": "Source-to-Image (S2I)",
+      "url": "https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html"
+    },
+    {
+      "description": "UBI and base image guidance.",
+      "embedded_doc": "docs/image-selection-criteria.md",
+      "title": "Red Hat Universal Base Images",
+      "url": "https://developers.redhat.com/products/rhel/ubi"
+    },
+    {
+      "description": "Local container workflows used by the pack.",
+      "embedded_doc": "docs/debugging-patterns.md",
+      "title": "Podman",
+      "url": "https://docs.podman.io/"
+    },
+    {
+      "description": "Pack policy for confirmations and destructive actions.",
+      "embedded_doc": "docs/human-in-the-loop.md",
+      "title": "Human-in-the-loop (pack)",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+    },
+    {
+      "description": "SSH/systemd patterns for `/rhel-deploy`.",
+      "embedded_doc": "docs/rhel-deployment.md",
+      "title": "RHEL deployment notes (pack)",
       "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
     }
   ],
   "sample_workflows": [
     {
-      "name": "Choose the right skill",
-      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+      "name": "S2I path: detect → image → build → deploy",
+      "workflow": "User: \"I have a Node app in this repo; put it on OpenShift\"\n- `/detect-project` identifies the stack\n- `/recommend-image` picks a builder (optional)\n- `/s2i-build` creates the image\n- `/deploy` rolls out Deployment, Service, and Route with approval\n"
+    },
+    {
+      "name": "Helm install on cluster",
+      "workflow": "User: \"Install this Helm chart into namespace apps\"\n- `/validate-environment` checks `oc`/`helm`\n- `/helm-deploy` installs or upgrades the chart and reports release status\n"
+    },
+    {
+      "name": "End-to-end with checkpoints",
+      "workflow": "User: \"Take my Python service from source to running on the cluster\"\n- `/containerize-deploy` walks phases with confirmations between detect, strategy, and deploy steps\n"
+    },
+    {
+      "name": "Build failure then retry",
+      "workflow": "User: \"S2I build failed with ImagePullBackOff\"\n- `/debug-build` gathers build and registry signals\n- User applies fix; `/s2i-build` retries with updated inputs\n"
+    },
+    {
+      "name": "Pod triage",
+      "workflow": "User: \"My pod keeps restarting\"\n- `/debug-pod` inspects events and logs\n- If networking suspected, `/debug-network` narrows DNS/Route/Service issues\n"
     }
   ],
-  "summary": "- **Pack:** `rh-developer`\n- **Focus:** Plugins for building and deploying applications on Red Hat platforms.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "security_model_file": "#security_model.md",
+  "summary": "The rh-developer collection provides skills to detect projects, build images (S2I/Helm), deploy to OpenShift or RHEL, validate environments, and debug builds, pods, pipelines, networks, and hosts.",
+  "support_level": "Unknown",
   "version": "0.1.0"
 }

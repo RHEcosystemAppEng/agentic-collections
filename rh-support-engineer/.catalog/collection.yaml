@@ -7,45 +7,50 @@ name: Red Hat Support Engineer Agentic Skills Collection
 provider: Red Hat
 version: 0.1.0
 categories:
+- Support
 - Red Hat
-- Automation
 personas:
-- Red Hat platform engineer
+- Support Engineer
 marketplaces:
 - Claude Code
 - Cursor
-description: Agentic collection `rh-support-engineer`.
-summary: '- **Pack:** `rh-support-engineer`
-
-  - **Focus:** Agentic collection `rh-support-engineer`.
-
-  - **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.
-
-  '
+- ChatGPT
+support_level: Unknown
+description: Technical support and troubleshooting tools for Red Hat products and platforms, including diagnostics, issue
+  resolution, knowledge workflows, and customer-ready guidance.
+summary: |
+  The rh-support-engineer pack is reserved for future support-focused skills. It currently ships documentation-only metadata
+  so the union registry and docs site stay aligned; add `skills/<name>/SKILL.md` before advertising automation here.
 contents:
-  description: The pack provides 0 skills under `rh-support-engineer` for Red Hat platforms.
+  description: |
+    The pack has no `skills/` directory yet. When skills land, list each exactly once under `contents.skills` or
+    `contents.orchestration_skills` and extend this catalog from SKILL.md, README, and CLAUDE sources.
   skills: []
   orchestration_skills: []
   skills_decision_guide: []
-deploy_and_use: '## Install (Lola)
-
-
-  Add the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-support-engineer`). See
-  the pack `README.md` for prerequisites, MCP env vars, and safety notes.
-
-  '
+deploy_and_use: |
+  ## Install (Lola)
+  This path is listed in `docs/plugins.json` for discoverability. When a marketplace module is published with `path:
+  rh-support-engineer`, install from `marketplace/rh-agentic-collection.yml` and follow the pack `README.md` for prerequisites.
 sample_workflows:
-- name: Choose the right skill
-  workflow: 'User: "I have a task for this collection"
-
-    - Open CLAUDE.md intent routing and match your request to a skill name.
-
-    - Invoke that skill and follow its workflow and prerequisites.
-
-    '
+- name: Adopt the pack when skills exist
+  workflow: |
+    User: "I want to use the support engineer pack in my assistant"
+    - Read `README.md` for persona and marketplace targets
+    - After skills are added, follow CLAUDE intent routing and invoke `/skill-name` via the Skill tool
 resources:
 - title: agentic-collections repository
-  description: Source repository for these packs and skills.
   url: https://github.com/RHEcosystemAppEng/agentic-collections
+  description: Source repository for Red Hat agentic packs and contribution guidelines.
+legal_resources:
+  license_agreement_url: https://www.redhat.com/en/about/agreements
+  privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
+author:
+  name: Red Hat Ecosystem Engineering
+  email: eco-engineering@redhat.com
+homepage: https://github.com/RHEcosystemAppEng/agentic-collections
 repository: https://github.com/RHEcosystemAppEng/agentic-collections
 license: Apache-2.0
+keywords:
+- support
+- red-hat

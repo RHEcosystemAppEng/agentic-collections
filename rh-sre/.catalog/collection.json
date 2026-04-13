@@ -8,74 +8,74 @@
     "Security"
   ],
   "contents": {
-    "description": "The pack provides 13 skills for common SRE operations, including one orchestration skill for end-to-end remediation.",
+    "description": "The pack provides 13 skills for common SRE operations, including one orchestration skill for end-to-end remediation.\n",
     "orchestration_skills": [
       {
         "description": "End-to-End CVE Remediation",
         "name": "remediation",
-        "summary_markdown": "The remediation skill orchestrates 6 specialized skills to provide complete CVE remediation workflows.\n\n**Use when:**\n- Remediate CVE-2024-1234 on system abc-123\n- Create and execute a remediation playbook for CVE-X\n- Patch these 5 CVEs on all production servers\n\n**Workflow:**\n0. Validate MCP (mcp-lightspeed-validator, mcp-aap-validator)\n1. Impact (cve-impact skill, if needed)\n2. Validate CVE (cve-validation skill)\n3. Gather Context (system-context skill)\n4. Generate Playbook (playbook-generator skill)\n5. Execute (playbook-executor skill, with user confirmation)\n6. Verify (remediation-verifier skill)\n\n**Capabilities:**\n- Single CVE on single system\n- Batch remediation (multiple CVEs, multiple systems)\n- Cross-environment patching (dev → staging → prod)\n- Automated job tracking and reporting\n- Partial failure handling\n"
+        "summary_markdown": "The remediation skill orchestrates 6 specialized skills to provide complete CVE remediation workflows.\n**Use when:**\n- Remediate CVE-2024-1234 on system abc-123\n- Create and execute a remediation playbook for CVE-X\n- Patch these 5 CVEs on all production servers\n**Workflow:**\n0. Validate MCP (mcp-lightspeed-validator, mcp-aap-validator)\n1. Impact (cve-impact skill, if needed)\n2. Validate CVE (cve-validation skill)\n3. Gather Context (system-context skill)\n4. Generate Playbook (playbook-generator skill)\n5. Execute (playbook-executor skill, with user confirmation)\n6. Verify (remediation-verifier skill)\n**Capabilities:**\n- Single CVE on single system\n- Batch remediation (multiple CVEs, multiple systems)\n- Cross-environment patching (dev → staging → prod)\n- Automated job tracking and reporting\n- Partial failure handling\n"
       }
     ],
     "skills": [
       {
         "description": "System Discovery and Fleet Management",
         "name": "fleet-inventory",
-        "summary_markdown": "Query and display Red Hat Lightspeed managed system inventory.\n\n**Use when:**\n- Show the managed fleet\n- List all RHEL 8 systems\n- What systems are registered in Lightspeed?\n\n**What it does:**\n- Retrieves all registered systems\n- Groups by RHEL version and environment\n- Shows system health and check-in status\n- Identifies stale systems\n"
+        "summary_markdown": "Query and display Red Hat Lightspeed managed system inventory.\n**Use when:**\n- Show the managed fleet\n- List all RHEL 8 systems\n- What systems are registered in Lightspeed?\n**What it does:**\n- Retrieves all registered systems\n- Groups by RHEL version and environment\n- Shows system health and check-in status\n- Identifies stale systems\n"
       },
       {
         "description": "CVE Discovery and Risk Assessment",
         "name": "cve-impact",
-        "summary_markdown": "Analyze CVE impact across the fleet without immediate remediation.\n\n**Use when:**\n- What are the most critical vulnerabilities?\n- Show CVEs affecting my systems\n- List high-severity CVEs\n\n**What it does:**\n- Lists CVEs by severity (Critical/Important)\n- Sorts by CVSS score\n- Shows affected system counts\n- Provides priority recommendations\n"
+        "summary_markdown": "Analyze CVE impact across the fleet without immediate remediation.\n**Use when:**\n- What are the most critical vulnerabilities?\n- Show CVEs affecting my systems\n- List high-severity CVEs\n**What it does:**\n- Lists CVEs by severity (Critical/Important)\n- Sorts by CVSS score\n- Shows affected system counts\n- Provides priority recommendations\n"
       },
       {
         "description": "CVE Verification",
         "name": "cve-validation",
-        "summary_markdown": "Validate CVE existence and remediation availability.\n\n**Use when:**\n- Is CVE-2024-1234 valid?\n- Does CVE-X have a remediation?\n- What's the CVSS score for CVE-Y?\n\n**What it does:**\n- Verifies CVE in Red Hat database\n- Checks remediation availability\n- Returns CVE metadata and severity\n"
+        "summary_markdown": "Validate CVE existence and remediation availability.\n**Use when:**\n- Is CVE-2024-1234 valid?\n- Does CVE-X have a remediation?\n- What's the CVSS score for CVE-Y?\n**What it does:**\n- Verifies CVE in Red Hat database\n- Checks remediation availability\n- Returns CVE metadata and severity\n"
       },
       {
         "description": "System Information Gathering",
         "name": "system-context",
-        "summary_markdown": "Collect detailed system information from Red Hat Lightspeed.\n\n**Use when:**\n- What systems are affected by CVE-X?\n- Show me details for server-01\n- Get system profile for these hosts\n\n**What it does:**\n- Retrieves system details\n- Shows installed packages\n- Displays configuration data\n- Maps CVE-to-system relationships\n"
+        "summary_markdown": "Collect detailed system information from Red Hat Lightspeed.\n**Use when:**\n- What systems are affected by CVE-X?\n- Show me details for server-01\n- Get system profile for these hosts\n**What it does:**\n- Retrieves system details\n- Shows installed packages\n- Displays configuration data\n- Maps CVE-to-system relationships\n"
       },
       {
         "description": "Ansible Playbook Creation",
         "name": "playbook-generator",
-        "summary_markdown": "Generate Ansible remediation playbooks following Red Hat best practices. **Only generates playbooks; does not execute them.** Use `/playbook-executor` to run playbooks.\n\n**Use when:**\n- Create a remediation playbook for CVE-X\n- Generate Ansible playbook to patch CVE-Y\n\n**What it does:**\n- Calls Red Hat Lightspeed remediation API\n- Generates production-ready Ansible playbooks\n- Includes error handling and rollback steps\n- Follows Red Hat standards\n"
+        "summary_markdown": "Generate Ansible remediation playbooks following Red Hat best practices. **Only generates playbooks; does not execute them.** Use `/playbook-executor` to run playbooks.\n**Use when:**\n- Create a remediation playbook for CVE-X\n- Generate Ansible playbook to patch CVE-Y\n**What it does:**\n- Calls Red Hat Lightspeed remediation API\n- Generates production-ready Ansible playbooks\n- Includes error handling and rollback steps\n- Follows Red Hat standards\n"
       },
       {
         "description": "AAP Playbook Execution",
         "name": "playbook-executor",
-        "summary_markdown": "Execute Ansible playbooks via AAP with dry-run, real-time monitoring, and reporting.\n\n**Use when:**\n- Execute this remediation playbook\n- Run the playbook and monitor status\n\n**What it does:**\n- Launches jobs via AAP MCP (job_templates_launch_retrieve)\n- Performs Git Flow (commit, push, sync) when playbook path differs from template\n- Monitors job status (PENDING → RUNNING → COMPLETED)\n- Reports execution results\n\n**Note:** Requires AAP MCP servers configured and job templates created (use job-template-creator skill).\n"
+        "summary_markdown": "Execute Ansible playbooks via AAP with dry-run, real-time monitoring, and reporting.\n**Use when:**\n- Execute this remediation playbook\n- Run the playbook and monitor status\n**What it does:**\n- Launches jobs via AAP MCP (job_templates_launch_retrieve)\n- Performs Git Flow (commit, push, sync) when playbook path differs from template\n- Monitors job status (PENDING → RUNNING → COMPLETED)\n- Reports execution results\n**Note:** Requires AAP MCP servers configured and job templates created (use job-template-creator skill).\n"
       },
       {
         "description": "Remediation Verification",
         "name": "remediation-verifier",
-        "summary_markdown": "Verify that CVE remediations were successfully applied.\n\n**Use when:**\n- Check if CVE-X was patched on server-01\n- Verify remediation status\n\n**What it does:**\n- Queries current CVE status\n- Verifies package updates\n- Confirms remediation success\n"
+        "summary_markdown": "Verify that CVE remediations were successfully applied.\n**Use when:**\n- Check if CVE-X was patched on server-01\n- Verify remediation status\n**What it does:**\n- Queries current CVE status\n- Verifies package updates\n- Confirms remediation success\n"
       },
       {
         "description": "Lightspeed MCP Server Validation",
         "name": "mcp-lightspeed-validator",
-        "summary_markdown": "Validate Red Hat Lightspeed MCP server configuration and connectivity.\n\n**Use when:**\n- Validate Lightspeed MCP\n- Check if Lightspeed is configured\n- Verify Lightspeed connection\n- Other skills need to verify lightspeed-mcp availability\n\n**What it does:**\n- Checks MCP server configuration in mcps.json\n- Verifies environment variables (LIGHTSPEED_CLIENT_ID, LIGHTSPEED_CLIENT_SECRET)\n- Tests server connectivity and tool availability\n- Reports validation status (PASSED/PARTIAL/FAILED)\n"
+        "summary_markdown": "Validate Red Hat Lightspeed MCP server configuration and connectivity.\n**Use when:**\n- Validate Lightspeed MCP\n- Check if Lightspeed is configured\n- Verify Lightspeed connection\n- Other skills need to verify lightspeed-mcp availability\n**What it does:**\n- Checks MCP server configuration in mcps.json\n- Verifies environment variables (LIGHTSPEED_CLIENT_ID, LIGHTSPEED_CLIENT_SECRET)\n- Tests server connectivity and tool availability\n- Reports validation status (PASSED/PARTIAL/FAILED)\n"
       },
       {
         "description": "AAP MCP Server Validation",
         "name": "mcp-aap-validator",
-        "summary_markdown": "Validate AAP MCP server configuration and connectivity.\n\n**Use when:**\n- Validate AAP MCP\n- Check if AAP is configured\n- Verify AAP connection\n- Other skills need to verify AAP MCP server availability\n\n**What it does:**\n- Checks both AAP MCP servers (job-management, inventory-management)\n- Verifies environment variables (AAP_MCP_SERVER, AAP_API_TOKEN)\n- Tests server connectivity and authentication\n- Reports validation status (PASSED/PARTIAL/FAILED)\n"
+        "summary_markdown": "Validate AAP MCP server configuration and connectivity.\n**Use when:**\n- Validate AAP MCP\n- Check if AAP is configured\n- Verify AAP connection\n- Other skills need to verify AAP MCP server availability\n**What it does:**\n- Checks both AAP MCP servers (job-management, inventory-management)\n- Verifies environment variables (AAP_MCP_SERVER, AAP_API_TOKEN)\n- Tests server connectivity and authentication\n- Reports validation status (PASSED/PARTIAL/FAILED)\n"
       },
       {
         "description": "Workflow Execution Report",
         "name": "execution-summary",
-        "summary_markdown": "Generate concise execution reports for audit and learning purposes.\n\n**Use when:**\n- Generate execution summary\n- Create execution report\n- Summarize what was used\n- Show execution summary\n\n**What it does:**\n- Analyzes conversation history\n- Extracts agents, skills, tools, and docs used\n- Formats in machine-readable format\n- Provides audit trail for workflows\n"
+        "summary_markdown": "Generate concise execution reports for audit and learning purposes.\n**Use when:**\n- Generate execution summary\n- Create execution report\n- Summarize what was used\n- Show execution summary\n**What it does:**\n- Analyzes conversation history\n- Extracts agents, skills, tools, and docs used\n- Formats in machine-readable format\n- Provides audit trail for workflows\n"
       },
       {
         "description": "AAP Job Template Creation",
         "name": "job-template-creator",
-        "summary_markdown": "Create AAP job templates for executing Ansible playbooks through Ansible Automation Platform.\n\n**Use when:**\n- Create a job template for this playbook\n- Set up a template to run remediation playbooks\n- Configure AAP to execute this playbook\n\n**What it does:**\n- Lists available projects and inventories\n- Provides instructions for template creation (Web UI or API)\n- Verifies template creation\n- Prepares for AAP-based playbook execution\n"
+        "summary_markdown": "Create AAP job templates for executing Ansible playbooks through Ansible Automation Platform.\n**Use when:**\n- Create a job template for this playbook\n- Set up a template to run remediation playbooks\n- Configure AAP to execute this playbook\n**What it does:**\n- Lists available projects and inventories\n- Provides instructions for template creation (Web UI or API)\n- Verifies template creation\n- Prepares for AAP-based playbook execution\n"
       },
       {
         "description": "AAP Job Template Remediation Validation",
         "name": "job-template-remediation-validator",
-        "summary_markdown": "Verify an AAP job template meets requirements for executing CVE remediation playbooks.\n\n**Use when:**\n- Does this job template support remediation playbooks?\n- Validate job template X for CVE remediation\n- Check if template is ready for playbook-executor\n\n**What it does:**\n- Validates required fields (inventory, project, playbook, credentials, privilege escalation)\n- Checks recommended options (ask variables/limit on launch)\n- Verifies project and inventory exist\n- Reports PASSED / PASSED WITH WARNINGS / FAILED\n"
+        "summary_markdown": "Verify an AAP job template meets requirements for executing CVE remediation playbooks.\n**Use when:**\n- Does this job template support remediation playbooks?\n- Validate job template X for CVE remediation\n- Check if template is ready for playbook-executor\n**What it does:**\n- Validates required fields (inventory, project, playbook, credentials, privilege escalation)\n- Checks recommended options (ask variables/limit on launch)\n- Verifies project and inventory exist\n- Reports PASSED / PASSED WITH WARNINGS / FAILED\n"
       }
     ],
     "skills_decision_guide": [
@@ -196,7 +196,7 @@
   "sample_workflows": [
     {
       "name": "Fleet Discovery → CVE Analysis → Remediation",
-      "workflow": "User: \"Show the managed fleet\"\n- fleet-inventory skill lists all systems\n\nUser: \"What are the critical CVEs affecting these systems?\"\n- cve-impact skill analyzes vulnerabilities\n\nUser: \"Remediate CVE-2024-1234 on all RHEL 8 production systems\"\n- remediation skill orchestrates end-to-end remediation\n"
+      "workflow": "User: \"Show the managed fleet\"\n- fleet-inventory skill lists all systems\nUser: \"What are the critical CVEs affecting these systems?\"\n- cve-impact skill analyzes vulnerabilities\nUser: \"Remediate CVE-2024-1234 on all RHEL 8 production systems\"\n- remediation skill orchestrates end-to-end remediation\n"
     },
     {
       "name": "Emergency CVE Patching",

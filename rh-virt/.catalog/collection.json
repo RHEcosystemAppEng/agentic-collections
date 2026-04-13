@@ -1,4 +1,8 @@
 {
+  "author": {
+    "email": "eco-engineering@redhat.com",
+    "name": "Red Hat Ecosystem Engineering"
+  },
   "categories": [
     "Red Hat",
     "Kubevirt",
@@ -7,92 +11,103 @@
     "Virt"
   ],
   "contents": {
-    "description": "The pack provides 9 skills and 1 orchestration skills under `rh-virt` for Red Hat platforms.",
-    "orchestration_skills": [
-      {
-        "description": "Orchestrate VM migrations across cluster nodes for load balancing, maintenance, and resource optimization. Use when: - \"Move VM database-01 to worker-03\" - \"Rebalance VMs to optimize CPU load\" - \"Drain worker-02 for m...",
-        "name": "vm-rebalance",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Orchestrate VM migrations across cluster nodes for load balancing, maintenance, and resource optimization. Use when: - \"Move VM database-01 to worker-03\" - \"Rebalance VMs to optimize CPU load\" - \"Drain worker-02 for m..."
-      }
-    ],
+    "description": "The pack provides 10 skills for rh virt workflows on Red Hat platforms; see CLAUDE.md for intent routing.\n",
+    "orchestration_skills": [],
     "skills": [
       {
-        "description": "Clone existing virtual machines for testing, scaling, or creating templates. Use when: - \"Clone VM [source] to [target]\" - \"Create a copy of VM [name]\" - \"Duplicate VM [name] for testing\" - \"Create 3 copies of templat...",
+        "description": "Clone existing virtual machines for testing, scaling, or creating templates.",
         "name": "vm-clone",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Clone existing virtual machines for testing, scaling, or creating templates. Use when: - \"Clone VM [source] to [target]\" - \"Create a copy of VM [name]\" - \"Duplicate VM [name] for testing\" - \"Create 3 copies of templat..."
+        "summary_markdown": "Clone existing virtual machines for testing, scaling, or creating templates.\n**Use when:**\n- \"Clone VM [source] to [target]\"\n- \"Create a copy of VM [name]\"\n- \"Duplicate VM [name] for testing\"\n- \"Create 3 copies of template-vm\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection. Use when: - \"Create a new VM\" - \"Deploy a virtual machine with [OS]\" - \"Set up a VM in namespace [name]...",
+        "description": "Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection.",
         "name": "vm-create",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection. Use when: - \"Create a new VM\" - \"Deploy a virtual machine with [OS]\" - \"Set up a VM in namespace [name]..."
+        "summary_markdown": "Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection.\n**Use when:**\n- \"Create a new VM\"\n- \"Deploy a virtual machine with [OS]\"\n- \"Set up a VM in namespace [name]\"\n- \"Provision a [size] VM\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "Permanently delete virtual machines and their associated resources from OpenShift Virtualization. Use when: - \"Delete VM [name]\" - \"Remove virtual machine [name]\" - \"Destroy VM [name]\" - \"Clean up VM [name]\" This skil...",
+        "description": "Permanently delete virtual machines and their associated resources from OpenShift Virtualization.",
         "name": "vm-delete",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Permanently delete virtual machines and their associated resources from OpenShift Virtualization. Use when: - \"Delete VM [name]\" - \"Remove virtual machine [name]\" - \"Destroy VM [name]\" - \"Clean up VM [name]\" This skil..."
+        "summary_markdown": "Permanently delete virtual machines and their associated resources from OpenShift Virtualization.\n**Use when:**\n- \"Delete VM [name]\"\n- \"Remove virtual machine [name]\"\n- \"Destroy VM [name]\"\n- \"Clean up VM [name]\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "List and view virtual machines across namespaces with status, resource usage, and health information. Use when: - \"List all VMs\" - \"Show VMs in namespace [name]\" - \"What VMs are running?\" - \"Get details of VM [name]\" ...",
+        "description": "List and view virtual machines across namespaces with status, resource usage, and health information.",
         "name": "vm-inventory",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** List and view virtual machines across namespaces with status, resource usage, and health information. Use when: - \"List all VMs\" - \"Show VMs in namespace [name]\" - \"What VMs are running?\" - \"Get details of VM [name]\" ..."
+        "summary_markdown": "List and view virtual machines across namespaces with status, resource usage, and health information.\n**Use when:**\n- \"List all VMs\"\n- \"Show VMs in namespace [name]\"\n- \"What VMs are running?\"\n- \"Get details of VM [name]\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "Manage virtual machine lifecycle operations including start, stop, and restart. Use when: - \"Start VM [name]\" - \"Stop the virtual machine [name]\" - \"Restart VM [name]\" - \"Power on/off VM [name]\" This skill handles VM ...",
+        "description": "Manage virtual machine lifecycle operations including start, stop, and restart.",
         "name": "vm-lifecycle-manager",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Manage virtual machine lifecycle operations including start, stop, and restart. Use when: - \"Start VM [name]\" - \"Stop the virtual machine [name]\" - \"Restart VM [name]\" - \"Power on/off VM [name]\" This skill handles VM ..."
+        "summary_markdown": "Manage virtual machine lifecycle operations including start, stop, and restart.\n**Use when:**\n- \"Start VM [name]\"\n- \"Stop the virtual machine [name]\"\n- \"Restart VM [name]\"\n- \"Power on/off VM [name]\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "Create virtual machine snapshots for backup and recovery. Use when: - \"Create a snapshot of VM [name]\" - \"Backup VM [name] before upgrade\" - \"Take a snapshot of [vm]\" Validates storage class snapshot support, CSI driv...",
+        "description": "Orchestrate VM migrations across cluster nodes for load balancing, maintenance, and resource optimization.",
+        "name": "vm-rebalance",
+        "summary_markdown": "Orchestrate VM migrations across cluster nodes for load balancing, maintenance, and resource optimization.\n**Use when:**\n- \"Move VM database-01 to worker-03\"\n- \"Rebalance VMs to optimize CPU load\"\n- \"Drain worker-02 for maintenance\"\n- \"Automatically rebalance the cluster\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
+      },
+      {
+        "description": "Create virtual machine snapshots for backup and recovery.",
         "name": "vm-snapshot-create",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Create virtual machine snapshots for backup and recovery. Use when: - \"Create a snapshot of VM [name]\" - \"Backup VM [name] before upgrade\" - \"Take a snapshot of [vm]\" Validates storage class snapshot support, CSI driv..."
+        "summary_markdown": "Create virtual machine snapshots for backup and recovery.\n**Use when:**\n- \"Create a snapshot of VM [name]\"\n- \"Backup VM [name] before upgrade\"\n- \"Take a snapshot of [vm]\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "Permanently delete virtual machine snapshots to free storage space. Use when: - \"Delete snapshot [snapshot-name]\" - \"Remove old snapshots for VM [name]\" - \"Free up snapshot storage\" Requires user confirmation before d...",
+        "description": "Permanently delete virtual machine snapshots to free storage space.",
         "name": "vm-snapshot-delete",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Permanently delete virtual machine snapshots to free storage space. Use when: - \"Delete snapshot [snapshot-name]\" - \"Remove old snapshots for VM [name]\" - \"Free up snapshot storage\" Requires user confirmation before d..."
+        "summary_markdown": "Permanently delete virtual machine snapshots to free storage space.\n**Use when:**\n- \"Delete snapshot [snapshot-name]\"\n- \"Remove old snapshots for VM [name]\"\n- \"Free up snapshot storage\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "List virtual machine snapshots across namespaces with status, age, and recovery information. Use when: - \"List snapshots for VM [name]\" - \"Show snapshots in namespace [name]\" - \"What snapshots exist for [vm]?\" Read-on...",
+        "description": "List virtual machine snapshots across namespaces with status, age, and recovery information.",
         "name": "vm-snapshot-list",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** List virtual machine snapshots across namespaces with status, age, and recovery information. Use when: - \"List snapshots for VM [name]\" - \"Show snapshots in namespace [name]\" - \"What snapshots exist for [vm]?\" Read-on..."
+        "summary_markdown": "List virtual machine snapshots across namespaces with status, age, and recovery information.\n**Use when:**\n- \"List snapshots for VM [name]\"\n- \"Show snapshots in namespace [name]\"\n- \"What snapshots exist for [vm]?\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       },
       {
-        "description": "Restore virtual machines from snapshots with strict safety confirmations to prevent data loss. Use when: - \"Restore VM [name] from snapshot [snapshot-name]\" - \"Roll back VM [name] to snapshot\" - \"Recover VM [name] fro...",
+        "description": "Restore virtual machines from snapshots with strict safety confirmations to prevent data loss.",
         "name": "vm-snapshot-restore",
-        "summary_markdown": "**Use when:** See the skill description and CLAUDE.md intent routing.\n\n**What it does:** Restore virtual machines from snapshots with strict safety confirmations to prevent data loss. Use when: - \"Restore VM [name] from snapshot [snapshot-name]\" - \"Roll back VM [name] to snapshot\" - \"Recover VM [name] fro..."
+        "summary_markdown": "Restore virtual machines from snapshots with strict safety confirmations to prevent data loss.\n**Use when:**\n- \"Restore VM [name] from snapshot [snapshot-name]\"\n- \"Roll back VM [name] to snapshot\"\n- \"Recover VM [name] from backup\"\n**What it does:**\n- Runs the documented workflow with MCP access only through the skill and required confirmations.\n- Aligns with CLAUDE.md chaining when users need follow-on skills.\n"
       }
     ],
     "skills_decision_guide": [
       {
-        "reason": "Use `vm-rebalance` for workflows described in that skill and in CLAUDE.md.",
-        "skill_to_use": "vm-rebalance",
-        "user_request": "User: \"I need help related to vm-rebalance\""
-      },
-      {
-        "reason": "Use `vm-clone` for workflows described in that skill and in CLAUDE.md.",
-        "skill_to_use": "vm-clone",
-        "user_request": "User: \"I need help related to vm-clone\""
-      },
-      {
-        "reason": "Use `vm-create` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Instance types, OS selection, and OpenShift Virtualization CRs.",
         "skill_to_use": "vm-create",
-        "user_request": "User: \"I need help related to vm-create\""
+        "user_request": "\"Create VM\""
       },
       {
-        "reason": "Use `vm-delete` for workflows described in that skill and in CLAUDE.md.",
-        "skill_to_use": "vm-delete",
-        "user_request": "User: \"I need help related to vm-delete\""
-      },
-      {
-        "reason": "Use `vm-inventory` for workflows described in that skill and in CLAUDE.md.",
+        "reason": "Namespace-scoped inventory and status.",
         "skill_to_use": "vm-inventory",
-        "user_request": "User: \"I need help related to vm-inventory\""
+        "user_request": "\"List VMs\""
+      },
+      {
+        "reason": "Validated snapshot creation for recovery points.",
+        "skill_to_use": "vm-snapshot-create",
+        "user_request": "\"Snapshot\" backup"
+      },
+      {
+        "reason": "Stop VM and restore with confirmations.",
+        "skill_to_use": "vm-snapshot-restore",
+        "user_request": "\"Restore snapshot\""
+      },
+      {
+        "reason": "Migrations for load and maintenance.",
+        "skill_to_use": "vm-rebalance",
+        "user_request": "\"Rebalance\" or \"drain node\""
       }
     ]
   },
-  "deploy_and_use": "## Install (Lola)\n\nAdd the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-virt`). See the pack `README.md` for prerequisites, MCP env vars, and safety notes.\n",
+  "deploy_and_use": "#deploy_and_use.md",
   "description": "Virtual machine management and automation for OpenShift Virtualization and KubeVirt workloads.",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "id": "openshift-virtualization",
+  "keywords": [
+    "kubevirt",
+    "openshift-virtualization",
+    "vm",
+    "migration",
+    "snapshot"
+  ],
+  "legal_resources": {
+    "license_agreement_url": "https://www.redhat.com/en/about/agreements",
+    "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
+  },
   "license": "Apache-2.0",
   "marketplaces": [
     "Claude Code",
@@ -106,17 +121,36 @@
   "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
   "resources": [
     {
-      "description": "Source repository for these packs and skills.",
+      "description": "Official docs for VMs, storage, and live migration.",
+      "title": "OpenShift Virtualization",
+      "url": "https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/virtualization/"
+    },
+    {
+      "description": "KubeVirt concepts underlying OpenShift Virtualization.",
+      "title": "KubeVirt user guide",
+      "url": "https://kubevirt.io/user-guide/"
+    },
+    {
+      "description": "Source for this pack and catalog metadata.",
       "title": "agentic-collections repository",
       "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
     }
   ],
   "sample_workflows": [
     {
-      "name": "Choose the right skill",
-      "workflow": "User: \"I have a task for this collection\"\n- Open CLAUDE.md intent routing and match your request to a skill name.\n- Invoke that skill and follow its workflow and prerequisites.\n"
+      "name": "Create and verify VM",
+      "workflow": "User: \"Create a small RHEL VM in my team namespace\"\n- `/vm-create` resolves instance type and OS and applies the VirtualMachine spec with approval\n- `/vm-inventory` confirms the VM is running with expected resources\n"
+    },
+    {
+      "name": "Snapshot before change",
+      "workflow": "User: \"Snapshot database-vm before the maintenance window\"\n- `/vm-snapshot-create` validates storage class and guest agent readiness\n- `/vm-lifecycle-manager` stops the VM if the restore path requires it later\n"
+    },
+    {
+      "name": "Maintenance drain",
+      "workflow": "User: \"Drain worker-04 and move VMs safely\"\n- `/vm-rebalance` plans migrations for load or node maintenance\n- `/vm-inventory` verifies placement after moves complete\n"
     }
   ],
-  "summary": "- **Pack:** `rh-virt`\n- **Focus:** Virtual machine management and automation for OpenShift Virtualization and KubeVirt workloads.\n- **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.\n",
+  "summary": "The rh-virt collection ships 10 skills for OpenShift Virtualization operations with confirmations on destructive steps.\n",
+  "support_level": "Unknown",
   "version": "0.1.0"
 }

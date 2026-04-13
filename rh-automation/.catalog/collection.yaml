@@ -13,148 +13,196 @@ categories:
 - Red Hat
 - Governance
 - Troubleshooting
+- Execution
 personas:
 - Red Hat platform engineer
 marketplaces:
 - Claude Code
 - Cursor
-description: Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation
-  engineers.
-summary: '- **Pack:** `rh-automation`
-
-  - **Focus:** Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation
-  engineers.
-
-  - **Skills:** see `.catalog/collection.yaml` contents for the authoritative list.
-
-  '
+support_level: Unknown
+description: "Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation engineers."
+summary: |
+  The rh-automation collection ships 11 catalogued skills for Red Hat automation workflows described in README and CLAUDE.md; orchestration entries coordinate sub-skills with explicit approvals.
 contents:
-  description: The pack provides 8 skills and 3 orchestration skills under `rh-automation` for Red Hat platforms.
+  description: |
+    The pack provides 8 skills and 3 orchestration skills for rh automation workflows on Red Hat platforms; see CLAUDE.md for intent routing.
   skills:
   - name: aap-mcp-validator
-    description: 'Validate that required AAP MCP servers are accessible before executing automation skills. Use when: - Before
-      any skill that requires AAP MCP access - "Validate AAP MCP", "Check if AAP is configured" - "Verify AAP conn...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Validate that required AAP MCP servers are accessible before executing automation skills. Use when:
-      - Before any skill that requires AAP MCP access - "Validate AAP MCP", "Check if AAP is configured" - "Verify AAP conn...'
+    description: "Validate that required AAP MCP servers are accessible before executing automation skills."
+    summary_markdown: |
+      Validate that required AAP MCP servers are accessible before executing automation skills.
+      **Use when:**
+      - "Validate AAP MCP"
+      - "Verify AAP connection"
+      - "See CLAUDE.md intent routing"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: execution-risk-analyzer
-    description: 'Analyze execution risk by classifying inventory, scanning extra_vars for secrets, and assessing scope. Use
-      when: - "Execute on production", "Deploy to production" (as first step before launch) - "Is this execution saf...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Analyze execution risk by classifying inventory, scanning extra_vars for secrets, and assessing scope.
-      Use when: - "Execute on production", "Deploy to production" (as first step before launch) - "Is this execution saf...'
+    description: "Analyze execution risk by classifying inventory, scanning extra_vars for secrets, and assessing scope."
+    summary_markdown: |
+      Analyze execution risk by classifying inventory, scanning extra_vars for secrets, and assessing scope.
+      **Use when:**
+      - "Execute on production"
+      - "Is this execution safe?"
+      - "Check execution risk"
+      - "Validate the execution target"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: execution-summary
-    description: 'Generate concise execution audit reports tracking documents consulted, MCP tools used, decisions made, and
-      outcomes. Use when: - "Generate execution summary" - "Create execution report" - "Show workflow audit trail" -...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Generate concise execution audit reports tracking documents consulted, MCP tools used, decisions made,
-      and outcomes. Use when: - "Generate execution summary" - "Create execution report" - "Show workflow audit trail" -...'
+    description: "Generate concise execution audit reports tracking documents consulted, MCP tools used, decisions made, and outcomes."
+    summary_markdown: |
+      Generate concise execution audit reports tracking documents consulted, MCP tools used, decisions made, and outcomes.
+      **Use when:**
+      - "Generate execution summary"
+      - "Create execution report"
+      - "Show workflow audit trail"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: governance-readiness-assessor
-    description: 'Assess AAP platform governance readiness -- full 7-domain audit or scoped to specific domains. Use when:
-      - Full assessment: "Is my AAP ready for production?", "Audit my platform governance" - Scoped assessment: "Asses...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Assess AAP platform governance readiness -- full 7-domain audit or scoped to specific domains. Use
-      when: - Full assessment: "Is my AAP ready for production?", "Audit my platform governance" - Scoped assessment: "Asses...'
+    description: "Assess AAP platform governance readiness -- full 7-domain audit or scoped to specific domains."
+    summary_markdown: |
+      Assess AAP platform governance readiness -- full 7-domain audit or scoped to specific domains.
+      **Use when:**
+      - "What should I fix before executing jobs?"
+      - "Assess my AAP configuration"
+      - "See CLAUDE.md intent routing"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: governed-job-launcher
-    description: 'Execute governed job launches with check mode, approval gates, phased rollout, and rollback. Use when: -
-      After execution-risk-analyzer has classified the execution risk - "Launch with check mode first", "Run the dry r...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Execute governed job launches with check mode, approval gates, phased rollout, and rollback. Use when:
-      - After execution-risk-analyzer has classified the execution risk - "Launch with check mode first", "Run the dry r...'
+    description: "Execute governed job launches with check mode, approval gates, phased rollout, and rollback."
+    summary_markdown: |
+      Execute governed job launches with check mode, approval gates, phased rollout, and rollback.
+      **Use when:**
+      - "Launch with check mode first"
+      - "Execute the job"
+      - "Rollback the failed job"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: host-fact-inspector
-    description: 'Correlate job failures with host system facts to determine platform drift and resource issues. Use when:
-      - After job failure analysis identifies affected hosts - "Check the system facts for failed hosts" - "Is the hos...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Correlate job failures with host system facts to determine platform drift and resource issues. Use
-      when: - After job failure analysis identifies affected hosts - "Check the system facts for failed hosts" - "Is the hos...'
+    description: "Correlate job failures with host system facts to determine platform drift and resource issues."
+    summary_markdown: |
+      Correlate job failures with host system facts to determine platform drift and resource issues.
+      **Use when:**
+      - "Check the system facts for failed hosts"
+      - "Is the host healthy?"
+      - "Why is the service failing on this host?"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: job-failure-analyzer
-    description: 'Extract and analyze failure events from AAP jobs to classify errors and reconstruct failure timelines. Use
-      when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failed job", "What went wrong?" - "Show ...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Extract and analyze failure events from AAP jobs to classify errors and reconstruct failure timelines.
-      Use when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failed job", "What went wrong?" - "Show ...'
+    description: "Extract and analyze failure events from AAP jobs to classify errors and reconstruct failure timelines."
+    summary_markdown: |
+      Extract and analyze failure events from AAP jobs to classify errors and reconstruct failure timelines.
+      **Use when:**
+      - "Job #X failed"
+      - "Analyze the failed job"
+      - "Show me the failure details"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: resolution-advisor
-    description: 'Provide Red Hat documentation-backed resolution recommendations for classified job errors. Use when: - After
-      failure analysis and host fact inspection: "How do I fix this?" - "What does Red Hat recommend for this erro...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Provide Red Hat documentation-backed resolution recommendations for classified job errors. Use when:
-      - After failure analysis and host fact inspection: "How do I fix this?" - "What does Red Hat recommend for this erro...'
+    description: "Provide Red Hat documentation-backed resolution recommendations for classified job errors."
+    summary_markdown: |
+      Provide Red Hat documentation-backed resolution recommendations for classified job errors.
+      **Use when:**
+      - "What does Red Hat recommend for this error?"
+      - "What's the fix for privilege escalation timeout?"
+      - "Is this a known AAP issue?"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   orchestration_skills:
   - name: forensic-troubleshooter
-    description: 'Orchestrates forensic analysis of failed jobs with event extraction, host correlation, and resolution advisory.
-      Use when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failure", "What went wrong?" - ...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Orchestrates forensic analysis of failed jobs with event extraction, host correlation, and resolution
-      advisory. Use when: - "Job #X failed", "Why did the execution fail?" - "Analyze the failure", "What went wrong?" - ...'
+    description: "Orchestrates forensic analysis of failed jobs with event extraction, host correlation, and resolution advisory."
+    summary_markdown: |
+      Orchestrates forensic analysis of failed jobs with event extraction, host correlation, and resolution advisory.
+      **Use when:**
+      - "Job #X failed"
+      - "Analyze the failure"
+      - "Root cause analysis of job #X"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: governance-assessor
-    description: 'Orchestrates AAP governance readiness assessments -- full platform audit or scoped to specific domains.
-      Assesses 7 governance domains + 1 bonus: 1. Workflow Governance (approval gates, workflow coverage) 2. Notificati...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Orchestrates AAP governance readiness assessments -- full platform audit or scoped to specific domains.
-      Assesses 7 governance domains + 1 bonus: 1. Workflow Governance (approval gates, workflow coverage) 2. Notificati...'
+    description: "Orchestrates AAP governance readiness assessments -- full platform audit or scoped to specific domains."
+    summary_markdown: |
+      Orchestrates AAP governance readiness assessments -- full platform audit or scoped to specific domains.
+      **Use when:**
+      - "What should I fix before executing jobs?"
+      - "See CLAUDE.md intent routing"
+      - "See CLAUDE.md intent routing"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   - name: governance-executor
-    description: 'Orchestrates governed job execution with risk analysis, check mode, approval, and rollback. Use when: -
-      "Execute job template X", "Deploy to production", "Push to prod", "Launch job template" - Any execution request t...'
-    summary_markdown: '**Use when:** See the skill description and CLAUDE.md intent routing.
-
-
-      **What it does:** Orchestrates governed job execution with risk analysis, check mode, approval, and rollback. Use when:
-      - "Execute job template X", "Deploy to production", "Push to prod", "Launch job template" - Any execution request t...'
+    description: "Orchestrates governed job execution with risk analysis, check mode, approval, and rollback."
+    summary_markdown: |
+      Orchestrates governed job execution with risk analysis, check mode, approval, and rollback.
+      **Use when:**
+      - "Execute job template X"
+      - "See CLAUDE.md intent routing"
+      - "See CLAUDE.md intent routing"
+      **What it does:**
+      - Runs the documented workflow with MCP access only through the skill and required confirmations.
+      - Aligns with CLAUDE.md chaining when users need follow-on skills.
   skills_decision_guide:
-  - user_request: 'User: "I need help related to forensic-troubleshooter"'
-    skill_to_use: forensic-troubleshooter
-    reason: Use `forensic-troubleshooter` for workflows described in that skill and in CLAUDE.md.
-  - user_request: 'User: "I need help related to governance-assessor"'
+  - user_request: "\"Governance audit\" or \"production readiness\""
     skill_to_use: governance-assessor
-    reason: Use `governance-assessor` for workflows described in that skill and in CLAUDE.md.
-  - user_request: 'User: "I need help related to governance-executor"'
+    reason: "End-to-end governance assessment with summaries."
+  - user_request: "\"Run job template\" with approvals"
     skill_to_use: governance-executor
-    reason: Use `governance-executor` for workflows described in that skill and in CLAUDE.md.
-  - user_request: 'User: "I need help related to aap-mcp-validator"'
+    reason: "Validator, risk analysis, governed launch, and summary."
+  - user_request: "\"Job failed\" root cause"
+    skill_to_use: forensic-troubleshooter
+    reason: "Failure analysis, host facts, resolution advice, summary."
+  - user_request: "\"Validate AAP MCP\""
     skill_to_use: aap-mcp-validator
-    reason: Use `aap-mcp-validator` for workflows described in that skill and in CLAUDE.md.
-  - user_request: 'User: "I need help related to execution-risk-analyzer"'
+    reason: "Connectivity and tool checks before other AAP skills."
+  - user_request: "\"Is execution safe?\""
     skill_to_use: execution-risk-analyzer
-    reason: Use `execution-risk-analyzer` for workflows described in that skill and in CLAUDE.md.
-deploy_and_use: '## Install (Lola)
-
-
-  Add the marketplace and install this module from `marketplace/rh-agentic-collection.yml` (path `rh-automation`). See the
-  pack `README.md` for prerequisites, MCP env vars, and safety notes.
-
-  '
+    reason: "Inventory class, extra_vars scan, scope assessment."
+deploy_and_use: '#deploy_and_use.md'
 sample_workflows:
-- name: Choose the right skill
-  workflow: 'User: "I have a task for this collection"
-
-    - Open CLAUDE.md intent routing and match your request to a skill name.
-
-    - Invoke that skill and follow its workflow and prerequisites.
-
-    '
+- name: "Governed production deploy"
+  workflow: |
+    User: "Deploy this job template to production with checks"
+    - `/governance-executor` validates MCP, analyzes risk, offers check mode, and launches with approvals
+    - `/execution-summary` captures the audit trail afterward
+- name: "Forensics after failure"
+  workflow: |
+    User: "Job 8841 failed on finance inventory — what happened?"
+    - `/forensic-troubleshooter` walks failure analysis, host facts, and doc-backed fixes
+    - `/resolution-advisor` context is included inside that orchestration path
+- name: "Manual validator then launch"
+  workflow: |
+    User: "I only want risk analysis before I approve launch"
+    - `/aap-mcp-validator` confirms MCP reachability
+    - `/execution-risk-analyzer` classifies targets and variables
+    - `/governed-job-launcher` runs with the agreed mode and gates
 resources:
-- title: agentic-collections repository
-  description: Source repository for these packs and skills.
+- title: "Red Hat Ansible Automation Platform"
+  url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/
+  description: "Official AAP documentation for controllers and execution."
+- title: "agentic-collections repository"
   url: https://github.com/RHEcosystemAppEng/agentic-collections
+  description: "Source for this pack and catalog metadata."
+legal_resources:
+  license_agreement_url: https://www.redhat.com/en/about/agreements
+  privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
+author:
+  name: Red Hat Ecosystem Engineering
+  email: eco-engineering@redhat.com
+homepage: https://github.com/RHEcosystemAppEng/agentic-collections
 repository: https://github.com/RHEcosystemAppEng/agentic-collections
 license: Apache-2.0
+keywords:
+- ansible
+- aap
+- governance
+- automation
+- job-template
