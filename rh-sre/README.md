@@ -600,8 +600,6 @@ This pack demonstrates the complete agentic pack architecture:
 ```
 rh-sre/
 ├── README.md                    # This file
-├── .claude-plugin/
-│   └── plugin.json              # Plugin metadata
 ├── mcps.json                    # MCP server configurations
 ├── skills/
 │   ├── remediation/SKILL.md     # Orchestration skill (end-to-end CVE remediation)
@@ -622,6 +620,8 @@ rh-sre/
     ├── SOURCES.md
     └── .ai-index/               # Semantic indexing
 ```
+
+*Optional:* `.claude-plugin/plugin.json` — only if publishing via Claude Code’s plugin format; not required for [Lola](https://github.com/RedHatProductSecurity/lola) install.
 
 ### Key Patterns
 - **Skills encapsulate tools** - Never call MCP tools directly

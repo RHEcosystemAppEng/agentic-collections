@@ -26,17 +26,17 @@ Each pack follows this structure:
 <pack-name>/
 ├── CLAUDE.md            # Claude Code instruction routing (persona, skills, rules)
 ├── README.md            # Pack description, persona, target marketplaces
-├── .claude-plugin/      # Claude Code plugin metadata
-│   └── plugin.json      # Name, version, description, author, license
-├── mcps.json           # MCP server configurations (uses env vars for credentials)
-├── skills/             # Specialized task executors (including orchestration skills)
+├── mcps.json            # MCP server configurations (uses env vars for credentials)
+├── skills/              # Specialized task executors (including orchestration skills)
 │   └── <skill>/
-│       └── SKILL.md    # Skill definition with YAML frontmatter
-└── docs/               # AI-optimized knowledge base (rh-sre only currently)
-    ├── INDEX.md        # Documentation map and AI discovery guide
-    ├── SOURCES.md      # Official Red Hat source attributions
-    └── .ai-index/      # Semantic indexing for token optimization
+│       └── SKILL.md     # Skill definition with YAML frontmatter
+└── docs/                # AI-optimized knowledge base (rh-sre only currently)
+    ├── INDEX.md         # Documentation map and AI discovery guide
+    ├── SOURCES.md       # Official Red Hat source attributions
+    └── .ai-index/       # Semantic indexing for token optimization
 ```
+
+Optional (not required for Lola): `.claude-plugin/plugin.json` — Claude Code plugin metadata if you publish this pack through the Claude Code plugin format in addition to Lola.
 
 ## Working with Agentic Collections
 
@@ -155,9 +155,10 @@ last_updated: YYYY-MM-DD
 2. Add `README.md` with description, persona, marketplaces
 3. Add `CLAUDE.md` with persona, skill-first rule, intent routing table, MCP servers, and global rules (see [rh-ai-engineer/CLAUDE.md](rh-ai-engineer/CLAUDE.md) for reference)
 4. Create `skills/` directory
-5. Optional: Add `.claude-plugin/plugin.json` for Claude Code
-6. Optional: Add `mcps.json` for MCP server integrations
-7. Update main `README.md` table with link
+5. Add `mcps.json` when the pack integrates MCP servers (use `${VAR}` for secrets)
+6. Register the pack in [`marketplace/rh-agentic-collection.yml`](marketplace/rh-agentic-collection.yml) so `lola install -f <pack-name>` can resolve it
+7. Optional: Add `.claude-plugin/plugin.json` only if publishing via Claude Code’s plugin mechanism
+8. Update main `README.md` table with link
 
 ### Adding a Skill
 

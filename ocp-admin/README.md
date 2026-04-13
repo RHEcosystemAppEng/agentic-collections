@@ -642,8 +642,6 @@ The pack includes 17 comprehensive reference documents covering all aspects of O
 ```
 ocp-admin/
 ├── README.md                    # This file
-├── .claude-plugin/
-│   └── plugin.json              # Plugin metadata
 ├── mcps.json                    # MCP server configurations
 ├── docs/                        # Comprehensive reference documentation (17 files)
 │   ├── INDEX.md                 # Master documentation navigation
@@ -674,6 +672,8 @@ ocp-admin/
         ├── assemble.py               # MCP output assembly
         └── aggregate.py              # Metrics aggregation
 ```
+
+*Optional:* `.claude-plugin/plugin.json` — only if publishing via Claude Code’s plugin format; not required for [Lola](https://github.com/RedHatProductSecurity/lola) install.
 
 ### Key Patterns
 

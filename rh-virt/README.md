@@ -511,8 +511,6 @@ The **vm-create** skill includes automatic error diagnosis and workaround propos
 ```
 rh-virt/
 ├── README.md                    # This file
-├── .claude-plugin/
-│   └── plugin.json              # Plugin metadata
 ├── mcps.json                    # MCP server configuration
 ├── docs/                        # AI-optimized knowledge base
 │   └── troubleshooting/         # VM error diagnosis and workarounds (categorized by error type)
@@ -531,6 +529,8 @@ rh-virt/
     ├── vm-delete/SKILL.md       # VM destruction and cleanup
     └── vm-clone/SKILL.md        # VM cloning and duplication
 ```
+
+*Optional:* `.claude-plugin/plugin.json` — only if publishing via Claude Code’s plugin format; not required for [Lola](https://github.com/RedHatProductSecurity/lola) install.
 
 ### Key Patterns
 

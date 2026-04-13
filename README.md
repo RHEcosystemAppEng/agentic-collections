@@ -184,7 +184,7 @@ Generate and view documentation locally:
 # Install dependencies (first time only)
 make install
 
-# Validate pack structure (plugin.json, mcps.json, frontmatter)
+# Validate pack structure (mcps.json, CLAUDE.md, frontmatter; plugin.json if present)
 make validate
 
 # Validate skills against Design Principles (SKILL_DESIGN_PRINCIPLES.md)
@@ -468,22 +468,24 @@ cd /path/to/agentic-collections
 /plugin install rh-sre@redhat-agentic-collections
 ```
 
-### Validate Marketplace
+### Validate packs (recommended)
 
 ```bash
-# Validate marketplace.json and all plugins
-claude plugin validate .
+# Structure, mcps.json, CLAUDE.md, skill frontmatter; validates plugin.json only when present
+make validate
+```
 
+### Optional: Claude Code plugin CLI
+
+If you use the Claude Code `/plugin` marketplace workflow against a local checkout:
+
+```bash
+claude plugin validate .
 # Or from within Claude Code
 /plugin validate .
 ```
 
-This will check:
-- ✅ Marketplace.json schema compliance
-- ✅ All plugin.json files syntax
-- ✅ YAML frontmatter in skills
-- ✅ Duplicate names
-- ✅ Invalid paths
+That CLI checks marketplace/plugin manifests for that workflow, including `plugin.json` when present under `.claude-plugin/`.
 
 ---
 
@@ -504,26 +506,15 @@ We welcome contributions! Here's how to add or improve skills:
    ```
 5. Update the pack's `CLAUDE.md` intent routing table
 
-### Adding a New Plugin
+### Adding a New Plugin (pack)
 
-1. Create plugin directory: `<pack-name>/`
-2. Add `.claude-plugin/plugin.json` with metadata
-3. Add `skills/` directory
-4. Add `CLAUDE.md` with persona and skill routing (see [rh-ai-engineer/CLAUDE.md](rh-ai-engineer/CLAUDE.md))
-5. Add `README.md` with plugin description
-6. Update marketplace.json:
-   ```json
-   {
-     "name": "your-plugin",
-     "description": "Plugin description",
-     "version": "1.0.0",
-     "author": {...},
-     "source": "./your-plugin",
-     "category": "your-category",
-     "skills": "./skills"
-   }
-   ```
-7. Validate: `make validate && claude plugin validate .`
+1. Create pack directory: `<pack-name>/`
+2. Add `README.md`, `CLAUDE.md`, and `skills/` (see [CLAUDE.md](CLAUDE.md))
+3. Add `mcps.json` when the pack uses MCP servers
+4. Register the module in [`marketplace/rh-agentic-collection.yml`](marketplace/rh-agentic-collection.yml) (add a `modules:` entry with `name`, `path`, `repository`, `version`, etc.)
+5. Optional: Add `.claude-plugin/plugin.json` only if you also publish through Claude Code’s plugin format (not required for Lola)
+6. Validate: `make validate`
+7. Optional: `claude plugin validate .` if you use the Claude Code plugin CLI locally
 
 ### Pull Request Guidelines
 

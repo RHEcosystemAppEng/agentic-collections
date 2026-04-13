@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validate agentic collection pack structure (plugin.json, mcps.json, CLAUDE.md).
+Validate agentic collection pack structure (mcps.json, CLAUDE.md; plugin.json optional).
 
 Skill-level validation (frontmatter, sections, security) is handled by
 validate-skills.sh and run-skill-linter.sh.
@@ -18,13 +18,13 @@ PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-v
 
 def validate_plugin_json(pack_dir: str) -> List[str]:
     """
-    Validate plugin.json structure.
+    Validate plugin.json structure when `.claude-plugin/plugin.json` exists.
 
     Args:
         pack_dir: Collection directory name
 
     Returns:
-        List of error messages (empty if valid)
+        List of error messages (empty if valid or file absent)
     """
     errors = []
     plugin_path = Path(pack_dir) / '.claude-plugin' / 'plugin.json'

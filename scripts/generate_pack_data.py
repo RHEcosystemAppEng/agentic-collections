@@ -72,7 +72,7 @@ def load_plugin_titles() -> Dict[str, str]:
 
 def parse_plugin_json(pack_dir: str, plugin_titles: Dict[str, str]) -> Dict[str, Any]:
     """
-    Parse plugin.json from a pack directory and merge with title from docs/plugins.json.
+    Parse optional plugin.json from a pack directory and merge with title from docs/plugins.json.
 
     Args:
         pack_dir: Name of the pack directory

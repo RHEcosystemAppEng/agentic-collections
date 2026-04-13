@@ -2,7 +2,13 @@
 
 Repository-specific design principles for creating skills and agents in agentic collections. Referenced from [CLAUDE.md](CLAUDE.md).
 
-**Scope**: Tier 2 requirements - repository enhancements beyond base agentskills.io specification (Tier 1 validated by linter). Packs follow the Lola module format; see [CLAUDE.md](CLAUDE.md) for layout.
+**Scope**: Tier 2 requirements - repository enhancements beyond base agentskills.io specification (Tier 1 validated by linter).
+
+**Distribution (Lola):** Packs are installed with the [Lola](https://github.com/RedHatProductSecurity/lola) package manager from the registry in [`marketplace/rh-agentic-collection.yml`](marketplace/rh-agentic-collection.yml). Layout and install flow are documented in [CLAUDE.md](CLAUDE.md) and the root [README.md](README.md).
+
+**MCP configuration:** Use `<pack>/mcps.json` for MCP server definitions (never hardcode secrets; use `${VAR}` references). The deprecated filename `.mcp.json` is not used in this repository.
+
+**Optional Claude Code manifest:** `.claude-plugin/plugin.json` is optional—only needed for Claude Code–specific plugin publishing. It is not required for Lola installation or for Tier 2 skill content compliance.
 
 ---
 

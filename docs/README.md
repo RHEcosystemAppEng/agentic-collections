@@ -31,7 +31,7 @@ This script parses all agentic collections and MCP configurations.
 ## Manual Updates
 
 To manually update the site:
-1. Modify pack configurations (plugin.json, mcps.json, skills, agents)
+1. Modify pack configurations (`mcps.json`, skills, agents; optional `.claude-plugin/plugin.json`)
 2. Run `make generate` from the root directory
 3. Commit the updated `docs/data.json`
 4. Push to trigger GitHub Pages deployment
