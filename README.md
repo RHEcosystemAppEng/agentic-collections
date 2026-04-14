@@ -45,54 +45,40 @@ lola install -f rh-sre -a cursor        # Cursor only
 ### 1. Add the Marketplace
 
 ```bash
-/plugin marketplace add RHEcosystemAppEng/agentic-collections
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
 ```
 
-### 2. Install a Plugin
+### 2. Install a Module
 
 ```bash
 # For Site Reliability Engineers
-/plugin install rh-sre@redhat-agentic-collections
+lola install -f rh-sre
 
 # For Developers
-/plugin install rh-developer@redhat-agentic-collections
+lola install -f rh-developer
 
 # For OpenShift Administrators
-/plugin install ocp-admin@redhat-agentic-collections
+lola install -f ocp-admin
 
 # For Virtualization Administrators
-/plugin install openshift-virtualization@redhat-agentic-collections
+lola install -f rh-virt
 
 # For AI/ML Engineers
-/plugin install rh-ai-engineer@redhat-agentic-collections
+lola install -f rh-ai-engineer
 
 # For Ansible Automation Platform Engineers
-/plugin install rh-automation@redhat-agentic-collections
+lola install -f rh-automation
 ```
 
-See each plugin's README for available skills and usage examples.
+See each module's README for available skills and usage examples.
 
-### 3. Update
+### 3. Install All Modules
 
 ```bash
-# Update the marketplace to get latest plugin versions
-/plugin marketplace update redhat-agentic-collections
-
-# Update a specific plugin to the latest version
-/plugin update rh-sre@redhat-agentic-collections
+for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do lola install -f $m; done
 ```
 
-**Note:** Claude Code automatically checks for marketplace updates at startup. Manual updates are useful when you want the latest skills immediately.
-
-### 4. Uninstall
-
-```bash
-# Uninstall a specific plugin
-/plugin uninstall rh-sre@redhat-agentic-collections
-
-# Remove the marketplace (this will uninstall all plugins from this marketplace)
-/plugin marketplace remove redhat-agentic-collections
-```
+**Note:** Re-run `lola install -f <module>` anytime to pick up newer module content after marketplace updates.
 
 ---
 
@@ -469,13 +455,13 @@ Test the marketplace locally before publishing:
 
 ```bash
 cd /path/to/agentic-collections
-/plugin marketplace add .
+lola market add rh-agentic-collections ./marketplace/rh-agentic-collection.yml
 ```
 
-### Install Plugin Locally
+### Install Module Locally
 
 ```bash
-/plugin install rh-sre@redhat-agentic-collections
+lola install -f rh-sre
 ```
 
 ### Validate packs (recommended)
@@ -484,18 +470,6 @@ cd /path/to/agentic-collections
 # Structure, mcps.json, CLAUDE.md, skill frontmatter; validates plugin.json only when present
 make validate
 ```
-
-### Optional: Claude Code plugin CLI
-
-If you use the Claude Code `/plugin` marketplace workflow against a local checkout:
-
-```bash
-claude plugin validate .
-# Or from within Claude Code
-/plugin validate .
-```
-
-That CLI checks marketplace/plugin manifests for that workflow, including `plugin.json` when present under `.claude-plugin/`.
 
 ---
 
@@ -524,7 +498,6 @@ We welcome contributions! Here's how to add or improve skills:
 4. Register the module in [`marketplace/rh-agentic-collection.yml`](marketplace/rh-agentic-collection.yml) (add a `modules:` entry with `name`, `path`, `repository`, `version`, etc.)
 5. Optional: Add `.claude-plugin/plugin.json` only if you also publish through Claude Code’s plugin format (not required for Lola)
 6. Validate: `make validate`
-7. Optional: `claude plugin validate .` if you use the Claude Code plugin CLI locally
 
 ### Pull Request Guidelines
 
