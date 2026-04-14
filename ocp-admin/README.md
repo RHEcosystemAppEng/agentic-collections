@@ -32,25 +32,20 @@ The ocp-admin collection provides specialized tools for managing OpenShift clust
   - OpenShift cluster access via `KUBECONFIG`
   - For multi-cluster reports, a kubeconfig with multiple contexts
 
-### Installation (Claude Code)
+### Installation (Lola)
 
-Install the pack as a Claude Code plugin:
+Install the pack with [Lola](https://github.com/RedHatProductSecurity/lola):
 
 ```bash
-# Option 1: From GitHub (when published)
-claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
-claude plugin install ocp-admin
-
-# Option 2: Local development
-claude plugin marketplace add /path/to/agentic-collections
-claude plugin install ocp-admin
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola install -f ocp-admin
 ```
 
 Verify installation:
 
 ```bash
-claude plugin list
-# Should show: ocp-admin@redhat-agentic-collections
+lola list
+# Optional: lola list -a claude-code
 ```
 
 ---
@@ -628,7 +623,7 @@ The pack includes 17 comprehensive reference documents covering all aspects of O
 **Problem**: Skills don't activate on expected queries
 
 **Solutions**:
-1. Verify plugin installed: `claude plugin list`
+1. Verify module is installed: `lola list`
 2. Reload Claude Code to refresh plugins
 3. Check skill descriptions match query intent
 4. Use explicit phrasing from skill examples

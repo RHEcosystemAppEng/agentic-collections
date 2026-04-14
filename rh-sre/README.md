@@ -139,25 +139,19 @@ export LIGHTSPEED_CLIENT_ID="your-service-account-client-id"
 export LIGHTSPEED_CLIENT_SECRET="your-service-account-client-secret"
 ```
 
-### Installation (Claude Code)
+### Installation (Lola)
 
-Install the pack as a Claude Code plugin:
-
-```bash
-claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
-claude plugin install rh-sre
-```
-
-Or for local development:
+Install the pack with [Lola](https://github.com/RedHatProductSecurity/lola):
 
 ```bash
-claude plugin marketplace add /path/to/agentic-collections
-claude plugin install rh-sre
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola install -f rh-sre
 ```
 
-Show installed Red Hat plugins:
+Verify installation:
 ```
-claude plugin list --json | jq '[.[] | select(.id | contains("redhat"))]' 
+lola list
+# Optional: lola list -a claude-code
 ```
 
 ## Skills
@@ -587,7 +581,7 @@ MCP servers are configured in `mcps.json`:
 **Problem**: Skills don't activate on expected queries
 
 **Solutions**:
-1. Verify plugin installed: `claude plugin list`
+1. Verify module is installed: `lola list`
 2. Reload Claude Code to refresh plugins
 3. Check skill descriptions in `skills/*/SKILL.md`
 4. Use explicit phrasing matching skill examples

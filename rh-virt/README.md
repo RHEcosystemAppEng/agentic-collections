@@ -78,20 +78,13 @@ The OpenShift MCP server is not published to public registries, so you need to b
 
 **Note**: The build process takes several minutes as it compiles the Go binary and downloads dependencies. The final image size is approximately 192 MB.
 
-### Installation (Claude Code)
+### Installation (Lola)
 
-Install the pack as a Claude Code plugin:
-
-```bash
-claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
-claude plugin install openshift-virtualization
-```
-
-Or for local development:
+Install the pack with [Lola](https://github.com/RedHatProductSecurity/lola):
 
 ```bash
-claude plugin marketplace add /path/to/agentic-collections
-claude plugin install openshift-virtualization
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola install -f rh-virt
 ```
 
 ## Skills
@@ -499,7 +492,7 @@ The **vm-create** skill includes automatic error diagnosis and workaround propos
 **Problem**: Skills don't activate on expected queries
 
 **Solutions**:
-1. Verify plugin installed: `claude plugin list`
+1. Verify module is installed: `lola list`
 2. Reload Claude Code to refresh plugins
 3. Check skill descriptions match query intent
 4. Use explicit phrasing from skill examples
