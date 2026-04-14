@@ -1,0 +1,271 @@
+# Catalog: maintained via create-collection workflow (assistant + maintainer + PR review).
+# Golden sources: skills/*/SKILL.md, README.md, CLAUDE.md, marketplace/rh-agentic-collection.yml
+# Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
+
+id: rh-developer
+name: Red Hat Developer Agentic Collection
+provider: Red Hat
+version: 0.1.0
+categories:
+- Application development
+- OpenShift
+- Containers
+- Automation
+personas:
+- Application developer
+marketplaces:
+- Claude Code
+- Cursor
+support_level: Unknown
+description: Plugins for building and deploying applications on Red Hat platforms.
+summary: The rh-developer collection provides skills to detect projects, build images (S2I/Helm), deploy to OpenShift or RHEL,
+  validate environments, and debug builds, pods, pipelines, networks, and hosts.
+contents:
+  description: |
+    The pack provides 14 skills for developer workflows on OpenShift and RHEL, including one orchestration skill
+    for end-to-end containerize-and-deploy.
+  skills:
+  - name: detect-project
+    description: Project and runtime detection
+    summary_markdown: |
+      Analyze repositories and local trees to detect language, framework, and runtime signals.
+      **Use when:**
+      - "What language is this repo?"
+      - "Scan my project for frameworks"
+      - "Identify runtime from source"
+      **What it does:**
+      - Reads project files and optional GitHub context.
+      - Summarizes stack signals for build and deploy skills.
+  - name: recommend-image
+    description: Image and builder recommendations
+    summary_markdown: |
+      Recommend S2I builder or base images aligned with Red Hat guidance.
+      **Use when:**
+      - "Which S2I image for Node?"
+      - "Best UBI image for this app?"
+      **What it does:**
+      - Uses image selection criteria and builder catalog patterns.
+      - Prepares inputs for `/s2i-build`.
+  - name: s2i-build
+    description: Source-to-image builds
+    summary_markdown: |
+      Build container images on OpenShift using S2I / BuildConfig flows.
+      **Use when:**
+      - "S2I build this repo"
+      - "Create a BuildConfig"
+      - "Build image from source"
+      **What it does:**
+      - Validates inputs, drives build logs, surfaces common build failures.
+      - Pairs with `/debug-build` on failure.
+  - name: deploy
+    description: OpenShift deployment
+    summary_markdown: |
+      Deploy images to OpenShift with Deployment, Service, and Route.
+      **Use when:**
+      - "Deploy to OpenShift"
+      - "Expose my app with a Route"
+      **What it does:**
+      - Generates manifests with approval gates.
+      - Coordinates with cluster MCP safely.
+  - name: helm-deploy
+    description: Helm-based deployment
+    summary_markdown: |
+      Install or upgrade Helm charts on OpenShift.
+      **Use when:**
+      - "Helm install my chart"
+      - "Upgrade release with new values"
+      **What it does:**
+      - Validates chart paths and values.
+      - Reports release status and common Helm errors.
+  - name: rhel-deploy
+    description: RHEL / SSH deployment
+    summary_markdown: |
+      Deploy to standalone RHEL/Fedora hosts via SSH and systemd/Podman patterns.
+      **Use when:**
+      - "Deploy on RHEL over SSH"
+      - "systemd unit for my container"
+      **What it does:**
+      - Uses SSH and host workflows from pack docs.
+      - Optional Lightspeed context when configured.
+  - name: validate-environment
+    description: Environment validation
+    summary_markdown: |
+      Verify local tools and cluster connectivity before deploy or debug work.
+      **Use when:**
+      - "Check oc and helm"
+      - "Validate my environment"
+      **What it does:**
+      - Checks binaries, kubeconfig reachability, and common misconfigurations.
+  - name: debug-build
+    description: OpenShift build diagnostics
+    summary_markdown: |
+      Diagnose BuildConfig / S2I / image build failures.
+      **Use when:**
+      - "Build failed on OpenShift"
+      - "ImagePullBackOff during build"
+      **What it does:**
+      - Collects build logs and events.
+      - Suggests fixes and retries with `/s2i-build`.
+  - name: debug-pod
+    description: Pod diagnostics
+    summary_markdown: |
+      Diagnose running pod failures on OpenShift.
+      **Use when:**
+      - "CrashLoopBackOff"
+      - "Pod pending"
+      - "OOMKilled pod"
+      **What it does:**
+      - Inspects status, events, current/previous logs.
+      - Coordinates with `/debug-network` when needed.
+  - name: debug-pipeline
+    description: Tekton / pipeline diagnostics
+    summary_markdown: |
+      Diagnose PipelineRun and TaskRun failures.
+      **Use when:**
+      - "PipelineRun failed"
+      - "Tekton step error"
+      **What it does:**
+      - Surfaces pipeline logs and workspace issues.
+      - Guides toward green reruns.
+  - name: debug-network
+    description: Cluster networking diagnostics
+    summary_markdown: |
+      Diagnose Services, Routes, DNS, and NetworkPolicy issues.
+      **Use when:**
+      - "Service not reachable"
+      - "Route returns 503"
+      **What it does:**
+      - Traces endpoints and policies.
+      - Feeds back into `/deploy` verification.
+  - name: debug-container
+    description: Local container diagnostics
+    summary_markdown: |
+      Diagnose Podman/Docker local container failures.
+      **Use when:**
+      - "Container exits immediately locally"
+      - "Cannot pull image locally"
+      **What it does:**
+      - Inspects local container state and logs.
+      - Complements OpenShift debug skills.
+  - name: debug-rhel
+    description: RHEL host diagnostics
+    summary_markdown: |
+      Diagnose systemd, SELinux, firewall, and resource issues on RHEL hosts.
+      **Use when:**
+      - "SELinux denial"
+      - "systemd service failed on host"
+      **What it does:**
+      - Uses journal and policy signals.
+      - Optional Lightspeed insights when available.
+  orchestration_skills:
+  - name: containerize-deploy
+    description: End-to-end containerize and deploy
+    summary_markdown: |
+      Guided workflow from source to running application on OpenShift or RHEL with checkpoints.
+      **Use when:**
+      - "Deploy my app end to end"
+      - "Take me from repo to running service"
+      **What it does:**
+      - Phase: detect project and target environment.
+      - Phase: choose OpenShift (S2I / Helm / Podman) or RHEL path.
+      - Invokes specialized skills with explicit user approvals between phases.
+  skills_decision_guide:
+  - user_request: '"Deploy to OpenShift" or "expose my image"'
+    skill_to_use: deploy
+    reason: Creates workload, Service, and Route with confirmation gates.
+  - user_request: '"Helm install" or "upgrade my chart"'
+    skill_to_use: helm-deploy
+    reason: Helm-focused install/upgrade with values and release checks.
+  - user_request: '"S2I build" or "BuildConfig from source"'
+    skill_to_use: s2i-build
+    reason: OpenShift-native build flow before `/deploy`.
+  - user_request: '"From repo to running app" or "full deploy workflow"'
+    skill_to_use: containerize-deploy
+    reason: Orchestrates detect → strategy → deploy with checkpoints.
+  - user_request: '"CrashLoopBackOff" or "pod not starting"'
+    skill_to_use: debug-pod
+    reason: Pod logs, events, and resource pressure analysis.
+  - user_request: '"Build failed" or "S2I error"'
+    skill_to_use: debug-build
+    reason: Build logs and BuildConfig diagnosis.
+  - user_request: '"Check my tools" or "validate cluster access"'
+    skill_to_use: validate-environment
+    reason: Pre-flight before deploy or heavy debug.
+deploy_and_use: '#deploy_and_use.md'
+documentation_section: '#documentation_section.md'
+mcp_section: '#mcp_section.md'
+security_model: '#security_model.md'
+sample_workflows:
+- name: 'S2I path: detect → image → build → deploy'
+  workflow: |
+    User: "I have a Node app in this repo; put it on OpenShift"
+    - `/detect-project` identifies the stack
+    - `/recommend-image` picks a builder (optional)
+    - `/s2i-build` creates the image
+    - `/deploy` rolls out Deployment, Service, and Route with approval
+- name: Helm install on cluster
+  workflow: |
+    User: "Install this Helm chart into namespace apps"
+    - `/validate-environment` checks `oc`/`helm`
+    - `/helm-deploy` installs or upgrades the chart and reports release status
+- name: End-to-end with checkpoints
+  workflow: |
+    User: "Take my Python service from source to running on the cluster"
+    - `/containerize-deploy` walks phases with confirmations between detect, strategy, and deploy steps
+- name: Build failure then retry
+  workflow: |
+    User: "S2I build failed with ImagePullBackOff"
+    - `/debug-build` gathers build and registry signals
+    - User applies fix; `/s2i-build` retries with updated inputs
+- name: Pod triage
+  workflow: |
+    User: "My pod keeps restarting"
+    - `/debug-pod` inspects events and logs
+    - If networking suspected, `/debug-network` narrows DNS/Route/Service issues
+resources:
+- title: OpenShift documentation
+  url: https://docs.redhat.com/en/documentation/openshift_container_platform/
+  description: OpenShift platform guides for developers and administrators.
+  embedded_doc: docs/prerequisites.md
+- title: Helm documentation
+  url: https://helm.sh/docs/
+  description: Helm install, upgrade, and chart authoring.
+  embedded_doc: docs/dynamic-validation.md
+- title: Source-to-Image (S2I)
+  url: https://docs.openshift.com/container-platform/latest/cicd/builds/understanding-image-builds.html
+  description: OpenShift builds and S2I concepts.
+  embedded_doc: docs/builder-images.md
+- title: Red Hat Universal Base Images
+  url: https://developers.redhat.com/products/rhel/ubi
+  description: UBI and base image guidance.
+  embedded_doc: docs/image-selection-criteria.md
+- title: Podman
+  url: https://docs.podman.io/
+  description: Local container workflows used by the pack.
+  embedded_doc: docs/debugging-patterns.md
+- title: Human-in-the-loop (pack)
+  url: https://github.com/RHEcosystemAppEng/agentic-collections
+  description: Pack policy for confirmations and destructive actions.
+  embedded_doc: docs/human-in-the-loop.md
+- title: RHEL deployment notes (pack)
+  url: https://github.com/RHEcosystemAppEng/agentic-collections
+  description: SSH/systemd patterns for `/rhel-deploy`.
+  embedded_doc: docs/rhel-deployment.md
+legal_resources:
+  license_agreement_url: https://www.redhat.com/en/about/agreements
+  privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
+author:
+  name: Red Hat Ecosystem Engineering
+  email: eco-engineering@redhat.com
+homepage: https://github.com/RHEcosystemAppEng/agentic-collections
+repository: https://github.com/RHEcosystemAppEng/agentic-collections
+license: Apache-2.0
+keywords:
+- developer
+- openshift
+- rhel
+- s2i
+- containerization
+- deployment
+- helm
+- podman

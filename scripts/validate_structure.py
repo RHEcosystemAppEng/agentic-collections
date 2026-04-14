@@ -12,8 +12,10 @@ from pathlib import Path
 from typing import List
 import re
 
-# List of agentic collections to validate
-PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt', 'rh-ai-engineer', 'rh-automation']
+import pack_registry
+
+# Union of Lola marketplace paths and docs/plugins.json keys (existing dirs only)
+PACK_DIRS = pack_registry.get_union_pack_dirs()
 
 
 def validate_plugin_json(pack_dir: str) -> List[str]:

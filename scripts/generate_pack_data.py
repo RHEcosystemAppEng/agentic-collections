@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Dict, List, Any
 import yaml
 
-# List of agentic packs to parse
-PACK_DIRS = ['rh-sre', 'rh-developer', 'ocp-admin', 'rh-support-engineer', 'rh-virt', 'rh-ai-engineer', 'rh-automation']
+import pack_registry
 
-# Packs omitted from docs/data.json and the static documentation site
-DOCS_EXCLUDED_PACKS = frozenset({'rh-support-engineer'})
-DOCS_PACK_DIRS = [d for d in PACK_DIRS if d not in DOCS_EXCLUDED_PACKS]
+# Union registry (marketplace ∪ plugins.json); docs site uses subset helper
+PACK_DIRS = pack_registry.get_union_pack_dirs()
+DOCS_EXCLUDED_PACKS = pack_registry.DOCS_EXCLUDED_PACKS
+DOCS_PACK_DIRS = pack_registry.get_docs_pack_dirs()
 
 
 def parse_yaml_frontmatter(file_path: Path) -> Dict[str, Any]:

@@ -12,6 +12,8 @@ This directory contains the generated GitHub Pages site for agentic-collections.
 
 ## Local Development
 
+From the repository root, install git hooks once (`make install` then `scripts/install-hooks.sh`) so commits run [pre-commit](https://pre-commit.com/) (gitleaks + scoped `make validate` / skill design checks); see the main [README.md](../README.md#security).
+
 Run locally:
 ```bash
 python -m http.server 8000
@@ -31,10 +33,11 @@ This script parses all agentic collections and MCP configurations.
 ## Manual Updates
 
 To manually update the site:
-1. Modify pack configurations (`mcps.json`, skills, agents; optional `.claude-plugin/plugin.json`)
-2. Run `make generate` from the root directory
-3. Commit the updated `docs/data.json`
-4. Push to trigger GitHub Pages deployment
+1. Modify pack configurations (`mcps.json`, skills, agents; optional `.claude-plugin/plugin.json`) and per-pack **`.catalog/collection.yaml`** when catalog metadata changes (see [COLLECTION_SPEC.md](../COLLECTION_SPEC.md) and [catalog/schema.yaml](../catalog/schema.yaml); use the **create-collection** / **collection-compliance** repo skills).
+2. If you edit `collection.yaml`, refresh mirrors: `make catalog-mirror-json` from the repository root.
+3. Run `make generate` from the root directory (runs `make validate` first when using `make test`).
+4. Commit the updated `docs/data.json` and any `.catalog/` files.
+5. Push to trigger GitHub Pages deployment.
 
 ## Security
 

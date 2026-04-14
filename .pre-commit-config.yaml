@@ -1,0 +1,34 @@
+# See README.md "Git hooks (pre-commit)" for install. Aligns with CI: make validate + changed skill design.
+default_install_hook_types: [pre-commit]
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      # Uses gitleaks on PATH (install: brew install gitleaks, or run scripts/install-hooks.sh)
+      - id: gitleaks-system
+
+  - repo: local
+    hooks:
+      - id: make-validate
+        name: make validate (structure + collection compliance)
+        entry: make validate
+        language: system
+        pass_filenames: false
+        files: |
+          (?x)^(
+            catalog/.*|
+            marketplace/.*|
+            scripts/(validate_structure|validate_collection_compliance|validate_collection_schema|collection_validate_lib|pack_registry|catalog_yaml_to_json)\.py|
+            (rh-[-a-z0-9]+|ocp-admin)/\.catalog/.*|
+            (rh-[-a-z0-9]+|ocp-admin)/skills/[^/]+/SKILL\.md|
+            (rh-[-a-z0-9]+|ocp-admin)/mcps\.json|
+            (rh-[-a-z0-9]+|ocp-admin)/CLAUDE\.md
+          )
+
+      - id: validate-skill-design-changed
+        name: make validate-skill-design-changed (Tier-2 skill design)
+        entry: make validate-skill-design-changed
+        language: system
+        pass_filenames: false
+        files: ^(rh-[-a-z0-9]+|ocp-admin)/skills/[^/]+/SKILL\.md$

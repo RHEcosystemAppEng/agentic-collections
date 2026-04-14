@@ -1,0 +1,200 @@
+# Pack-local collection catalog — JSON Schema (Draft 2020-12), YAML encoding.
+# Field semantics and authoring: COLLECTION_SPEC.md. Instance files: <pack>/.catalog/collection.yaml
+# Fragments: sibling *.md of collection.yaml; reference as #name.md (quote in YAML). Inline monitored fields
+# >500 code points must use a fragment; see COLLECTION_SPEC.md. Resolved by scripts/collection_validate_lib.py.
+
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://github.com/RHEcosystemAppEng/agentic-collections/catalog/schema.yaml
+title: Agentic collection catalog
+type: object
+additionalProperties: true
+required:
+- id
+- name
+- provider
+- version
+- categories
+- personas
+- marketplaces
+- description
+- summary
+- contents
+- deploy_and_use
+- mcp_section
+- sample_workflows
+- resources
+properties:
+  id:
+    type: string
+    minLength: 1
+  name:
+    type: string
+    minLength: 1
+  provider:
+    type: string
+    minLength: 1
+  version:
+    type: string
+    pattern: ^[0-9]+\.[0-9]+\.[0-9]+
+  categories:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+  personas:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+  marketplaces:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 1
+  support_level:
+    type: string
+  description:
+    type: string
+    minLength: 1
+  summary:
+    type: string
+    minLength: 1
+  contents:
+    type: object
+    additionalProperties: true
+    required:
+    - description
+    - skills
+    - orchestration_skills
+    - skills_decision_guide
+    properties:
+      description:
+        type: string
+        minLength: 1
+      skills:
+        type: array
+        items:
+          $ref: '#/$defs/catalogSkill'
+      orchestration_skills:
+        type: array
+        items:
+          $ref: '#/$defs/catalogSkill'
+      skills_decision_guide:
+        type: array
+        items:
+          $ref: '#/$defs/decisionGuideRow'
+  deploy_and_use:
+    type: string
+    minLength: 1
+    description: >
+      Inline markdown (≤500 code points unless externalized) or a one-line fragment ref
+      '#filename.md' sibling under .catalog/.
+  documentation_section:
+    type: string
+    minLength: 1
+    description: >
+      How documentation is organized; inline markdown or one-line '#fragment.md' under .catalog/
+      (same convention as deploy_and_use).
+  mcp_section:
+    type: string
+    minLength: 1
+    description: >
+      MCP usage summary; inline or '#fragment.md' under .catalog/.
+  security_model:
+    type: string
+    minLength: 1
+    description: >
+      Security posture narrative; inline or '#fragment.md' under .catalog/.
+  sample_workflows:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/$defs/sampleWorkflow'
+  resources:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/$defs/resource'
+  legal_resources:
+    type: object
+  author:
+    type: object
+  homepage:
+    type: string
+  repository:
+    type: string
+  license:
+    type: string
+  keywords:
+    type: array
+    items:
+      type: string
+$defs:
+  catalogSkill:
+    type: object
+    required:
+    - name
+    - description
+    - summary_markdown
+    additionalProperties: true
+    properties:
+      name:
+        type: string
+        minLength: 1
+      description:
+        type: string
+        minLength: 1
+      summary_markdown:
+        type: string
+        minLength: 1
+  decisionGuideRow:
+    type: object
+    required:
+    - user_request
+    - skill_to_use
+    - reason
+    additionalProperties: false
+    properties:
+      user_request:
+        type: string
+        minLength: 1
+      skill_to_use:
+        type: string
+        minLength: 1
+      reason:
+        type: string
+        minLength: 1
+  sampleWorkflow:
+    type: object
+    required:
+    - name
+    - workflow
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        minLength: 1
+      workflow:
+        type: string
+        minLength: 10
+  resource:
+    type: object
+    required:
+    - title
+    - description
+    - url
+    additionalProperties: true
+    properties:
+      title:
+        type: string
+        minLength: 1
+      description:
+        type: string
+      url:
+        type: string
+        minLength: 1
+      embedded_doc:
+        type: string

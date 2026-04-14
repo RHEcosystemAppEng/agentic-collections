@@ -27,6 +27,7 @@ Automation tools for AI/ML engineers working with Red Hat OpenShift AI (RHOAI). 
 ### Environment Variables
 - `KUBECONFIG` - Path to Kubernetes configuration file
 - `AI_OBSERVABILITY_MCP_URL` (optional) - URL for the AI Observability MCP server
+- `RHOAI_MCP_TRANSPORT` - Declared in **`mcps.json`** as **`stdio`** for the **`rhoai`** server; no export needed unless you maintain a customized **`mcps.json`**
 
 ### Cluster Requirements
 - OpenShift cluster with Red Hat OpenShift AI operator installed

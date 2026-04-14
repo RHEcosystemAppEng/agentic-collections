@@ -170,8 +170,13 @@ Generate and view documentation locally:
 # Install dependencies (first time only)
 make install
 
-# Validate pack structure (mcps.json, CLAUDE.md, frontmatter; plugin.json if present)
+# Validate pack structure + collection compliance (COLLECTION_SPEC.md, catalog/schema.yaml)
 make validate
+
+# Optional: collection-only targets
+# make validate-collection-schema
+# make validate-collection-compliance
+# make catalog-mirror-json   # refresh .catalog/collection.json from YAML
 
 # Validate skills against Design Principles (SKILL_DESIGN_PRINCIPLES.md)
 # Validate only changed skills (staged + unstaged) - recommended for local dev:
@@ -223,14 +228,19 @@ uv run python scripts/validate_skill_design.py --warnings-as-errors
 
 ## Security
 
-This repository uses [gitleaks](https://github.com/gitleaks/gitleaks) to prevent accidental commits of sensitive data.
+This repository uses [gitleaks](https://github.com/gitleaks/gitleaks) and the [pre-commit](https://pre-commit.com/) framework to block accidental secrets and to run scoped validation before commits.
 
 ### Quick Start
 
 ```bash
-# Install gitleaks and pre-commit hook (one-time setup)
+# One-time: Python deps + dev tools (includes pre-commit), then install the git hook
+make install
 scripts/install-hooks.sh
 ```
+
+`scripts/install-hooks.sh` runs `uv sync` / `uv sync --group dev`, ensures `gitleaks` is available when possible, then `uv run pre-commit install`. It backs up a **non–pre-commit** `.git/hooks/pre-commit` (for example an old gitleaks-only hook) before replacing it.
+
+On commit, hooks defined in `.pre-commit-config.yaml` run: **gitleaks**, **`make validate`** when catalog/roster-related paths change, and **`make validate-skill-design-changed`** when pack `skills/*/SKILL.md` files change. CI still enforces the full checks in [`.github/workflows/compliance-check.yml`](.github/workflows/compliance-check.yml) (`make validate` and related jobs).
 
 ### What's Protected
 
