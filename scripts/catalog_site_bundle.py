@@ -54,7 +54,7 @@ def bundle_catalog_for_site(pack_dir: str, root: Path) -> Tuple[Optional[Dict[st
     out: Dict[str, Any] = copy.deepcopy(data)
     warnings: list[str] = []
 
-    for key in (*cvl.CATALOG_MARKDOWN_OR_FRAGMENT_KEYS, "deploy_and_use"):
+    for key in cvl.CATALOG_FRAGMENT_FIELD_KEYS:
         val = out.get(key)
         if not isinstance(val, str) or not val.strip():
             continue

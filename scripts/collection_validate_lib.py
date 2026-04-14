@@ -30,14 +30,19 @@ CATALOG_INLINE_CHAR_LIMIT = 500
 # File refs use the same `#name.md` form as deploy_and_use — not counted as "inline" for length.
 CATALOG_INLINE_LENGTH_KEYS = ("documentation_section", "mcp_section", "security_model", "summary")
 
-# Optional markdown fields that may be inline or a one-line `#fragment.md` under .catalog/ (like deploy_and_use).
-CATALOG_MARKDOWN_OR_FRAGMENT_KEYS = ("documentation_section", "mcp_section", "security_model")
-
 # Deprecated: use documentation_section / mcp_section / security_model with inline or #fragment.md (same as deploy_and_use).
 DEPRECATED_CATALOG_FILE_KEYS = (
     "documentation_section_file",
     "mcp_section_file",
     "security_model_file",
+)
+
+# Top-level fields that may be inline markdown or a one-line `#fragment.md` (validation + site bundle).
+CATALOG_FRAGMENT_FIELD_KEYS = (
+    "documentation_section",
+    "mcp_section",
+    "security_model",
+    "deploy_and_use",
 )
 
 _SCHEMA_CACHE: Optional[Dict[str, Any]] = None
@@ -149,7 +154,7 @@ def validate_deprecated_catalog_file_keys(pack_dir: str, data: Dict[str, Any]) -
 def _collect_top_level_catalog_fragment_refs(data: Dict[str, Any]) -> List[str]:
     """Fragment refs on top-level fields that may be inline markdown or #sibling.md (like deploy_and_use)."""
     refs: List[str] = []
-    for key in (*CATALOG_MARKDOWN_OR_FRAGMENT_KEYS, "deploy_and_use"):
+    for key in CATALOG_FRAGMENT_FIELD_KEYS:
         v = data.get(key)
         if isinstance(v, str) and v.strip() and catalog_fragment_rel_path(v):
             refs.append(v.strip())
