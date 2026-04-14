@@ -17,6 +17,7 @@ marketplaces:
 - Claude Code
 - Cursor
 support_level: Unknown
+maturity: ORANGE
 description: Plugins for building and deploying applications on Red Hat platforms.
 summary: The rh-developer collection provides skills to detect projects, build images (S2I/Helm), deploy to OpenShift or RHEL,
   validate environments, and debug builds, pods, pipelines, networks, and hosts.
@@ -252,7 +253,7 @@ resources:
   description: SSH/systemd patterns for `/rhel-deploy`.
   embedded_doc: docs/rhel-deployment.md
 legal_resources:
-  license_agreement_url: https://www.redhat.com/en/about/agreements
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
   privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
 author:
   name: Red Hat Ecosystem Engineering

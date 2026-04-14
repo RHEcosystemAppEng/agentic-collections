@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agentic Skills packs</title>
-    <link rel="stylesheet" href="styles.css?v=23">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Red+Hat+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=34">
 </head>
 <body>
     <header>
@@ -35,8 +38,9 @@
                     <span class="counter-label">MCP</span>
                 </div>
             </div>
-            <div class="toolbar-right">
-                <a href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank" class="toolbar-button">GitHub</a>
+            <div class="toolbar-right toolbar-actions">
+                <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="collection-meta-link">Apache 2.0 License →</a>
+                <a href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank" rel="noopener noreferrer" class="collection-meta-link">GitHub →</a>
             </div>
         </div>
         <div class="search-container">
@@ -60,6 +64,25 @@
     </div>
 
     <main>
+        <!-- Per-collection catalog view (hash: #collection/<pack>) -->
+        <section id="collection-page" class="collection-page" hidden aria-hidden="true">
+            <div class="collection-page-inner">
+                <nav class="collection-nav" aria-label="Collection">
+                    <div class="collection-nav-start">
+                        <a href="#" id="collection-back" class="collection-back">← Back to Catalog</a>
+                    </div>
+                    <div class="collection-nav-center">
+                        <a id="collection-yaml-link" href="#" target="_blank" rel="noopener noreferrer" class="collection-meta-link">catalog YAML →</a>
+                    </div>
+                    <div class="collection-nav-end">
+                        <a id="collection-readme-link" href="#" target="_blank" rel="noopener noreferrer" class="collection-meta-link" hidden>README →</a>
+                        <a id="collection-license-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="collection-meta-link">Apache 2.0 License →</a>
+                    </div>
+                </nav>
+                <div id="collection-page-body" class="collection-page-body collection-content-inner"></div>
+            </div>
+        </section>
+
         <!-- Section 1: Agentic Packs -->
         <section id="packs-section">
             <h2 onclick="toggleSection('packs')">
@@ -89,7 +112,7 @@
     </main>
 
     <footer>
-        <p>Generated from <a href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank">agentic-collections</a> repository</p>
+        <p>Generated from the <a href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank" rel="noopener noreferrer">agentic-collections</a> repository on GitHub.</p>
     </footer>
 
     <!-- Modal for Pack Details -->
@@ -102,6 +125,6 @@
         <div class="modal-content" id="mcp-details"></div>
     </div>
 
-    <script src="app.js?v=23"></script>
+    <script src="app.js?v=34"></script>
 </body>
 </html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Hat OpenShift Virtualization Agentic Collection - Red Hat Agentic Catalog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Red+Hat+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css?v=34">
+</head>
+<body>
+    <div class="site-brand-accent" aria-hidden="true"></div>
+    <main>
+        <section class="collection-page">
+            <div class="collection-page-inner collection-content">
+                <nav class="collection-nav" aria-label="Collection">
+                    <div class="collection-nav-start">
+                        <a href="../index.html" class="collection-back">← Back to Catalog</a>
+                    </div>
+                    <div class="collection-nav-center">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/.catalog/collection.yaml" target="_blank" rel="noopener noreferrer" class="collection-meta-link">catalog YAML →</a>
+                    </div>
+                    <div class="collection-nav-end">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/README.md" target="_blank" rel="noopener noreferrer" class="collection-meta-link">README →</a>
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="collection-meta-link">Apache 2.0 License →</a>
+                    </div>
+                </nav>
+                <div class="collection-page-body collection-content-inner">
+                    <h1 class="collection-page-title">Red Hat OpenShift Virtualization Agentic Collection</h1>
+                    <p class="collection-page-sub">Virtual machine management and automation for OpenShift Virtualization and KubeVirt workloads.</p>
+                    <p class="collection-page-sub"><strong>Module:</strong> rh-virt · v0.1.0 · Red Hat platform engineer</p>
+                    <p class="collection-tags"><strong>Categories:</strong> Red Hat, Kubevirt, Openshift, Virtualization, Virt</p>
+
+                    <div class="collection-tabs" role="tablist">
+                        <button type="button" class="collection-tab active" data-tab="overview" role="tab" aria-selected="true" aria-controls="tab-overview">Overview</button>
+                        <button type="button" class="collection-tab" data-tab="skills" role="tab" aria-selected="false" aria-controls="tab-skills">Skills</button>
+                        <button type="button" class="collection-tab" data-tab="resources" role="tab" aria-selected="false" aria-controls="tab-resources">Resources</button>
+                        <button type="button" class="collection-tab" data-tab="agents" role="tab" aria-selected="false" aria-controls="tab-agents">Agents</button>
+                    </div>
+
+                    <div id="tab-overview" class="collection-tab-panel active" role="tabpanel"><h2>Overview</h2><div class="collection-prose"><p>The rh-virt collection ships 10 skills for OpenShift Virtualization operations with confirmations on destructive steps.</p></div><h2>MCP</h2><div class="collection-prose"><table>
+<thead>
+<tr>
+<th>Server</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>openshift-virtualization</strong></td>
+<td>KubeVirt and OpenShift Virtualization VM, snapshot, and migration workflows via the Kubernetes/OpenShift API.</td>
+</tr>
+</tbody>
+</table>
+<p>Configure servers through <strong><code>mcps.json</code></strong> (e.g. <strong><code>KUBECONFIG</code></strong>); skills must be invoked instead of calling MCP tools directly from the agent.</p></div><h2>Quick Start</h2><div class="collection-prose"><h3>Prerequisites</h3>
+<ul>
+<li>Claude Code CLI or IDE extension (if using Claude Code)</li>
+<li>Podman (or Docker) for the container-based MCP server defined in <strong><code>mcps.json</code></strong></li>
+<li>OpenShift cluster (<strong>&gt;= 4.19</strong>) with the <strong>OpenShift Virtualization</strong> operator installed</li>
+<li>A kubeconfig with RBAC sufficient for VirtualMachine and related KubeVirt resources in target namespaces</li>
+</ul>
+<h3>Environment setup</h3>
+<p>Point <strong><code>KUBECONFIG</code></strong> at a kubeconfig file the MCP container can read (names must match <strong><code>mcps.json</code></strong>):</p>
+<pre><code class="language-bash">export KUBECONFIG=&quot;/path/to/your/kubeconfig&quot;
+</code></pre>
+<p>Verify the API sees KubeVirt / VM objects (optional smoke check):</p>
+<pre><code class="language-bash">oc get virtualmachines -A
+# or
+kubectl get vms -A
+</code></pre>
+<p>The pack <strong><code>mcps.json</code></strong> mounts <code>${KUBECONFIG}</code> read-only into the MCP container and passes <strong><code>${KUBECONFIG}</code></strong> in <code>env</code> — use placeholders only in git; never commit kubeconfig contents or secrets.</p>
+<p>If you build the OpenShift MCP image locally instead of pulling a published image, follow <strong>Building the MCP Server Container Image</strong> in the pack <strong><a href="../../README.md">README.md</a></strong>.</p></div><div class="install-accordion"><details class="install-accordion-item" open><summary class="install-accordion-header">Installation (Claude Code)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f rh-virt -a claude-code
+</code></pre></div></details><details class="install-accordion-item"><summary class="install-accordion-header">Installation (Cursor)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f rh-virt -a cursor
+</code></pre></div></details></div><div class="collection-prose collection-mcp-after-install"><h3>MCP configuration</h3>
+<p>Server definitions live in <strong><code>mcps.json</code></strong> at the pack root (<code>openshift-virtualization</code> server, <strong><code>--toolsets</code></strong> includes <strong><code>kubevirt</code></strong>). Use <strong><code>${VAR}</code></strong> placeholders only; never commit secrets.</p></div></div>
+                    <div id="tab-skills" class="collection-tab-panel" role="tabpanel"><h2>Skills</h2><div class="collection-prose"><p>The pack provides 10 skills for rh virt workflows on Red Hat platforms; see CLAUDE.md for intent routing.</p></div><h3>Skills</h3><ol class="collection-skill-list"><li>
+<div><code>/vm-clone</code> - Clone existing virtual machines for testing, scaling, or creating templates.</div>
+<div class="collection-prose collection-prose-tight"><p>Clone existing virtual machines for testing, scaling, or creating templates.<br />
+<strong>Use when:</strong><br />
+- "Clone VM [source] to [target]"<br />
+- "Create a copy of VM [name]"<br />
+- "Duplicate VM [name] for testing"<br />
+- "Create 3 copies of template-vm"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-clone/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-create</code> - Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection.</div>
+<div class="collection-prose collection-prose-tight"><p>Create new virtual machines in OpenShift Virtualization with automatic instance type resolution and OS selection.<br />
+<strong>Use when:</strong><br />
+- "Create a new VM"<br />
+- "Deploy a virtual machine with [OS]"<br />
+- "Set up a VM in namespace [name]"<br />
+- "Provision a [size] VM"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-create/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-delete</code> - Permanently delete virtual machines and their associated resources from OpenShift Virtualization.</div>
+<div class="collection-prose collection-prose-tight"><p>Permanently delete virtual machines and their associated resources from OpenShift Virtualization.<br />
+<strong>Use when:</strong><br />
+- "Delete VM [name]"<br />
+- "Remove virtual machine [name]"<br />
+- "Destroy VM [name]"<br />
+- "Clean up VM [name]"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-delete/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-inventory</code> - List and view virtual machines across namespaces with status, resource usage, and health information.</div>
+<div class="collection-prose collection-prose-tight"><p>List and view virtual machines across namespaces with status, resource usage, and health information.<br />
+<strong>Use when:</strong><br />
+- "List all VMs"<br />
+- "Show VMs in namespace [name]"<br />
+- "What VMs are running?"<br />
+- "Get details of VM [name]"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-inventory/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-lifecycle-manager</code> - Manage virtual machine lifecycle operations including start, stop, and restart.</div>
+<div class="collection-prose collection-prose-tight"><p>Manage virtual machine lifecycle operations including start, stop, and restart.<br />
+<strong>Use when:</strong><br />
+- "Start VM [name]"<br />
+- "Stop the virtual machine [name]"<br />
+- "Restart VM [name]"<br />
+- "Power on/off VM [name]"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-lifecycle-manager/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-rebalance</code> - Orchestrate VM migrations across cluster nodes for load balancing, maintenance, and resource optimization.</div>
+<div class="collection-prose collection-prose-tight"><p>Orchestrate VM migrations across cluster nodes for load balancing, maintenance, and resource optimization.<br />
+<strong>Use when:</strong><br />
+- "Move VM database-01 to worker-03"<br />
+- "Rebalance VMs to optimize CPU load"<br />
+- "Drain worker-02 for maintenance"<br />
+- "Automatically rebalance the cluster"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-rebalance/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-snapshot-create</code> - Create virtual machine snapshots for backup and recovery.</div>
+<div class="collection-prose collection-prose-tight"><p>Create virtual machine snapshots for backup and recovery.<br />
+<strong>Use when:</strong><br />
+- "Create a snapshot of VM [name]"<br />
+- "Backup VM [name] before upgrade"<br />
+- "Take a snapshot of [vm]"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-snapshot-create/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-snapshot-delete</code> - Permanently delete virtual machine snapshots to free storage space.</div>
+<div class="collection-prose collection-prose-tight"><p>Permanently delete virtual machine snapshots to free storage space.<br />
+<strong>Use when:</strong><br />
+- "Delete snapshot [snapshot-name]"<br />
+- "Remove old snapshots for VM [name]"<br />
+- "Free up snapshot storage"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-snapshot-delete/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-snapshot-list</code> - List virtual machine snapshots across namespaces with status, age, and recovery information.</div>
+<div class="collection-prose collection-prose-tight"><p>List virtual machine snapshots across namespaces with status, age, and recovery information.<br />
+<strong>Use when:</strong><br />
+- "List snapshots for VM [name]"<br />
+- "Show snapshots in namespace [name]"<br />
+- "What snapshots exist for [vm]?"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-snapshot-list/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/vm-snapshot-restore</code> - Restore virtual machines from snapshots with strict safety confirmations to prevent data loss.</div>
+<div class="collection-prose collection-prose-tight"><p>Restore virtual machines from snapshots with strict safety confirmations to prevent data loss.<br />
+<strong>Use when:</strong><br />
+- "Restore VM [name] from snapshot [snapshot-name]"<br />
+- "Roll back VM [name] to snapshot"<br />
+- "Recover VM [name] from backup"<br />
+<strong>What it does:</strong><br />
+- Runs the documented workflow with MCP access only through the skill and required confirmations.<br />
+- Aligns with CLAUDE.md chaining when users need follow-on skills.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-virt/skills/vm-snapshot-restore/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li></ol><h2>Skills Decision Guide</h2><table class="collection-decision-table"><thead><tr><th>User request</th><th>Skill to use</th><th>Reason</th></tr></thead><tbody><tr><td><p>"Create VM"</p></td><td>/vm-create</td><td><p>Instance types, OS selection, and OpenShift Virtualization CRs.</p></td></tr><tr><td><p>"List VMs"</p></td><td>/vm-inventory</td><td><p>Namespace-scoped inventory and status.</p></td></tr><tr><td><p>"Snapshot" backup</p></td><td>/vm-snapshot-create</td><td><p>Validated snapshot creation for recovery points.</p></td></tr><tr><td><p>"Restore snapshot"</p></td><td>/vm-snapshot-restore</td><td><p>Stop VM and restore with confirmations.</p></td></tr><tr><td><p>"Rebalance" or "drain node"</p></td><td>/vm-rebalance</td><td><p>Migrations for load and maintenance.</p></td></tr></tbody></table></div>
+                    <div id="tab-resources" class="collection-tab-panel" role="tabpanel"><h2>References</h2><ul class="simple-list collection-resources"><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/virtualization/" target="_blank" rel="noopener noreferrer">OpenShift Virtualization</a> - Official docs for VMs, storage, and live migration.</li><li><a class="collection-resource-link" href="https://kubevirt.io/user-guide/" target="_blank" rel="noopener noreferrer">KubeVirt user guide</a> - KubeVirt concepts underlying OpenShift Virtualization.</li><li><a class="collection-resource-link" href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank" rel="noopener noreferrer">agentic-collections repository</a> - Source for this pack and catalog metadata.</li></ul></div>
+                    <div id="tab-agents" class="collection-tab-panel" role="tabpanel"><h2>MCP Server Integrations</h2><div class="collection-mcp-grid"><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="rh-virt" data-mcp-name="openshift-virtualization"><div class="collection-mcp-card-title"><span>🖥️</span><span>OpenShift MCP Server - Virtualization</span></div><div class="collection-mcp-card-meta">By Red Hat - Container</div></div></div><h2>Sample Workflows</h2><h3>Create and verify VM</h3><div class="collection-prose"><p>User: "Create a small RHEL VM in my team namespace"<br />
+- <code>/vm-create</code> resolves instance type and OS and applies the VirtualMachine spec with approval<br />
+- <code>/vm-inventory</code> confirms the VM is running with expected resources</p></div><h3>Snapshot before change</h3><div class="collection-prose"><p>User: "Snapshot database-vm before the maintenance window"<br />
+- <code>/vm-snapshot-create</code> validates storage class and guest agent readiness<br />
+- <code>/vm-lifecycle-manager</code> stops the VM if the restore path requires it later</p></div><h3>Maintenance drain</h3><div class="collection-prose"><p>User: "Drain worker-04 and move VMs safely"<br />
+- <code>/vm-rebalance</code> plans migrations for load or node maintenance<br />
+- <code>/vm-inventory</code> verifies placement after moves complete</p></div></div>
+
+                    <p class="collection-footer-meta">https://github.com/RHEcosystemAppEng/agentic-collections</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="mcp-modal" class="modal">
+        <div class="modal-content" id="mcp-details"></div>
+    </div>
+
+    <script src="../app.js?v=34"></script>
+</body>
+</html>

@@ -220,7 +220,6 @@ The workflow will fail and provide:
   - `rh-sre/**`
   - `rh-developer/**`
   - `ocp-admin/**`
-  - `rh-support-engineer/**`
   - `rh-virt/**`
   - `scripts/**`
   - `docs/**`

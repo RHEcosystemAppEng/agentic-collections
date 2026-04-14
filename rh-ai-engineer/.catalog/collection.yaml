@@ -22,6 +22,7 @@ marketplaces:
 - Claude Code
 - Cursor
 support_level: Unknown
+maturity: ORANGE
 description: Skills for OpenShift AI (RHOAI)—data science projects, workbenches, KServe and NIM model serving, pipelines,
   observability, TrustyAI monitoring and guardrails, model registry, and inference troubleshooting.
 summary: |
@@ -216,7 +217,7 @@ resources:
   url: https://github.com/RHEcosystemAppEng/agentic-collections
   description: Source for this pack and catalog metadata.
 legal_resources:
-  license_agreement_url: https://www.redhat.com/en/about/agreements
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
   privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
 author:
   name: Red Hat Ecosystem Engineering

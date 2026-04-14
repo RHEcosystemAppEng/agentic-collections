@@ -105,7 +105,7 @@
     "snapshot"
   ],
   "legal_resources": {
-    "license_agreement_url": "https://www.redhat.com/en/about/agreements",
+    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE",
     "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
   },
   "license": "Apache-2.0",
@@ -113,6 +113,7 @@
     "Claude Code",
     "Cursor"
   ],
+  "maturity": "GREEN",
   "mcp_section": "#mcp_section.md",
   "name": "Red Hat OpenShift Virtualization Agentic Collection",
   "personas": [

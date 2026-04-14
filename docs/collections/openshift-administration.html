@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Hat OpenShift Administration Agentic Skills Collection - Red Hat Agentic Catalog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Red+Hat+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css?v=34">
+</head>
+<body>
+    <div class="site-brand-accent" aria-hidden="true"></div>
+    <main>
+        <section class="collection-page">
+            <div class="collection-page-inner collection-content">
+                <nav class="collection-nav" aria-label="Collection">
+                    <div class="collection-nav-start">
+                        <a href="../index.html" class="collection-back">← Back to Catalog</a>
+                    </div>
+                    <div class="collection-nav-center">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/ocp-admin/.catalog/collection.yaml" target="_blank" rel="noopener noreferrer" class="collection-meta-link">catalog YAML →</a>
+                    </div>
+                    <div class="collection-nav-end">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/ocp-admin/README.md" target="_blank" rel="noopener noreferrer" class="collection-meta-link">README →</a>
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="collection-meta-link">Apache 2.0 License →</a>
+                    </div>
+                </nav>
+                <div class="collection-page-body collection-content-inner">
+                    <h1 class="collection-page-title">Red Hat OpenShift Administration Agentic Skills Collection</h1>
+                    <p class="collection-page-sub">Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security policies,...</p>
+                    <p class="collection-page-sub"><strong>Module:</strong> ocp-admin · v0.1.0 · OpenShift Administrator</p>
+                    <p class="collection-tags"><strong>Categories:</strong> Red Hat, Openshift, Administration, Management</p>
+
+                    <div class="collection-tabs" role="tablist">
+                        <button type="button" class="collection-tab active" data-tab="overview" role="tab" aria-selected="true" aria-controls="tab-overview">Overview</button>
+                        <button type="button" class="collection-tab" data-tab="skills" role="tab" aria-selected="false" aria-controls="tab-skills">Skills</button>
+                        <button type="button" class="collection-tab" data-tab="resources" role="tab" aria-selected="false" aria-controls="tab-resources">Resources</button>
+                        <button type="button" class="collection-tab" data-tab="agents" role="tab" aria-selected="false" aria-controls="tab-agents">Agents</button>
+                    </div>
+
+                    <div id="tab-overview" class="collection-tab-panel active" role="tabpanel"><h2>Overview</h2><div class="collection-prose"><p>The ocp-admin collection covers Assisted Installer cluster creation, multi-cluster discovery across self-managed and managed<br />
+OpenShift, and kubeconfig-backed fleet health reporting. Use CLAUDE.md intent routing to pick <code>/cluster-creator</code>,<br />
+<code>/cluster-inventory</code>, or <code>/cluster-report</code>.</p></div><h2>MCP</h2><div class="collection-prose"><table>
+<thead>
+<tr>
+<th>Server</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>openshift-self-managed</strong></td>
+<td>Assisted Installer API for self-managed cluster lifecycle (OCP, SNO).</td>
+</tr>
+<tr>
+<td><strong>openshift-ocm-managed</strong></td>
+<td>OpenShift Cluster Manager API for managed service clusters (ROSA, ARO, OSD).</td>
+</tr>
+<tr>
+<td><strong>openshift-administration</strong></td>
+<td>Kubernetes/OpenShift operations for multi-context fleet reports; read-only where applicable.</td>
+</tr>
+</tbody>
+</table>
+<p>Configure servers through <strong><code>mcps.json</code></strong>; skills must be invoked instead of calling MCP tools directly from the agent.</p></div><h2>Quick Start</h2><div class="collection-prose"><h3>Prerequisites</h3>
+<ul>
+<li>Claude Code CLI or IDE extension (if using Claude Code)</li>
+<li>Podman (or Docker) for the container-based MCP servers in <strong><code>mcps.json</code></strong></li>
+<li>Red Hat account with access to <a href="https://cloud.redhat.com">cloud.redhat.com</a> for <strong>cluster creation</strong> and <strong>inventory</strong> flows</li>
+<li><strong>Offline token</strong> from <a href="https://cloud.redhat.com/openshift/token">OpenShift offline token</a> for Assisted Installer and OCM APIs</li>
+<li>For <strong><code>/cluster-report</code></strong>: valid <strong><code>KUBECONFIG</code></strong> with contexts that point at real OpenShift clusters (read-only MCP mode)</li>
+</ul>
+<h3>Environment setup</h3>
+<p>Variable <strong>names</strong> must match <strong><code>mcps.json</code></strong> (use <strong><code>${...}</code></strong> placeholders only in git; never commit secrets).</p>
+<p><strong>Assisted Installer + managed clusters</strong> (<code>openshift-self-managed</code>, <code>openshift-ocm-managed</code>):</p>
+<pre><code class="language-bash">export OFFLINE_TOKEN=&quot;your-offline-api-token&quot;
+</code></pre>
+<p><strong>Multi-cluster kube report</strong> (<code>openshift-administration</code>):</p>
+<pre><code class="language-bash">export KUBECONFIG=&quot;/path/to/your/kubeconfig&quot;
+</code></pre></div><div class="install-accordion"><details class="install-accordion-item" open><summary class="install-accordion-header">Installation (Claude Code)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f ocp-admin -a claude-code
+</code></pre></div></details><details class="install-accordion-item"><summary class="install-accordion-header">Installation (Cursor)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f ocp-admin -a cursor
+</code></pre></div></details></div><div class="collection-prose collection-mcp-after-install"><h3>MCP configuration</h3>
+<p>Servers are defined in <strong><code>mcps.json</code></strong> at the pack root: Assisted Installer / OCM (<code>OFFLINE_TOKEN</code>) and read-only OpenShift API (<code>KUBECONFIG</code>). Use <strong><code>${VAR}</code></strong> placeholders only; never print token or kubeconfig contents in chat output.</p>
+<p><strong>Linux vs macOS:</strong> OpenShift MCP <code>podman</code> args may include user-namespace flags for <code>KUBECONFIG</code> mounts; adjust per the pack <strong>README</strong> if Podman runs in a VM.</p></div></div>
+                    <div id="tab-skills" class="collection-tab-panel" role="tabpanel"><h2>Skills</h2><div class="collection-prose"><p>The pack provides three skills for cluster lifecycle and fleet visibility on OpenShift, using Assisted Installer and OCM APIs<br />
+where applicable and read-only cluster APIs for consolidated reports.</p></div><h3>Skills</h3><ol class="collection-skill-list"><li>
+<div><code>/cluster-creator</code> - End-to-end OpenShift cluster creation using Red Hat Assisted Installer (SNO and HA; bare metal, vSphere, OCI, Nutanix).</div>
+<div class="collection-prose collection-prose-tight"><p>Create and install OpenShift clusters through Assisted Installer with validation, host networking, and progress monitoring.<br />
+<strong>Use when:</strong><br />
+- "Create a new OpenShift cluster"<br />
+- "Install OpenShift on my servers"<br />
+- "Set up a single-node cluster"<br />
+<strong>What it does:</strong><br />
+- Drives Assisted Installer flows with explicit approval for VIPs, host roles, and install triggers.<br />
+- Surfaces installation events and validation errors until the cluster reaches ready state.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/ocp-admin/skills/cluster-creator/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/cluster-inventory</code> - List and inspect OpenShift clusters across self-managed (OCP, SNO) and managed service (ROSA, ARO, OSD) deployments.</div>
+<div class="collection-prose collection-prose-tight"><p>List clusters, versions, platforms, and status from OCM and Assisted Installer contexts using a single offline token workflow.<br />
+<strong>Use when:</strong><br />
+- "List all clusters"<br />
+- "Show cluster status"<br />
+- "What clusters are available?"<br />
+<strong>What it does:</strong><br />
+- Returns identifiers, versions, platforms, and creation metadata for fleet visibility.<br />
+- Separates self-managed versus managed-service clusters for the right API path.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/ocp-admin/skills/cluster-inventory/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/cluster-report</code> - Consolidated health report across kubeconfig contexts, skipping non-OpenShift contexts by default.</div>
+<div class="collection-prose collection-prose-tight"><p>Aggregate node, namespace, and workload signals across contexts that resolve to real OpenShift clusters.<br />
+<strong>Use when:</strong><br />
+- "Health report across clusters"<br />
+- "Fleet summary from kubeconfig"<br />
+- "Compare resource usage between contexts"<br />
+<strong>What it does:</strong><br />
+- Verifies each context is OpenShift before collecting metrics to avoid kube API errors.<br />
+- Summarizes capacity, GPU presence, and pod health for operations review.</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/ocp-admin/skills/cluster-report/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li></ol><h2>Skills Decision Guide</h2><table class="collection-decision-table"><thead><tr><th>User request</th><th>Skill to use</th><th>Reason</th></tr></thead><tbody><tr><td><p>"Create cluster" or "install OpenShift with Assisted Installer"</p></td><td>/cluster-creator</td><td><p>Provisions SNO or HA clusters and monitors install through completion.</p></td></tr><tr><td><p>"List clusters" or "cluster status in OCM/ROSA"</p></td><td>/cluster-inventory</td><td><p>Inventory across managed and self-managed targets with consistent fields.</p></td></tr><tr><td><p>"Fleet health" or "multi-cluster report from kubeconfig"</p></td><td>/cluster-report</td><td><p>Read-only aggregation after OpenShift context verification.</p></td></tr></tbody></table></div>
+                    <div id="tab-resources" class="collection-tab-panel" role="tabpanel"><h2>References</h2><ul class="simple-list collection-resources"><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/openshift_container_platform/" target="_blank" rel="noopener noreferrer">OpenShift documentation</a> - Platform guides for administrators installing and operating OpenShift.</li><li><a class="collection-resource-link" href="https://github.com/RHEcosystemAppEng/agentic-collections" target="_blank" rel="noopener noreferrer">agentic-collections repository</a> - Source repository for these packs, skills, and catalog metadata.</li></ul></div>
+                    <div id="tab-agents" class="collection-tab-panel" role="tabpanel"><h2>MCP Server Integrations</h2><div class="collection-mcp-grid"><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="ocp-admin" data-mcp-name="openshift-self-managed"><div class="collection-mcp-card-title"><span>Assisted Installer MCP (self-managed)</span></div><div class="collection-mcp-card-meta">By Red Hat - Container</div></div><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="ocp-admin" data-mcp-name="openshift-ocm-managed"><div class="collection-mcp-card-title"><span>OCM MCP (managed clusters)</span></div><div class="collection-mcp-card-meta">By Red Hat - Container</div></div><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="ocp-admin" data-mcp-name="openshift-administration"><div class="collection-mcp-card-title"><span>OpenShift MCP Server (administration)</span></div><div class="collection-mcp-card-meta">By Red Hat - Container</div></div></div><h2>Sample Workflows</h2><h3>Assisted install then verify</h3><div class="collection-prose"><p>User: "Create an HA cluster on bare metal and tell me when it is ready"<br />
+- <code>/cluster-creator</code> walks prerequisites, manifests, and installation monitoring with approvals at critical steps<br />
+- <code>/cluster-inventory</code> confirms version and state once the API shows the new cluster</p></div><h3>Fleet visibility</h3><div class="collection-prose"><p>User: "List everything in my Red Hat account and flag stale check-ins"<br />
+- <code>/cluster-inventory</code> returns self-managed and managed clusters with metadata for triage</p></div><h3>Multi-cluster health</h3><div class="collection-prose"><p>User: "Summarize node and pod health for every OpenShift context in my kubeconfig"<br />
+- <code>/cluster-report</code> skips non-OpenShift contexts and aggregates signals for operators</p></div></div>
+
+                    <p class="collection-footer-meta">https://github.com/RHEcosystemAppEng/agentic-collections</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="mcp-modal" class="modal">
+        <div class="modal-content" id="mcp-details"></div>
+    </div>
+
+    <script src="../app.js?v=34"></script>
+</body>
+</html>

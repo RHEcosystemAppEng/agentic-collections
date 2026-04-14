@@ -84,7 +84,7 @@ for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do 
 
 ## 📦 Available Plugins
 
-7 persona-focused plugins with **100+ production-ready skills**:
+6 persona-focused plugins with **100+ production-ready skills**:
 
 | Plugin | Version | Skills | Description | Personas |
 |--------|---------|--------|-------------|----------|
@@ -94,7 +94,6 @@ for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do 
 | **[ocp-admin](ocp-admin/README.md)** | 1.0.0 | 1 | Multi-cluster management, health reports, monitoring | OpenShift Administrators |
 | **[rh-ai-engineer](rh-ai-engineer/README.md)** | 1.0.0 | 18 | Model serving, vLLM, KServe, NVIDIA NIM | AI/ML Engineers |
 | **[rh-automation](rh-automation/README.md)** | 1.0.0 | 13 | Ansible Automation Platform governance, safety checks | Automation Leads |
-| **[rh-support-engineer](rh-support-engineer/README.md)** | 1.0.0 | 0* | Technical support and troubleshooting | Support Engineers |
 
 **Total:** 100 skills across 7 plugins | **License:** Apache 2.0 | **Status:** Production Ready
 

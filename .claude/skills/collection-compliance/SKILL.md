@@ -34,11 +34,11 @@ allowed-tools: Read Glob Grep Bash
 
 2. **Classify**
    - **Missing file** — create `.catalog/collection.yaml` via create-collection skill (or `uv run python scripts/bootstrap_catalog.py --pack <pack>` for bootstrap baseline).
-   - **Schema** — align YAML with [catalog/schema.yaml](../../catalog/schema.yaml).
+   - **Schema** — align YAML with [catalog/schema.yaml](../../catalog/schema.yaml) (includes required **`maturity`**: `GREEN` or `ORANGE`; site listing uses **`GREEN`** only per `pack_registry.get_docs_pack_dirs()`).
    - **Roster** — every `skills/<n>/SKILL.md` must appear once under `contents.skills` or `contents.orchestration_skills` with `name == <n>`.
    - **Banner** — `collection.yaml` must mention `create-collection` and `Golden sources` in the opening `#` block.
    - **`collection.json` drift** — run `uv run python scripts/catalog_yaml_to_json.py --pack <pack>` or `make catalog-mirror-json`.
-   - **Fragment refs / length** — `deploy_and_use`, `documentation_section`, `mcp_section`, and `security_model` may be inline or a one-line `#fragment.md` under `.catalog/`. Refs must start with `#`. Inline monitored fields over **500** code points must move to a fragment on the **same** key.
+   - **Fragment refs / length** — `deploy_and_use`, `documentation_section`, `mcp_section`, and `security_model` may be inline or a one-line `#…md` ref naming a sibling file under `.catalog/` (e.g. `#install.md`). Refs must start with `#`. Inline monitored fields over **500** code points must move to a fragment on **that same key** (see COLLECTION_SPEC).
    - **Fragment provenance (`.catalog/*.md`)** — each referenced fragment must start with a leading HTML **`<!-- … -->`** block with the **same intent** as the `collection.yaml` banner: **create-collection** workflow and **Golden sources** (SKILL, README, CLAUDE, marketplace). See [COLLECTION_SPEC.md](../../COLLECTION_SPEC.md) **Provenance banners** (CI does not yet assert this text; fix when reviewing fragments).
    - **Thin `deploy_and_use` (manual review)** — if the pack has **`mcps.json`** MCP servers, **`deploy_and_use`** (inline or **`#deploy_and_use.md`**) should meet [COLLECTION_SPEC.md](../../COLLECTION_SPEC.md) **install + env + MCP** (prerequisites, **`export`** for each **`${VAR}`** name, Lola **`path:`**, MCP notes, optional Claude/Cursor install). CI may not fail; fix via **create-collection** when reviewing PRs.
 

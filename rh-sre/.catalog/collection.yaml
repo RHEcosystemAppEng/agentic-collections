@@ -15,6 +15,7 @@ marketplaces:
 - Claude Code
 - Cursor
 support_level: Unknown
+maturity: GREEN
 description: Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.
 summary: The rh-sre collection provides skills for site reliability tasks.
 contents:
@@ -297,7 +298,7 @@ resources:
   url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/
   description: AAP API reference for job and inventory management.
 legal_resources:
-  license_agreement_url: https://www.redhat.com/en/about/agreements
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
   privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
 author:
   name: Red Hat Ecosystem Engineering

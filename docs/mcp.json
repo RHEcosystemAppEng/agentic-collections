@@ -3,6 +3,7 @@
     "title": "OpenShift MCP Server",
     "owner": "Official",
     "repository": "https://github.com/openshift/openshift-mcp-server",
+    "description": "OpenShift MCP server for cluster operations: namespaces and projects, workloads (pods, resources), Helm, monitoring (Prometheus, Alertmanager), OpenShift Service Mesh, kcp workspaces, and OpenShift Virtualization (KubeVirt) VM create and lifecycle. Uses the active kubeconfig context with elevated permissions.",
     "tools": [
       {
         "name": "events_list",
@@ -117,6 +118,10 @@
         "description": "Query active and pending alerts from Alertmanager"
       },
       {
+        "name": "vm_clone",
+        "description": "Clone a KubeVirt VirtualMachine via a VirtualMachineClone resource (source name/namespace, target name)."
+      },
+      {
         "name": "vm_create",
         "description": "Create virtual machines with instance types and preferences (KubeVirt)"
       },
@@ -162,11 +167,275 @@
       }
     ]
   },
+  "openshift-self-managed": {
+    "title": "Assisted Installer MCP (self-managed)",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "repository": "https://github.com/openshift-assisted/assisted-service-mcp",
+    "description": "Red Hat Hybrid Cloud Assisted Installer API MCP for self-managed clusters (OCP, SNO): create clusters, ISO and credentials, nmstate networking, hosts, versions, operators, events, and logs. Requires OFFLINE_TOKEN and uses INVENTORY_URL for the assisted-install v2 API.",
+    "tools": [
+      {
+        "name": "cluster_info",
+        "description": "Get detailed information about a cluster by ID (status, platform, networking, hosts)."
+      },
+      {
+        "name": "list_clusters",
+        "description": "List all Assisted Installer clusters for the account (minimal info per cluster)."
+      },
+      {
+        "name": "create_cluster",
+        "description": "Create a new cluster and infraenv (name, version, base_domain, single_node, ssh key, etc.)."
+      },
+      {
+        "name": "set_cluster_vips",
+        "description": "Set API and ingress VIPs for the cluster."
+      },
+      {
+        "name": "set_cluster_platform",
+        "description": "Set or update cluster platform configuration for the chosen provider."
+      },
+      {
+        "name": "install_cluster",
+        "description": "Trigger installation for a cluster that is ready to install."
+      },
+      {
+        "name": "set_cluster_ssh_key",
+        "description": "Set or update the SSH public key for cluster node access."
+      },
+      {
+        "name": "analyze_cluster_logs",
+        "description": "Analyze cluster logs for troubleshooting (registered only when ENABLE_TROUBLESHOOTING_TOOLS is set)."
+      },
+      {
+        "name": "cluster_events",
+        "description": "Get events for a cluster by ID."
+      },
+      {
+        "name": "host_events",
+        "description": "Get events for a specific host in a cluster."
+      },
+      {
+        "name": "cluster_iso_download_url",
+        "description": "Get discovery ISO download URL(s) for a cluster."
+      },
+      {
+        "name": "cluster_credentials_download_url",
+        "description": "Get kubeconfig / credentials download URL after installation."
+      },
+      {
+        "name": "cluster_logs_download_url",
+        "description": "Get a URL to download diagnostic log bundles."
+      },
+      {
+        "name": "list_versions",
+        "description": "List OpenShift versions available for installation."
+      },
+      {
+        "name": "list_operator_bundles",
+        "description": "List optional operator bundles addable at install time."
+      },
+      {
+        "name": "add_operator_bundle_to_cluster",
+        "description": "Request an operator bundle to be installed with the cluster."
+      },
+      {
+        "name": "set_host_role",
+        "description": "Set host role (auto-assign, master, arbiter, worker) for a discovered host."
+      },
+      {
+        "name": "validate_nmstate_yaml",
+        "description": "Validate nmstate YAML before applying to hosts."
+      },
+      {
+        "name": "generate_nmstate_yaml",
+        "description": "Generate initial nmstate YAML from gathered inputs (prefer calling this before hand-authoring YAML)."
+      },
+      {
+        "name": "alter_static_network_config_nmstate_for_host",
+        "description": "Update per-host static network nmstate configuration."
+      },
+      {
+        "name": "list_static_network_config",
+        "description": "List static network configuration for the cluster or hosts."
+      }
+    ]
+  },
+  "openshift-ocm-managed": {
+    "title": "OCM MCP (managed clusters)",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "repository": "https://github.com/openshift-assisted/assisted-service-mcp",
+    "description": "Same assisted-service-mcp binary and tool surface as self-managed; container sets INVENTORY_URL to the OCM clusters_mgmt API for ROSA, ARO, and OSD. Requires OFFLINE_TOKEN.",
+    "tools": [
+      {
+        "name": "cluster_info",
+        "description": "Get detailed information about a cluster by ID (status, platform, networking, hosts)."
+      },
+      {
+        "name": "list_clusters",
+        "description": "List all Assisted Installer clusters for the account (minimal info per cluster)."
+      },
+      {
+        "name": "create_cluster",
+        "description": "Create a new cluster and infraenv (name, version, base_domain, single_node, ssh key, etc.)."
+      },
+      {
+        "name": "set_cluster_vips",
+        "description": "Set API and ingress VIPs for the cluster."
+      },
+      {
+        "name": "set_cluster_platform",
+        "description": "Set or update cluster platform configuration for the chosen provider."
+      },
+      {
+        "name": "install_cluster",
+        "description": "Trigger installation for a cluster that is ready to install."
+      },
+      {
+        "name": "set_cluster_ssh_key",
+        "description": "Set or update the SSH public key for cluster node access."
+      },
+      {
+        "name": "analyze_cluster_logs",
+        "description": "Analyze cluster logs for troubleshooting (registered only when ENABLE_TROUBLESHOOTING_TOOLS is set)."
+      },
+      {
+        "name": "cluster_events",
+        "description": "Get events for a cluster by ID."
+      },
+      {
+        "name": "host_events",
+        "description": "Get events for a specific host in a cluster."
+      },
+      {
+        "name": "cluster_iso_download_url",
+        "description": "Get discovery ISO download URL(s) for a cluster."
+      },
+      {
+        "name": "cluster_credentials_download_url",
+        "description": "Get kubeconfig / credentials download URL after installation."
+      },
+      {
+        "name": "cluster_logs_download_url",
+        "description": "Get a URL to download diagnostic log bundles."
+      },
+      {
+        "name": "list_versions",
+        "description": "List OpenShift versions available for installation."
+      },
+      {
+        "name": "list_operator_bundles",
+        "description": "List optional operator bundles addable at install time."
+      },
+      {
+        "name": "add_operator_bundle_to_cluster",
+        "description": "Request an operator bundle to be installed with the cluster."
+      },
+      {
+        "name": "set_host_role",
+        "description": "Set host role (auto-assign, master, arbiter, worker) for a discovered host."
+      },
+      {
+        "name": "validate_nmstate_yaml",
+        "description": "Validate nmstate YAML before applying to hosts."
+      },
+      {
+        "name": "generate_nmstate_yaml",
+        "description": "Generate initial nmstate YAML from gathered inputs (prefer calling this before hand-authoring YAML)."
+      },
+      {
+        "name": "alter_static_network_config_nmstate_for_host",
+        "description": "Update per-host static network nmstate configuration."
+      },
+      {
+        "name": "list_static_network_config",
+        "description": "List static network configuration for the cluster or hosts."
+      }
+    ]
+  },
+  "openshift-administration": {
+    "title": "OpenShift MCP Server (administration)",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "repository": "https://github.com/openshift/openshift-mcp-server",
+    "description": "OpenShift MCP focused on multi-cluster administration and reporting: Kubernetes core plus config toolsets, read-only mode (--read-only), and kubeconfig-mounted access for fleet visibility. Used by cluster-report and similar skills.",
+    "tools": [
+      {
+        "name": "configuration_contexts_list",
+        "description": "List kubeconfig contexts and API server URLs for multi-cluster reporting"
+      },
+      {
+        "name": "configuration_view",
+        "description": "View merged kubeconfig and client configuration as YAML"
+      },
+      {
+        "name": "namespaces_list",
+        "description": "List all Kubernetes namespaces in the cluster"
+      },
+      {
+        "name": "projects_list",
+        "description": "List all OpenShift projects in the cluster"
+      },
+      {
+        "name": "events_list",
+        "description": "List Kubernetes events from all or specific namespaces"
+      },
+      {
+        "name": "resources_list",
+        "description": "List Kubernetes resources by apiVersion and kind"
+      },
+      {
+        "name": "resources_get",
+        "description": "Get specific Kubernetes resources by apiVersion, kind, name, and namespace"
+      },
+      {
+        "name": "resources_create_or_update",
+        "description": "Create or update resources from YAML or JSON (when not using read-only mode)"
+      },
+      {
+        "name": "resources_delete",
+        "description": "Delete Kubernetes resources (when not using read-only mode)"
+      },
+      {
+        "name": "pods_list",
+        "description": "List all pods in the cluster from all namespaces"
+      },
+      {
+        "name": "pods_get",
+        "description": "Get a specific pod by name and namespace"
+      },
+      {
+        "name": "pods_log",
+        "description": "Get logs from pod containers"
+      },
+      {
+        "name": "pods_exec",
+        "description": "Execute commands in pod containers"
+      },
+      {
+        "name": "pods_top",
+        "description": "List resource consumption for pods"
+      },
+      {
+        "name": "nodes_top",
+        "description": "List CPU and memory consumption for nodes"
+      },
+      {
+        "name": "nodes_log",
+        "description": "Get logs from Kubernetes nodes (kubelet, kube-proxy, system logs)"
+      },
+      {
+        "name": "nodes_stats_summary",
+        "description": "Get detailed resource usage statistics from nodes"
+      }
+    ]
+  },
   "podman": {
     "title": "Podman MCP Server",
     "tier": "Community",
     "owner": "Marc Nuri (Red Hat)",
     "repository": "https://github.com/manusa/podman-mcp-server",
+    "description": "Local container engine MCP: build, pull, push, and remove images; run, inspect, log, stop, and remove containers; list networks and volumes—without requiring a Kubernetes cluster.",
     "tools": [
       {
         "name": "container_inspect",
@@ -227,6 +496,7 @@
     "tier": "Community",
     "owner": "GitHub",
     "repository": "https://github.com/github/github-mcp-server",
+    "description": "GitHub API MCP for repositories, issues, pull requests, code search, branches, releases, and related collaboration workflows using a GitHub token.",
     "tools": [
       {
         "name": "add_comment_to_pending_review",
@@ -395,37 +665,38 @@
     "tier": "Official",
     "owner": "Red Hat",
     "repository": "https://github.com/RedHatInsights/insights-mcp",
+    "description": "Red Hat Insights and Lightspeed MCP: Advisor recommendations, vulnerability and compliance posture, inventory and drift, remediation guidance, subscription usage, and related platform insights for registered RHEL and hybrid cloud estates.",
     "tools": [
       {
-        "name": "advisor__get_active_rules",
+        "name": "advisor_get_active_rules",
         "description": "Get active Advisor Recommendations for your account that help identify issues affecting system availability, stability, performance, or security. Use filters to find recommendations by impact level, likelihood, systems affected, workspace, tags, and automatic remediation availability. Higher impact/likelihood values indicate more critical issues."
       },
       {
-        "name": "advisor__get_hosts_details_hitting_a_rule",
+        "name": "advisor_get_hosts_details_for_rule",
         "description": "Get detailed information about RHEL systems affected by a specific Advisor Recommendation. Returns paginated system details with comprehensive information about each affected system, including system identification, impact metrics, RHEL version, and last seen timestamps. Each system entry contains hit counts categorized by severity level and incident status."
       },
       {
-        "name": "advisor__get_hosts_hitting_a_rule",
+        "name": "advisor_get_hosts_hitting_a_rule",
         "description": "Get all RHEL systems affected by a specific Advisor Recommendation. Shows which systems in your infrastructure have the issue identified by this recommendation. Use this to understand the scope of impact."
       },
       {
-        "name": "advisor__get_recommendations_statistics",
+        "name": "advisor_get_recommendations_stats",
         "description": "Show statistics of recommendations across categories and risks."
       },
       {
-        "name": "advisor__get_rule_by_text_search",
+        "name": "advisor_get_rule_by_text_search",
         "description": "Finds Advisor Recommendations that contain an exact text substring."
       },
       {
-        "name": "advisor__get_rule_details",
+        "name": "advisor_get_rule_details",
         "description": "Get detailed information about a specific Advisor Recommendation, including impact level, likelihood, remediation steps, and related knowledge base articles."
       },
       {
-        "name": "advisor__get_rule_from_node_id",
+        "name": "advisor_get_rule_from_node_id",
         "description": "Find Advisor Recommendations related to a specific Knowledge Base article or solution. Use this when you have a Knowledge Base article or solution ID and want to find corresponding Advisor Recommendations that provide system-specific remediation steps."
       },
       {
-        "name": "content-sources__list_repositories",
+        "name": "content-sources_list_repositories",
         "description": "List repositories with filtering and pagination options."
       },
       {
@@ -433,123 +704,123 @@
         "description": "Get the version of the Red Hat Lightspeed MCP server. Always call this if the user asks for the version of the Red Hat Lightspeed MCP server or when there is an API or authentication issue. Present the comparison URL to the user."
       },
       {
-        "name": "image-builder__blueprint_compose",
+        "name": "image-builder_blueprint_compose",
         "description": "Compose an image from a blueprint UUID created with create_blueprint, get_blueprints. If the UUID is not clear, ask the user whether to create a new blueprint with create_blueprint or use an existing blueprint from get_blueprints."
       },
       {
-        "name": "image-builder__create_blueprint",
+        "name": "image-builder_create_blueprint",
         "description": "Create a custom Linux image blueprint. CRITICAL: Only call this function after you have gathered ALL required information from the user including blueprint name, distribution, architecture, image type, username, and any customizations. For RHEL images, use RHSM get_activation_keys and get_org_id to get required information. CUSTOM REPOSITORIES MUST BE INCLUDED IN BOTH payload_repositories AND custom_repositories fields."
       },
       {
-        "name": "image-builder__get_blueprint_details",
+        "name": "image-builder_get_blueprint_details",
         "description": "Get blueprint details."
       },
       {
-        "name": "image-builder__get_blueprints",
+        "name": "image-builder_get_blueprints",
         "description": "Show user's image blueprints (saved image templates/configurations for Linux distributions, packages, users)."
       },
       {
-        "name": "image-builder__get_compose_details",
+        "name": "image-builder_get_compose_details",
         "description": "Get detailed information about a specific image build. REQUIRES: You MUST have the compose UUID from get_composes() first. NEVER call this with generic terms like \"latest\", \"recent\", or \"my build\". Returns detailed compose information including full status and progress, error messages if failed, download URLs if completed, build logs, and artifact details."
       },
       {
-        "name": "image-builder__get_composes",
+        "name": "image-builder_get_composes",
         "description": "Get a list of all image builds (composes) with their UUIDs and basic status. ALWAYS USE THIS FIRST when checking image build status or finding builds. This returns the UUID needed for get_compose_details."
       },
       {
-        "name": "image-builder__get_distributions",
+        "name": "image-builder_get_distributions",
         "description": "Get the list of distributions available to build images with. Emphasize that there is support only for Red Hat Enterprise Linux (RHEL) images and there only for the latest minor version of each major version. Emphasize that Fedora images are \"similar\" to the upstream but no official versions! Emphasize that CentOS Stream is not supported by Red Hat."
       },
       {
-        "name": "image-builder__get_openapi",
+        "name": "image-builder_get_openapi",
         "description": "Get OpenAPI spec. Use this to get details e.g for a new blueprint. Optional parameters: endpoints - Comma-separated endpoint specs (like GET:/blueprints,POST:/blueprints). When provided, the returned OpenAPI is minimized to only the selected paths and their transitive component references. Use this only to prepare payloads for create_blueprint or update_blueprint."
       },
       {
-        "name": "image-builder__get_org_id",
+        "name": "image-builder_get_org_id",
         "description": "Get the organization ID for RHEL image registration/subscription. Purpose: Fetch the organization ID for RHEL image registration. When to Use: Always use this tool when enabling registration for Red Hat services in a blueprint. CRITICAL NOTE: Never assume or use placeholder organization IDs. Always fetch the actual organization ID using this tool."
       },
       {
-        "name": "image-builder__update_blueprint",
+        "name": "image-builder_update_blueprint",
         "description": "Update a blueprint. VERIFY PARAMETERS - Get original blueprint details and UUID before proceeding. Use get_openapi(endpoints=\"PUT:/blueprints/{id}\") to fetch the minimal schema needed to format the update payload."
       },
       {
-        "name": "inventory__find_host_by_name",
+        "name": "inventory_find_host_by_name",
         "description": "Find a host by its hostname/display name."
       },
       {
-        "name": "inventory__get_host_details",
+        "name": "inventory_get_host_details",
         "description": "Get detailed information for specific hosts by their IDs. Returns comprehensive host data including identifiers (insights_id, satellite_id, bios_uuid), display names, network info (IP/MAC addresses), cloud provider details, account/org metadata, timestamps (created, updated, stale_timestamp), reporter info, groups, facts, and basic system_profile data."
       },
       {
-        "name": "inventory__get_host_system_profile",
+        "name": "inventory_get_host_system_profile",
         "description": "Get detailed system profile information for specific hosts. Returns comprehensive hardware and software configuration data including CPU details (model, count, cores per socket), memory info (system_memory_bytes), infrastructure details (type, vendor), network interfaces, disk devices, BIOS information, and various system state data. For RHEL hosts, also includes software information such as enabled repositories, installed packages, and enabled services. This provides the most detailed technical specifications for each host."
       },
       {
-        "name": "inventory__get_host_tags",
+        "name": "inventory_get_host_tags",
         "description": "Get tags for specific hosts."
       },
       {
-        "name": "inventory__list_hosts",
+        "name": "inventory_list_hosts",
         "description": "List hosts with filtering and sorting options. CRITICAL: For the 'per_page' parameter, you MUST use a value of 10 on the first call to avoid performance degradation and context overflow. Only use a larger value if the user explicitly requests to see more systems at once."
       },
       {
-        "name": "planning__get_appstreams_lifecycle",
+        "name": "planning_get_appstreams_lifecycle",
         "description": "Get Application Streams lifecycle information. Use this tool when the user asks about Application Streams lifecycle (modules or packages) or wants to understand what streams exist for specific RHEL versions. Returns JSON-encoded response object containing metadata and a list of Application Stream lifecycle records with name, display_name, application_stream_name, stream, start_date, end_date, support_status, and lifecycle information."
       },
       {
-        "name": "planning__get_relevant_upcoming_changes",
+        "name": "planning_get_relevant_upcoming_changes",
         "description": "List relevant upcoming package changes, deprecations, additions and enhancements to user's systems. Use this tool to answer questions about upcoming package changes, deprecations, additions, or enhancements in the roadmap filtered by relevance to the user's systems. Also to plan for future upgrades and mitigate risk. Use this tool over get_upcoming_changes when the user asks about upcoming changes for their systems."
       },
       {
-        "name": "planning__get_rhel_lifecycle",
+        "name": "planning_get_rhel_lifecycle",
         "description": "Returns life cycle dates for all RHEL majors and minors. Use this tool when the user asks for RHEL versions and lifecycle timelines, including major versions, minor versions, or extended support types (EUS/E4S/ELS). Returns a response object containing a list of RHEL lifecycle records with name, start_date, end_date, support_status, display_name, major, minor, and extended support dates (end_date_e4s, end_date_els, end_date_eus)."
       },
       {
-        "name": "planning__get_upcoming_changes",
+        "name": "planning_get_upcoming_changes",
         "description": "List upcoming package changes, deprecations, additions and enhancements. Use this tool to answer questions about upcoming package changes, deprecations, additions, or enhancements in the roadmap when a full list of upcoming items is acceptable. When the user asks about a specific RHEL version (for example, \"What is coming in RHEL 9.4?\"), call this tool without parameters and then filter and summarize the entries relevant to that version in your response."
       },
       {
-        "name": "rbac__get_all_access",
+        "name": "rbac_get_all_access",
         "description": "Get access information for all Red Hat insights applications. This endpoint returns access information across all Red Hat insights applications. The API returns gzipped responses for this endpoint, which are handled by the client. Use this when you need to see access permissions across all applications."
       },
       {
-        "name": "remediations__create_vulnerability_playbook",
+        "name": "remediations_create_vuln_playbook",
         "description": "Create remediation playbook for given CVEs on given systems to mitigate vulnerabilities. Don't process the playbook. You MUST return the YAML as is. Ask user if they want to get a link to the playbook or to get the YAML content. Inform them about the limitations of the link and that printing the YAML can be slow. If user ask for it, you can also respond with a link to the playbook. Inform user that they can't see the playbook with user other than Service Account used to create it."
       },
       {
-        "name": "rhsm__get_activation_key",
+        "name": "rhsm_get_activation_key",
         "description": "Get a specific activation key by name. This endpoint returns details for a specific activation key including its name, description, service level, role, usage, release version, and additional repositories. Returns activation key details including configuration and subscription information."
       },
       {
-        "name": "rhsm__get_activation_keys",
+        "name": "rhsm_get_activation_keys",
         "description": "Get the list of activation keys available to the authenticated user. This endpoint returns activation keys that can be used for RHEL system registration. Activation keys contain subscription and configuration information needed to register systems with Red Hat Subscription Management. If the user has more questions about the activation keys, ask the user to go to https://console.redhat.com/insights/connector/activation-keys"
       },
       {
-        "name": "vulnerability__explain_cves",
+        "name": "vulnerability_explain_cves",
         "description": "Explain why CVEs are affecting my environment. This endpoint returns a detailed explanation of why CVEs are affecting my environment. It uses VMAAS to explain the CVEs, what packages are affected and why. Alongside with the information how this CVE can be fixed. To get the explanation, we need to get the system UUID from the inventory and list of CVEs. 'affected_packages' in 'vmaas' response is a list of packages that are affected by the CVE. To update affected packages, suggest to use Ansible Remediation Playbook via Remediations MCP tool."
       },
       {
-        "name": "vulnerability__get_cve_systems",
+        "name": "vulnerability_get_cve_systems",
         "description": "Get list of systems affected by a given CVE. This is a report of affected systems for a given CVE. Use this tool to obtain list of all affected systems for a given CVE."
       },
       {
-        "name": "vulnerability__get_cve",
+        "name": "vulnerability_get_cve",
         "description": "Get details about specific CVE. This endpoint returns the CVE identification number, description, scores and other metadata. The metadata includes the description, CVSS 2/3 Score, CVSS 2/3 attack vector, severity, public date, modified date, business risk, status, a URL to Red Hat web pages, a list of advisories remediating the CVE, and information regarding known exploits for the CVE."
       },
       {
-        "name": "vulnerability__get_cves",
+        "name": "vulnerability_get_cves",
         "description": "Get list of CVEs affecting the account. This provides an overview of vulnerabilities across your entire system inventory. Use this endpoint to get an overview of which CVEs are affecting your account, including some CVE metadata, how many systems are affected by each CVE, and more."
       },
       {
-        "name": "vulnerability__get_openapi",
+        "name": "vulnerability_get_openapi",
         "description": "Get Red Hat Lightspeed Vulnerability OpenAPI specification in JSON format."
       },
       {
-        "name": "vulnerability__get_system_cves",
+        "name": "vulnerability_get_system_cves",
         "description": "Get list of CVEs affecting a given system. IMPORTANT: Prefer get_cves as get_cves can filter for CVEs with available advisories. This is a report of CVEs affecting a given system. Use this tool to obtain list of all CVEs affecting a given system."
       },
       {
-        "name": "vulnerability__get_systems",
+        "name": "vulnerability_get_systems",
         "description": "Get list of systems in Red Hat Lightspeed Vulnerability inventory. List all systems registered in Red Hat Lightspeed Vulnerability service, including information about their last check-in, system name, workspace name, RHEL version, and number of CVEs affecting them. This tool shows both affected and not affected systems."
       }
     ]
@@ -670,6 +941,166 @@
       }
     ]
   },
+  "aap-mcp-configuration": {
+    "title": "AAP MCP Service-Configuration",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/ansible/aap-mcp-server",
+    "description": "Ansible Automation Platform configuration MCP: notification templates, execution environments, and related platform settings exposed over the AAP MCP gateway. Requires AAP_MCP_SERVER and AAP_API_TOKEN.",
+    "tools": [
+      {
+        "name": "notification_templates_list",
+        "description": "List notification templates for job start, success, failure, and other events"
+      },
+      {
+        "name": "notification_templates_retrieve",
+        "description": "Retrieve a notification template by ID"
+      },
+      {
+        "name": "notification_templates_create",
+        "description": "Create a notification template"
+      },
+      {
+        "name": "execution_environments_list",
+        "description": "List execution environments (container images) used by automation jobs"
+      },
+      {
+        "name": "execution_environments_retrieve",
+        "description": "Retrieve an execution environment by ID"
+      },
+      {
+        "name": "execution_environments_create",
+        "description": "Create an execution environment definition"
+      },
+      {
+        "name": "settings_list",
+        "description": "List or discover platform settings categories available via the configuration MCP surface"
+      },
+      {
+        "name": "settings_retrieve",
+        "description": "Retrieve a specific platform setting or settings payload"
+      }
+    ]
+  },
+  "aap-mcp-security-compliance": {
+    "title": "AAP MCP Service-Security & Compliance",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/ansible/aap-mcp-server",
+    "description": "AAP security and compliance MCP: credentials, credential types, and credential testing against external systems. Requires AAP_MCP_SERVER and AAP_API_TOKEN.",
+    "tools": [
+      {
+        "name": "credentials_list",
+        "description": "List credentials (metadata and types; never returns secret values)"
+      },
+      {
+        "name": "credentials_retrieve",
+        "description": "Retrieve metadata for a credential by ID"
+      },
+      {
+        "name": "credentials_create",
+        "description": "Create a new credential using a credential type"
+      },
+      {
+        "name": "credential_types_list",
+        "description": "List credential types that define input fields and validation"
+      },
+      {
+        "name": "credential_types_retrieve",
+        "description": "Retrieve a credential type by ID"
+      }
+    ]
+  },
+  "aap-mcp-system-monitoring": {
+    "title": "AAP MCP Service-System Monitoring",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/ansible/aap-mcp-server",
+    "description": "AAP system monitoring MCP: controller health (ping), configuration introspection, instance groups and instances, and gateway activity stream for audit and platform status. Tool names follow the generated OpenAPI mapping (e.g. controller.*, gateway.*). Requires AAP_MCP_SERVER and AAP_API_TOKEN.",
+    "tools": [
+      {
+        "name": "ping_list",
+        "description": "Ping the controller API for connectivity and basic health (system_monitoring toolset)"
+      },
+      {
+        "name": "config_list",
+        "description": "List controller configuration entries relevant to monitoring and diagnostics"
+      },
+      {
+        "name": "instance_groups_list",
+        "description": "List instance groups that map jobs to controller capacity"
+      },
+      {
+        "name": "instance_groups_retrieve",
+        "description": "Retrieve details for an instance group by ID"
+      },
+      {
+        "name": "instances_list",
+        "description": "List controller instances and their roles"
+      },
+      {
+        "name": "instances_retrieve",
+        "description": "Retrieve a specific controller instance by ID"
+      },
+      {
+        "name": "activity_stream_list",
+        "description": "List gateway activity stream entries for audit and change history"
+      }
+    ]
+  },
+  "aap-mcp-user-management": {
+    "title": "AAP MCP Service-User Management",
+    "tier": "Official",
+    "owner": "Red Hat",
+    "type": "http",
+    "repository": "https://github.com/ansible/aap-mcp-server",
+    "description": "AAP user management MCP: users, teams, organizations, role assignments, role definitions, and authenticators. Requires AAP_MCP_SERVER and AAP_API_TOKEN.",
+    "tools": [
+      {
+        "name": "users_list",
+        "description": "List platform users"
+      },
+      {
+        "name": "users_retrieve",
+        "description": "Retrieve a user by ID"
+      },
+      {
+        "name": "teams_list",
+        "description": "List teams for organization-scoped RBAC"
+      },
+      {
+        "name": "teams_retrieve",
+        "description": "Retrieve a team by ID"
+      },
+      {
+        "name": "organizations_list",
+        "description": "List organizations"
+      },
+      {
+        "name": "organizations_retrieve",
+        "description": "Retrieve an organization by ID"
+      },
+      {
+        "name": "role_definitions_list",
+        "description": "List role definitions used for RBAC"
+      },
+      {
+        "name": "role_user_assignments_list",
+        "description": "List role assignments to users"
+      },
+      {
+        "name": "role_team_assignments_list",
+        "description": "List role assignments to teams"
+      },
+      {
+        "name": "authenticators_list",
+        "description": "List configured authenticators (LDAP, SAML, etc.) when exposed"
+      }
+    ]
+  },
   "ai-observability": {
     "title": "AI Observability MCP Server",
     "tier": "Official",
@@ -680,59 +1111,175 @@
     "tools": [
       {
         "name": "list_models",
-        "description": "List available AI models being served and monitored by vLLM"
+        "description": "List vLLM models from Prometheus-backed discovery."
       },
       {
         "name": "list_vllm_namespaces",
-        "description": "Get monitored Kubernetes namespaces with vLLM observability data"
+        "description": "Namespaces with vLLM observability data."
       },
       {
-        "name": "get_gpu_info",
-        "description": "Get cluster GPU inventory including count, vendors, models, temperatures, and power usage"
+        "name": "get_model_config",
+        "description": "LLM model configuration for summarization/analysis."
       },
       {
-        "name": "get_deployment_info",
-        "description": "Get deployment status for a model in a namespace (is_new_deployment, deployment_date)"
+        "name": "get_vllm_metrics_tool",
+        "description": "Return vLLM metrics tool metadata / wiring."
+      },
+      {
+        "name": "fetch_vllm_metrics_data",
+        "description": "Fetch raw vLLM metrics series for a model."
       },
       {
         "name": "analyze_vllm",
-        "description": "Analyze vLLM model performance metrics (latency, throughput, errors, token rates) with LLM-generated summary"
+        "description": "Analyze vLLM performance with optional LLM summary."
+      },
+      {
+        "name": "calculate_metrics",
+        "description": "Compute derived metrics from vLLM series."
+      },
+      {
+        "name": "list_summarization_models",
+        "description": "List summarization models from MODEL_CONFIG."
+      },
+      {
+        "name": "get_gpu_info",
+        "description": "Cluster GPU inventory (count, vendor, utilization)."
+      },
+      {
+        "name": "get_deployment_info",
+        "description": "Heuristic deployment info for a model in a namespace."
       },
       {
         "name": "chat_vllm",
-        "description": "Conversational follow-up on vLLM metrics analysis with context from previous analysis"
+        "description": "Follow-up chat on vLLM analysis context."
       },
       {
         "name": "analyze_openshift",
-        "description": "Analyze OpenShift metrics by category (Fleet Overview, GPU & Accelerators, Workloads & Pods, etc.) with cluster-wide or namespace scope"
+        "description": "Analyze OpenShift metrics by category with LLM summary."
       },
       {
-        "name": "list_openshift_metric_groups",
-        "description": "List available OpenShift metric group categories for cluster-wide analysis"
+        "name": "fetch_openshift_metrics_data",
+        "description": "Fetch OpenShift metrics payload for analysis."
       },
       {
         "name": "list_openshift_namespaces",
-        "description": "List all OpenShift namespaces observed in Prometheus"
+        "description": "List namespaces visible to observability queries."
       },
       {
-        "name": "query_tempo_tool",
-        "description": "Query distributed traces from Tempo by TraceQL query, service, operation, or time range"
+        "name": "list_openshift_metric_groups",
+        "description": "Cluster-wide OpenShift metric categories."
       },
       {
-        "name": "get_trace_details_tool",
-        "description": "Get detailed trace information with spans, operations, durations, and tags by trace ID"
+        "name": "list_openshift_namespace_metric_groups",
+        "description": "Namespace-scoped OpenShift metric categories."
+      },
+      {
+        "name": "chat_openshift",
+        "description": "Conversational follow-up for OpenShift metrics analysis."
       },
       {
         "name": "search_metrics",
-        "description": "Search for Prometheus metrics using semantic pattern matching"
+        "description": "Search Prometheus metrics by semantic/pattern."
+      },
+      {
+        "name": "get_metric_metadata",
+        "description": "Metadata for a metric name."
+      },
+      {
+        "name": "get_label_values",
+        "description": "Label values for a metric/label pair."
       },
       {
         "name": "execute_promql",
-        "description": "Execute a PromQL query and return structured results with time range support"
+        "description": "Run a PromQL query with time range."
+      },
+      {
+        "name": "explain_results",
+        "description": "Explain Prometheus query result sets."
+      },
+      {
+        "name": "suggest_queries",
+        "description": "Suggest related PromQL queries."
+      },
+      {
+        "name": "select_best_metric",
+        "description": "Heuristic best metric selection."
+      },
+      {
+        "name": "find_best_metric_with_metadata_v2",
+        "description": "Smart metric selection (v2) with metadata."
+      },
+      {
+        "name": "find_best_metric_with_metadata",
+        "description": "Smart metric selection (v1) with metadata."
+      },
+      {
+        "name": "get_metrics_categories",
+        "description": "Metric categories catalog."
+      },
+      {
+        "name": "search_metrics_by_category",
+        "description": "Search metrics within a category."
+      },
+      {
+        "name": "get_category_metrics_detail",
+        "description": "Category catalog JSON for UI/detail."
+      },
+      {
+        "name": "convert_time_to_promql_duration",
+        "description": "Convert natural/relative time to PromQL duration."
+      },
+      {
+        "name": "query_tempo_tool",
+        "description": "Query Tempo traces (TraceQL / filters)."
+      },
+      {
+        "name": "get_trace_details_tool",
+        "description": "Trace detail by trace ID."
+      },
+      {
+        "name": "chat_tempo_tool",
+        "description": "Conversational Tempo trace analysis."
+      },
+      {
+        "name": "korrel8r_query_objects",
+        "description": "Korrel8r: query observability objects."
       },
       {
         "name": "korrel8r_get_correlated",
-        "description": "Find correlated observability signals (logs, traces, metrics, alerts) across domains using Korrel8r"
+        "description": "Korrel8r: correlated signals across domains."
+      },
+      {
+        "name": "get_correlated_logs",
+        "description": "Correlate and fetch logs via Korrel8r paths."
+      },
+      {
+        "name": "chat",
+        "description": "Generic chat entry for observability assistant."
+      },
+      {
+        "name": "validate_api_key",
+        "description": "Validate a provider API key configuration."
+      },
+      {
+        "name": "save_api_key",
+        "description": "Save provider API key to cluster secret."
+      },
+      {
+        "name": "check_provider_secret",
+        "description": "Check whether a provider secret exists."
+      },
+      {
+        "name": "delete_provider_secret",
+        "description": "Delete stored provider secret."
+      },
+      {
+        "name": "list_provider_models",
+        "description": "List models from configured provider API."
+      },
+      {
+        "name": "add_model_to_config",
+        "description": "Add a model entry to local MODEL_CONFIG."
       }
     ]
   },
@@ -744,36 +1291,184 @@
     "description": "RHOAI-specific operations for model deployment, serving runtimes, data connections, and project management on OpenShift AI",
     "tools": [
       {
-        "name": "deploy_model",
-        "description": "Create InferenceService with high-level parameters (no YAML construction needed)"
-      },
-      {
         "name": "list_inference_services",
-        "description": "List deployed models with structured status data"
+        "description": "List InferenceServices (model deployments) in the cluster."
       },
       {
         "name": "get_inference_service",
-        "description": "Get detailed model deployment status with conditions"
+        "description": "Get status and spec for one InferenceService."
       },
       {
-        "name": "get_model_endpoint",
-        "description": "Get inference endpoint URL directly"
+        "name": "deploy_model",
+        "description": "Deploy a model as an InferenceService with high-level parameters."
+      },
+      {
+        "name": "delete_inference_service",
+        "description": "Delete an InferenceService (gated by dangerous-ops settings)."
       },
       {
         "name": "list_serving_runtimes",
-        "description": "List available runtimes and platform templates with model format support"
-      },
-      {
-        "name": "list_data_science_projects",
-        "description": "Discover RHOAI Data Science Projects in the cluster"
-      },
-      {
-        "name": "list_data_connections",
-        "description": "Verify S3 and other data storage connections in a namespace"
+        "description": "List serving runtimes and platform templates."
       },
       {
         "name": "create_serving_runtime",
-        "description": "Instantiate a serving runtime from a platform template"
+        "description": "Create a ServingRuntime from a template."
+      },
+      {
+        "name": "get_model_endpoint",
+        "description": "Resolve inference HTTP/gRPC endpoint for a model."
+      },
+      {
+        "name": "prepare_model_deployment",
+        "description": "Prepare manifests/inputs for a model deployment."
+      },
+      {
+        "name": "check_deployment_prerequisites",
+        "description": "Validate namespace, RBAC, and dependencies before deploy."
+      },
+      {
+        "name": "estimate_serving_resources",
+        "description": "Estimate CPU/memory/GPU for a serving configuration."
+      },
+      {
+        "name": "recommend_serving_runtime",
+        "description": "Recommend a ServingRuntime for a model/format."
+      },
+      {
+        "name": "test_model_endpoint",
+        "description": "Send a test request to a deployed model endpoint."
+      },
+      {
+        "name": "list_data_connections",
+        "description": "List data connections (e.g. S3) in a namespace."
+      },
+      {
+        "name": "get_data_connection",
+        "description": "Get one data connection by name and namespace."
+      },
+      {
+        "name": "create_s3_data_connection",
+        "description": "Create an S3-compatible data connection secret."
+      },
+      {
+        "name": "delete_data_connection",
+        "description": "Delete a data connection (gated)."
+      },
+      {
+        "name": "list_data_science_projects",
+        "description": "List OpenShift AI Data Science Projects."
+      },
+      {
+        "name": "get_project_details",
+        "description": "Get details for a Data Science Project."
+      },
+      {
+        "name": "create_data_science_project",
+        "description": "Create a Data Science Project."
+      },
+      {
+        "name": "delete_data_science_project",
+        "description": "Delete a Data Science Project (gated)."
+      },
+      {
+        "name": "set_model_serving_mode",
+        "description": "Configure model serving mode for a project."
+      },
+      {
+        "name": "list_workbenches",
+        "description": "List notebook workbenches."
+      },
+      {
+        "name": "get_workbench",
+        "description": "Get workbench details."
+      },
+      {
+        "name": "create_workbench",
+        "description": "Create a workbench."
+      },
+      {
+        "name": "start_workbench",
+        "description": "Start a stopped workbench."
+      },
+      {
+        "name": "stop_workbench",
+        "description": "Stop a running workbench."
+      },
+      {
+        "name": "delete_workbench",
+        "description": "Delete a workbench (gated)."
+      },
+      {
+        "name": "list_notebook_images",
+        "description": "List available notebook images."
+      },
+      {
+        "name": "get_workbench_url",
+        "description": "Resolve URL for a workbench."
+      },
+      {
+        "name": "get_pipeline_server",
+        "description": "Get Data Science Pipelines server info for a namespace."
+      },
+      {
+        "name": "create_pipeline_server",
+        "description": "Provision pipeline server components (gated)."
+      },
+      {
+        "name": "delete_pipeline_server",
+        "description": "Remove pipeline server (gated)."
+      },
+      {
+        "name": "list_storage",
+        "description": "List PVCs/storage for DS projects."
+      },
+      {
+        "name": "create_storage",
+        "description": "Create a PVC (gated)."
+      },
+      {
+        "name": "delete_storage",
+        "description": "Delete a PVC (gated)."
+      },
+      {
+        "name": "list_registered_models",
+        "description": "List models from Model Registry or Model Catalog."
+      },
+      {
+        "name": "get_registered_model",
+        "description": "Get registered model metadata."
+      },
+      {
+        "name": "list_model_versions",
+        "description": "List versions for a registered model."
+      },
+      {
+        "name": "get_model_version",
+        "description": "Get a model version by ID."
+      },
+      {
+        "name": "get_model_artifacts",
+        "description": "List artifacts for a model version."
+      },
+      {
+        "name": "get_model_benchmarks",
+        "description": "Get benchmark metadata for a model."
+      },
+      {
+        "name": "get_validation_metrics",
+        "description": "Get validation metrics for a model/version."
+      },
+      {
+        "name": "find_benchmarks_by_gpu",
+        "description": "Find benchmarks filtered by GPU class."
+      },
+      {
+        "name": "list_catalog_sources",
+        "description": "List Model Catalog sources (when catalog API in use)."
+      },
+      {
+        "name": "get_catalog_model_artifacts",
+        "description": "Get artifacts for a catalog model entry."
       }
     ]
   },
@@ -782,7 +1477,44 @@
     "tier": "Official",
     "owner": "Red Hat",
     "repository": "https://github.com/openshift/openshift-mcp-server",
+    "description": "OpenShift MCP with core and KubeVirt toolsets for OpenShift Virtualization: standard cluster operations (namespaces, pods, resources, events) plus VirtualMachine create and lifecycle. Typical configuration uses --toolsets core,kubevirt.",
     "tools": [
+      {
+        "name": "events_list",
+        "description": "List Kubernetes events from all or specific namespaces"
+      },
+      {
+        "name": "namespaces_list",
+        "description": "List all Kubernetes namespaces in the cluster"
+      },
+      {
+        "name": "projects_list",
+        "description": "List all OpenShift projects in the cluster"
+      },
+      {
+        "name": "pods_list_in_namespace",
+        "description": "List pods in a specific namespace"
+      },
+      {
+        "name": "pods_get",
+        "description": "Get a specific pod by name and namespace"
+      },
+      {
+        "name": "pods_log",
+        "description": "Get logs from pod containers"
+      },
+      {
+        "name": "resources_list",
+        "description": "List Kubernetes resources by apiVersion and kind"
+      },
+      {
+        "name": "resources_get",
+        "description": "Get specific Kubernetes resources"
+      },
+      {
+        "name": "vm_clone",
+        "description": "Clone a KubeVirt VirtualMachine via a VirtualMachineClone resource (source name/namespace, target name)."
+      },
       {
         "name": "vm_create",
         "description": "Create new VirtualMachine resources in OpenShift Virtualization. Accepts namespace (required), name (required), workload/OS (default: fedora), size (small/medium/large), storage (default: 30Gi), autostart flag (default: false), optional networks (Multus NetworkAttachmentDefinitions), performance family hint (u1/o1/c1/m1), instance type, and preference. Automatically resolves instance types, preferences, and container disk images for common OS distributions (fedora, ubuntu, centos, centos-stream, debian, rhel, opensuse). Returns created VirtualMachine resource or error details."

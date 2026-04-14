@@ -8,7 +8,6 @@ on:
       - 'rh-sre/**'
       - 'rh-developer/**'
       - 'ocp-admin/**'
-      - 'rh-support-engineer/**'
       - 'rh-virt/**'
       - 'rh-automation/**'
       - 'rh-ai-engineer/**'

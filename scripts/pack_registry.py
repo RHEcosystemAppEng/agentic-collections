@@ -100,12 +100,34 @@ def load_plugin_title(pack_dir: str, repo_root: Optional[Path] = None) -> Option
     return None
 
 
-# Packs excluded from docs/data.json site generation only (not excluded from .catalog requirement).
-DOCS_EXCLUDED_PACKS: frozenset[str] = frozenset({"rh-support-engineer"})
+# Catalog `maturity` value that is included in GitHub Pages / docs/data.json generation.
+DOCS_MATURITY_PUBLISH: str = "GREEN"
+
+
+def load_pack_maturity(pack_dir: str, repo_root: Optional[Path] = None) -> Optional[str]:
+    """Return uppercase maturity from ``<pack>/.catalog/collection.yaml``, or None if missing/invalid."""
+    root = repo_root or _repo_root()
+    path = root / pack_dir / ".catalog" / "collection.yaml"
+    if not path.is_file():
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    except (OSError, yaml.YAMLError):
+        return None
+    m = data.get("maturity")
+    if isinstance(m, str) and m.strip():
+        return m.strip().upper()
+    return None
 
 
 def get_docs_pack_dirs(
     repo_root: Optional[Path] = None,
 ) -> List[str]:
-    """Pack dirs included in GitHub Pages data.json (subset of union)."""
-    return [p for p in get_union_pack_dirs(repo_root) if p not in DOCS_EXCLUDED_PACKS]
+    """Pack dirs included in GitHub Pages data.json: union registry packs whose catalog maturity is GREEN."""
+    root = repo_root or _repo_root()
+    out: List[str] = []
+    for p in get_union_pack_dirs(repo_root):
+        if load_pack_maturity(p, root) == DOCS_MATURITY_PUBLISH:
+            out.append(p)
+    return out

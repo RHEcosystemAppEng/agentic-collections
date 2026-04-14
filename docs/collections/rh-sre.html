@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Hat SRE Agentic Collection - Red Hat Agentic Catalog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Red+Hat+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css?v=34">
+</head>
+<body>
+    <div class="site-brand-accent" aria-hidden="true"></div>
+    <main>
+        <section class="collection-page">
+            <div class="collection-page-inner collection-content">
+                <nav class="collection-nav" aria-label="Collection">
+                    <div class="collection-nav-start">
+                        <a href="../index.html" class="collection-back">← Back to Catalog</a>
+                    </div>
+                    <div class="collection-nav-center">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/.catalog/collection.yaml" target="_blank" rel="noopener noreferrer" class="collection-meta-link">catalog YAML →</a>
+                    </div>
+                    <div class="collection-nav-end">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/README.md" target="_blank" rel="noopener noreferrer" class="collection-meta-link">README →</a>
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="collection-meta-link">Apache 2.0 License →</a>
+                    </div>
+                </nav>
+                <div class="collection-page-body collection-content-inner">
+                    <h1 class="collection-page-title">Red Hat SRE Agentic Collection</h1>
+                    <p class="collection-page-sub">Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.</p>
+                    <p class="collection-page-sub"><strong>Module:</strong> rh-sre · v0.1.0 · Site Reliability Engineer</p>
+                    <p class="collection-tags"><strong>Categories:</strong> Site Reliability, Security</p>
+
+                    <div class="collection-tabs" role="tablist">
+                        <button type="button" class="collection-tab active" data-tab="overview" role="tab" aria-selected="true" aria-controls="tab-overview">Overview</button>
+                        <button type="button" class="collection-tab" data-tab="skills" role="tab" aria-selected="false" aria-controls="tab-skills">Skills</button>
+                        <button type="button" class="collection-tab" data-tab="resources" role="tab" aria-selected="false" aria-controls="tab-resources">Resources</button>
+                        <button type="button" class="collection-tab" data-tab="agents" role="tab" aria-selected="false" aria-controls="tab-agents">Agents</button>
+                    </div>
+
+                    <div id="tab-overview" class="collection-tab-panel active" role="tabpanel"><h2>Overview</h2><div class="collection-prose"><p>The rh-sre collection provides skills for site reliability tasks.</p></div><h2>Documentation</h2><div class="collection-prose"><h3>Why use this collection instead of calling MCP tools directly?</h3>
+<ul>
+<li><strong>Reliability</strong> — Skills apply validation gates (CVE IDs, inventory, AAP connectivity) before expensive operations.</li>
+<li><strong>Safety</strong> — Human-in-the-loop for remediation plans, playbook execution, and broad job launches.</li>
+<li><strong>Consistency</strong> — Documented workflows, error handling, and follow-up skills (for example <code>/remediation</code> vs ad hoc tool calls).</li>
+<li><strong>Troubleshooting</strong> — Skills bundle recovery paths; use <code>/mcp-lightspeed-validator</code> and <code>/mcp-aap-validator</code> when prerequisites fail.</li>
+</ul>
+<h3>In-repository documentation</h3>
+<p>This pack ships an AI-oriented knowledge base under <strong><code>docs/</code></strong>. Start at <strong><a href="docs/INDEX.md">docs/INDEX.md</a></strong> and use <strong><code>docs/.ai-index/</code></strong> (semantic index, task mapping) for token-efficient discovery.</p>
+<h3>Configuration and architecture</h3>
+<ul>
+<li>Environment variables for Lightspeed and AAP are declared only as <code>${VAR}</code> placeholders in <strong><code>mcps.json</code></strong>.</li>
+<li>Orchestration (<strong><code>/remediation</code></strong>) chains impact, validation, context, playbook generation, execution, and verification; see pack <strong>CLAUDE.md</strong> for routing when you need a single step only.</li>
+</ul></div><h2>MCP</h2><div class="collection-prose"><table>
+<thead>
+<tr>
+<th>Server</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>lightspeed-mcp</strong></td>
+<td>CVEs, inventory, remediation inputs, playbook-related Lightspeed workflows.</td>
+</tr>
+<tr>
+<td><strong>aap-mcp-job-management</strong></td>
+<td>Job templates, projects, launches, execution status.</td>
+</tr>
+<tr>
+<td><strong>aap-mcp-inventory-management</strong></td>
+<td>Inventories and hosts for execution planning.</td>
+</tr>
+</tbody>
+</table>
+<p>Configure servers through <strong><code>mcps.json</code></strong>; skills must be invoked instead of calling MCP tools directly from the agent.</p></div><h2>Quick Start</h2><div class="collection-prose"><h3>Prerequisites</h3>
+<ul>
+<li>Claude Code CLI or IDE extension (if using Claude Code)</li>
+<li>Podman or Docker installed (for container-based MCP servers)</li>
+<li>Red Hat Lightspeed service account (<a href="https://console.redhat.com/">console</a>)</li>
+</ul>
+<h3>Environment setup</h3>
+<p>Configure Red Hat Lightspeed credentials (names must match <strong><code>mcps.json</code></strong>):</p>
+<pre><code class="language-bash">export LIGHTSPEED_CLIENT_ID=&quot;your-service-account-client-id&quot;
+export LIGHTSPEED_CLIENT_SECRET=&quot;your-service-account-client-secret&quot;
+</code></pre>
+<p>For Ansible Automation Platform MCP (optional, for playbook execution flows):</p>
+<pre><code class="language-bash">export AAP_MCP_SERVER=&quot;your-aap-controller-hostname&quot;
+export AAP_API_TOKEN=&quot;your-api-token&quot;
+</code></pre></div><div class="install-accordion"><details class="install-accordion-item" open><summary class="install-accordion-header">Installation (Claude Code)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f rh-sre -a claude-code
+</code></pre></div></details><details class="install-accordion-item"><summary class="install-accordion-header">Installation (Cursor)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f rh-sre -a cursor
+</code></pre></div></details></div><div class="collection-prose collection-mcp-after-install"><h3>MCP configuration</h3>
+<p>Server definitions live in <strong><code>mcps.json</code></strong> at the pack root. Use <strong><code>${VAR}</code></strong> placeholders only; never commit secrets.</p></div><h2>Security Model</h2><div class="collection-prose"><ul>
+<li>Do <strong>not</strong> expose <code>LIGHTSPEED_CLIENT_ID</code>, <code>LIGHTSPEED_CLIENT_SECRET</code>, AAP tokens, or any API credentials in chat—only whether they appear configured.</li>
+<li>Require explicit user approval before running remediation playbooks or destructive changes at scale.</li>
+<li>Prefer <strong><code>/remediation</code></strong> for end-to-end CVE response so validation and verification steps are not skipped accidentally.</li>
+</ul></div></div>
+                    <div id="tab-skills" class="collection-tab-panel" role="tabpanel"><h2>Skills</h2><div class="collection-prose"><p>The pack provides 13 skills for common SRE operations, including one orchestration skill for end-to-end remediation.</p></div><h3>Orchestration Skill</h3><ol class="collection-skill-list"><li>
+<div><code>/remediation</code> - End-to-End CVE Remediation</div>
+<div class="collection-prose collection-prose-tight"><p>The remediation skill orchestrates 6 specialized skills to provide complete CVE remediation workflows.<br />
+<strong>Use when:</strong><br />
+- Remediate CVE-2024-1234 on system abc-123<br />
+- Create and execute a remediation playbook for CVE-X<br />
+- Patch these 5 CVEs on all production servers<br />
+<strong>Workflow:</strong><br />
+0. Validate MCP (mcp-lightspeed-validator, mcp-aap-validator)<br />
+1. Impact (cve-impact skill, if needed)<br />
+2. Validate CVE (cve-validation skill)<br />
+3. Gather Context (system-context skill)<br />
+4. Generate Playbook (playbook-generator skill)<br />
+5. Execute (playbook-executor skill, with user confirmation)<br />
+6. Verify (remediation-verifier skill)<br />
+<strong>Capabilities:</strong><br />
+- Single CVE on single system<br />
+- Batch remediation (multiple CVEs, multiple systems)<br />
+- Cross-environment patching (dev → staging → prod)<br />
+- Automated job tracking and reporting<br />
+- Partial failure handling</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/remediation/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li></ol><h3>Basic Skills</h3><ol class="collection-skill-list"><li>
+<div><code>/fleet-inventory</code> - System Discovery and Fleet Management</div>
+<div class="collection-prose collection-prose-tight"><p>Query and display Red Hat Lightspeed managed system inventory.<br />
+<strong>Use when:</strong><br />
+- Show the managed fleet<br />
+- List all RHEL 8 systems<br />
+- What systems are registered in Lightspeed?<br />
+<strong>What it does:</strong><br />
+- Retrieves all registered systems<br />
+- Groups by RHEL version and environment<br />
+- Shows system health and check-in status<br />
+- Identifies stale systems</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/fleet-inventory/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/cve-impact</code> - CVE Discovery and Risk Assessment</div>
+<div class="collection-prose collection-prose-tight"><p>Analyze CVE impact across the fleet without immediate remediation.<br />
+<strong>Use when:</strong><br />
+- What are the most critical vulnerabilities?<br />
+- Show CVEs affecting my systems<br />
+- List high-severity CVEs<br />
+<strong>What it does:</strong><br />
+- Lists CVEs by severity (Critical/Important)<br />
+- Sorts by CVSS score<br />
+- Shows affected system counts<br />
+- Provides priority recommendations</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/cve-impact/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/cve-validation</code> - CVE Verification</div>
+<div class="collection-prose collection-prose-tight"><p>Validate CVE existence and remediation availability.<br />
+<strong>Use when:</strong><br />
+- Is CVE-2024-1234 valid?<br />
+- Does CVE-X have a remediation?<br />
+- What's the CVSS score for CVE-Y?<br />
+<strong>What it does:</strong><br />
+- Verifies CVE in Red Hat database<br />
+- Checks remediation availability<br />
+- Returns CVE metadata and severity</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/cve-validation/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/system-context</code> - System Information Gathering</div>
+<div class="collection-prose collection-prose-tight"><p>Collect detailed system information from Red Hat Lightspeed.<br />
+<strong>Use when:</strong><br />
+- What systems are affected by CVE-X?<br />
+- Show me details for server-01<br />
+- Get system profile for these hosts<br />
+<strong>What it does:</strong><br />
+- Retrieves system details<br />
+- Shows installed packages<br />
+- Displays configuration data<br />
+- Maps CVE-to-system relationships</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/system-context/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/playbook-generator</code> - Ansible Playbook Creation</div>
+<div class="collection-prose collection-prose-tight"><p>Generate Ansible remediation playbooks following Red Hat best practices. <strong>Only generates playbooks; does not execute them.</strong> Use <code>/playbook-executor</code> to run playbooks.<br />
+<strong>Use when:</strong><br />
+- Create a remediation playbook for CVE-X<br />
+- Generate Ansible playbook to patch CVE-Y<br />
+<strong>What it does:</strong><br />
+- Calls Red Hat Lightspeed remediation API<br />
+- Generates production-ready Ansible playbooks<br />
+- Includes error handling and rollback steps<br />
+- Follows Red Hat standards</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/playbook-generator/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/playbook-executor</code> - AAP Playbook Execution</div>
+<div class="collection-prose collection-prose-tight"><p>Execute Ansible playbooks via AAP with dry-run, real-time monitoring, and reporting.<br />
+<strong>Use when:</strong><br />
+- Execute this remediation playbook<br />
+- Run the playbook and monitor status<br />
+<strong>What it does:</strong><br />
+- Launches jobs via AAP MCP (job_templates_launch_retrieve)<br />
+- Performs Git Flow (commit, push, sync) when playbook path differs from template<br />
+- Monitors job status (PENDING → RUNNING → COMPLETED)<br />
+- Reports execution results<br />
+<strong>Note:</strong> Requires AAP MCP servers configured and job templates created (use job-template-creator skill).</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/playbook-executor/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/remediation-verifier</code> - Remediation Verification</div>
+<div class="collection-prose collection-prose-tight"><p>Verify that CVE remediations were successfully applied.<br />
+<strong>Use when:</strong><br />
+- Check if CVE-X was patched on server-01<br />
+- Verify remediation status<br />
+<strong>What it does:</strong><br />
+- Queries current CVE status<br />
+- Verifies package updates<br />
+- Confirms remediation success</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/remediation-verifier/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/mcp-lightspeed-validator</code> - Lightspeed MCP Server Validation</div>
+<div class="collection-prose collection-prose-tight"><p>Validate Red Hat Lightspeed MCP server configuration and connectivity.<br />
+<strong>Use when:</strong><br />
+- Validate Lightspeed MCP<br />
+- Check if Lightspeed is configured<br />
+- Verify Lightspeed connection<br />
+- Other skills need to verify lightspeed-mcp availability<br />
+<strong>What it does:</strong><br />
+- Checks MCP server configuration in mcps.json<br />
+- Verifies environment variables (LIGHTSPEED_CLIENT_ID, LIGHTSPEED_CLIENT_SECRET)<br />
+- Tests server connectivity and tool availability<br />
+- Reports validation status (PASSED/PARTIAL/FAILED)</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/mcp-lightspeed-validator/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/mcp-aap-validator</code> - AAP MCP Server Validation</div>
+<div class="collection-prose collection-prose-tight"><p>Validate AAP MCP server configuration and connectivity.<br />
+<strong>Use when:</strong><br />
+- Validate AAP MCP<br />
+- Check if AAP is configured<br />
+- Verify AAP connection<br />
+- Other skills need to verify AAP MCP server availability<br />
+<strong>What it does:</strong><br />
+- Checks both AAP MCP servers (job-management, inventory-management)<br />
+- Verifies environment variables (AAP_MCP_SERVER, AAP_API_TOKEN)<br />
+- Tests server connectivity and authentication<br />
+- Reports validation status (PASSED/PARTIAL/FAILED)</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/mcp-aap-validator/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/execution-summary</code> - Workflow Execution Report</div>
+<div class="collection-prose collection-prose-tight"><p>Generate concise execution reports for audit and learning purposes.<br />
+<strong>Use when:</strong><br />
+- Generate execution summary<br />
+- Create execution report<br />
+- Summarize what was used<br />
+- Show execution summary<br />
+<strong>What it does:</strong><br />
+- Analyzes conversation history<br />
+- Extracts agents, skills, tools, and docs used<br />
+- Formats in machine-readable format<br />
+- Provides audit trail for workflows</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/execution-summary/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/job-template-creator</code> - AAP Job Template Creation</div>
+<div class="collection-prose collection-prose-tight"><p>Create AAP job templates for executing Ansible playbooks through Ansible Automation Platform.<br />
+<strong>Use when:</strong><br />
+- Create a job template for this playbook<br />
+- Set up a template to run remediation playbooks<br />
+- Configure AAP to execute this playbook<br />
+<strong>What it does:</strong><br />
+- Lists available projects and inventories<br />
+- Provides instructions for template creation (Web UI or API)<br />
+- Verifies template creation<br />
+- Prepares for AAP-based playbook execution</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/job-template-creator/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/job-template-remediation-validator</code> - AAP Job Template Remediation Validation</div>
+<div class="collection-prose collection-prose-tight"><p>Verify an AAP job template meets requirements for executing CVE remediation playbooks.<br />
+<strong>Use when:</strong><br />
+- Does this job template support remediation playbooks?<br />
+- Validate job template X for CVE remediation<br />
+- Check if template is ready for playbook-executor<br />
+<strong>What it does:</strong><br />
+- Validates required fields (inventory, project, playbook, credentials, privilege escalation)<br />
+- Checks recommended options (ask variables/limit on launch)<br />
+- Verifies project and inventory exist<br />
+- Reports PASSED / PASSED WITH WARNINGS / FAILED</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/skills/job-template-remediation-validator/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li></ol><h2>Skills Decision Guide</h2><table class="collection-decision-table"><thead><tr><th>User request</th><th>Skill to use</th><th>Reason</th></tr></thead><tbody><tr><td><p>"Show the managed fleet" or "List RHEL systems"</p></td><td>/fleet-inventory</td><td><p>Discovers and displays Lightspeed-managed system inventory.</p></td></tr><tr><td><p>"What are the most critical CVEs?" or "Show CVEs affecting my systems"</p></td><td>/cve-impact</td><td><p>Analyzes CVE impact across the fleet without immediate remediation.</p></td></tr><tr><td><p>"Remediate CVE-2024-1234 on system abc-123" or "Patch these CVEs on production"</p></td><td>/remediation</td><td><p>Orchestrates full workflow (validate → context → playbook → execute → verify).</p></td></tr><tr><td><p>"Create a remediation playbook for CVE-X" (no execution yet)</p></td><td>/playbook-generator</td><td><p>Generates Ansible playbook only; use playbook-executor to run it.</p></td></tr><tr><td><p>"Does this job template support remediation playbooks?"</p></td><td>/job-template-remediation-validator</td><td><p>Validates AAP job template for CVE remediation requirements.</p></td></tr></tbody></table></div>
+                    <div id="tab-resources" class="collection-tab-panel" role="tabpanel"><h2>References</h2><ul class="simple-list collection-resources"><li><a class="collection-resource-link" href="https://console.redhat.com/insights" target="_blank" rel="noopener noreferrer">Red Hat Lightspeed</a> - Red Hat Insights and Lightspeed console for fleet and vulnerability management.</li><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/red_hat_lightspeed/1-latest/html-single/red_hat_lightspeed_remediations_guide/index" target="_blank" rel="noopener noreferrer">Red Hat Lightspeed Remediations Guide</a> - Creating remediation plans, playbook generation. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/ansible/cve-remediation-templates.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://github.com/RedHatInsights/insights-mcp" target="_blank" rel="noopener noreferrer">Red Hat Lightspeed MCP</a> - MCP server used by this collection; parameter reference. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/references/lightspeed-mcp-parameters.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/red_hat_lightspeed/1-latest/html/assessing_and_monitoring_security_vulnerabilities_on_rhel_systems/vuln-cves_vuln-overview" target="_blank" rel="noopener noreferrer">Assessing and Monitoring Security Vulnerabilities on RHEL Systems</a> - CVE identification, classification, threat intelligence. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/insights/vulnerability-logic.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html-single/managing_software_with_the_dnf_tool/index" target="_blank" rel="noopener noreferrer">Managing Software with the DNF Tool (RHEL 9)</a> - DNF commands, updating packages, repository management. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/rhel/package-management.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://access.redhat.com/security/updates/classification" target="_blank" rel="noopener noreferrer">Severity Ratings (Red Hat Customer Portal)</a> - Red Hat severity ratings, CVSS usage. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/references/cvss-scoring.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6" target="_blank" rel="noopener noreferrer">Red Hat Ansible Automation Platform Documentation</a> - AAP 2.6 docs; projects, job templates, playbook integration. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/ansible/playbook-integration-aap.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/using_automation_execution/controller-job-templates" target="_blank" rel="noopener noreferrer">AAP Job Execution</a> - Job templates, check mode, dry-run execution. <a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-sre/docs/ansible/aap-job-execution.md" target="_blank" rel="noopener noreferrer">[embedded doc]</a></li><li><a class="collection-resource-link" href="https://www.redhat.com/en/technologies/management/ansible" target="_blank" rel="noopener noreferrer">Ansible Automation Platform</a> - AAP product overview for playbook execution.</li><li><a class="collection-resource-link" href="https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/" target="_blank" rel="noopener noreferrer">AAP REST API Documentation</a> - AAP API reference for job and inventory management.</li></ul></div>
+                    <div id="tab-agents" class="collection-tab-panel" role="tabpanel"><h2>MCP Server Integrations</h2><div class="collection-mcp-grid"><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="rh-sre" data-mcp-name="lightspeed-mcp"><div class="collection-mcp-card-title"><span>💡</span><span>Red Hat Lightspeed MCP</span></div><div class="collection-mcp-card-meta">By Red Hat - Container</div></div><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="rh-sre" data-mcp-name="aap-mcp-job-management"><div class="collection-mcp-card-title"><span>⚙️</span><span>AAP MCP Service-Job Management</span></div><div class="collection-mcp-card-meta">By Red Hat - HTTP Remote</div></div><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="rh-sre" data-mcp-name="aap-mcp-inventory-management"><div class="collection-mcp-card-title"><span>📋</span><span>AAP MCP Service-Inventory Management</span></div><div class="collection-mcp-card-meta">By Red Hat - HTTP Remote</div></div></div><h2>Sample Workflows</h2><h3>Fleet Discovery → CVE Analysis → Remediation</h3><div class="collection-prose"><p>User: "Show the managed fleet"<br />
+- fleet-inventory skill lists all systems<br />
+User: "What are the critical CVEs affecting these systems?"<br />
+- cve-impact skill analyzes vulnerabilities<br />
+User: "Remediate CVE-2024-1234 on all RHEL 8 production systems"<br />
+- remediation skill orchestrates end-to-end remediation</p></div><h3>Emergency CVE Patching</h3><div class="collection-prose"><p>User: "URGENT: CVE-2024-CRITICAL has CVSS 9.8 - create emergency remediation playbooks for all production systems"<br />
+- remediation skill:<br />
+  - Validates CVE (cve-validation skill)<br />
+  - Lists production systems (system-context skill)<br />
+  - Generates playbook (playbook-generator skill)<br />
+  - Provides execution instructions<br />
+  - Offers automated execution option</p></div><h3>Batch Remediation with Verification</h3><div class="collection-prose"><p>User: "Create and execute remediation playbooks for CVE-X, CVE-Y, CVE-Z on systems server-01, server-02, server-03"<br />
+- remediation skill:<br />
+  - Validates all CVEs<br />
+  - Gathers system context<br />
+  - Generates consolidated playbook<br />
+  - Asks for execution approval<br />
+  - Executes and monitors job status<br />
+  - Verifies remediation success (remediation-verifier skill)</p></div><h3>Account-Level CVE Discovery</h3><div class="collection-prose"><p>User: "What are the critical vulnerabilities on my account?"<br />
+- cve-impact skill with account-level parameters<br />
+- Lists critical CVEs across the fleet, filters by severity and remediation availability</p></div><h3>Playbook Execution with Dry-Run</h3><div class="collection-prose"><p>User: "Execute the CVE remediation playbook"<br />
+- playbook-executor skill:<br />
+  - Validates AAP prerequisites<br />
+  - Lists and selects job template<br />
+  - Offers dry-run first (check mode)<br />
+  - Proceeds to actual execution after approval<br />
+  - Monitors job status and reports results</p></div></div>
+
+                    <p class="collection-footer-meta">https://github.com/RHEcosystemAppEng/agentic-collections</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="mcp-modal" class="modal">
+        <div class="modal-content" id="mcp-details"></div>
+    </div>
+
+    <script src="../app.js?v=34"></script>
+</body>
+</html>

@@ -1,29 +1,48 @@
-/* Red Hat Brand Colors - Light Theme */
+/*
+ * PatternFly 5–aligned tokens + Red Hat branding (review_catalog / console-style).
+ * See: PatternFly global palette, Red Hat product typography (Display / Text).
+ */
 :root {
-    --primary: #ee0000;
-    --primary-dark: #c00000;
-    --primary-light: #ffebee;
+    /* PatternFly global (light) */
+    --pf-global--palette--black-900: #151515;
+    --pf-global--palette--black-600: #6a6e73;
+    --pf-global--BackgroundColor--100: #ffffff;
+    --pf-global--BackgroundColor--200: #f0f0f0;
+    --pf-global--BorderColor--100: #d2d2d2;
+    --pf-global--BorderColor--200: #8a8d90;
+    --pf-global--palette--red-100: #c9190b;
+
+    /* Red Hat brand */
+    --rh-red: #ee0000;
+    --rh-red-dark: #c9190b;
+    --rh-red-light: #faeae8;
+
+    --primary: var(--rh-red);
+    --primary-dark: var(--rh-red-dark);
+    --primary-light: var(--rh-red-light);
     --secondary: #ff6b6b;
-    
-    /* Light backgrounds */
-    --bg-light: #ffffff;
-    --bg-section: #f8f9fa;
-    --bg-card: #ffffff;
+
+    --bg-light: var(--pf-global--BackgroundColor--100);
+    --bg-section: var(--pf-global--BackgroundColor--200);
+    --bg-card: var(--pf-global--BackgroundColor--100);
     --bg-code: #f5f5f5;
-    --bg-hover: #fafafa;
-    
-    /* Dark text on light background */
-    --text-primary: #151515;
-    --text-secondary: #4a4a4a;
-    --text-muted: #767676;
-    
-    /* Light borders */
-    --border: #e5e5e5;
-    --border-hover: #cccccc;
-    
-    --success: #3ba935;
-    --radius: 12px;
-    --transition-speed: 0.3s;
+    --bg-hover: #ededed;
+
+    --text-primary: var(--pf-global--palette--black-900);
+    --text-secondary: #4f5255;
+    --text-muted: var(--pf-global--palette--black-600);
+
+    --border: var(--pf-global--BorderColor--100);
+    --border-hover: var(--pf-global--BorderColor--200);
+
+    --success: #3e8635;
+
+    --radius: 8px;
+    --pf-card--BoxShadow: 0 0.125rem 0.25rem 0 rgba(3, 3, 3, 0.12), 0 0 0.125rem 0 rgba(3, 3, 3, 0.06);
+    --transition-speed: 0.2s;
+
+    --font-heading: 'Red Hat Display', 'Red Hat Text', 'Overpass', system-ui, sans-serif;
+    --font-body: 'Red Hat Text', 'Red Hat Display', 'Overpass', system-ui, sans-serif;
 }
 
 * {
@@ -33,20 +52,28 @@
 }
 
 body {
-    font-family: 'Red Hat Text', 'Red Hat Display', 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-body);
     background: var(--bg-section);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: 1.5;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* Header */
+/* Standalone collection pages (no catalog header): Red Hat top bar */
+.site-brand-accent {
+    height: 3px;
+    flex-shrink: 0;
+    background: var(--primary);
+}
+
+/* Masthead: Red Hat top accent + PatternFly-style white bar */
 header {
     background: var(--bg-light);
+    border-top: 3px solid var(--primary);
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: none;
 }
 
 /* Toolbar */
@@ -68,13 +95,12 @@ header {
 }
 
 .toolbar-left h1 {
+    font-family: var(--font-heading);
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 600;
     margin: 0 0 0.25rem 0;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .toolbar-left .subtitle {
@@ -91,23 +117,23 @@ header {
 }
 
 .counter-badge {
-    background: var(--bg-light);
+    background: var(--bg-section);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 0.4rem 0.75rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.2rem;
     min-width: 60px;
-    transition: all var(--transition-speed) ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    box-shadow: var(--pf-card--BoxShadow);
 }
 
 .counter-badge:hover {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    box-shadow: 0 2px 4px rgba(238, 0, 0, 0.1);
+    background: var(--bg-light);
+    border-color: var(--border-hover);
+    box-shadow: 0 0.25rem 0.5rem 0 rgba(3, 3, 3, 0.12);
 }
 
 .counter-number {
@@ -128,20 +154,29 @@ header {
     display: flex;
     gap: 0.75rem;
     flex-shrink: 0;
+    align-items: center;
+}
+
+.toolbar-actions {
+    gap: 0.5rem;
 }
 
 .toolbar-button {
-    padding: 0.5rem 1.25rem;
+    padding: 0.5rem 1rem;
     border-radius: 6px;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 600;
+    line-height: 1.25;
     cursor: pointer;
-    transition: all var(--transition-speed) ease;
+    transition: border-color var(--transition-speed) ease, color var(--transition-speed) ease, background var(--transition-speed) ease;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     border: 1px solid var(--border);
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .toolbar-button:hover {
@@ -164,16 +199,16 @@ header {
 .search-container {
     max-width: 100%;
     padding: 1rem 2rem;
-    background: var(--bg-card);
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border);
 }
 
-/* Red Hat Ecosystem Catalog–style: light gray with subtle teal dot pattern */
+/* Install strip: PatternFly inline alert–style left accent */
 .install-callout {
     display: block;
     padding: 1rem 2rem;
-    background-color: #f5f5f5;
-    background-image: radial-gradient(circle, rgba(0, 137, 123, 0.08) 1px, transparent 1px);
-    background-size: 12px 12px;
+    background-color: var(--pf-global--BackgroundColor--200);
+    background-image: none;
     border-top: 1px solid var(--border);
     border-left: 4px solid var(--primary);
     font-size: 0.9rem;
@@ -285,20 +320,21 @@ header {
 
 #searchInput {
     width: 100%;
-    padding: 1rem 1.5rem;
+    padding: 0.5rem 1rem;
     font-size: 1rem;
+    font-family: var(--font-body);
     background: var(--bg-light);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
+    border: 1px solid var(--border-hover);
+    border-radius: 0;
     color: var(--text-primary);
-    transition: all var(--transition-speed) ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    box-shadow: none;
 }
 
 #searchInput:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(238, 0, 0, 0.1);
+    box-shadow: 0 0 0 1px var(--primary), 0 0 0 4px rgba(238, 0, 0, 0.15);
 }
 
 #searchInput::placeholder {
@@ -320,21 +356,21 @@ section {
 }
 
 section h2 {
+    font-family: var(--font-heading);
     color: var(--text-primary);
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     margin-bottom: 1.5rem;
     cursor: pointer;
     user-select: none;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all var(--transition-speed) ease;
+    transition: color var(--transition-speed) ease;
 }
 
 section h2:hover {
     color: var(--primary);
-    transform: translateX(4px);
 }
 
 section h2 .arrow {
@@ -372,32 +408,33 @@ section.collapsed .grid {
     gap: 1.5rem;
 }
 
-/* Cards */
+/* Cards (PatternFly card elevation) */
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.5rem;
-    transition: all var(--transition-speed) ease;
+    transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
     cursor: pointer;
     height: 100%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--pf-card--BoxShadow);
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px rgba(238, 0, 0, 0.15);
+    border-color: var(--border-hover);
+    box-shadow: 0 0.5rem 1rem 0 rgba(3, 3, 3, 0.12), 0 0 0.25rem 0 rgba(3, 3, 3, 0.06);
 }
 
 .card h3 {
+    font-family: var(--font-heading);
     color: var(--text-primary);
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     margin: 0;
     font-weight: 600;
+    line-height: 1.3;
 }
 
 .card .version {
@@ -470,6 +507,11 @@ section.collapsed .grid {
     color: var(--primary-dark);
 }
 
+.card.mcp-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 /* README badge in top-right corner of MCP cards */
 .readme-badge {
     position: absolute;
@@ -518,7 +560,7 @@ section.collapsed .grid {
     max-height: 85vh;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1rem 2.5rem rgba(3, 3, 3, 0.2);
     display: flex;
     flex-direction: column;
 }
@@ -539,10 +581,12 @@ section.collapsed .grid {
 }
 
 .modal-title-group h2 {
+    font-family: var(--font-heading);
     color: var(--text-primary);
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     margin: 0;
+    line-height: 1.3;
 }
 
 .modal-meta {
@@ -751,7 +795,7 @@ section.collapsed .grid {
 
 .expand-link:hover,
 .collapse-link:hover {
-    color: var(--secondary);
+    color: var(--primary-dark);
     text-decoration: underline;
 }
 
@@ -826,7 +870,7 @@ footer a {
 }
 
 footer a:hover {
-    color: var(--secondary);
+    color: var(--primary-dark);
     text-decoration: underline;
 }
 
@@ -892,7 +936,7 @@ footer a:hover {
         gap: 0.5rem;
     }
 
-    .toolbar-button {
+    .toolbar-actions .collection-meta-link {
         width: 100%;
         text-align: center;
     }
@@ -973,4 +1017,445 @@ footer a:hover {
 
 .item-icon {
     font-size: 1rem;
+}
+
+/* Per-collection catalog page (#collection/<pack>) */
+.collection-page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+}
+
+.collection-page-inner {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem 2rem 2.5rem;
+    box-shadow: var(--pf-card--BoxShadow);
+}
+
+.collection-nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.collection-nav-start {
+    justify-self: start;
+}
+
+.collection-nav-center {
+    justify-self: center;
+    text-align: center;
+}
+
+.collection-nav-end {
+    justify-self: end;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem 0.75rem;
+}
+
+.toolbar-actions .collection-meta-link {
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .collection-nav {
+        grid-template-columns: 1fr;
+    }
+
+    .collection-nav-center,
+    .collection-nav-end {
+        justify-self: stretch;
+        justify-content: flex-start;
+    }
+
+    .collection-nav-center {
+        text-align: left;
+    }
+}
+
+.collection-back {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.collection-back:hover {
+    text-decoration: underline;
+}
+
+.collection-meta-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.collection-meta-link:hover {
+    text-decoration: underline;
+}
+
+.collection-page-title {
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+h1.collection-page-title {
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.collection-page-sub,
+.collection-tags {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+}
+
+.collection-page-sub strong,
+.collection-tags strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.collection-missing {
+    color: var(--text-secondary);
+    margin: 1rem 0;
+}
+
+.collection-page-body .modal-section-header {
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.collection-prose,
+.collection-prose-tight {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+
+.collection-prose-tight {
+    margin-top: 0.5rem;
+}
+
+/* Reset * { padding: 0 } removes default ul/ol indent; restore readable list inset */
+.collection-prose ul,
+.collection-prose ol,
+.collection-prose-tight ul,
+.collection-prose-tight ol {
+    margin: 0.5rem 0 0.75rem;
+    padding-left: 1.5rem;
+}
+
+.collection-prose li,
+.collection-prose-tight li {
+    margin: 0.35rem 0;
+}
+
+.collection-prose ul ul,
+.collection-prose ul ol,
+.collection-prose ol ul,
+.collection-prose ol ol,
+.collection-prose-tight ul ul,
+.collection-prose-tight ol ol {
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.collection-inline-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.collection-inline-link:hover {
+    text-decoration: underline;
+}
+
+.collection-guide {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.collection-guide-row {
+    border-left: 3px solid var(--primary-light);
+    padding-left: 1rem;
+    background: var(--bg-section);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 0.75rem 1rem;
+}
+
+.collection-guide-user {
+    margin-bottom: 0.35rem;
+}
+
+.collection-guide-skill {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.collection-guide-reason {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.collection-workflow {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.collection-workflow:last-of-type {
+    border-bottom: none;
+}
+
+.collection-workflow-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+/* References tab: titled external links in brand red; not monospace env-var rows */
+ul.simple-list.collection-resources {
+    list-style: disc;
+    list-style-position: outside;
+    padding-left: 1.5rem;
+    margin: 1rem 0 0;
+    font-family: inherit;
+}
+
+ul.simple-list.collection-resources li {
+    border-bottom: none;
+    padding: 0.4rem 0;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+.collection-resource-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.collection-resource-link:hover {
+    text-decoration: underline;
+}
+
+.collection-resources .collection-inline-link {
+    font-weight: 500;
+}
+
+.collection-footer-meta {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Fork-aligned tab strip (review_catalog / collection_page.html.j2) */
+.collection-content-inner {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.collection-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin: 1.5rem 0 0;
+}
+
+.collection-tab {
+    padding: 0.75rem 1.25rem;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.collection-tab:hover {
+    color: var(--primary);
+}
+
+.collection-tab.active {
+    color: var(--primary);
+    font-weight: 600;
+    border-bottom-color: var(--primary);
+}
+
+.collection-tab-panel {
+    display: none;
+    padding: 1.5rem 0 2rem;
+}
+
+.collection-tab-panel.active {
+    display: block;
+}
+
+.collection-tab-panel h2 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.collection-tab-panel h2:first-child {
+    margin-top: 0;
+}
+
+.collection-tab-panel h3 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    margin-top: 1.25rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.install-accordion {
+    margin-top: 1rem;
+}
+
+.collection-mcp-after-install {
+    margin-top: 1rem;
+}
+
+.install-accordion-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.install-accordion-item:last-child {
+    margin-bottom: 0;
+}
+
+.install-accordion-header {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    list-style: none;
+    background: var(--bg-section);
+    transition: background 0.2s ease;
+}
+
+.install-accordion-header::-webkit-details-marker {
+    display: none;
+}
+
+.install-accordion-header::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 0.5rem;
+    font-size: 0.7em;
+    transition: transform 0.2s ease;
+}
+
+.install-accordion-item[open] .install-accordion-header::before {
+    transform: rotate(90deg);
+}
+
+.install-accordion-header:hover {
+    background: var(--bg-hover);
+}
+
+.install-accordion-body {
+    padding: 1rem 1rem 1rem 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.collection-skill-list {
+    margin: 1rem 0 1rem 1.5rem;
+    padding-left: 1.5rem;
+    list-style-type: decimal;
+    list-style-position: outside;
+}
+
+.collection-skill-list li {
+    margin-bottom: 1.5rem;
+}
+
+.collection-skill-list li:last-child {
+    margin-bottom: 0;
+}
+
+.collection-decision-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.collection-decision-table th,
+.collection-decision-table td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.collection-decision-table th {
+    background: var(--bg-section);
+    font-weight: 600;
+}
+
+.collection-mcp-grid {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.collection-mcp-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    background: var(--bg-card);
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.collection-mcp-card:hover {
+    border-color: var(--primary);
+    background: var(--bg-hover);
+}
+
+.collection-mcp-card-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.collection-mcp-card-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
 }
