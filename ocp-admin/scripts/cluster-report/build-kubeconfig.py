@@ -59,6 +59,8 @@ def run_setup(args):
     kube_cmd = find_kube_cmd()
     inventory_file = Path(args.output_inventory)
 
+    print(f"Inventory file: {inventory_file}")
+
     if not args.skip_rbac and not RBAC_MANIFEST.is_file():
         print(f"Error: RBAC manifest not found at {RBAC_MANIFEST}", file=sys.stderr)
         sys.exit(1)
