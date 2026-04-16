@@ -84,18 +84,19 @@ for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do 
 
 ## 📦 Available Plugins
 
-6 persona-focused plugins with **100+ production-ready skills**:
+7 persona-focused plugins with **60+ production-ready skills**:
 
 | Plugin | Version | Skills | Description | Personas |
 |--------|---------|--------|-------------|----------|
-| **[rh-sre](rh-sre/README.md)** | 1.0.0 | 38 | CVE remediation, system compliance, RHEL automation | Site Reliability Engineers |
+| **[rh-sre](rh-sre/README.md)** | 1.0.0 | 13 | CVE remediation, system compliance, RHEL automation | Site Reliability Engineers |
 | **[rh-developer](rh-developer/README.md)** | 1.0.0 | 14 | Application deployment, S2I builds, Helm charts | Application Developers |
-| **[openshift-virtualization](rh-virt/README.md)** | 1.0.0 | 16 | VM lifecycle, snapshots, migrations, cloning | Virtualization Admins |
-| **[ocp-admin](ocp-admin/README.md)** | 1.0.0 | 1 | Multi-cluster management, health reports, monitoring | OpenShift Administrators |
-| **[rh-ai-engineer](rh-ai-engineer/README.md)** | 1.0.0 | 18 | Model serving, vLLM, KServe, NVIDIA NIM | AI/ML Engineers |
-| **[rh-automation](rh-automation/README.md)** | 1.0.0 | 13 | Ansible Automation Platform governance, safety checks | Automation Leads |
+| **[openshift-virtualization](rh-virt/README.md)** | 1.0.0 | 10 | VM lifecycle, snapshots, migrations, cloning | Virtualization Admins |
+| **[ocp-admin](ocp-admin/README.md)** | 1.0.0 | 3 | Multi-cluster management, health reports, monitoring | OpenShift Administrators |
+| **[rh-ai-engineer](rh-ai-engineer/README.md)** | 1.0.0 | 12 | Model serving, vLLM, KServe, NVIDIA NIM | AI/ML Engineers |
+| **[rh-automation](rh-automation/README.md)** | 1.0.0 | 11 | Ansible Automation Platform governance, safety checks | Automation Leads |
+| **[rh-support-engineer](rh-support-engineer/README.md)** | 1.0.0 | 0* | Technical support and troubleshooting | Support Engineers |
 
-**Total:** 100 skills across 7 plugins | **License:** Apache 2.0 | **Status:** Production Ready
+**Total:** 63 skills across 7 plugins | **License:** Apache 2.0 | **Status:** Production Ready
 
 <sub>* Coming soon</sub>
 
@@ -135,10 +136,22 @@ Each plugin has additional requirements:
 
 - **🎯 Role-Specific**: Each plugin is designed for specific personas and workflows
 - **🔒 Security First**: Credential handling, human-in-the-loop for destructive operations
-- **🔧 Production Ready**: 100+ skills validated against [design principles](SKILL_DESIGN_PRINCIPLES.md)
+- **🔧 Production Ready**: 60+ skills validated against [design principles](SKILL_DESIGN_PRINCIPLES.md)
 - **📚 Documentation**: AI-optimized docs with semantic indexing (rh-sre reference)
 - **🔌 MCP Integration**: Red Hat Lightspeed, Ansible Automation Platform servers
 - **✅ Quality Assured**: Automated compliance checks and specification linting
+
+---
+
+## 🤝 Contributing
+
+**Want to add your own skill to the marketplace?** We've made it easy with our interactive skill builder!
+
+Use the `/agentic-contribution-skill` skill to create production-ready skills with automated validation, or contribute manually following our design principles. The skill builder guides you through discovery, definition, generation, validation, and git workflow - no prior experience needed!
+
+📖 **See the complete guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
 
 ## Documentation Site
 
@@ -224,6 +237,7 @@ make validate-skill-design PACK=rh-sre
 uv run python scripts/validate_skill_design.py --warnings-as-errors
 
 ```
+
 
 ## Security
 
@@ -470,42 +484,18 @@ lola install -f rh-sre
 make validate
 ```
 
----
+### Optional: Claude Code plugin CLI
 
-## 🤝 Contributing
+If you use the Claude Code `/plugin` marketplace workflow against a local checkout:
 
-We welcome contributions! Here's how to add or improve skills:
+```bash
+claude plugin validate .
+# Or from within Claude Code
+/plugin validate .
+```
 
-### Adding a New Skill
+That CLI checks marketplace/plugin manifests for that workflow, including `plugin.json` when present under `.claude-plugin/`.
 
-1. Follow the [Skill Design Principles](SKILL_DESIGN_PRINCIPLES.md)
-2. Use the appropriate template:
-   - General: See SKILL_DESIGN_PRINCIPLES.md
-   - rh-virt collection: Use `rh-virt/SKILL_TEMPLATE.md`
-3. Create `skills/<skill-name>/SKILL.md` with proper YAML frontmatter
-4. Validate with the linter:
-   ```bash
-   make validate-skill-design-changed
-   ```
-5. Update the pack's `CLAUDE.md` intent routing table
-
-### Adding a New Plugin (pack)
-
-1. Create pack directory: `<pack-name>/`
-2. Add `README.md`, `CLAUDE.md`, and `skills/` (see [CLAUDE.md](CLAUDE.md))
-3. Add `mcps.json` when the pack uses MCP servers
-4. Register the module in [`marketplace/rh-agentic-collection.yml`](marketplace/rh-agentic-collection.yml) (add a `modules:` entry with `name`, `path`, `repository`, `version`, etc.)
-5. Optional: Add `.claude-plugin/plugin.json` only if you also publish through Claude Code’s plugin format (not required for Lola)
-6. Validate: `make validate`
-
-### Pull Request Guidelines
-
-- Run `make validate-skill-design-changed` before committing
-- Ensure CI checks pass (compliance + linter)
-- Follow conventional commits format
-- Update relevant documentation
-
----
 
 ## 📚 Additional Resources
 
