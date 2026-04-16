@@ -46,6 +46,15 @@ rules:
       - docs/icons.json
       - docs/plugins.json
       - docs/mcp.json
+  - rule_id: VIS-003
+    scope: docs-site
+    severity: high
+    check_method: computed
+    autofixable: true
+    source_of_truth_files:
+      - docs/data.json
+      - scripts/build_website.py
+      - docs/app.js
   - rule_id: CLM-001
     scope: pack
     severity: high

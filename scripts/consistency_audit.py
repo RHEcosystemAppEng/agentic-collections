@@ -8,6 +8,7 @@ from typing import Callable
 
 from consistency_audit_lib import matrix as matrix_builder
 from consistency_audit_lib.checks import (
+    docs_data_checks,
     icon_mapping_checks,
     mcp_metadata_checks,
     model_metadata_checks,
@@ -67,6 +68,7 @@ def build_report(root: Path) -> tuple[dict, dict]:
     _run_check(style_checks.run, root, findings, status_by_pack)
     _run_check(icon_mapping_checks.run, root, findings, status_by_pack)
     _run_check(mcp_metadata_checks.run, root, findings, status_by_pack)
+    _run_check(docs_data_checks.run, root, findings, status_by_pack)
 
     rh_support_status = status_by_pack.get("rh-support-engineer", {}).get("registration_status", "missing")
     _run_check(scope_policy_checks.run, root, findings, status_by_pack, rh_support_status)

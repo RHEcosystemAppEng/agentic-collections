@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0.0",
-  "generated_at": "2026-04-14T13:52:45.883020+00:00",
+  "generated_at": "2026-04-16T13:11:01.270593+00:00",
   "branch": "001-collection-consistency-audit",
   "summary": {
     "packs_total": 7,
-    "findings_total": 1,
+    "findings_total": 2,
     "by_severity": {
       "blocking": 0,
-      "high": 0,
+      "high": 1,
       "medium": 0,
       "informational": 1
     }
@@ -19,7 +19,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "none",
       "observed_versions": {}
     },
@@ -29,7 +29,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "none",
       "observed_versions": {}
     },
@@ -39,7 +39,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "none",
       "observed_versions": {}
     },
@@ -49,7 +49,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "informational",
       "observed_versions": {}
     },
@@ -59,7 +59,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "none",
       "observed_versions": {}
     },
@@ -69,7 +69,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "none",
       "observed_versions": {}
     },
@@ -79,7 +79,7 @@
       "version_consistency_status": "pass",
       "model_metadata_status": "pass",
       "claim_reality_status": "pass",
-      "style_icon_status": "pass",
+      "style_icon_status": "warn",
       "overall_severity": "none",
       "observed_versions": {}
     }
@@ -95,6 +95,18 @@
       "pack_name": "rh-support-engineer",
       "expected": "Pack is listed or explicitly excluded by policy",
       "actual": "Not listed",
+      "autofixable": false
+    },
+    {
+      "finding_id": "VIS-003-MISSING-DATA-JSON",
+      "rule_id": "VIS-003",
+      "severity": "high",
+      "artifact_path": "docs/data.json",
+      "message": "Documentation site data file is missing or has not yet been generated",
+      "ci_enforcement": "warn",
+      "pack_name": null,
+      "expected": "docs/data.json exists (generate via `make generate`)",
+      "actual": "file missing",
       "autofixable": false
     }
   ],
