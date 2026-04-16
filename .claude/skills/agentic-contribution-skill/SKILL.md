@@ -15,7 +15,7 @@ model: inherit
 color: green
 metadata:
   author: "Red Hat Ecosystem Engineering"
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # /agentic-contribution-skill Skill
@@ -75,15 +75,30 @@ Ask concisely, validate before proceeding. Make additional questions if needed t
 1. **Purpose & Red Hat Product**: "What does the skill do? (1 sentence) For which Red Hat product(s) is this skill targeted?"
 2. **Persona**: "What role uses it?" (detect existing pack or suggest new)
 3. **Pack**: "Use <existing-pack>? (yes/no/create-new)"
-4. **MCP Tools**: "What MCP tools does it need?" (verify in pack's mcps.json)
+4. **MCP Tools**: 
+   - Read pack's `mcps.json` to list existing MCP servers
+   - If MCP server mentioned, verify it exists in the file
+   - For tools mentioned, verify they exist in MCP server documentation or configuration
+   - Ask: "What MCP tools does this skill need? Available MCPs in <pack>: <list>. Will you use existing MCPs, need new ones, or both?"
+   - **Never suggest tools based on intuition** - only recommend tools you've verified exist
 5. **Operation Type**: "Read-only, additive, or destructive?" (determines color)
+
+**Color Mapping** (risk-based, with Red Hat/OpenShift examples):
+
+| Color | Use Case | Examples |
+|-------|----------|----------|
+| 🔵 cyan | Read-only operations | list clusters, view VM status, check node health, get CVE data |
+| 🟢 green | Additive operations | create VM, deploy cluster, generate playbook, add backup |
+| 🔵 blue | Reversible operations | restart pod, pause MCP, start VM, stop service |
+| 🟡 yellow | Destructive but recoverable | delete snapshot, remove annotation, uncordon node |
+| 🔴 red | Critical/irreversible | upgrade cluster, delete cluster, restore ETCD, execute remediation |
 
 **Validation**:
 - Purpose: specific, under 100 chars
 - Red Hat product: identified (OpenShift, RHEL, Ansible, etc.)
 - Persona: matches known or justifies new pack
-- MCP tools: exist or explain what to add
-- Operation type → Color mapping: cyan/green/blue/yellow/red
+- MCP tools: **verified to exist** (no assumptions/intuition)
+- Operation type → Color selected from table above
 
 ### Phase 2: Definition (6 questions max)
 
@@ -93,10 +108,26 @@ Ask concisely, validate before proceeding. Make additional questions if needed t
 4. **Workflow**: "Steps with MCP tools?" (e.g., "1. Validate VM - resources_get")
 5. **Common Issues**: "3+ issues: problem: cause: solution"
 6. **Prerequisites**: "Special requirements? (env vars, permissions)"
+7. **External Resources**: "Any external docs/links/KB articles referenced?" (will be saved to `docs/` folder)
 
-**Token Check**: Estimate description tokens (~use_cases + anti_patterns). Warn if > 400 words (~520 tokens).
+**Quality over Speed**: Focus on gathering complete, accurate information. Validation and iteration will ensure correctness - prioritize quality of final result over generation time.
 
-### Phase 3: Pre-Generation Summary
+### Phase 3: Pre-Generation Summary & Document Consultation
+
+**Document Consultation** (REQUIRED - Execute BEFORE generation):
+1. **Action**: Read [SKILL_DESIGN_PRINCIPLES.md](../../../SKILL_DESIGN_PRINCIPLES.md) using Read tool to understand:
+   - Mandatory section structure (DP7)
+   - Precise workflow step format (DP2)
+   - Human Notification Protocol (DP8)
+   - Prerequisites template (DP8)
+   - All design principles (DP1-11)
+2. **Output to user**: "I consulted SKILL_DESIGN_PRINCIPLES.md to ensure compliant generation."
+
+**Modularity Assessment**:
+- If workflow has >10 steps OR could logically divide into phases, present modularity options to user
+- **Default**: Single comprehensive skill (keeps related logic together, especially for critical operations)
+- If subdivision makes sense (technical/temporal/logical separation), propose to user but let them decide
+- **User decision is final**
 
 Show complete spec:
 
@@ -113,10 +144,18 @@ Show complete spec:
 
 **Workflow**: <N> steps
 **Common Issues**: <N> documented
-**MCP Tools**: <tool_count> tools
+**MCP Tools**: <tool_count> tools (verified to exist)
+**External Resources**: <count> (will be saved to docs/)
 **Human-in-the-Loop**: <Yes/No>
 
-Proceed? (yes/no)
+[If >10 steps or complex workflow]:
+💡 **Modularity Note**: This skill has <N> steps. Options:
+1. Single comprehensive skill (recommended for critical/cohesive workflows)
+2. Subdivide into <N> modular skills (if logical separation exists)
+
+Default: Option 1. Subdivide? (yes/no)
+
+Proceed with generation? (yes/no)
 ```
 
 ### Phase 4: Generation
@@ -124,29 +163,42 @@ Proceed? (yes/no)
 **Create structure**:
 ```bash
 mkdir -p <pack>/skills/<skill-name>/
+# If external resources provided by user:
+mkdir -p <pack>/skills/<skill-name>/docs/
 ```
 
 **Generate files**:
-1. **SKILL.md**: YAML frontmatter + 10 mandatory sections (follow SKILL_DESIGN_PRINCIPLES.md template)
-2. **Update <pack>/CLAUDE.md**: Add intent routing entry
-3. **Create <pack>/mcps.json**: If new MCP server needed (use `${ENV_VAR}` format)
-4. **Update marketplace/rh-agentic-collection.yml**: If new pack (register pack for Lola installation)
-5. **Create pack structure**: If new pack (README.md, CLAUDE.md, skills/ directory)
-6. **Optional - plugin.json**: Only if publishing via Claude Code plugin mechanism (`.claude-plugin/plugin.json`)
+1. **SKILL.md**: YAML frontmatter + mandatory sections (follow SKILL_DESIGN_PRINCIPLES.md template - already consulted in Phase 3)
+   - Focus on complete, production-ready content
+   - Include all relevant information from user and verified sources
+   - Keep main skill focused; detailed content can go to `docs/` if needed
+2. **docs/ folder** (if applicable):
+   - `docs/workflow-details.md` - Extended workflow explanations if skill is concise
+   - `docs/common-issues.md` - Detailed troubleshooting with full KB article content
+   - `docs/examples.md` - Comprehensive usage examples
+   - `docs/external-resources.md` - Any external docs/links/KB articles mentioned by user
+3. **Update <pack>/CLAUDE.md**: Add intent routing entry
+4. **Create <pack>/mcps.json**: If new MCP server needed (use `${ENV_VAR}` format)
+5. **Update marketplace/rh-agentic-collection.yml**: If new pack (register pack for Lola installation)
+6. **Create pack structure**: If new pack (README.md, CLAUDE.md, skills/ directory)
 
-**Mandatory SKILL.md sections** (in order):
+**Mandatory SKILL.md sections** (in order per DP7):
 1. Frontmatter (name, description, model, color)
-2. `# /<skill-name> Skill` + overview
-3. `## Prerequisites` (verification + Human Notification Protocol)
-4. `## When to Use This Skill`
-5. `## Workflow` (with precise parameters)
-6. `## Common Issues` (min 3)
-7. `## Dependencies` (MCP servers, tools, related skills)
-8. `## Critical: Human-in-the-Loop Requirements` (if applicable)
+2. `# /<skill-name> Skill` + overview (1-2 sentences)
+3. `## Critical: Human-in-the-Loop Requirements` (if applicable - HITL can be here or after Dependencies)
+4. `## Prerequisites` (verification + Human Notification Protocol per DP8)
+5. `## When to Use This Skill` (use cases + anti-patterns)
+6. `## Workflow` (precise parameters per DP2, document consultation per DP1 if needed in steps)
+7. `## Common Issues` (min 3, reference docs/ for details)
+8. `## Dependencies` (MCP servers, tools, related skills)
 9. `## Security Considerations` (if applicable)
-10. `## Example Usage` (min 1)
+10. `## Example Usage` (min 1, reference docs/examples.md for comprehensive cases)
 
-### Phase 5: Validation
+**Note**: If SKILL.md becomes too long during generation, detailed content moves to `docs/` with references in main file.
+
+### Phase 5: Validation & Iteration
+
+**Validation always runs** - quality is the priority, not speed.
 
 **Tier 1 - agentskills.io**:
 ```bash
@@ -155,17 +207,28 @@ mkdir -p <pack>/skills/<skill-name>/
 
 **Tier 2 - Design Principles**:
 ```bash
-make validate-skill-design-changed
+python scripts/validate_skill_design.py <pack>/skills/<skill-name>/SKILL.md
 ```
 
 **Report clearly**:
-- ✅ PASSED → Proceed
-- ⚠️ WARNINGS → Ask user to continue
-- ❌ ERRORS → Block, show fixes
+- ✅ PASSED → Proceed to Phase 6
+- ⚠️ WARNINGS → Review warnings with user
+  - Non-standard subdirectory (docs/) is acceptable if needed
+  - Description buzzwords acceptable if accurate for critical skills
+  - Ask: "Warnings acceptable? (yes/no)"
+- ❌ ERRORS → **Fix required**, iterate until validation passes
 
-**Document Consultation** (REQUIRED):
-Read [SKILL_DESIGN_PRINCIPLES.md](../../../SKILL_DESIGN_PRINCIPLES.md) before validation.
-Output: "I consulted SKILL_DESIGN_PRINCIPLES.md for validation criteria."
+**Iteration Protocol** (if validation fails):
+1. **Analyze errors**: Identify specific issues (line count, missing sections, format problems)
+2. **Determine fix strategy**:
+   - Line count exceeded → Move detailed content to `docs/` folder, keep main skill concise
+   - Missing sections → Add required sections per DP7
+   - Format issues → Correct frontmatter, section headers, or structure
+3. **Apply fixes**: Edit SKILL.md and/or create docs/ files
+4. **Re-validate**: Run both Tier 1 and Tier 2 again
+5. **Repeat until ✅ PASSED**
+
+**Note**: We iterate as many times as needed to achieve production-ready quality. Each iteration improves the skill.
 
 ### Phase 6: Post-Validation Summary
 
@@ -173,7 +236,12 @@ Output: "I consulted SKILL_DESIGN_PRINCIPLES.md for validation criteria."
 ## ✅ Skill Created
 
 **Files**:
-✅ <pack>/skills/<name>/SKILL.md
+✅ <pack>/skills/<name>/SKILL.md (<N> lines)
+[If docs/ created]:
+✅ <pack>/skills/<name>/docs/workflow-details.md
+✅ <pack>/skills/<name>/docs/common-issues.md
+✅ <pack>/skills/<name>/docs/examples.md
+✅ <pack>/skills/<name>/docs/external-resources.md (if applicable)
 ✅ <pack>/CLAUDE.md (intent routing updated)
 [If new pack]:
 ✅ <pack>/README.md
@@ -182,30 +250,39 @@ Output: "I consulted SKILL_DESIGN_PRINCIPLES.md for validation criteria."
 ✅ marketplace/rh-agentic-collection.yml (pack registered)
 
 **Validation**:
-✅ Tier 1: agentskills.io compliant
-✅ Tier 2: Design principles satisfied
+✅ Tier 1: agentskills.io compliant (PASSED [with N warnings])
+✅ Tier 2: Design principles satisfied (PASSED [with N warnings])
+[If iterated]:
+✅ Iterations: <N> (quality over speed achieved)
 
 **Quality**:
-- Sections: <N>
-- Tokens: <N>/500
+- Main skill: <N> lines (under 500-line limit)
+- Sections: <N> (all mandatory sections present)
 - Workflow steps: <N>
-- Common issues: <N>
+- Common issues: <N> documented
+- Supporting docs: <count> files (detailed content preserved)
+
+**Structure**:
+- Main SKILL.md: Concise and actionable
+- docs/ folder: Detailed explanations, examples, external resources
 
 **Lola Installation**:
 After merge: `lola install -f <pack-name>`
 
-**Opinion**: <Your assessment - strengths, fit, readiness>
+**Opinion**: <Your assessment - strengths, fit, readiness, production-ready status>
 
 Ready to commit? (yes/no)
 ```
 
-### Phase 7: Git Workflow (User Confirmation Required)
+### Phase 7: Git Workflow (Optional - User Controls)
 
-**Each step requires confirmation**:
+**User has full control** over git operations. Each step requires explicit confirmation.
+
+**Workflow**:
 
 1. **Branch**: "Create `feat/<skill-name>`? (yes/no)"
-2. **Stage**: Show files, ask confirmation
-3. **Commit**: Show message, ask confirmation
+2. **Stage**: Show files, ask confirmation before staging
+3. **Commit**: Show proposed message, wait for approval
    ```
    feat: add <skill-name> skill to <pack>
 
@@ -213,9 +290,12 @@ Ready to commit? (yes/no)
 
    Tier 1+2 validated
 
+   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
    ```
 4. **Push**: "Push changes? (yes/no)"
-5. **PR**: Use `gh` and/or `git` if available, else provide manual instructions
+5. **PR**: Provide instructions (use `gh pr create` if available, or manual steps)
+
+**Note**: User can skip any step. Git operations are suggested, not required. User manages their repository workflow.
 
 ### Phase 8: Final Summary
 
@@ -275,6 +355,29 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
   path: <pack-name>
 ```
 
+### Issue 7: "Line count exceeds 500"
+
+**Cause**: Skill content is comprehensive but exceeds agentskills.io 500-line limit
+
+**Fix**: Iterate to move detailed content to `docs/` folder:
+1. Create `<skill>/docs/` directory
+2. Move detailed workflow explanations to `docs/workflow-details.md`
+3. Move full troubleshooting KB articles to `docs/common-issues.md`
+4. Move comprehensive examples to `docs/examples.md`
+5. Keep main SKILL.md concise with references to docs/
+6. Re-run validation
+
+**Example**:
+```markdown
+## Common Issues
+
+See [docs/common-issues.md](docs/common-issues.md) for detailed solutions.
+
+### Issue 1: Snapshot Fails
+Storage doesn't support snapshots.
+**Solution**: Use snapshot-capable storage. [Details](docs/common-issues.md#issue-1)
+```
+
 ## Dependencies
 
 ### Required MCP Servers
@@ -304,9 +407,8 @@ See [Prerequisites](#prerequisites) section for required system tools (git, uv, 
 ### Reference Documentation
 
 **Internal**:
-- [SKILL_DESIGN_PRINCIPLES.md](../../../SKILL_DESIGN_PRINCIPLES.md) - Complete design principles
+- [SKILL_DESIGN_PRINCIPLES.md](../../../SKILL_DESIGN_PRINCIPLES.md) - Complete design principles (DP1-11)
 - [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contribution workflow guide
-- [rh-virt/SKILL_TEMPLATE.md](../../../rh-virt/SKILL_TEMPLATE.md) - Enhanced template example
 
 **External**:
 - [agentskills.io Specification](https://agentskills.io/specification) - Base skill standard
@@ -342,97 +444,25 @@ See [Prerequisites](#prerequisites) section for required system tools (git, uv, 
 
 ## Example Usage
 
+**See [docs/examples.md](docs/examples.md) for comprehensive examples.**
+
+### Quick Example: Creating VM Backup Skill
+
 ```
 User: "Create skill for rh-virt to backup VMs"
 
-Agentic-Contribution-Skill:
-What does it do? For which Red Hat product(s) is this skill targeted?
-> "Create VM backups using snapshots for OpenShift Virtualization"
+Skill guides through:
+1. Discovery (5 questions) - Verifies MCP tools exist
+2. Definition (6 questions) - Gathers workflow details
+3. Pre-generation summary - Consults SKILL_DESIGN_PRINCIPLES.md
+4. Generation - Creates SKILL.md with all mandatory sections
+5. Validation - Tier 1 + Tier 2, iterates if needed
+6. Git workflow - User confirms each step
 
-What role uses it?
-> "Virt admins"
-
-✅ Detected pack: rh-virt. Use it? (yes/no)
-> yes
-
-MCP tools needed?
-> "vm-snapshot-create from openshift-virtualization"
-
-Operation type? (read-only/additive/destructive)
-> "additive"
-
-✅ Color: green
-
-Skill name? (kebab-case)
-> "vm-backup-create"
-
-✅ Name is representative of purpose (VM backup using snapshots for OpenShift Virtualization)
-✅ Unique in rh-virt
-
-3-5 user phrases for 'Use when':
-> - "Backup VM database-01"
-> - "Create snapshot before upgrade"
-> - "Save VM state for recovery"
-
-NOT for?
-> "NOT for restoring (use vm-snapshot-restore)"
-
-Workflow steps with MCP tools:
-> 1. Validate VM exists - resources_get
-> 2. Check storage supports snapshots - storageclasses_list
-> 3. Create snapshot - virtualmachinesnapshot_create
-> 4. Monitor until ready - virtualmachinesnapshot_get
-
-3+ common issues:
-> "Snapshot fails: Storage doesn't support: Use snapshot-capable storage"
-> "VM not found: Wrong namespace: Verify with oc project"
-> "Stuck pending: CSI driver issue: Check openshift-storage pods"
-
-## Review Before Generation
-[shows complete summary]
-
-Proceed? (yes/no)
-> yes
-
-✅ Generated: rh-virt/skills/vm-backup-create/SKILL.md
-✅ Updated: rh-virt/CLAUDE.md (intent routing)
-
-Running validation...
-I consulted SKILL_DESIGN_PRINCIPLES.md for validation criteria.
-
-✅ Tier 1: PASSED
-✅ Tier 2: PASSED (8/8 design principles)
-
-## ✅ Skill Created
-Production-ready quality
-
-Ready to commit? (yes/no)
-> yes
-
-[Git workflow with confirmations]
-
-🎉 Complete! PR created at: github.com/...
-
-Thank you for contributing!
+Result: Production-ready skill in rh-virt/skills/vm-backup-create/
 ```
 
----
-
-### Example 2: Non-representative name triggers AI suggestions
-
-```
-Skill name? (kebab-case)
-> "check-stuff"
-
-⚠️ Not representative of purpose (monitor cluster health for OpenShift).
-
-Suggestions:
-1. cluster-health-monitor
-2. ocp-health-check  
-3. cluster-metrics-monitor
-
-Choose (1-3) or provide your own:
-> 1
-
-✅ Using "cluster-health-monitor"
-```
+**More examples**: [docs/examples.md](docs/examples.md)
+- Example 1: VM backup skill (complete interaction)
+- Example 2: Non-representative name correction
+- Example 3: Large skill requiring docs/ folder with iteration
