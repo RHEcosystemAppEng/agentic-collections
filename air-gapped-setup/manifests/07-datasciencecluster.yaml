@@ -1,0 +1,43 @@
+apiVersion: datasciencecluster.opendatahub.io/v1
+kind: DataScienceCluster
+metadata:
+  name: default-dsc
+  labels:
+    app.kubernetes.io/name: datasciencecluster
+    app.kubernetes.io/part-of: rhods
+spec:
+  components:
+    dashboard:
+      managementState: Managed
+
+    # KServe disabled - requires Service Mesh (complex for air-gapped)
+    # We use direct vLLM Deployments + OpenShift Routes instead
+    kserve:
+      managementState: Removed
+
+    modelmeshserving:
+      managementState: Removed
+    
+    datasciencepipelines:
+      managementState: Managed
+    
+    workbenches:
+      managementState: Managed
+    
+    modelregistry:
+      managementState: Managed
+    
+    codeflare:
+      managementState: Removed
+    
+    ray:
+      managementState: Removed
+    
+    kueue:
+      managementState: Removed
+    
+    trainingoperator:
+      managementState: Removed
+    
+    trustyai:
+      managementState: Removed

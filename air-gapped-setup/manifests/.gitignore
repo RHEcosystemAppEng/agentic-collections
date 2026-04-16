@@ -1,0 +1,5 @@
+# Ignore non-YAML directories (legacy)
+gpu-operator/
+models/
+nfd/
+openshift-ai/

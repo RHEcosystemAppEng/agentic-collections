@@ -1,0 +1,29 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: llama-3-8b
+  namespace: llm-models
+  labels:
+    app: llm-serving
+    model: llama-3.1-8b-instruct
+  annotations:
+    haproxy.router.openshift.io/timeout: 600s  # 10 min timeout for long inference
+    haproxy.router.openshift.io/balance: source  # Sticky sessions
+spec:
+  # Host is auto-generated: llama-3-8b-llm-models.apps.<cluster-domain>
+  # Or specify manually:
+  # host: llama-3-8b.apps.appeng-lab01.accl-001.lab.rdu2.dc.redhat.com
+
+  to:
+    kind: Service
+    name: llm-llama-3-8b-svc
+    weight: 100
+
+  port:
+    targetPort: http
+
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+
+  wildcardPolicy: None
