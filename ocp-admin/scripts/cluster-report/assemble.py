@@ -14,6 +14,7 @@ def unwrap_persisted_output(raw_content):
     except (json.JSONDecodeError, ValueError):
         return raw_content
 
+    print(f"Data: {data}")
     if isinstance(data, list) and len(data) > 0:
         if all(isinstance(item, dict) and "type" in item for item in data):
             texts = []

@@ -60,6 +60,9 @@ def run_setup(args):
     inventory_file = Path(args.output_inventory)
 
     print(f"Inventory file: {inventory_file}")
+    print(f"Inventory file: {inventory_file}")
+    print(f"Inventory file: {inventory_file}")
+    print(f"Inventory file: {inventory_file}")
 
     if not args.skip_rbac and not RBAC_MANIFEST.is_file():
         print(f"Error: RBAC manifest not found at {RBAC_MANIFEST}", file=sys.stderr)
@@ -139,6 +142,7 @@ def run_setup(args):
     inventory_file.parent.mkdir(parents=True, exist_ok=True)
 
     existing_by_name = {}
+    print(f"Inventory file: {inventory_file}")
     if inventory_file.is_file():
         try:
             with open(inventory_file) as f:
