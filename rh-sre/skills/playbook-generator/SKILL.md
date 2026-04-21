@@ -16,6 +16,8 @@ description: |
   - ALWAYS use this skill instead of calling create_vulnerability_playbook directly
   - NEVER execute playbooks using ansible-playbook CLI
   - ALWAYS delegate execution to /playbook-executor skill
+model: inherit
+color: green
 ---
 
 # Ansible Playbook Generator Skill

@@ -17,7 +17,6 @@ description: |
   - Standalone impact analysis without remediation → Use `/cve-impact`
 
   This skill orchestrates 6 specialized skills (cve-impact, cve-validation, system-context, playbook-generator, playbook-executor, remediation-verifier) for complete remediation workflows.
----
 model: inherit
 color: red
 metadata:

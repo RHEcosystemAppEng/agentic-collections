@@ -35,3 +35,8 @@ jobs:
         run: |
           source $HOME/.cargo/env
           ./scripts/ci-validate-changed-skills.sh
+
+      - name: Validate consistency audit CI gate
+        run: |
+          source $HOME/.cargo/env
+          make validate-consistency-audit-ci

@@ -103,3 +103,9 @@ jobs:
             echo "❌ Linter did not complete"
             exit 1
           fi
+
+      - name: Run consistency audit (changed-scope mode)
+        if: github.event_name == 'pull_request'
+        run: |
+          uv run python scripts/consistency_audit.py --changed-only --format json --output reports/consistency-audit-pr.json
+        continue-on-error: true

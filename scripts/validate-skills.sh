@@ -173,10 +173,10 @@ validate_yaml_frontmatter() {
         log_error "$skill_name: Missing 'color' field in frontmatter (MANDATORY)"
         ((errors++))
     else
-        # Validate color value is one of: cyan, green, blue, yellow, red
+        # Validate color value is one of: cyan, green, blue, yellow, red, magenta
         local color_value=$(echo "$frontmatter" | grep '^color:' | sed 's/color: *//' | tr -d '"' | tr -d "'" | xargs)
-        if [[ "$color_value" != "cyan" && "$color_value" != "green" && "$color_value" != "blue" && "$color_value" != "yellow" && "$color_value" != "red" ]]; then
-            log_error "$skill_name: Invalid color value '$color_value' (must be: cyan, green, blue, yellow, or red)"
+        if [[ "$color_value" != "cyan" && "$color_value" != "green" && "$color_value" != "blue" && "$color_value" != "yellow" && "$color_value" != "red" && "$color_value" != "magenta" ]]; then
+            log_error "$skill_name: Invalid color value '$color_value' (must be: cyan, green, blue, yellow, red, or magenta)"
             ((errors++))
         fi
     fi

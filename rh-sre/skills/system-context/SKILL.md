@@ -14,6 +14,8 @@ description: |
   This skill orchestrates MCP tools (get_cve_systems, get_host_details) for system analysis.
 
   **IMPORTANT**: ALWAYS use this skill instead of calling get_cve_systems or get_host_details directly for system context gathering.
+model: inherit
+color: blue
 ---
 
 # System Context Gathering Skill

@@ -175,7 +175,7 @@ last_updated: YYYY-MM-DD
 1. Create `skills/<skill-name>/SKILL.md`
 2. Define YAML frontmatter with mandatory fields:
    - `name`, `description` (agentskills.io spec)
-   - `model` (inherit|sonnet|haiku), `color` (cyan|green|blue|yellow|red) - Repository requirement
+   - `model` (inherit|sonnet|haiku), `color` (cyan|green|blue|yellow|red|magenta) - Repository requirement
    - Optional: `metadata` for custom fields (author, priority, version)
 3. Follow [SKILL_DESIGN_PRINCIPLES.md](SKILL_DESIGN_PRINCIPLES.md) for:
    - Section structure and ordering
@@ -237,7 +237,7 @@ When creating new collection, use `rh-sre` as the architectural reference.
 
 The `rh-virt` pack demonstrates skill quality standardization:
 - Comprehensive skill templates (`SKILL_TEMPLATE.md`)
-- Risk-based color coding (cyan/green/blue/yellow/red)
+- Risk-based color coding (cyan/green/blue/yellow/red/magenta)
 - Mandatory Common Issues and Example Usage sections
 - Consistent section ordering and formatting
 

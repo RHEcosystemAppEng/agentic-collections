@@ -9,6 +9,12 @@ let data = null;
 let allPacks = [];
 let allMCPServers = [];
 let allCommunityMCPServers = [];
+const JS_STYLE_TOKENS = {
+    errorColor: 'var(--primary)',
+    mutedTextColor: 'var(--text-muted)',
+    subtleErrorBackground: 'var(--primary-light)',
+    softAccentBackground: 'var(--primary-light)'
+};
 
 /** Default LICENSE in upstream repo (collection legal_resources may override). */
 const UPSTREAM_REPO_LICENSE_URL = 'https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE';
@@ -105,7 +111,7 @@ async function init() {
 function showError(message) {
     const main = document.querySelector('main');
     const errorDiv = document.createElement('div');
-    errorDiv.style.color = '#ee0000';
+    errorDiv.style.color = JS_STYLE_TOKENS.errorColor;
     errorDiv.style.padding = '2rem';
     errorDiv.style.textAlign = 'center';
     errorDiv.textContent = `Error: ${message}`;
@@ -126,7 +132,7 @@ function renderPacks(packs) {
     if (packs.length === 0) {
         const noResults = document.createElement('p');
         noResults.textContent = 'No packs found matching your search.';
-        noResults.style.color = '#d2d2d2';
+        noResults.style.color = JS_STYLE_TOKENS.mutedTextColor;
         grid.appendChild(noResults);
         return;
     }
@@ -251,7 +257,7 @@ function renderMCPServers(servers) {
     if (servers.length === 0) {
         const noResults = document.createElement('p');
         noResults.textContent = 'No MCP servers found matching your search.';
-        noResults.style.color = '#d2d2d2';
+        noResults.style.color = JS_STYLE_TOKENS.mutedTextColor;
         grid.appendChild(noResults);
         return;
     }
@@ -276,7 +282,7 @@ function renderCommunityMCPServers(servers) {
     if (servers.length === 0) {
         const noResults = document.createElement('p');
         noResults.textContent = 'No community MCP servers found matching your search.';
-        noResults.style.color = '#d2d2d2';
+        noResults.style.color = JS_STYLE_TOKENS.mutedTextColor;
         grid.appendChild(noResults);
         return;
     }
@@ -594,7 +600,7 @@ function showPackDetails(packName) {
         
         const nameCode = document.createElement('code');
         nameCode.textContent = pack.plugin.name;
-        nameCode.style.backgroundColor = 'rgba(238, 0, 0, 0.1)';
+        nameCode.style.backgroundColor = JS_STYLE_TOKENS.subtleErrorBackground;
         nameCode.style.padding = '0.25rem 0.5rem';
         nameCode.style.borderRadius = '4px';
         nameCode.style.fontSize = '0.85rem';
@@ -934,7 +940,7 @@ lola install -f ${moduleName}`;
             // Hover effects
             mcpDef.onmouseenter = () => {
                 mcpDef.style.borderLeftColor = 'var(--primary)';
-                mcpDef.style.backgroundColor = 'rgba(238, 0, 0, 0.05)';
+                mcpDef.style.backgroundColor = JS_STYLE_TOKENS.softAccentBackground;
                 arrow.style.transform = 'translateX(4px)';
             };
             

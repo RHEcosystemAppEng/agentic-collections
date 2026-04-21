@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rhecosystemappeng.github.io/agentic-collections/schemas/consistency-audit-report.schema.json",
+  "title": "Consistency Audit Report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "branch",
+    "summary",
+    "matrix",
+    "findings",
+    "policy_decisions",
+    "remediation_plan"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "packs_total",
+        "findings_total",
+        "by_severity"
+      ],
+      "properties": {
+        "packs_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "findings_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "by_severity": {
+          "type": "object",
+          "required": [
+            "blocking",
+            "high",
+            "medium",
+            "informational"
+          ],
+          "properties": {
+            "blocking": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "high": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "medium": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "informational": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pack_name",
+          "registration_status",
+          "version_consistency_status",
+          "model_metadata_status",
+          "claim_reality_status",
+          "style_icon_status",
+          "overall_severity"
+        ],
+        "properties": {
+          "pack_name": {
+            "type": "string"
+          },
+          "registration_status": {
+            "type": "string",
+            "enum": [
+              "registered",
+              "missing",
+              "excluded-by-policy"
+            ]
+          },
+          "version_consistency_status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "warn",
+              "fail"
+            ]
+          },
+          "model_metadata_status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "warn",
+              "fail"
+            ]
+          },
+          "claim_reality_status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "warn",
+              "fail"
+            ]
+          },
+          "style_icon_status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "warn",
+              "fail"
+            ]
+          },
+          "overall_severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "high",
+              "medium",
+              "informational",
+              "none"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "finding_id",
+          "rule_id",
+          "severity",
+          "artifact_path",
+          "message",
+          "ci_enforcement"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string"
+          },
+          "rule_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "high",
+              "medium",
+              "informational"
+            ]
+          },
+          "pack_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "artifact_path": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "actual": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "ci_enforcement": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "warn",
+              "report"
+            ]
+          },
+          "autofixable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "policy_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "decision_id",
+          "topic",
+          "decision"
+        ],
+        "properties": {
+          "decision_id": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "applies_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "remediation_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "item_id",
+          "priority",
+          "finding_ids",
+          "owner_area"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "p0",
+              "p1",
+              "p2",
+              "p3"
+            ]
+          },
+          "finding_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "owner_area": {
+            "type": "string"
+          },
+          "target_artifacts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -96,9 +96,13 @@ for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do 
 | **[rh-automation](rh-automation/README.md)** | 1.0.0 | 11 | Ansible Automation Platform governance, safety checks | Automation Leads |
 | **[rh-support-engineer](rh-support-engineer/README.md)** | 1.0.0 | 0* | Technical support and troubleshooting | Support Engineers |
 
-**Total:** 63 skills across 7 plugins | **License:** Apache 2.0 | **Status:** Production Ready
+**Total:** 63 skills across 7 plugins | **Standalone Agents:** 0 | **Orchestration:** Delivered through orchestration skills where applicable | **License:** Apache 2.0 | **Status:** Production Ready
 
 <sub>* Coming soon</sub>
+
+### rh-support-engineer policy
+
+`rh-support-engineer` is intentionally excluded from `marketplace/rh-agentic-collection.yml` while content remains in a pre-release placeholder state. This exclusion is explicit policy (not an omission), and consistency checks treat this pack as `excluded-by-policy` until it is formally registered.
 
 ---
 
@@ -222,6 +226,7 @@ Use the `validate-skill-design` and `validate-skill-design-changed` targets to c
 - Human-in-the-loop requirements for critical operations (DP5)
 - Mandatory sections (Prerequisites, When to Use, Workflow) (DP6)
 - Credential security (no `echo $VAR` exposure) (DP7)
+- Required frontmatter policy (`model` required: `inherit|sonnet|haiku`; `color` required: `cyan|green|blue|yellow|red|magenta`)
 
 ```bash
 # Validate only changed skills (staged + unstaged) - recommended for local dev
@@ -295,6 +300,22 @@ gitleaks protect --staged
 ```
 
 See [SECURITY.md](SECURITY.md) for details.
+
+## Consistency Audit Severity Guide
+
+Use the consistency audit outputs to prioritize fixes:
+
+- **blocking**: must be fixed before merge; CI fails.
+- **high**: warning in initial rollout; prioritize in same PR when practical.
+- **medium**: warning; schedule near-term cleanup.
+- **informational**: track for hygiene improvements.
+
+Recommended remediation workflow:
+
+1. Run `make validate-consistency-audit`.
+2. Review `reports/consistency-audit.json` and `reports/consistency-audit.md`.
+3. Fix all blocking findings first, then high findings related to changed files.
+4. Re-run `make validate-consistency-audit-ci` before opening or updating a PR.
 
 ## Adding a New MCP Server
 

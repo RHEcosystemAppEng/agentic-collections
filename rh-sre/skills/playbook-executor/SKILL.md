@@ -12,6 +12,8 @@ description: |
   - "Dry-run the playbook first"
 
   **Git Flow**: If template playbook path ≠ generated playbook, perform Git Flow (commit, push, sync) BEFORE launch.
+model: inherit
+color: red
 ---
 
 # AAP Playbook Executor Skill

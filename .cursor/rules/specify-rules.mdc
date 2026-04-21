@@ -1,0 +1,35 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# agentic-collections Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-04-14
+
+## Active Technologies
+
+- Python 3.11 (existing scripts), Bash (existing CI wrappers), Markdown/JSON/YAML for policy and report artifacts + Existing `uv` workflow, existing validation scripts in `scripts/`, existing GitHub Actions workflows in `.github/workflows/` (001-collection-consistency-audit)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+cd src && pytest && ruff check .
+
+## Code Style
+
+Python 3.11 (existing scripts), Bash (existing CI wrappers), Markdown/JSON/YAML for policy and report artifacts: Follow standard conventions
+
+## Recent Changes
+
+- 001-collection-consistency-audit: Added Python 3.11 (existing scripts), Bash (existing CI wrappers), Markdown/JSON/YAML for policy and report artifacts + Existing `uv` workflow, existing validation scripts in `scripts/`, existing GitHub Actions workflows in `.github/workflows/`
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

@@ -1,0 +1,21 @@
+{
+  "colors": {
+    "primary": "var(--primary)",
+    "primaryDark": "var(--primary-dark)",
+    "primaryLight": "var(--primary-light)",
+    "textPrimary": "var(--text-primary)",
+    "textSecondary": "var(--text-secondary)",
+    "textMuted": "var(--text-muted)"
+  },
+  "sizes": {
+    "cardIcon": "1.2rem",
+    "itemIcon": "1rem"
+  },
+  "usage": {
+    "stylesCss": "docs/styles.css",
+    "appJs": "docs/app.js",
+    "iconsJson": "docs/icons.json",
+    "pluginsJson": "docs/plugins.json",
+    "mcpJson": "docs/mcp.json"
+  }
+}
