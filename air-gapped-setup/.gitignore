@@ -1,9 +1,0 @@
-# Model download cache (exclude downloaded models but keep manifests)
-models/cache/
-
-# Tarball files
-*.tar.gz
-
-# Temporary files
-*.tmp
-*.log
