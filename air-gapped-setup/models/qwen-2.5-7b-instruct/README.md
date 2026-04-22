@@ -54,84 +54,33 @@ hf download Qwen/Qwen2.5-7B-Instruct \
 
 # Verify download (should show ~15 files)
 ls -lh ./models/cache/Qwen/Qwen2.5-7B-Instruct/
-
-# Create tarball for transfer (maintains vendor/model structure)
-tar -czf qwen-2.5-7b.tar.gz -C ./models/cache .
-
-# Check tarball size (~14GB)
-ls -lh qwen-2.5-7b.tar.gz
-```
-
-**Expected files after download:**
-```
-config.json
-generation_config.json
-model-00001-of-00004.safetensors (~3.9GB)
-model-00002-of-00004.safetensors (~3.9GB)
-model-00003-of-00004.safetensors (~3.9GB)
-model-00004-of-00004.safetensors (~2.2GB)
-model.safetensors.index.json
-merges.txt
-tokenizer.json
-tokenizer_config.json
-vocab.json
-... (15 files total, ~14GB)
 ```
 
 ---
 
-### Step 2: Transfer Model to Air-Gapped Cluster
+### Step 2: Upload Model to OpenShift PVC
 
-**Transfer tarball to bastion/jump host:**
+**Prerequisites:**
+- `llm-models` namespace exists
+- `models-storage` PVC exists and is bound
+- `model-loader` pod is running
+- `oc` CLI configured with access to the cluster
+
+See [main documentation Sections 1-2](../../../README.md#21-prepare-shared-model-storage-one-time-setup) for setup instructions.
+
+> **⚠️ NOTE**: This guide assumes the machine where you downloaded the model has direct `oc` access to the OpenShift cluster. If you access the cluster through a bastion/jump host, transfer the model directory to that bastion first before proceeding with the upload steps below.
+
+**Upload to PVC:**
 
 ```bash
-# Transfer tarball to bastion host with oc access
-# (Use scp, rsync, or physical media)
-scp qwen-2.5-7b.tar.gz user@bastion:/tmp/
-```
+# Create destination directory in PVC
+oc exec -n llm-models model-loader -- mkdir -p /mnt/models/Qwen/Qwen2.5-7B-Instruct
 
-**On bastion host with oc access:**
-
-```bash
-# Create temporary pod with PVC mounted
-cat <<EOF | oc apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: model-loader
-  namespace: llm-models
-spec:
-  containers:
-  - name: loader
-    image: registry.access.redhat.com/ubi9/ubi:latest
-    command: ["/bin/sh", "-c", "sleep 3600"]
-    volumeMounts:
-    - name: models
-      mountPath: /mnt/models
-  volumes:
-  - name: models
-    persistentVolumeClaim:
-      claimName: model-storage
-  restartPolicy: Never
-EOF
-
-# Wait for pod to be ready
-oc wait --for=condition=Ready pod/model-loader -n llm-models --timeout=120s
-
-# Copy model tarball to PVC
-oc cp /tmp/qwen-2.5-7b.tar.gz llm-models/model-loader:/mnt/models/
-
-# Extract tarball in PVC
-oc exec -n llm-models model-loader -- tar -xzf /mnt/models/qwen-2.5-7b.tar.gz -C /mnt/models/
-
-# Remove tarball to save space
-oc exec -n llm-models model-loader -- rm /mnt/models/qwen-2.5-7b.tar.gz
+# Copy model to PVC (with progress)
+oc rsync --progress ./models/cache/Qwen/Qwen2.5-7B-Instruct/ llm-models/model-loader:/mnt/models/Qwen/Qwen2.5-7B-Instruct/
 
 # Verify model files are present
 oc exec -n llm-models model-loader -- ls -lh /mnt/models/Qwen/Qwen2.5-7B-Instruct/
-
-# Delete loader pod
-oc delete pod model-loader -n llm-models
 ```
 
 **Expected Output (ls -lh):**
@@ -149,29 +98,67 @@ total XXXM
 
 ---
 
-### Step 3: Deploy Model
+### Step 3: Deploy Model with OpenShift AI
+
+This deployment uses **OpenShift AI RawDeployment mode** with KServe API (ServingRuntime + InferenceService).
+
+#### 3.1. Create ServingRuntime
+
+The ServingRuntime defines **HOW** to serve models (vLLM configuration, GPU allocation, resource limits).
 
 ```bash
-# Navigate to model manifest directory
-cd models/qwen-2.5-7b-instruct/
-
-# Deploy all resources (deployment, service, route)
-oc apply -f .
-
-# Verify resources created
-oc get deployment,service,route -n llm-models
+oc apply -f models/qwen-2.5-7b-instruct/servingruntime.yaml
 ```
 
-**Expected Output:**
+**Verify ServingRuntime created:**
+```bash
+oc get servingruntime -n llm-models
 ```
-NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/vllm-qwen-2-5-7b   0/1     1            0           5s
 
-NAME                          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
-service/llm-qwen-2-5-7b-svc   ClusterIP   172.30.xxx.xxx   <none>        8000/TCP   5s
+**Expected output:**
+```
+NAME                 DISABLED   MODELTYPE   CONTAINERS   AGE
+vllm-qwen-runtime    false      vLLM        kserve       10s
+```
 
-NAME                                  HOST/PORT                                                    PATH   SERVICES             PORT   TERMINATION   WILDCARD
-route.route.openshift.io/qwen-2-5-7b  qwen-2-5-7b-llm-models.apps.example.com                             llm-qwen-2-5-7b-svc  http   edge          None
+---
+
+#### 3.2. Create InferenceService
+
+The InferenceService defines **WHAT** model to serve (references the ServingRuntime and PVC).
+
+```bash
+oc apply -f models/qwen-2.5-7b-instruct/inferenceservice.yaml
+```
+
+**Verify InferenceService created:**
+```bash
+oc get inferenceservice -n llm-models
+```
+
+**Expectedoutput:**
+```
+NAME            URL                                          READY   PREV   LATEST
+qwen-2-5-7b     http://qwen-2-5-7b.llm-models.svc.cluster    True           100
+```
+
+---
+
+#### 3.3. Create Route for External Access
+
+```bash
+oc apply -f route-inferenceservice.yaml
+```
+
+**Get route URL:**
+```bash
+oc get route qwen-2-5-7b-inference -n llm-models
+```
+
+**Expected output:**
+```
+NAME                     HOST/PORT                                               
+qwen-2-5-7b-inference    qwen-2-5-7b-inference-llm-models.apps.example.com
 ```
 
 ---
@@ -180,32 +167,31 @@ route.route.openshift.io/qwen-2-5-7b  qwen-2-5-7b-llm-models.apps.example.com   
 
 ```bash
 # Watch pod status (model loading takes 2-5 minutes)
-oc get pods -n llm-models -l model=qwen-2.5-7b-instruct -w
+oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -w
 
 # Check pod events
-oc describe pod -n llm-models -l model=qwen-2.5-7b-instruct
+oc describe pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 
 # Follow logs (watch for "Application startup complete")
-POD=$(oc get pods -n llm-models -l model=qwen-2.5-7b-instruct -o name | head -1)
+POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1)
 oc logs -f $POD -n llm-models
 ```
 
 **Key Log Messages to Look For:**
 ```
-INFO:     Started server process
-INFO:     Waiting for application startup.
-INFO:     Loading model weights...
-INFO:     Model loaded successfully
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO: Starting to load model /mnt/models/Qwen/Qwen2.5-7B-Instruct...
+INFO: Loading weights took X seconds
+INFO: Model loading took 14.25 GiB memory
+INFO: Compiling a graph for compile range
+INFO: Application startup complete
 ```
 
 **Pod Status Progression:**
 ```
-NAME                               READY   STATUS              RESTARTS   AGE
-vllm-qwen-2-5-7b-xxxxxxxxx-xxxxx   0/1     ContainerCreating   0          10s
-vllm-qwen-2-5-7b-xxxxxxxxx-xxxxx   0/1     Running             0          30s
-vllm-qwen-2-5-7b-xxxxxxxxx-xxxxx   1/1     Running             0          3m
+NAME                                    READY   STATUS              RESTARTS   AGE
+qwen-2-5-7b-xxxxx-xxxxx                 0/1     ContainerCreating   0          10s
+qwen-2-5-7b-xxxxx-xxxxx                 0/1     Running             0          30s
+qwen-2-5-7b-xxxxx-xxxxx                 1/1     Running             0          3m
 ```
 
 ---
@@ -214,12 +200,11 @@ vllm-qwen-2-5-7b-xxxxxxxxx-xxxxx   1/1     Running             0          3m
 
 ```bash
 # Get route URL
-ROUTE_URL=$(oc get route qwen-2-5-7b -n llm-models -o jsonpath='{.spec.host}')
+ROUTE_URL=$(oc get route qwen-2-5-7b-inference -n llm-models -o jsonpath='{.spec.host}')
 echo "Model endpoint: https://$ROUTE_URL"
 
 # Test health endpoint
 curl -k https://$ROUTE_URL/health
-# Expected: {"status":"ok"}
 
 # List available models
 curl -k https://$ROUTE_URL/v1/models
@@ -228,7 +213,7 @@ curl -k https://$ROUTE_URL/v1/models
 curl -k https://$ROUTE_URL/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
     "messages": [
       {"role": "user", "content": "Explain Kubernetes in one sentence."}
     ],
@@ -240,7 +225,7 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 curl -k https://$ROUTE_URL/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
     "messages": [
       {"role": "system", "content": "You are a helpful coding assistant."},
       {"role": "user", "content": "Write a Python function to calculate fibonacci numbers using memoization."}
@@ -253,7 +238,7 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 curl -k https://$ROUTE_URL/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
     "messages": [
       {"role": "user", "content": "用中文解释什么是机器学习"}
     ],
@@ -265,7 +250,7 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 curl -k https://$ROUTE_URL/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
     "messages": [
       {"role": "user", "content": "Count from 1 to 10."}
     ],
@@ -277,24 +262,25 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 **Expected Response (example):**
 ```json
 {
-  "id": "cmpl-xxxxxxxxxxxxxxxxxxxxxxxx",
+  "id": "chatcmpl-xxxxxxxxxxxxxxxx",
   "object": "chat.completion",
-  "created": 1234567890,
-  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "created": 1776789362,
+  "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
   "choices": [
     {
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "Kubernetes is an open-source container orchestration platform..."
+        "content": "Kubernetes is an open-source container orchestration platform...",
+        "refusal": null
       },
       "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 15,
+    "prompt_tokens": 34,
     "completion_tokens": 42,
-    "total_tokens": 57
+    "total_tokens": 76
   }
 }
 ```
@@ -305,8 +291,8 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 
 ```bash
 # Check GPU utilization
-POD=$(oc get pods -n llm-models -l model=qwen-2.5-7b-instruct -o name | head -1)
-oc exec $POD -- nvidia-smi
+POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1)
+oc exec $POD -c kserve-container -- nvidia-smi
 
 # Check vLLM metrics
 curl -k https://$ROUTE_URL/metrics
@@ -327,19 +313,173 @@ oc adm top pod -n llm-models
 
 ---
 
+### Step 6: Configure OpenCode (Optional)
+
+If you want to use this model with OpenCode for AI-assisted development:
+
+#### 6.1. Update Base URL
+
+First, get your deployed model's route URL:
+
+```bash
+ROUTE_URL=$(oc get route qwen-2-5-7b-inference -n llm-models -o jsonpath='{.spec.host}')
+echo "https://$ROUTE_URL/v1"
+```
+
+Edit `opencode.json` and update the `baseURL` with your route:
+
+```json
+{
+  "provider": {
+    "openshift-ai-qwen": {
+      "options": {
+        "baseURL": "https://YOUR-ROUTE-URL/v1"
+      }
+    }
+  }
+}
+```
+
+#### 6.2. Copy Configuration
+
+```bash
+# Copy to your project directory
+cp models/qwen-2.5-7b-instruct/opencode.json /path/to/your/project/
+
+# Or configure globally
+mkdir -p ~/.config/opencode
+cp models/qwen-2.5-7b-instruct/opencode.json ~/.config/opencode/
+```
+
+#### 6.3. Start OpenCode
+
+```bash
+cd /path/to/your/project
+opencode
+```
+
+OpenCode will now use your air-gapped Qwen 2.5 7B model.
+
+---
+
+### OpenCode Configuration Reference
+
+The `opencode.json` file configures Open Code to use your deployed model:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openshift-ai-qwen": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenShift AI - Qwen 2.5 7B",
+      "options": {
+        "baseURL": "https://qwen-2-5-7b-inference-llm-models.apps.example.com/v1"
+      },
+      "models": {
+        "/mnt/models/Qwen/Qwen2.5-7B-Instruct": {
+          "name": "Qwen 2.5 7B Instruct (Air-Gapped)",
+          "description": "Qwen 2.5 7B instruction-tuned model deployed on OpenShift AI with vLLM and NVIDIA H200 GPU",
+          "limit": {
+            "context": 32768,
+            "output": 1024
+          }
+        }
+      }
+    }
+  },
+  "model": "openshift-ai-qwen//mnt/models/Qwen/Qwen2.5-7B-Instruct"
+}
+```
+
+#### Configuration Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `$schema` | `https://opencode.ai/config.json` | JSON schema for validation |
+| `provider.*.npm` | `@ai-sdk/openai-compatible` | AI SDK provider for OpenAI-compatible APIs |
+| `provider.*.name` | `OpenShift AI - Qwen 2.5 7B` | Display name in Open Code |
+| `provider.*.options.baseURL` | `https://<route>/v1` | Your model's OpenAI-compatible API endpoint |
+| `models.*.limit.context` | `32768` | Total context window in tokens |
+| `models.*.limit.output` | `1024` | Maximum output tokens per response |
+| `model` | `openshift-ai-qwen//mnt/...` | Active model identifier |
+
+#### Understanding Token Limits
+
+**The `limit` configuration is critical** for Open Code to work correctly:
+
+```json
+"limit": {
+  "context": 32768,    // Total tokens (input + output)
+  "output": 1024       // Maximum response length
+}
+```
+
+**Why is `output` set to 1024?**
+
+Open Code automatically loads context (skills, documentation, conversation history) that can consume **significant tokens**. With a 32k context window:
+
+- **Typical Open Code context**: 20k-28k tokens (skills, system prompts, conversation)
+- **Available for output**: 4k-12k tokens
+- **Safe default**: 1024 tokens ensures room for input without overflow
+
+**If you see errors like:**
+```
+This model's maximum context length is 32768 tokens. However, you requested 
+X output tokens and your prompt contains at least Y input tokens...
+```
+
+**Solution**: Reduce `output` further (512 or 256) or work without loading many skills.
+
+#### Adjusting Token Limits
+
+**For basic prompts without skills:**
+```json
+"limit": {
+  "context": 32768,
+  "output": 4096      // More room for longer responses
+}
+```
+
+**For skill-heavy workflows:**
+```json
+"limit": {
+  "context": 32768,
+  "output": 512       // Minimal to leave room for skill content
+}
+```
+
+**Trade-off**: Lower `output` = shorter responses but more room for complex prompts.
+
+#### Troubleshooting
+
+**Problem**: "Unrecognized key: maxTokens"  
+**Solution**: Use `limit.output` instead of `maxTokens` in the models section
+
+**Problem**: "max_tokens is too large"  
+**Solution**: Reduce `limit.output` in `opencode.json`
+
+**Problem**: Context overflow with skills loaded  
+**Solution**: 
+1. Reduce `limit.output` to 512 or lower
+2. Uninstall unused skills (`lola uninstall <module>`)
+3. Use prompts without loading many skills at once
+
+---
+
 ## Configuration Reference
 
-### Deployment Configuration
+### ServingRuntime Configuration
 
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
+| **Runtime Name** | `vllm-qwen-runtime` | ServingRuntime identifier |
+| **Container Image** | `vllm/vllm-openai:latest` | Official vLLM OpenAI-compatible image |
 | **Model Path** | `/mnt/models/Qwen/Qwen2.5-7B-Instruct` | Location in PVC |
-| **Served Model Name** | `Qwen/Qwen2.5-7B-Instruct` | API model identifier |
 | **GPUs** | 1 | Number of GPUs allocated |
-| **Tensor Parallel** | 1 | GPU parallelization (1 for single GPU) |
 | **Max Model Length** | 32768 | Context window size in tokens |
 | **GPU Memory Util** | 0.90 | Percentage of VRAM to use (90%) |
-| **Port** | 8000 | vLLM API port |
+| **Port** | 8080 | vLLM API port (KServe standard) |
 
 ### Resource Allocation
 
@@ -355,20 +495,30 @@ resources:
     nvidia.com/gpu: "1"
 ```
 
-### vLLM Arguments
+### InferenceService Configuration
 
 ```yaml
-args:
-  - /mnt/models/Qwen/Qwen2.5-7B-Instruct
-  - --port=8000
-  - --served-model-name=Qwen/Qwen2.5-7B-Instruct
-  - --trust-remote-code
-  - --tensor-parallel-size=1
-  - --gpu-memory-utilization=0.90
-  - --max-model-len=32768
-  - --dtype=auto
-  - --disable-log-requests
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: qwen-2-5-7b
+  annotations:
+    serving.kserve.io/deploymentMode: RawDeployment
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: vLLM
+      runtime: vllm-qwen-runtime
+      storageUri: pvc://models-storage/
+    minReplicas: 1
+    maxReplicas: 1
 ```
+
+**Key Points:**
+- `deploymentMode: RawDeployment` - Creates standard Kubernetes Deployment (not Knative)
+- `runtime: vllm-qwen-runtime` - References the ServingRuntime
+- `storageUri: pvc://models-storage/` - KServe syntax for PVC storage
 
 ---
 
@@ -390,11 +540,17 @@ Based on NVIDIA H200 GPU:
 ### Horizontal Scaling (Multiple Replicas)
 
 ```bash
-# Increase replicas (requires additional GPUs)
-oc scale deployment vllm-qwen-2-5-7b -n llm-models --replicas=2
+# Edit InferenceService
+oc edit inferenceservice qwen-2-5-7b -n llm-models
+
+# Change:
+# spec:
+#   predictor:
+#     minReplicas: 2
+#     maxReplicas: 2
 
 # Verify both pods are running
-oc get pods -n llm-models -l model=qwen-2.5-7b-instruct
+oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 
 # Service automatically load balances across replicas
 ```
@@ -404,15 +560,19 @@ oc get pods -n llm-models -l model=qwen-2.5-7b-instruct
 ### Vertical Scaling (Extended Context)
 
 ```bash
-# Edit deployment to increase context window
-oc edit deployment vllm-qwen-2-5-7b -n llm-models
+# Edit ServingRuntime to increase context window
+oc edit servingruntime vllm-qwen-runtime -n llm-models
 
 # Change:
-# - --max-model-len=32768
+# args:
+#   - --max-model-len
+#   - "32768"
 # to:
-# - --max-model-len=65536
+#   - --max-model-len
+#   - "65536"
 
-# Pod will restart with new configuration
+# Delete pod to restart with new config
+oc delete pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 ```
 
 **Note**: Longer context windows require more VRAM and reduce concurrent request capacity.
@@ -452,8 +612,8 @@ oc logs -n llm-models -l model=qwen-2.5-7b-instruct --tail=100
 
 ```bash
 # Check GPU utilization
-POD=$(oc get pods -n llm-models -l model=qwen-2.5-7b-instruct -o name | head -1)
-oc exec $POD -- nvidia-smi
+POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1)
+oc exec $POD -c kserve-container -- nvidia-smi
 
 # Check if model is loaded in GPU memory (VRAM usage should be ~14GB)
 # Check concurrent request load
@@ -465,18 +625,22 @@ oc logs $POD | grep "num_requests"
 ### Model Not Responding
 
 ```bash
+# Check InferenceService status
+oc get inferenceservice qwen-2-5-7b -n llm-models
+
 # Check pod status
-oc get pods -n llm-models -l model=qwen-2.5-7b-instruct
+oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 
 # Check readiness probe
-oc describe pod -n llm-models -l model=qwen-2.5-7b-instruct | grep -A 5 Readiness
+oc describe pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b | grep -A 5 Readiness
 
 # Check route
-oc get route qwen-2-5-7b -n llm-models
+oc get route qwen-2-5-7b-inference -n llm-models
 
 # Test from within cluster (bypass route)
+SVC=$(oc get service -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1 | cut -d/ -f2)
 oc run -it --rm debug --image=registry.access.redhat.com/ubi9/ubi-minimal --restart=Never -- \
-  curl http://llm-qwen-2-5-7b-svc.llm-models.svc.cluster.local:8000/health
+  curl http://$SVC.llm-models.svc.cluster.local:8080/health
 ```
 
 ---
@@ -486,14 +650,17 @@ oc run -it --rm debug --image=registry.access.redhat.com/ubi9/ubi-minimal --rest
 ### Delete Model Deployment Only
 
 ```bash
-# Navigate to manifest directory
-cd models/qwen-2.5-7b-instruct/
+# Delete InferenceService (automatically deletes pods and services)
+oc delete inferenceservice qwen-2-5-7b -n llm-models
 
-# Delete resources
-oc delete -f .
+# Delete Route
+oc delete route qwen-2-5-7b-inference -n llm-models
+
+# Delete ServingRuntime (if not used by other models)
+oc delete servingruntime vllm-qwen-runtime -n llm-models
 
 # Verify deletion
-oc get pods,service,route -n llm-models
+oc get inferenceservice,servingruntime,route -n llm-models
 ```
 
 ### Delete Everything (Namespace and PVC)

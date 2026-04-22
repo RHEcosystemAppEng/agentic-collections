@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openshift-ai-qwen": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenShift AI - Qwen 2.5 7B",
+      "options": {
+        "baseURL": "https://qwen-2-5-7b-inference-llm-models.apps.appeng-lab01.accl-001.lab.rdu2.dc.redhat.com/v1"
+      },
+      "models": {
+        "/mnt/models/Qwen/Qwen2.5-7B-Instruct": {
+          "name": "Qwen 2.5 7B Instruct (Air-Gapped)",
+          "description": "Qwen 2.5 7B instruction-tuned model deployed on OpenShift AI with vLLM and NVIDIA H200 GPU",
+          "limit": {
+            "context": 32768,
+            "output": 1024
+          }
+        }
+      }
+    }
+  },
+  "model": "openshift-ai-qwen//mnt/models/Qwen/Qwen2.5-7B-Instruct"
+}

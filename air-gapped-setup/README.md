@@ -133,14 +133,28 @@ oc apply -f manifests/openshift-ai/subscription.yaml
 oc wait --for=condition=Ready csv -n redhat-ods-operator -l operators.coreos.com/rhods-operator.redhat-ods-operator --timeout=300s
 ```
 
-**Initialize:**
+**Initialize (Step 1 - DSCInitialization):**
+```bash
+oc apply -f manifests/openshift-ai/dscinitialization.yaml
+```
+
+**Verify DSCInitialization is created:**
+```bash
+oc get dscinitialization default-dsci
+```
+
+**Initialize (Step 2 - DataScienceCluster):**
 ```bash
 oc apply -f manifests/openshift-ai/datasciencecluster.yaml
 ```
 
-**Verify OpenShift AI is running:**
+**Wait for DataScienceCluster to be ready:**
 ```bash
-oc get datasciencecluster
+oc wait --for=condition=Ready datasciencecluster default-dsc --timeout=300s
+```
+
+**Verify OpenShift AI components:**
+```bash
 oc get pods -n redhat-ods-applications
 ```
 
@@ -148,90 +162,100 @@ oc get pods -n redhat-ods-applications
 
 ### 2. Model Deployment
 
-This section covers deploying Llama 3.1 405B using KServe with RawDeployment mode and vLLM runtime.
+All LLM models are deployed to a shared namespace: `llm-models`
 
-#### 2.1. Prepare Model Storage
+This approach allows you to:
+- Store multiple models in a single PVC
+- Reuse the same infrastructure for different models
+- Simplify operations and reduce resource overhead
+
+---
+
+#### 2.1. Prepare Shared Model Storage (One-Time Setup)
 
 **Create namespace and PVC:**
 ```bash
-oc apply -f manifests/models/llama31-405b/namespace.yaml
-oc apply -f manifests/models/llama31-405b/pvc.yaml
+oc apply -f manifests/llm-models/namespace.yaml
+oc apply -f manifests/llm-models/pvc.yaml
 ```
 
-**Verify PVC is bound:**
+**Check PVC is created (will be Pending until a pod mounts it):**
 ```bash
-oc get pvc -n llama31-405b
+oc get pvc -n llm-models
 ```
 
-**Load model into PVC:**
-
-You need to copy the Llama 3.1 405B model files into the PVC. This can be done using a helper pod:
-
-```bash
-oc run -n llama31-405b model-loader --image=registry.access.redhat.com/ubi9/ubi:latest \
-  --restart=Never --command -- sleep infinity
-
-oc set volume pod/model-loader -n llama31-405b --add \
-  --name=model-storage --type=persistentVolumeClaim \
-  --claim-name=llama31-405b-model --mount-path=/mnt/models
-
-oc wait --for=condition=Ready pod/model-loader -n llama31-405b --timeout=300s
+**Expected output:**
+```
+NAME              STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS
+models-storage    Pending                                      gp3-csi
 ```
 
-Then copy the model files (from your bastion/mirror host):
+**Create model-loader helper pod (this will trigger PVC binding):**
 ```bash
-oc cp /path/to/llama31-405b-fp8/ llama31-405b/model-loader:/mnt/models/
+oc apply -f manifests/llm-models/model-loader-pod.yaml
 ```
 
-Verify the model files:
+**Wait for pod to be ready (this also ensures PVC is bound):**
 ```bash
-oc exec -n llama31-405b model-loader -- ls -lh /mnt/models/
+oc wait --for=condition=Ready pod/model-loader -n llm-models --timeout=300s
 ```
 
-Clean up the helper pod:
+**Verify both PVC and pod are ready:**
 ```bash
-oc delete pod model-loader -n llama31-405b
+oc get pvc,pod -n llm-models
 ```
 
-#### 2.2. Deploy the Model
+**Expected output:**
+```
+NAME                                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS
+persistentvolumeclaim/models-storage   Bound    pvc-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   500Gi      RWO            gp3-csi
 
-**Deploy ServingRuntime and InferenceService:**
-```bash
-oc apply -f manifests/models/llama31-405b/servingruntime.yaml
-oc apply -f manifests/models/llama31-405b/inferenceservice.yaml
+NAME               READY   STATUS    RESTARTS   AGE
+pod/model-loader   1/1     Running   0          45s
 ```
 
-**Verify deployment:**
+The `model-loader` pod is now ready to receive models via `oc cp` command.
+
+---
+
+#### 2.2. Deploy Specific Models
+
+Each model has specific download and deployment instructions. Choose your model from the table below:
+
+| Model | Parameters | Quantization | Disk Size | VRAM Required | Download & Deploy Guide |
+|-------|------------|--------------|-----------|---------------|-------------------------|
+| **Qwen 2.5 Instruct** | 7B | FP16 | ~14 GB | ~16 GB (1x GPU) | [📖 models/qwen-2.5-7b-instruct/README.md](./models/qwen-2.5-7b-instruct/README.md) |
+| **Llama 3.1 Instruct** | 8B | FP16 | ~16 GB | ~18 GB (1x GPU) | [📖 models/llama-3.1-8b-instruct/README.md](./models/llama-3.1-8b-instruct/README.md) |
+| **Qwen 2.5 Instruct** | 72B | FP8 | ~40 GB | ~160 GB (2x H100) | 📋 Coming soon |
+| **DeepSeek V3** | 671B (37B active) | FP8 | ~350 GB | ~480 GB (6x H100) | 📋 Coming soon |
+
+**After loading a model**, verify the structure inside the PVC:
 ```bash
-oc get inferenceservice -n llama31-405b
-oc get pods -n llama31-405b
+oc exec -n llm-models model-loader -- ls -lh /mnt/models/
 ```
 
-Wait for the predictor pod to be running:
-```bash
-oc wait --for=condition=Ready pod -l serving.kserve.io/inferenceservice=llama31-405b -n llama31-405b --timeout=600s
+**Expected structure** (example with multiple models):
+```
+total 0
+drwxr-xr-x. qwen-2.5-7b/
+drwxr-xr-x. llama-3.1-405b/
 ```
 
-#### 2.3. Test the Model
+---
 
-**Get the inference service URL:**
+#### 2.3. Keep model-loader Running (Optional)
+
+The `model-loader` pod can stay running if you plan to upload more models later.
+
+**To delete it** (saves resources when not in use):
 ```bash
-oc get inferenceservice llama31-405b -n llama31-405b -o jsonpath='{.status.url}'
+oc delete pod model-loader -n llm-models
 ```
 
-**Test the endpoint (from within the cluster):**
+**To recreate it later** (when you need to upload another model):
 ```bash
-oc run -n llama31-405b test-client --image=registry.access.redhat.com/ubi9/ubi:latest \
-  --restart=Never --rm -it -- bash -c "
-curl -X POST http://llama31-405b-predictor.llama31-405b.svc.cluster.local:8080/v1/completions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    \"model\": \"/mnt/models\",
-    \"prompt\": \"What is OpenShift?\",
-    \"max_tokens\": 100,
-    \"temperature\": 0.7
-  }'
-"
+oc apply -f manifests/llm-models/model-loader-pod.yaml
+oc wait --for=condition=Ready pod/model-loader -n llm-models --timeout=300s
 ```
 
 ---
@@ -240,14 +264,6 @@ curl -X POST http://llama31-405b-predictor.llama31-405b.svc.cluster.local:8080/v
 
 ---
 
-## Tested Models
-
-| Model | Size | Quantization | GPUs Required | Status | Notes |
-|-------|------|--------------|---------------|--------|-------|
-| Llama 3.1 405B | 405B | FP8 | 8x H100 80GB | Testing | Initial deployment |
-
----
-
-**Version:** 2.0  
+**Version:** 2.1  
 **Status:** In development  
-**Last Updated:** 2026-04-07
+**Last Updated:** 2026-04-17
