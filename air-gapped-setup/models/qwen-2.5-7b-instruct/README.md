@@ -579,69 +579,16 @@ oc delete pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 
 ---
 
-## Troubleshooting
+## Troubleshooting and Advanced Topics
 
-### Pod Stuck in Pending
+For security hardening, monitoring, observability, and detailed troubleshooting procedures, see:
 
-```bash
-# Check events
-oc describe pod -n llm-models -l model=qwen-2.5-7b-instruct
+**📖 [troubleshooting.md](./troubleshooting.md)**
 
-# Common causes:
-# - No available GPU: Check GPU allocation
-#   oc describe nodes | grep nvidia.com/gpu
-# - PVC not bound: Check PVC status
-#   oc get pvc -n llm-models
-```
-
-### Pod CrashLoopBackOff
-
-```bash
-# Check logs
-oc logs -n llm-models -l model=qwen-2.5-7b-instruct --tail=100
-
-# Common issues:
-# - Model files not found: Verify PVC path
-#   oc exec model-loader -n llm-models -- ls -lh /mnt/models/Qwen/Qwen2.5-7B-Instruct/
-# - OOM (Out of Memory): Reduce --max-model-len or --gpu-memory-utilization
-# - GPU not available: Check GPU Operator is running
-#   oc get pods -n nvidia-gpu-operator
-```
-
-### Slow Inference / High Latency
-
-```bash
-# Check GPU utilization
-POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1)
-oc exec $POD -c kserve-container -- nvidia-smi
-
-# Check if model is loaded in GPU memory (VRAM usage should be ~14GB)
-# Check concurrent request load
-oc logs $POD | grep "num_requests"
-
-# Reduce concurrent load or increase replicas
-```
-
-### Model Not Responding
-
-```bash
-# Check InferenceService status
-oc get inferenceservice qwen-2-5-7b -n llm-models
-
-# Check pod status
-oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
-
-# Check readiness probe
-oc describe pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b | grep -A 5 Readiness
-
-# Check route
-oc get route qwen-2-5-7b-inference -n llm-models
-
-# Test from within cluster (bypass route)
-SVC=$(oc get service -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1 | cut -d/ -f2)
-oc run -it --rm debug --image=registry.access.redhat.com/ubi9/ubi-minimal --restart=Never -- \
-  curl http://$SVC.llm-models.svc.cluster.local:8080/health
-```
+Includes:
+- Security hardening (NetworkPolicy, OAuth authentication)
+- Monitoring and observability (GPU metrics, vLLM metrics, logs)
+- Common issues and solutions (CUDA errors, startup failures, performance issues)
 
 ---
 
