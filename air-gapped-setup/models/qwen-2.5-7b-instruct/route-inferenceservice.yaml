@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: qwen-2-5-7b-inference
+  namespace: llm-models
+spec:
+  to:
+    kind: Service
+    name: qwen-2-5-7b-predictor
+  port:
+    targetPort: qwen-2-5-7b-predictor
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

@@ -1,0 +1,72 @@
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: vllm-mixtral-runtime
+  namespace: llm-models
+  labels:
+    opendatahub.io/dashboard: "true"
+  annotations:
+    opendatahub.io/template-display-name: "vLLM Runtime - Mixtral 8x22B"
+    opendatahub.io/template-name: "vllm-mixtral-runtime"
+spec:
+  supportedModelFormats:
+    - name: vLLM
+      version: "1"
+      autoSelect: true
+  multiModel: false
+  containers:
+    - name: kserve-container
+      image: vllm/vllm-openai:latest
+      command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+      args:
+        - --model
+        - /mnt/models/Mixtral/Mixtral-8x22B-Instruct-v0.1
+        - --port
+        - "8080"
+        - --dtype
+        - auto
+        - --tensor-parallel-size
+        - "4"
+        - --gpu-memory-utilization
+        - "0.90"
+        - --max-model-len
+        - "65536"
+        - --max-num-seqs
+        - "128"
+        - --enable-auto-tool-choice
+        - --tool-call-parser
+        - hermes
+      env:
+        - name: HF_HOME
+          value: /tmp/hf_home
+        - name: VLLM_WORKER_MULTIPROC_METHOD
+          value: spawn
+        - name: HOME
+          value: /tmp
+        - name: FLASHINFER_WORKSPACE_DIR
+          value: /tmp/flashinfer
+        - name: XDG_CACHE_HOME
+          value: /tmp/cache
+      resources:
+        limits:
+          cpu: "64"
+          memory: 512Gi
+          nvidia.com/gpu: "4"
+        requests:
+          cpu: "32"
+          memory: 256Gi
+          nvidia.com/gpu: "4"
+      volumeMounts:
+        - name: shm
+          mountPath: /dev/shm
+  volumes:
+    - name: shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 32Gi
+  nodeSelector:
+    nvidia.com/gpu.present: "true"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm-models
+  labels:
+    opendatahub.io/dashboard: "true"
+    purpose: llm-serving
+  annotations:
+    openshift.io/description: "Shared namespace for LLM model storage and serving"
+    openshift.io/display-name: "LLM Models"

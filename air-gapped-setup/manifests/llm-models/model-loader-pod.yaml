@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: model-loader
+  namespace: llm-models
+  labels:
+    app: model-loader
+    purpose: utility
+  annotations:
+    description: "Helper pod for uploading models to PVC via 'oc cp'"
+spec:
+  restartPolicy: Never
+  containers:
+  - name: loader
+    image: registry.access.redhat.com/ubi9/toolbox:latest
+    command:
+      - sleep
+      - infinity
+    volumeMounts:
+    - name: model-storage
+      mountPath: /mnt/models
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1"
+  volumes:
+  - name: model-storage
+    persistentVolumeClaim:
+      claimName: models-storage

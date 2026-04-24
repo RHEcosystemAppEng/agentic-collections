@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mixtral-8x22b-inference
+  namespace: llm-models
+spec:
+  to:
+    kind: Service
+    name: mixtral-8x22b-predictor
+  port:
+    targetPort: mixtral-8x22b-predictor
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

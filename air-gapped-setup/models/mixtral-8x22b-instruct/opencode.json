@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openshift-ai-mixtral": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenShift AI - Mixtral 8x22B",
+      "options": {
+        "baseURL": "https://mixtral-8x22b-inference-llm-models.apps.appeng-lab01.accl-001.lab.rdu2.dc.redhat.com/v1"
+      },
+      "models": {
+        "/mnt/models/Mixtral/Mixtral-8x22B-Instruct-v0.1": {
+          "name": "Mixtral 8x22B Instruct (Air-Gapped)",
+          "description": "Mixtral 8x22B MoE model deployed on OpenShift AI with vLLM and 4x NVIDIA H200 GPUs",
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+  "model": "openshift-ai-mixtral//mnt/models/Mixtral/Mixtral-8x22B-Instruct-v0.1"
+}
