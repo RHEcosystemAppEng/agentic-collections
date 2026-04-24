@@ -34,13 +34,6 @@ This guide demonstrates how to deploy and serve large language models (LLMs) on 
 
 **Note:** This section describes the reference lab environment used for testing. Your environment may differ.
 
-### Cluster Configuration (Reference Lab)
-```
-Cluster: appeng-lab01.accl-001.lab.rdu2.dc.redhat.com
-Architecture: Single-Node OpenShift (SNO) - High-Performance Lab
-Node Type: Dell PowerEdge XE9680L
-```
-
 ### Compute Resources (Reference Lab)
 | Component | Specification |
 |-----------|---------------|
@@ -60,25 +53,13 @@ Memory Bandwidth: High (HBM3)
 FP16/BF16 Performance: Optimized for LLM inference
 ```
 
-### Current Cluster Utilization (Reference Lab Example)
-- **CPU Usage**: 48% (~108 cores in use)
-- **Memory Usage**: 15% (~322 GB in use)
-- **GPUs Available**: 3 of 8 (5 currently serving llm-d models)
-
-### Network Configuration
-- **Apps Domain**: `apps.appeng-lab01.accl-001.lab.rdu2.dc.redhat.com`
-- **TLS Termination**: Edge (OpenShift Router)
-- **External Access**: HTTPS Routes with auto-generated certificates
-
 ---
 
-## Air-Gapped Environment Setup
+## 1. Air-Gapped Environment Setup
 
 #### Air-Gapped Challenges:
 - Mirror and maintain 4 additional operators
-- Configure Service Mesh in restricted network
-- Troubleshoot Istio networking without internet access
-- Significantly increased setup time and complexity
+- Upload and save the models without internet connection
 
 ### Our Simplified Approach
 
@@ -115,11 +96,11 @@ FP16/BF16 Performance: Optimized for LLM inference
 └─────────────────────────────────────────────────────┘
 ```
 
-### 1. Environment Pre-configuration
+### 1.1 Environment Pre-configuration
 
 This section covers the installation and configuration of required operators and platform components. All commands are idempotent and safe to execute multiple times.
 
-#### 1.1 Prerequisites Verification
+#### 1.1.1 Prerequisites Verification
 
 Verify cluster access and basic requirements:
 
@@ -135,7 +116,7 @@ oc get nodes
 oc auth can-i create namespaces --all-namespaces
 ```
 
-#### 1.2 NVIDIA GPU Operator Installation
+#### 1.1.2 NVIDIA GPU Operator Installation
 
 The NVIDIA GPU Operator manages GPU resources and drivers on OpenShift nodes.
 
@@ -185,7 +166,7 @@ oc get nodes -l nvidia.com/gpu.present=true
 oc describe nodes | grep -A 10 "Capacity:" | grep nvidia.com/gpu
 ```
 
-#### 1.3 Red Hat OpenShift AI (RHOAI) Installation
+#### 1.1.3 Red Hat OpenShift AI (RHOAI) Installation
 
 **Check if already installed:**
 
@@ -249,7 +230,7 @@ oc get pods -n redhat-ods-applications
 > - Direct control over model serving configuration
 > - Same end result: models accessible via OpenAI-compatible API
 
-#### 1.4 Verification
+#### 1.1.4 Verification
 
 Verify all components are ready:
 
@@ -283,11 +264,11 @@ RHOAI Pods: All Running (dashboard, pipelines, model-controller, etc.)
 
 ---
 
-### 2. Model Deployment
+### 1.2 Model Deployment
 
 This section demonstrates how to deploy an LLM model using direct vLLM Deployments with GPU acceleration. The example uses **Llama 3.1 8B Instruct**, but the manifests are designed to be easily adapted for other models.
 
-#### 2.1 Pre-requisites
+#### 1.2.1 Pre-requisites
 
 Before deploying, ensure:
 - GPU Operator is installed and GPUs are available
@@ -308,7 +289,7 @@ oc describe nodes | awk '/Capacity:/,/Allocatable:/ {if (/nvidia.com\/gpu/) prin
 oc describe nodes | grep -E "^\s+nvidia.com/gpu:" | head -2
 ```
 
-#### 2.2 Deployment Architecture
+#### 1.2.2 Deployment Architecture
 
 ```
 Namespace (llm-models)
@@ -322,7 +303,7 @@ Service (llm-llama-3-8b-svc) ← Internal ClusterIP
 Route (llama-3-8b) ← External HTTPS access
 ```
 
-#### 2.3 Create Namespace and Storage
+#### 1.2.3 Create Namespace and Storage
 
 ```bash
 # Create namespace for LLM models
@@ -361,7 +342,7 @@ oc wait --for=jsonpath='{.status.phase}'=Bound pvc/model-storage -n llm-models -
 oc get pvc -n llm-models
 ```
 
-#### 2.4 Pre-download Models (Air-Gapped Preparation)
+#### 1.2.4 Pre-download Models (Air-Gapped Preparation)
 
 This process is generic for all models. Configure the variables below for your specific model, then execute the commands.
 
@@ -462,16 +443,29 @@ oc delete pod model-loader -n llm-models
 
 **Note:** The PVC can hold multiple models. Extract each model tarball to `/mnt/models/` maintaining the vendor directory structure (e.g., `meta-llama/`, `mistralai/`, `Qwen/`).
 
-#### 2.5 Model-Specific Deployments
+#### 1.2.5 Model-Specific Deployments
 
 Each model has a dedicated README in `models/<model-name>/` with complete deployment instructions, configuration details, air-gapped setup, testing examples, and troubleshooting guides.
 
 **Supported Models:**
 
-| Model | Parameters | GPU Requirements | VRAM Usage | Status | Documentation |
-|-------|------------|------------------|------------|--------|---------------|
-| **Qwen 2.5 7B Instruct** | 7B | 1x H200 | ~14GB | ✅ Open-access | [README](models/qwen-2.5-7b-instruct/README.md) |
-| **Llama 3.1 8B Instruct** | 8B | 1x H200 | ~16GB | 🔒 Requires approval | [README](models/llama-3.1-8b-instruct/README.md) |
+| Model | Parameters | Architecture | GPU Requirements | VRAM Usage | Context Window | Status | Documentation |
+|-------|------------|--------------|------------------|------------|----------------|--------|---------------|
+| **Qwen 2.5 7B Instruct** | 7B | Dense | 1x H200 | ~14GB | 32K | ✅ Validated | [README](models/qwen-2.5-7b-instruct/README.md) |
+| **Mixtral 8x7B Instruct** | 47B (13B active) | MoE | 1x H200 | ~47GB | 32K | ✅ Validated | [README](models/mixtral-8x7b-instruct/README.md) |
+| **Mixtral 8x22B Instruct** | 141B (39B active) | MoE | 4x H200 | ~131GB | 64K | ✅ Validated | [README](models/mixtral-8x22b-instruct/README.md) |
+
+**Model Selection Guide:**
+
+- **Qwen 2.5 7B** - Best for: Code generation, math, multilingual tasks. Fastest inference, minimal GPU requirements.
+- **Mixtral 8x7B** - Best for: OpenCode/agentic workflows, fast inference with strong quality. MoE architecture = 3-4x faster than dense models.
+- **Mixtral 8x22B** - Best for: Advanced reasoning, complex tasks, long-context analysis. Top-tier quality with MoE efficiency.
+
+**Key Features:**
+- ✅ **No Quantization** - All models use full precision (FP16/auto) for perfect context retention
+- ✅ **Tool Calling Support** - All models configured with `--enable-auto-tool-choice` and Hermes parser
+- ✅ **OpenCode Compatible** - Pre-configured `opencode.json` files for AI-assisted development
+- ✅ **Apache 2.0 License** - All models are fully open-source, no approval needed
 
 **Deployment Steps:**
 
@@ -480,7 +474,7 @@ For any model listed above:
 2. Each README includes all necessary commands (namespace creation, model download, air-gapped transfer, deployment, verification)
 3. All commands are ready for copy-paste execution
 
-#### 2.6 Verify Deployment
+#### 1.2.6 Verify Deployment
 
 These verification steps work for any deployed model. Adjust the selector labels or route names as needed.
 
@@ -505,7 +499,7 @@ ROUTE_URL=$(oc get route ${ROUTE_NAME} -n llm-models -o jsonpath='{.spec.host}')
 echo "Model endpoint: https://$ROUTE_URL"
 ```
 
-#### 2.7 Test Model API
+#### 1.2.7 Test Model API
 
 All models expose an OpenAI-compatible API. Adjust the route name and model name to match your deployment.
 
@@ -547,93 +541,247 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 
 **Note:** For model-specific testing examples and validation, see each model's README in `models/<model-name>/README.md`.
 
-#### 2.8 Deploying Additional Models
+#### 1.2.8 Deploying Additional Models
 
 Models are organized in `models/<model-name>/` directories. Each model directory contains:
-- `deployment.yaml` - vLLM deployment configuration
-- `service.yaml` - ClusterIP service
-- `route.yaml` - External HTTPS route
+- `servingruntime.yaml` - vLLM runtime configuration
+- `inferenceservice.yaml` - KServe inference service definition
+- `opencode.json` - OpenCode integration configuration
 - `README.md` - Model-specific documentation
 
 **To deploy additional models:**
 
-1. Create model directory: `models/<model-name>/`
-2. Copy and customize manifests from `llama-3.1-8b-instruct/`
-3. Update key parameters:
-
-| Parameter | Location | Example Values |
-|-----------|----------|----------------|
-| **Deployment Name** | `metadata.name` | `vllm-mistral-7b`, `vllm-qwen-32b` |
-| **Model Path** | `args[0]` | `/mnt/models/mistralai/Mistral-7B-Instruct-v0.3` |
-| **Model Name** | `--served-model-name` | `mistralai/Mistral-7B-Instruct-v0.3` |
-| **GPU Count** | `--tensor-parallel-size` | `1` (8B models), `2` (70B models) |
-| **GPU Resources** | `resources.limits.nvidia.com/gpu` | `"1"`, `"2"` |
-| **Service Name** | `metadata.name` | `llm-mistral-7b-svc` |
-| **Route Name** | `metadata.name` | `mistral-7b` |
-| **Labels** | `model:` label | Update in all manifests for consistency |
-
-**Example: Deploy Mistral 7B Instruct**
+1. **Set environment variables for your model:**
 
 ```bash
-# 1. Pre-download model following section 2.4
-# 2. Create model directory
-mkdir -p models/mistral-7b-instruct
-cp models/llama-3.1-8b-instruct/*.yaml models/mistral-7b-instruct/
+# Configure these variables for your new model
+export MODEL_NAME="model-name"                           # e.g., mistral-7b-instruct
+export MODEL_VENDOR="vendor"                             # e.g., mistralai, Qwen
+export MODEL_FULL_NAME="Vendor/Model-Name"               # e.g., mistralai/Mistral-7B-Instruct-v0.3
+export MODEL_PATH="/mnt/models/${MODEL_VENDOR}/${MODEL_FULL_NAME##*/}"
+export GPU_COUNT="1"                                     # 1 for small models, 2-4 for large models
+export MAX_MODEL_LEN="32768"                             # Context window (32768, 65536, etc.)
+```
 
-# 3. Update manifests with Mistral parameters
+2. **Create model directory and copy template manifests:**
+
+```bash
+# Create directory structure
+mkdir -p models/${MODEL_NAME}
+
+# Copy manifests from a reference model (e.g., qwen-2.5-7b-instruct)
+cp models/qwen-2.5-7b-instruct/*.yaml models/${MODEL_NAME}/
+cp models/qwen-2.5-7b-instruct/opencode.json models/${MODEL_NAME}/
+```
+
+3. **Update key parameters in manifests:**
+
+| Parameter | File | Location | Value to Set |
+|-----------|------|----------|--------------|
+| **Runtime Name** | `servingruntime.yaml` | `metadata.name` | `vllm-${MODEL_NAME}-runtime` |
+| **Model Path** | `servingruntime.yaml` | `args: --model` | `${MODEL_PATH}` |
+| **Context Length** | `servingruntime.yaml` | `args: --max-model-len` | `${MAX_MODEL_LEN}` |
+| **GPU Count** | `servingruntime.yaml` | `args: --tensor-parallel-size` | `${GPU_COUNT}` |
+| **GPU Resources** | `servingruntime.yaml` | `resources.limits.nvidia.com/gpu` | `"${GPU_COUNT}"` |
+| **Service Name** | `inferenceservice.yaml` | `metadata.name` | `${MODEL_NAME}-inference` |
+| **Runtime Reference** | `inferenceservice.yaml` | `spec.predictor.model.runtime` | `vllm-${MODEL_NAME}-runtime` |
+| **Model Name** | `inferenceservice.yaml` | `spec.predictor.model.modelFormat.name` | `${MODEL_FULL_NAME}` |
+
+4. **Update opencode.json configuration:**
+
+```bash
+# Update the provider name, model path, and endpoint URL
+# Replace placeholders with your actual values:
+# - Provider name: openshift-ai-<model-name>
+# - Model path: ${MODEL_PATH}
+# - Base URL: https://<model-name>-inference-llm-models.apps.<your-cluster>.com/v1
+```
+
+5. **Deploy the model:**
+
+```bash
+# Navigate to model directory
+cd models/${MODEL_NAME}/
+
+# Apply manifests
+oc apply -f servingruntime.yaml
+oc apply -f inferenceservice.yaml
+
+# Verify deployment
+oc get inferenceservice -n llm-models
+oc get pods -n llm-models -l serving.kserve.io/inferenceservice=${MODEL_NAME}-inference
+```
+
+**Example: Complete deployment workflow**
+
+```bash
+# 1. Pre-download model following section 1.2.4
+# 2. Configure environment variables
+export MODEL_NAME="my-new-model"
+export MODEL_VENDOR="vendor-name"
+export MODEL_FULL_NAME="vendor-name/ModelName-Version"
+export MODEL_PATH="/mnt/models/${MODEL_VENDOR}/${MODEL_FULL_NAME##*/}"
+export GPU_COUNT="1"
+export MAX_MODEL_LEN="32768"
+
+# 3. Create and customize manifests
+mkdir -p models/${MODEL_NAME}
+cp models/qwen-2.5-7b-instruct/*.yaml models/${MODEL_NAME}/
+# Edit manifests with the values from the table above
+
 # 4. Deploy
-cd models/mistral-7b-instruct/
+cd models/${MODEL_NAME}/
 oc apply -f .
 ```
 
-See `models/README.md` for model selection guide and configuration patterns.
+See `models/<model-name>/README.md` for model-specific examples and configuration patterns.
 
 ---
 
-### 3. Models
+### 1.3 OpenCode Integration
 
-This section lists all models that have been tested and documented for deployment on this platform. Each model has a dedicated README with complete deployment instructions, configuration details, and validation steps.
+Each model directory includes an `opencode.json` file that configures OpenCode to use the deployed model for AI-assisted development.
 
-#### Available Models
+#### What is OpenCode?
 
-| Model | Parameters | GPU Requirements | VRAM Usage | Use Case | Access | Documentation |
-|-------|------------|------------------|------------|----------|--------|---------------|
-| **Qwen 2.5 7B Instruct** | 7B | 1x H200 | ~14GB | Code generation, multilingual, math & reasoning | ✅ Open-access | [README](models/qwen-2.5-7b-instruct/README.md) |
-| **Llama 3.1 8B Instruct** | 8B | 1x H200 | ~16GB | General purpose, code generation, fast inference | 🔒 Requires approval | [README](models/llama-3.1-8b-instruct/README.md) |
+OpenCode is an AI coding assistant that connects to LLM APIs to provide:
+- Code generation and completion
+- Documentation generation
+- Code review and refactoring suggestions
+- Bug detection and fixes
 
-#### Model Status
+#### Using OpenCode with Air-Gapped Models
 
-- ✅ **Open-access**: Model available immediately, no approval needed
-- 🔒 **Requires approval**: Model requires accepting license/terms on HuggingFace
-- 🔄 **In Progress**: Model documentation in development
-- 📝 **Planned**: Model scheduled for testing
+**1. Copy the model's opencode.json to your project:**
 
-**Current Status:**
-- ✅ **Qwen 2.5 7B Instruct** - Complete deployment guide, ready to use immediately
-- 🔒 **Llama 3.1 8B Instruct** - Complete deployment guide, pending HuggingFace approval
+```bash
+# Example for Qwen 2.5 7B
+cp models/qwen-2.5-7b-instruct/opencode.json /path/to/your/project/
+```
 
-#### Quick Reference
+**2. Set KUBECONFIG environment variable:**
 
-**Qwen 2.5 7B Instruct** ✅ Ready to use now
-- **HuggingFace ID**: `Qwen/Qwen2.5-7B-Instruct`
-- **Context Window**: 32,768 tokens (supports up to 128K)
-- **Performance**: ~90-130 tokens/sec on H200
-- **Strengths**: Code generation, multilingual, math & reasoning
-- **Access**: Open-access, no approval needed
-- **Deployment**: `cd models/qwen-2.5-7b-instruct/ && oc apply -f .`
-- **Complete Guide**: [qwen-2.5-7b-instruct/README.md](models/qwen-2.5-7b-instruct/README.md)
+OpenCode needs cluster access for the MCP (Model Context Protocol) server integration:
 
-**Llama 3.1 8B Instruct** 🔒 Pending approval
-- **HuggingFace ID**: `meta-llama/Llama-3.1-8B-Instruct`
-- **Context Window**: 8,192 tokens (configurable up to 128K)
-- **Performance**: ~80-120 tokens/sec on H200
-- **Access**: Requires HuggingFace approval (may take hours/days)
-- **Deployment**: `cd models/llama-3.1-8b-instruct/ && oc apply -f .`
-- **Complete Guide**: [llama-3.1-8b-instruct/README.md](models/llama-3.1-8b-instruct/README.md)
+```bash
+export KUBECONFIG=/path/to/your/kubeconfig
+```
+
+**3. Run OpenCode from the project directory:**
+
+```bash
+cd /path/to/your/project
+opencode
+```
+
+#### OpenCode Configuration Explained
+
+The `opencode.json` file contains:
+
+```json
+{
+  "provider": {
+    "openshift-ai-qwen": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenShift AI - Qwen 2.5 7B",
+      "options": {
+        "baseURL": "https://qwen-2-5-7b-inference-llm-models.apps.<your-cluster>.com/v1"
+      },
+      "models": {
+        "/mnt/models/Qwen/Qwen2.5-7B-Instruct": {
+          "name": "Qwen 2.5 7B Instruct (Air-Gapped)",
+          "description": "Qwen 2.5 7B instruction-tuned model deployed on OpenShift AI",
+          "limit": {
+            "context": 32768,
+            "output": 1024
+          }
+        }
+      }
+    }
+  },
+  "model": "openshift-ai-qwen//mnt/models/Qwen/Qwen2.5-7B-Instruct",
+  "mcp": {
+    "openshift-virtualization": {
+      "type": "local",
+      "command": [
+        "podman", "run", "--rm", "-i", "--network=host",
+        "--userns=keep-id:uid=65532,gid=65532",
+        "-v", "{env:KUBECONFIG}:/kubeconfig:ro,Z",
+        "--entrypoint", "/app/kubernetes-mcp-server",
+        "quay.io/ecosystem-appeng/openshift-mcp-server:latest",
+        "--kubeconfig", "/kubeconfig",
+        "--toolsets", "core,kubevirt"
+      ],
+      "environment": {
+        "KUBECONFIG": "{env:KUBECONFIG}"
+      }
+    }
+  }
+}
+```
+
+**Key configuration points:**
+
+- **baseURL**: Update with your actual InferenceService route
+- **context**: Token limit for input context (32K for Qwen, 64K for Mixtral 8x22B)
+- **output**: Maximum tokens for model response
+- **MCP server**: Enables OpenCode to interact with OpenShift/Kubernetes resources
+
+#### Installing Agentic Skills
+
+The [agentic-collections](../) repository contains skill packs that extend OpenCode with domain-specific capabilities.
+
+**Install the rh-virt pack (OpenShift Virtualization skills):**
+
+```bash
+# From air-gapped-setup directory
+lola install rh-virt
+```
+
+**Available skills after installation:**
+- `/vm-create` - Create virtual machines
+- `/vm-lifecycle` - Manage VM lifecycle (start/stop/restart)
+- And more...
+
+**Usage:**
+```bash
+# In OpenCode prompt
+/vm-create
+
+# OpenCode will guide you through VM creation
+```
+
+#### Important Notes
+
+**Running OpenCode from Correct Directory:**
+
+⚠️ **Always run OpenCode from the `air-gapped-setup` directory**, not the repository root!
+
+```bash
+# ✅ CORRECT
+cd /path/to/agentic-collections/air-gapped-setup
+opencode
+
+# ❌ WRONG - Will load too much context and exceed token limits
+cd /path/to/agentic-collections
+opencode
+```
+
+**Why?** OpenCode loads context from the current directory and its subdirectories. Running from the repo root loads all agentic packs, documentation, and files, easily exceeding the model's context window.
+
+**Environment Variables:**
+
+The MCP server configuration uses `{env:KUBECONFIG}` syntax to reference environment variables:
+
+```json
+"-v", "{env:KUBECONFIG}:/kubeconfig:ro,Z"
+```
+
+This is OpenCode's special syntax for variable expansion. Standard shell syntax `$KUBECONFIG` will NOT work in the JSON file.
 
 ---
 
-### 4. Model Performance Results
+### 1.4 Model Performance Results
 
 This section documents performance benchmarks and compatibility results for various LLM models tested on this hardware configuration.
 
@@ -647,15 +795,16 @@ This section documents performance benchmarks and compatibility results for vari
 
 #### Performance Metrics
 
-| Model | Version | Parameters | GPUs | GPU Type | Avg Response Time | Skills Comprehension ✓ | Notes |
-|-------|---------|------------|------|----------|-------------------|----------------------|-------|
-| Llama 3.1 | 8B-Instruct | 8B | 1 | H200 | - | ☐ | TBD |
-| Llama 3.1 | 70B-Instruct | 70B | 1 | H200 | - | ☐ | TBD |
-| Mistral NeMo | 12B-Instruct | 12B | 1 | H200 | - | ☐ | TBD |
-| Qwen 2.5 | 7B-Instruct | 7B | 1 | H200 | - | ☐ | TBD |
-| Qwen 2.5 | 32B-Instruct | 32B | 1 | H200 | - | ☐ | TBD |
-| DeepSeek Coder V2 | 16B-Lite | 16B | 1 | H200 | - | ☐ | TBD |
-| Granite 3.1 | 8B-Instruct | 8B | 1 | H200 | - | ☐ | TBD |
+| Model | Version | Parameters | GPUs | GPU Type | Tokens/sec (Single User) | Context Window | Skills Comprehension ✓ | Status | Notes |
+|-------|---------|------------|------|----------|--------------------------|----------------|----------------------|--------|-------|
+| **Qwen 2.5** | 7B-Instruct | 7B | 1 | H200 | ~85-130 | 32K | ☑ | ✅ Validated | Basic comprehension of the skill but limited context |
+| **Mixtral** | 8x7B-Instruct | 47B (13B active) | 1 | H200 | ~62-90 | 32K | ☑ | ✅ Validated | Basic comprehension of the skill but limited context |
+| **Mixtral** | 8x22B-Instruct | 141B (39B active) | 4 | H200 | ~40-60* | 64K | ☑ | ✅ Validated | |
+
+**Table Notes:**
+- *Mixtral 8x22B performance estimated based on model size and MoE efficiency
+- All measurements on unloaded GPU (excluding first request after model load)
+- Tokens/sec varies based on prompt length, temperature, and concurrent requests
 
 #### Legend
 
@@ -684,25 +833,32 @@ Models are evaluated based on their ability to:
 
 #### Performance Notes
 
-- **Response Time** includes:
-  - Time to first token (TTFT)
-  - Average generation time for typical OpenCode interactions
+- **Inference Performance**:
+  - Tokens/sec measured during typical OpenCode interactions
+  - Single-user workload (concurrent users will reduce per-user tokens/sec)
   - Measured on unloaded GPU (first request after model load excluded)
+  - MoE models (Mixtral) show better tokens/sec per active parameter compared to dense models
 
-- **Memory Usage**:
-  - 8B models: ~16GB VRAM
-  - 16B models: ~32GB VRAM
-  - 32B models: ~64GB VRAM
-  - 70B models: ~140GB VRAM (near H200 capacity)
+- **Memory Usage (Validated Models)**:
+  - Qwen 2.5 7B: ~14GB VRAM (1x H200)
+  - Mixtral 8x7B: ~47GB VRAM (1x H200)
+  - Mixtral 8x22B: ~131GB VRAM (4x H200)
 
 - **Recommendations**:
-  - For production workloads: Use models marked with ☑ in Skills Comprehension
-  - For multi-user scenarios: Consider models ≤32B to allow multiple instances
-  - For single-user high quality: 70B models provide best results
+  - **For development/testing**: Qwen 2.5 7B (fastest, lowest resource requirements)
+  - **For production OpenCode workflows**: Mixtral 8x7B (excellent balance of speed and quality)
+  - **For complex reasoning tasks**: Mixtral 8x22B (best quality, requires multi-GPU setup)
+  - **For multi-user scenarios**: Deploy multiple Qwen 2.5 7B instances on separate GPUs
 
 ---
 
-## License & Authors
+## 2. Troubleshooting
+
+For troubleshooting common issues, deployment problems, and getting diagnostic information, see the dedicated [Troubleshooting Guide](TROUBLESHOOTING.md).
+
+---
+
+## 3. License & Authors
 
 ### License
 This documentation is part of the **Red Hat Agentic Collections** project.

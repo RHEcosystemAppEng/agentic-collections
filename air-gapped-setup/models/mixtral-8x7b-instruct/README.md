@@ -1,15 +1,16 @@
-# Qwen 2.5 7B Instruct - Complete Deployment Guide
+# Mixtral 8x7B Instruct - Complete Deployment Guide
 
 ## Model Information
 
-- **Model**: Qwen 2.5 7B Instruct
-- **Parameters**: 7 billion
-- **HuggingFace ID**: `Qwen/Qwen2.5-7B-Instruct`
-- **Context Window**: 65,536 tokens (configured, supports up to 128K)
+- **Model**: Mixtral 8x7B Instruct v0.1
+- **Architecture**: Mixture of Experts (MoE) - 8 experts, 2 active per token
+- **Parameters**: 47 billion total, ~13 billion active
+- **HuggingFace ID**: `mistralai/Mixtral-8x7B-Instruct-v0.1`
+- **Context Window**: 32,000 tokens (32K native support)
 - **License**: Apache 2.0
-- **GPU Requirements**: 1x NVIDIA H200 (or similar with 14GB+ VRAM)
-- **VRAM Usage**: ~14GB
-- **Use Case**: Code generation, multilingual, math, reasoning
+- **GPU Requirements**: 1x NVIDIA H200 (or similar with 50GB+ VRAM)
+- **VRAM Usage**: ~47GB
+- **Use Case**: Fast inference, code generation, multilingual tasks, excellent quality-to-speed ratio
 
 ## Prerequisites
 
@@ -40,20 +41,25 @@ oc describe nodes | awk '/Capacity:/,/Allocatable:/ {if (/nvidia.com\/gpu/) prin
 
 ### Step 1: Download Model (Internet-Connected Machine)
 
-**Good news:** Qwen 2.5 7B Instruct is **open-access** - no approval needed! 🎉
+**✅ NO APPROVAL REQUIRED** - Mixtral 8x7B uses Apache 2.0 license (fully open)
 
 **Prerequisites:** HuggingFace CLI installed and authenticated (see [main documentation Section 2.4](../../../air-gapped-env-setup.md#24-pre-download-models-internet-connected-machine))
 
 **On a machine with internet access:**
 
 ```bash
-# Download Qwen 2.5 7B Instruct to cache directory
-# Note: ./models/cache is excluded from git via .gitignore
-hf download Qwen/Qwen2.5-7B-Instruct \
-  --local-dir ./models/cache/Qwen/Qwen2.5-7B-Instruct
+# Login to HuggingFace (use your access token)
+huggingface-cli login
 
-# Verify download (should show ~15 files)
-ls -lh ./models/cache/Qwen/Qwen2.5-7B-Instruct/
+# Download Mixtral 8x7B Instruct to cache directory
+# Note: This is ~94GB - ensure you have sufficient disk space
+# Note: ./models/cache is excluded from git via .gitignore
+hf download mistralai/Mixtral-8x7B-Instruct-v0.1 \
+  --local-dir ./models/cache/Mixtral/Mixtral-8x7B-Instruct-v0.1
+
+# Verify download (should show ~19 files)
+ls -lh ./models/cache/Mixtral/Mixtral-8x7B-Instruct-v0.1/
+du -sh ./models/cache/Mixtral/Mixtral-8x7B-Instruct-v0.1/
 ```
 
 ---
@@ -74,13 +80,14 @@ See [main documentation Sections 1-2](../../../README.md#21-prepare-shared-model
 
 ```bash
 # Create destination directory in PVC
-oc exec -n llm-models model-loader -- mkdir -p /mnt/models/Qwen/Qwen2.5-7B-Instruct
+oc exec -n llm-models model-loader -- mkdir -p /mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1
 
-# Copy model to PVC (with progress)
-oc rsync --progress ./models/cache/Qwen/Qwen2.5-7B-Instruct/ llm-models/model-loader:/mnt/models/Qwen/Qwen2.5-7B-Instruct/
+# Copy model to PVC (with progress) - This will take 30-60 minutes for ~94GB
+oc rsync --progress ./models/cache/Mixtral/Mixtral-8x7B-Instruct-v0.1/ llm-models/model-loader:/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1/
 
 # Verify model files are present
-oc exec -n llm-models model-loader -- ls -lh /mnt/models/Qwen/Qwen2.5-7B-Instruct/
+oc exec -n llm-models model-loader -- ls -lh /mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1/
+oc exec -n llm-models model-loader -- du -sh /mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1/
 ```
 
 **Expected Output (ls -lh):**
@@ -88,12 +95,10 @@ oc exec -n llm-models model-loader -- ls -lh /mnt/models/Qwen/Qwen2.5-7B-Instruc
 total XXXM
 -rw-r--r-- 1 ... config.json
 -rw-r--r-- 1 ... generation_config.json
--rw-r--r-- 1 ... model-00001-of-00004.safetensors
--rw-r--r-- 1 ... model-00002-of-00004.safetensors
--rw-r--r-- 1 ... model-00003-of-00004.safetensors
--rw-r--r-- 1 ... model-00004-of-00004.safetensors
--rw-r--r-- 1 ... tokenizer.json
+-rw-r--r-- 1 ... model-00001-of-00019.safetensors
+-rw-r--r-- 1 ... model-00002-of-00019.safetensors
 ...
+-rw-r--r-- 1 ... tokenizer.json
 ```
 
 ---
@@ -107,7 +112,7 @@ This deployment uses **OpenShift AI RawDeployment mode** with KServe API (Servin
 The ServingRuntime defines **HOW** to serve models (vLLM configuration, GPU allocation, resource limits).
 
 ```bash
-oc apply -f models/qwen-2.5-7b-instruct/servingruntime.yaml
+oc apply -f models/mixtral-8x7b-instruct/servingruntime.yaml
 ```
 
 **Verify ServingRuntime created:**
@@ -117,8 +122,8 @@ oc get servingruntime -n llm-models
 
 **Expected output:**
 ```
-NAME                 DISABLED   MODELTYPE   CONTAINERS   AGE
-vllm-qwen-runtime    false      vLLM        kserve       10s
+NAME                        DISABLED   MODELTYPE   CONTAINERS   AGE
+vllm-mixtral-8x7b-runtime   false      vLLM        kserve       10s
 ```
 
 ---
@@ -128,7 +133,7 @@ vllm-qwen-runtime    false      vLLM        kserve       10s
 The InferenceService defines **WHAT** model to serve (references the ServingRuntime and PVC).
 
 ```bash
-oc apply -f models/qwen-2.5-7b-instruct/inferenceservice.yaml
+oc apply -f models/mixtral-8x7b-instruct/inferenceservice.yaml
 ```
 
 **Verify InferenceService created:**
@@ -138,8 +143,8 @@ oc get inferenceservice -n llm-models
 
 **Expected output:**
 ```
-NAME            URL                                          READY   PREV   LATEST
-qwen-2-5-7b     http://qwen-2-5-7b.llm-models.svc.cluster    True           100
+NAME             URL                                           READY   PREV   LATEST
+mixtral-8x7b     http://mixtral-8x7b.llm-models.svc.cluster    True           100
 ```
 
 ---
@@ -147,18 +152,18 @@ qwen-2-5-7b     http://qwen-2-5-7b.llm-models.svc.cluster    True           100
 #### 3.3. Create Route for External Access
 
 ```bash
-oc apply -f models/qwen-2.5-7b-instruct/route-inferenceservice.yaml
+oc apply -f models/mixtral-8x7b-instruct/route-inferenceservice.yaml
 ```
 
 **Get route URL:**
 ```bash
-oc get route qwen-2-5-7b-inference -n llm-models
+oc get route mixtral-8x7b-inference -n llm-models
 ```
 
 **Expected output:**
 ```
-NAME                     HOST/PORT                                               
-qwen-2-5-7b-inference    qwen-2-5-7b-inference-llm-models.apps.example.com
+NAME                      HOST/PORT                                               
+mixtral-8x7b-inference    mixtral-8x7b-inference-llm-models.apps.example.com
 ```
 
 ---
@@ -166,32 +171,32 @@ qwen-2-5-7b-inference    qwen-2-5-7b-inference-llm-models.apps.example.com
 ### Step 4: Monitor Deployment
 
 ```bash
-# Watch pod status (model loading takes 2-5 minutes)
-oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -w
+# Watch pod status (model loading takes 2-4 minutes for 8x7B)
+oc get pods -n llm-models -l serving.kserve.io/inferenceservice=mixtral-8x7b -w
 
 # Check pod events
-oc describe pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
+oc describe pod -n llm-models -l serving.kserve.io/inferenceservice=mixtral-8x7b
 
 # Follow logs (watch for "Application startup complete")
-POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1)
+POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=mixtral-8x7b -o name | head -1)
 oc logs -f $POD -n llm-models
 ```
 
 **Key Log Messages to Look For:**
 ```
-INFO: Starting to load model /mnt/models/Qwen/Qwen2.5-7B-Instruct...
+INFO: Starting to load model /mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1...
+INFO: Loading MoE model with 8 experts (2 active per token)...
 INFO: Loading weights took X seconds
-INFO: Model loading took 14.25 GiB memory
-INFO: Compiling a graph for compile range
+INFO: Model loading took ~47 GiB memory
 INFO: Application startup complete
 ```
 
 **Pod Status Progression:**
 ```
-NAME                                    READY   STATUS              RESTARTS   AGE
-qwen-2-5-7b-xxxxx-xxxxx                 0/1     ContainerCreating   0          10s
-qwen-2-5-7b-xxxxx-xxxxx                 0/1     Running             0          30s
-qwen-2-5-7b-xxxxx-xxxxx                 1/1     Running             0          3m
+NAME                                   READY   STATUS              RESTARTS   AGE
+mixtral-8x7b-xxxxx-xxxxx               0/1     ContainerCreating   0          10s
+mixtral-8x7b-xxxxx-xxxxx               0/1     Running             0          30s
+mixtral-8x7b-xxxxx-xxxxx               1/1     Running             0          3m
 ```
 
 ---
@@ -200,7 +205,7 @@ qwen-2-5-7b-xxxxx-xxxxx                 1/1     Running             0          3
 
 ```bash
 # Get route URL
-ROUTE_URL=$(oc get route qwen-2-5-7b-inference -n llm-models -o jsonpath='{.spec.host}')
+ROUTE_URL=$(oc get route mixtral-8x7b-inference -n llm-models -o jsonpath='{.spec.host}')
 echo "Model endpoint: https://$ROUTE_URL"
 
 # Test health endpoint
@@ -213,48 +218,50 @@ curl -k https://$ROUTE_URL/v1/models
 curl -k https://$ROUTE_URL/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
+    "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
     "messages": [
-      {"role": "user", "content": "Explain Kubernetes in one sentence."}
-    ],
-    "max_tokens": 100,
-    "temperature": 0.7
-  }'
-
-# Test code generation (Qwen is excellent at code!)
-curl -k https://$ROUTE_URL/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
-    "messages": [
-      {"role": "system", "content": "You are a helpful coding assistant."},
-      {"role": "user", "content": "Write a Python function to calculate fibonacci numbers using memoization."}
-    ],
-    "max_tokens": 512,
-    "temperature": 0.7
-  }' | jq -r '.choices[0].message.content'
-
-# Test multilingual capability (Qwen supports Chinese, English, and more)
-curl -k https://$ROUTE_URL/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
-    "messages": [
-      {"role": "user", "content": "用中文解释什么是机器学习"}
+      {"role": "user", "content": "Explain the Mixture of Experts architecture in one paragraph."}
     ],
     "max_tokens": 200,
     "temperature": 0.7
   }'
 
+# Test code generation
+curl -k https://$ROUTE_URL/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
+    "messages": [
+      {"role": "system", "content": "You are an expert Python developer."},
+      {"role": "user", "content": "Write a Python function to implement binary search with type hints."}
+    ],
+    "max_tokens": 400,
+    "temperature": 0.7
+  }' | jq -r '.choices[0].message.content'
+
+# Test context retention
+curl -k https://$ROUTE_URL/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
+    "messages": [
+      {"role": "user", "content": "My favorite programming language is Python"},
+      {"role": "assistant", "content": "Great choice! Python is excellent for many use cases."},
+      {"role": "user", "content": "What is my favorite programming language?"}
+    ],
+    "max_tokens": 50,
+    "temperature": 0.7
+  }' | jq -r '.choices[0].message.content'
+
 # Test streaming response
 curl -k https://$ROUTE_URL/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
+    "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
     "messages": [
-      {"role": "user", "content": "Count from 1 to 10."}
+      {"role": "user", "content": "Explain asyncio in Python."}
     ],
-    "max_tokens": 50,
+    "max_tokens": 300,
     "stream": true
   }'
 ```
@@ -265,22 +272,22 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
   "id": "chatcmpl-xxxxxxxxxxxxxxxx",
   "object": "chat.completion",
   "created": 1776789362,
-  "model": "/mnt/models/Qwen/Qwen2.5-7B-Instruct",
+  "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
   "choices": [
     {
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "Kubernetes is an open-source container orchestration platform...",
+        "content": "Mixture of Experts (MoE) is an architecture...",
         "refusal": null
       },
       "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 34,
-    "completion_tokens": 42,
-    "total_tokens": 76
+    "prompt_tokens": 28,
+    "completion_tokens": 85,
+    "total_tokens": 113
   }
 }
 ```
@@ -291,7 +298,7 @@ curl -k https://$ROUTE_URL/v1/chat/completions \
 
 ```bash
 # Check GPU utilization
-POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b -o name | head -1)
+POD=$(oc get pods -n llm-models -l serving.kserve.io/inferenceservice=mixtral-8x7b -o name | head -1)
 oc exec $POD -c kserve-container -- nvidia-smi
 
 # Check vLLM metrics
@@ -306,8 +313,8 @@ oc adm top pod -n llm-models
 +-----------------------------------------------------------------------------+
 | NVIDIA-SMI 535.xx.xx    Driver Version: 535.xx.xx    CUDA Version: 12.2   |
 |-------------------------------+----------------------+----------------------+
-|   0  NVIDIA H200             On   | xxxxxxxxxx      |      0%      45C   |
-| N/A   58W / 700W |  14336MiB / 143871MiB |      10%      Default |
+|   0  NVIDIA H200             On   | xxxxxxxxxx      |      0%      48C   |
+| N/A   150W / 700W |  47000MiB / 143871MiB |      20%      Default |
 +-------------------------------+----------------------+----------------------+
 ```
 
@@ -322,7 +329,7 @@ If you want to use this model with OpenCode for AI-assisted development:
 First, get your deployed model's route URL:
 
 ```bash
-ROUTE_URL=$(oc get route qwen-2-5-7b-inference -n llm-models -o jsonpath='{.spec.host}')
+ROUTE_URL=$(oc get route mixtral-8x7b-inference -n llm-models -o jsonpath='{.spec.host}')
 echo "https://$ROUTE_URL/v1"
 ```
 
@@ -331,7 +338,7 @@ Edit `opencode.json` and update the `baseURL` with your route:
 ```json
 {
   "provider": {
-    "openshift-ai-qwen": {
+    "openshift-ai-mixtral": {
       "options": {
         "baseURL": "https://YOUR-ROUTE-URL/v1"
       }
@@ -344,11 +351,11 @@ Edit `opencode.json` and update the `baseURL` with your route:
 
 ```bash
 # Copy to your project directory
-cp models/qwen-2.5-7b-instruct/opencode.json /path/to/your/project/
+cp models/mixtral-8x7b-instruct/opencode.json /path/to/your/project/
 
 # Or configure globally
 mkdir -p ~/.config/opencode
-cp models/qwen-2.5-7b-instruct/opencode.json ~/.config/opencode/
+cp models/mixtral-8x7b-instruct/opencode.json ~/.config/opencode/
 ```
 
 #### 7.3. Start OpenCode
@@ -358,7 +365,7 @@ cd /path/to/your/project
 opencode
 ```
 
-OpenCode will now use your air-gapped Qwen 2.5 7B model.
+OpenCode will now use your air-gapped Mixtral 8x7B model.
 
 ---
 
@@ -370,25 +377,25 @@ The `opencode.json` file configures Open Code to use your deployed model:
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "openshift-ai-qwen": {
+    "openshift-ai-mixtral": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "OpenShift AI - Qwen 2.5 7B",
+      "name": "OpenShift AI - Mixtral 8x7B",
       "options": {
-        "baseURL": "https://qwen-2-5-7b-inference-llm-models.apps.example.com/v1"
+        "baseURL": "https://mixtral-8x7b-inference-llm-models.apps.example.com/v1"
       },
       "models": {
-        "/mnt/models/Qwen/Qwen2.5-7B-Instruct": {
-          "name": "Qwen 2.5 7B Instruct (Air-Gapped)",
-          "description": "Qwen 2.5 7B instruction-tuned model deployed on OpenShift AI with vLLM and NVIDIA H200 GPU",
+        "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1": {
+          "name": "Mixtral 8x7B Instruct (Air-Gapped)",
+          "description": "Mixtral 8x7B MoE model deployed on OpenShift AI with vLLM and NVIDIA H200 GPU",
           "limit": {
-            "context": 65536,
+            "context": 32768,
             "output": 2048
           }
         }
       }
     }
   },
-  "model": "openshift-ai-qwen//mnt/models/Qwen/Qwen2.5-7B-Instruct"
+  "model": "openshift-ai-mixtral//mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1"
 }
 ```
 
@@ -398,11 +405,11 @@ The `opencode.json` file configures Open Code to use your deployed model:
 |-----------|-------|-------------|
 | `$schema` | `https://opencode.ai/config.json` | JSON schema for validation |
 | `provider.*.npm` | `@ai-sdk/openai-compatible` | AI SDK provider for OpenAI-compatible APIs |
-| `provider.*.name` | `OpenShift AI - Qwen 2.5 7B` | Display name in Open Code |
+| `provider.*.name` | `OpenShift AI - Mixtral 8x7B` | Display name in Open Code |
 | `provider.*.options.baseURL` | `https://<route>/v1` | Your model's OpenAI-compatible API endpoint |
 | `models.*.limit.context` | `32768` | Total context window in tokens |
-| `models.*.limit.output` | `512` | Maximum output tokens per response |
-| `model` | `openshift-ai-qwen//mnt/...` | Active model identifier |
+| `models.*.limit.output` | `2048` | Maximum output tokens per response |
+| `model` | `openshift-ai-mixtral//mnt/...` | Active model identifier |
 
 #### Understanding Token Limits
 
@@ -411,21 +418,21 @@ The `opencode.json` file configures Open Code to use your deployed model:
 ```json
 "limit": {
   "context": 32768,    // Total tokens (input + output)
-  "output": 1024       // Maximum response length
+  "output": 2048       // Maximum response length
 }
 ```
 
 **Why is `output` set to 2048?**
 
-Open Code automatically loads context (skills, documentation, conversation history) that can consume **significant tokens**. With a 65k context window:
+Open Code automatically loads context (skills, documentation, conversation history) that can consume **significant tokens**. With a 32K context window:
 
-- **Typical Open Code context**: 20k-40k tokens (skills, system prompts, conversation)
-- **Available for output**: 25k-45k tokens
+- **Typical Open Code context**: 15k-25k tokens (skills, system prompts, conversation)
+- **Available for output**: 7k-17k tokens
 - **Current configuration**: 2048 tokens provides good response length while leaving room for complex prompts
 
 **If you see errors like:**
 ```
-This model's maximum context length is 65536 tokens. However, you requested 
+This model's maximum context length is 32768 tokens. However, you requested 
 X output tokens and your prompt contains at least Y input tokens...
 ```
 
@@ -436,7 +443,7 @@ X output tokens and your prompt contains at least Y input tokens...
 **For basic prompts without skills:**
 ```json
 "limit": {
-  "context": 65536,
+  "context": 32768,
   "output": 4096      // More room for longer responses
 }
 ```
@@ -444,7 +451,7 @@ X output tokens and your prompt contains at least Y input tokens...
 **For skill-heavy workflows (current configuration):**
 ```json
 "limit": {
-  "context": 65536,
+  "context": 32768,
   "output": 2048      // Balanced for skills + good response length
 }
 ```
@@ -473,13 +480,15 @@ X output tokens and your prompt contains at least Y input tokens...
 
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
-| **Runtime Name** | `vllm-qwen-runtime` | ServingRuntime identifier |
+| **Runtime Name** | `vllm-mixtral-8x7b-runtime` | ServingRuntime identifier |
 | **Container Image** | `vllm/vllm-openai:latest` | Official vLLM OpenAI-compatible image |
-| **Model Path** | `/mnt/models/Qwen/Qwen2.5-7B-Instruct` | Location in PVC |
-| **GPUs** | 1 | Number of GPUs allocated |
-| **Max Model Length** | 65536 | Context window size in tokens |
+| **Model Path** | `/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1` | Location in PVC |
+| **GPUs** | 1 | Single GPU (no tensor parallelism) |
+| **Max Model Length** | 32768 | Context window size in tokens (32K) |
+| **Max Num Seqs** | 128 | Maximum concurrent sequences |
 | **GPU Memory Util** | 0.90 | Percentage of VRAM to use (90%) |
 | **Port** | 8080 | vLLM API port (KServe standard) |
+| **Tool Call Parser** | hermes | Enable structured output/tool calling |
 
 ### Resource Allocation
 
@@ -487,13 +496,19 @@ X output tokens and your prompt contains at least Y input tokens...
 resources:
   requests:
     cpu: "8"
-    memory: 24Gi
+    memory: 64Gi
     nvidia.com/gpu: "1"
   limits:
     cpu: "16"
-    memory: 48Gi
+    memory: 128Gi
     nvidia.com/gpu: "1"
 ```
+
+**Note**: Mixtral 8x7B is very efficient:
+- **1 GPU only** - no tensor parallelism needed
+- **128GB system RAM** recommended
+- **~47GB VRAM** usage (plenty of room for KV cache on H200)
+- **No quantization** - full precision for best quality
 
 ### InferenceService Configuration
 
@@ -501,7 +516,7 @@ resources:
 apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
-  name: qwen-2-5-7b
+  name: mixtral-8x7b
   annotations:
     serving.kserve.io/deploymentMode: RawDeployment
 spec:
@@ -509,7 +524,7 @@ spec:
     model:
       modelFormat:
         name: vLLM
-      runtime: vllm-qwen-runtime
+      runtime: vllm-mixtral-8x7b-runtime
       storageUri: pvc://models-storage/
     minReplicas: 1
     maxReplicas: 1
@@ -517,21 +532,27 @@ spec:
 
 **Key Points:**
 - `deploymentMode: RawDeployment` - Creates standard Kubernetes Deployment (not Knative)
-- `runtime: vllm-qwen-runtime` - References the ServingRuntime
+- `runtime: vllm-mixtral-8x7b-runtime` - References the ServingRuntime
 - `storageUri: pvc://models-storage/` - KServe syntax for PVC storage
 
 ---
 
 ## Performance Expectations
 
-Based on NVIDIA H200 GPU:
+Based on 1x NVIDIA H200 GPU:
 
-- **First Token Latency (TTFT)**: 40-80ms
-- **Generation Speed**: 90-130 tokens/second
-- **VRAM Usage**: ~14GB (out of 143GB available)
-- **System RAM Usage**: ~6GB
-- **Concurrent Requests**: 6-10 users (depending on context length)
-- **Context Window**: 65,536 tokens (configured), supports up to 128K
+- **First Token Latency (TTFT)**: 30-60ms (very fast due to MoE)
+- **Generation Speed**: 100-150 tokens/second (excellent throughput)
+- **VRAM Usage**: ~47GB (leaves 96GB for KV cache on H200)
+- **System RAM Usage**: ~40GB
+- **Concurrent Requests**: 10-20 users with moderate contexts (8K+), 30-50 with short contexts (<2K)
+- **Context Window**: 32,768 tokens (32K native support)
+- **Model Loading Time**: 2-4 minutes (much faster than larger models)
+
+**MoE Advantage**: Mixtral 8x7B activates only ~13B parameters per token (vs 47B total), resulting in:
+- **3-4x faster** than dense 47B models
+- **Similar quality** to models 2-3x larger
+- **Excellent context retention** (no quantization issues)
 
 ---
 
@@ -541,7 +562,7 @@ Based on NVIDIA H200 GPU:
 
 ```bash
 # Edit InferenceService
-oc edit inferenceservice qwen-2-5-7b -n llm-models
+oc edit inferenceservice mixtral-8x7b -n llm-models
 
 # Change:
 # spec:
@@ -550,36 +571,34 @@ oc edit inferenceservice qwen-2-5-7b -n llm-models
 #     maxReplicas: 2
 
 # Verify both pods are running
-oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
+oc get pods -n llm-models -l serving.kserve.io/inferenceservice=mixtral-8x7b
 
 # Service automatically load balances across replicas
 ```
 
-**Note**: Each replica requires 1 GPU. The maximum number of replicas is limited by available GPUs in your cluster.
+**⚠️ Important**: Each replica requires **1 GPU**. For 2 replicas, you need **2 total GPUs** in your cluster.
 
 ### Vertical Scaling (Extended Context)
 
-**Current configuration: 65,536 tokens (64K)**
-
-To extend further to 128K (maximum supported):
+Mixtral 8x7B uses 32K context natively. You can reduce it if you need more concurrent request capacity:
 
 ```bash
-# Edit ServingRuntime to increase context window
-oc edit servingruntime vllm-qwen-runtime -n llm-models
+# Edit ServingRuntime to reduce context window (increases throughput)
+oc edit servingruntime vllm-mixtral-8x7b-runtime -n llm-models
 
 # Change:
 # args:
 #   - --max-model-len
-#   - "65536"
+#   - "32768"
 # to:
 #   - --max-model-len
-#   - "131072"
+#   - "16384"
 
 # Delete pod to restart with new config
-oc delete pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
+oc delete pod -n llm-models -l serving.kserve.io/inferenceservice=mixtral-8x7b
 ```
 
-**Note**: Longer context windows require more VRAM and reduce concurrent request capacity. 128K context may require memory adjustments.
+**Note**: With 96GB of KV cache available, you have plenty of room for long contexts.
 
 ---
 
@@ -593,6 +612,7 @@ Includes:
 - Security hardening (NetworkPolicy, OAuth authentication)
 - Monitoring and observability (GPU metrics, vLLM metrics, logs)
 - Common issues and solutions (CUDA errors, startup failures, performance issues)
+- MoE-specific troubleshooting
 
 ---
 
@@ -610,12 +630,12 @@ POST /v1/chat/completions
 Content-Type: application/json
 
 {
-  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Hello!"}
   ],
-  "max_tokens": 100,
+  "max_tokens": 200,
   "temperature": 0.7,
   "stream": false
 }
@@ -628,9 +648,9 @@ POST /v1/completions
 Content-Type: application/json
 
 {
-  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model": "/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1",
   "prompt": "Once upon a time",
-  "max_tokens": 100,
+  "max_tokens": 200,
   "temperature": 0.7
 }
 ```
@@ -657,20 +677,30 @@ GET /metrics
 
 ## Model Strengths
 
-Qwen 2.5 7B Instruct excels at:
+Mixtral 8x7B Instruct excels at:
 
-- **Code Generation**: Python, JavaScript, Go, Rust, and more
-- **Math & Reasoning**: Strong mathematical and logical reasoning
-- **Multilingual**: Chinese, English, and 27+ languages
-- **Long Context**: Supports up to 128K tokens
-- **Instruction Following**: Excellent at following complex instructions
+- **Fast Inference**: 3-4x faster than dense models of similar quality due to MoE
+- **Code Generation**: Strong performance on Python, JavaScript, Go, Rust, and more
+- **Multilingual**: Excellent across English, French, German, Spanish, Italian
+- **Instruction Following**: Fine-tuned for precise instruction adherence
+- **Context Retention**: Full precision (no quantization) = perfect context memory
+- **Mathematical Reasoning**: Good performance on math and logic tasks
+- **Tool Calling**: Built-in support with Hermes parser for structured outputs
+- **Efficiency**: Only 47GB VRAM = fits comfortably on 1 GPU with room for large KV cache
+
+**Perfect For**:
+- **OpenCode/Agentic workflows** (needs context retention)
+- **Real-time code assistance** (fast TTFT)
+- **Production deployments** (1 GPU = lower cost)
+- **Multi-user environments** (high concurrent capacity)
 
 ---
 
 ## References
 
-- **HuggingFace Model Card**: https://huggingface.co/Qwen/Qwen2.5-7B-Instruct
-- **Qwen Blog**: https://qwenlm.github.io/blog/qwen2.5/
+- **HuggingFace Model Card**: https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1
+- **Mistral AI Blog**: https://mistral.ai/news/mixtral-of-experts/
+- **MoE Paper**: https://arxiv.org/abs/1701.06538
 - **vLLM Documentation**: https://docs.vllm.ai/
 - **License**: Apache 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
 - **Main Documentation**: [air-gapped-env-setup.md](../../../air-gapped-env-setup.md)
@@ -679,20 +709,20 @@ Qwen 2.5 7B Instruct excels at:
 
 ## Cleanup
 
-To remove the Qwen 2.5 7B model deployment:
+To remove the Mixtral 8x7B model deployment:
 
 ```bash
 # Delete InferenceService (automatically deletes pods and services)
-oc delete inferenceservice qwen-2-5-7b -n llm-models
+oc delete inferenceservice mixtral-8x7b -n llm-models
 
 # Delete Route
-oc delete route qwen-2-5-7b-inference -n llm-models
+oc delete route mixtral-8x7b-inference -n llm-models
 
 # Delete ServingRuntime (if not used by other models)
-oc delete servingruntime vllm-qwen-runtime -n llm-models
+oc delete servingruntime vllm-mixtral-8x7b-runtime -n llm-models
 
 # Verify deletion
 oc get inferenceservice,servingruntime,route -n llm-models
 ```
 
-**Note**: This removes the deployment but keeps the model files in the PVC. To remove model files (~15GB), delete the directory `/mnt/models/Qwen/Qwen2.5-7B-Instruct/` from the PVC using the model-loader pod.
+**Note**: This removes the deployment but keeps the model files in the PVC. To remove model files (~94GB), delete the directory `/mnt/models/Mixtral/Mixtral-8x7B-Instruct-v0.1/` from the PVC using the model-loader pod.
