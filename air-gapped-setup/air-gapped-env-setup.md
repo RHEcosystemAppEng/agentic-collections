@@ -74,6 +74,47 @@ FP16/BF16 Performance: Optimized for LLM inference
 
 ## Air-Gapped Environment Setup
 
+#### Air-Gapped Challenges:
+- Mirror and maintain 4 additional operators
+- Configure Service Mesh in restricted network
+- Troubleshoot Istio networking without internet access
+- Significantly increased setup time and complexity
+
+### Our Simplified Approach
+
+```
+┌─────────────────────────────────────────────────────┐
+│  External Client (OpenCode)                         │
+│  HTTPS Request to Route                             │
+└────────────────┬────────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────────┐
+│  OpenShift Route (Edge TLS Termination)             │
+│  https://llama-3-8b.apps.cluster.example.com        │
+└────────────────┬────────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────────┐
+│  Service (ClusterIP)                                │
+│  Type: ClusterIP                                    │
+│  Port: 8000 → TargetPort: 8000                      │
+└────────────────┬────────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────────┐
+│  Deployment                                         │
+│  - Replicas: 1 (or more for HA)                     │
+│  - Container: vllm/vllm-openai:latest               │
+│  - Command: vllm serve <model>                      │
+│  - GPU: 1x NVIDIA H200                              │
+│  - Resources: 8 CPU, 32Gi RAM, 1 GPU                │
+└────────────────┬────────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────────┐
+│  PersistentVolumeClaim                              │
+│  - Storage: 200Gi (LVMS)                            │
+│  - Contains: Pre-downloaded model from HuggingFace  │
+└─────────────────────────────────────────────────────┘
+```
+
 ### 1. Environment Pre-configuration
 
 This section covers the installation and configuration of required operators and platform components. All commands are idempotent and safe to execute multiple times.

@@ -5,7 +5,7 @@
 - **Model**: Qwen 2.5 7B Instruct
 - **Parameters**: 7 billion
 - **HuggingFace ID**: `Qwen/Qwen2.5-7B-Instruct`
-- **Context Window**: 32,768 tokens (supports up to 128K)
+- **Context Window**: 65,536 tokens (configured, supports up to 128K)
 - **License**: Apache 2.0
 - **GPU Requirements**: 1x NVIDIA H200 (or similar with 14GB+ VRAM)
 - **VRAM Usage**: ~14GB
@@ -136,7 +136,7 @@ oc apply -f models/qwen-2.5-7b-instruct/inferenceservice.yaml
 oc get inferenceservice -n llm-models
 ```
 
-**Expectedoutput:**
+**Expected output:**
 ```
 NAME            URL                                          READY   PREV   LATEST
 qwen-2-5-7b     http://qwen-2-5-7b.llm-models.svc.cluster    True           100
@@ -147,7 +147,7 @@ qwen-2-5-7b     http://qwen-2-5-7b.llm-models.svc.cluster    True           100
 #### 3.3. Create Route for External Access
 
 ```bash
-oc apply -f route-inferenceservice.yaml
+oc apply -f models/qwen-2.5-7b-instruct/route-inferenceservice.yaml
 ```
 
 **Get route URL:**
@@ -381,8 +381,8 @@ The `opencode.json` file configures Open Code to use your deployed model:
           "name": "Qwen 2.5 7B Instruct (Air-Gapped)",
           "description": "Qwen 2.5 7B instruction-tuned model deployed on OpenShift AI with vLLM and NVIDIA H200 GPU",
           "limit": {
-            "context": 32768,
-            "output": 1024
+            "context": 65536,
+            "output": 2048
           }
         }
       }
@@ -401,7 +401,7 @@ The `opencode.json` file configures Open Code to use your deployed model:
 | `provider.*.name` | `OpenShift AI - Qwen 2.5 7B` | Display name in Open Code |
 | `provider.*.options.baseURL` | `https://<route>/v1` | Your model's OpenAI-compatible API endpoint |
 | `models.*.limit.context` | `32768` | Total context window in tokens |
-| `models.*.limit.output` | `1024` | Maximum output tokens per response |
+| `models.*.limit.output` | `512` | Maximum output tokens per response |
 | `model` | `openshift-ai-qwen//mnt/...` | Active model identifier |
 
 #### Understanding Token Limits
@@ -415,37 +415,37 @@ The `opencode.json` file configures Open Code to use your deployed model:
 }
 ```
 
-**Why is `output` set to 1024?**
+**Why is `output` set to 2048?**
 
-Open Code automatically loads context (skills, documentation, conversation history) that can consume **significant tokens**. With a 32k context window:
+Open Code automatically loads context (skills, documentation, conversation history) that can consume **significant tokens**. With a 65k context window:
 
-- **Typical Open Code context**: 20k-28k tokens (skills, system prompts, conversation)
-- **Available for output**: 4k-12k tokens
-- **Safe default**: 1024 tokens ensures room for input without overflow
+- **Typical Open Code context**: 20k-40k tokens (skills, system prompts, conversation)
+- **Available for output**: 25k-45k tokens
+- **Current configuration**: 2048 tokens provides good response length while leaving room for complex prompts
 
 **If you see errors like:**
 ```
-This model's maximum context length is 32768 tokens. However, you requested 
+This model's maximum context length is 65536 tokens. However, you requested 
 X output tokens and your prompt contains at least Y input tokens...
 ```
 
-**Solution**: Reduce `output` further (512 or 256) or work without loading many skills.
+**Solution**: Reduce `output` to 1024 or 512 if working with very skill-heavy workflows.
 
 #### Adjusting Token Limits
 
 **For basic prompts without skills:**
 ```json
 "limit": {
-  "context": 32768,
+  "context": 65536,
   "output": 4096      // More room for longer responses
 }
 ```
 
-**For skill-heavy workflows:**
+**For skill-heavy workflows (current configuration):**
 ```json
 "limit": {
-  "context": 32768,
-  "output": 512       // Minimal to leave room for skill content
+  "context": 65536,
+  "output": 2048      // Balanced for skills + good response length
 }
 ```
 
@@ -477,7 +477,7 @@ X output tokens and your prompt contains at least Y input tokens...
 | **Container Image** | `vllm/vllm-openai:latest` | Official vLLM OpenAI-compatible image |
 | **Model Path** | `/mnt/models/Qwen/Qwen2.5-7B-Instruct` | Location in PVC |
 | **GPUs** | 1 | Number of GPUs allocated |
-| **Max Model Length** | 32768 | Context window size in tokens |
+| **Max Model Length** | 65536 | Context window size in tokens |
 | **GPU Memory Util** | 0.90 | Percentage of VRAM to use (90%) |
 | **Port** | 8080 | vLLM API port (KServe standard) |
 
@@ -531,7 +531,7 @@ Based on NVIDIA H200 GPU:
 - **VRAM Usage**: ~14GB (out of 143GB available)
 - **System RAM Usage**: ~6GB
 - **Concurrent Requests**: 6-10 users (depending on context length)
-- **Context Window**: 32,768 tokens (default), supports up to 128K
+- **Context Window**: 65,536 tokens (configured), supports up to 128K
 
 ---
 
@@ -559,6 +559,10 @@ oc get pods -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 
 ### Vertical Scaling (Extended Context)
 
+**Current configuration: 65,536 tokens (64K)**
+
+To extend further to 128K (maximum supported):
+
 ```bash
 # Edit ServingRuntime to increase context window
 oc edit servingruntime vllm-qwen-runtime -n llm-models
@@ -566,16 +570,16 @@ oc edit servingruntime vllm-qwen-runtime -n llm-models
 # Change:
 # args:
 #   - --max-model-len
-#   - "32768"
+#   - "65536"
 # to:
 #   - --max-model-len
-#   - "65536"
+#   - "131072"
 
 # Delete pod to restart with new config
 oc delete pod -n llm-models -l serving.kserve.io/inferenceservice=qwen-2-5-7b
 ```
 
-**Note**: Longer context windows require more VRAM and reduce concurrent request capacity.
+**Note**: Longer context windows require more VRAM and reduce concurrent request capacity. 128K context may require memory adjustments.
 
 ---
 
@@ -589,69 +593,6 @@ Includes:
 - Security hardening (NetworkPolicy, OAuth authentication)
 - Monitoring and observability (GPU metrics, vLLM metrics, logs)
 - Common issues and solutions (CUDA errors, startup failures, performance issues)
-
----
-
-## Cleanup
-
-### Delete Model Deployment Only
-
-```bash
-# Delete InferenceService (automatically deletes pods and services)
-oc delete inferenceservice qwen-2-5-7b -n llm-models
-
-# Delete Route
-oc delete route qwen-2-5-7b-inference -n llm-models
-
-# Delete ServingRuntime (if not used by other models)
-oc delete servingruntime vllm-qwen-runtime -n llm-models
-
-# Verify deletion
-oc get inferenceservice,servingruntime,route -n llm-models
-```
-
-### Delete Everything (Namespace and PVC)
-
-```bash
-# Delete entire namespace (removes all models and storage)
-oc delete namespace llm-models
-
-# Warning: This deletes ALL model files in the PVC
-```
-
-### Delete Model Files from PVC (Keep PVC)
-
-```bash
-# Create temporary pod
-cat <<EOF | oc apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: model-loader
-  namespace: llm-models
-spec:
-  containers:
-  - name: loader
-    image: registry.access.redhat.com/ubi9/ubi-minimal:latest
-    command: ["/bin/sh", "-c", "sleep 600"]
-    volumeMounts:
-    - name: models
-      mountPath: /mnt/models
-  volumes:
-  - name: models
-    persistentVolumeClaim:
-      claimName: model-storage
-EOF
-
-# Wait for pod
-oc wait --for=condition=Ready pod/model-loader -n llm-models --timeout=60s
-
-# Delete model directory
-oc exec -n llm-models model-loader -- rm -rf /mnt/models/Qwen/Qwen2.5-7B-Instruct/
-
-# Delete pod
-oc delete pod model-loader -n llm-models
-```
 
 ---
 
@@ -733,3 +674,25 @@ Qwen 2.5 7B Instruct excels at:
 - **vLLM Documentation**: https://docs.vllm.ai/
 - **License**: Apache 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
 - **Main Documentation**: [air-gapped-env-setup.md](../../../air-gapped-env-setup.md)
+
+---
+
+## Cleanup
+
+To remove the Qwen 2.5 7B model deployment:
+
+```bash
+# Delete InferenceService (automatically deletes pods and services)
+oc delete inferenceservice qwen-2-5-7b -n llm-models
+
+# Delete Route
+oc delete route qwen-2-5-7b-inference -n llm-models
+
+# Delete ServingRuntime (if not used by other models)
+oc delete servingruntime vllm-qwen-runtime -n llm-models
+
+# Verify deletion
+oc get inferenceservice,servingruntime,route -n llm-models
+```
+
+**Note**: This removes the deployment but keeps the model files in the PVC. To remove model files (~15GB), delete the directory `/mnt/models/Qwen/Qwen2.5-7B-Instruct/` from the PVC using the model-loader pod.

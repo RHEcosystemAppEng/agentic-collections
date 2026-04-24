@@ -45,6 +45,8 @@ spec:
           value: /tmp/flashinfer
         - name: XDG_CACHE_HOME
           value: /tmp/cache
+        - name: VLLM_ALLOW_LONG_MAX_MODEL_LEN
+          value: "1"
       resources:
         limits:
           cpu: "16"

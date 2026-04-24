@@ -12,8 +12,8 @@
           "name": "Qwen 2.5 7B Instruct (Air-Gapped)",
           "description": "Qwen 2.5 7B instruction-tuned model deployed on OpenShift AI with vLLM and NVIDIA H200 GPU",
           "limit": {
-            "context": 32768,
-            "output": 1024
+            "context": 65536,
+            "output": 2048
           }
         }
       }

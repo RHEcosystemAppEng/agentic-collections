@@ -18,6 +18,25 @@ Deploy and serve LLMs that can execute skills from the [agentic-collections](../
 
 ---
 
+## Validated Models
+
+This guide includes complete, tested deployment procedures for the following models:
+
+| Model | Size | GPUs | Key Strengths | Status |
+|-------|------|------|---------------|--------|
+| **Qwen 2.5 7B Instruct** | 7B | 1x H200 | Fast inference, code generation, multilingual | ✅ Validated |
+| **Mixtral 8x7B Instruct** | 47B (13B active) | 1x H200 | MoE efficiency, excellent quality-to-speed ratio | ✅ Validated |
+| **Mixtral 8x22B Instruct** | 141B (39B active) | 4x H200 | Advanced reasoning, 64K context, top-tier quality | ✅ Validated |
+
+**All models feature:**
+- 🔒 **Full precision** (no quantization) for perfect context retention
+- 🛠️ **Tool calling support** via Hermes parser
+- 💻 **OpenCode integration** with pre-configured profiles
+- 📜 **Apache 2.0 license** (no approval required)
+- 🚀 **vLLM serving** with OpenAI-compatible API
+
+---
+
 ## Setup
 
 ### 1. Operators installation
@@ -222,12 +241,23 @@ The `model-loader` pod is now ready to receive models via `oc cp` command.
 
 Each model has specific download and deployment instructions. Choose your model from the table below:
 
-| Model | Parameters | Quantization | Disk Size | VRAM Required | Download & Deploy Guide |
-|-------|------------|--------------|-----------|---------------|-------------------------|
-| **Qwen 2.5 Instruct** | 7B | FP16 | ~14 GB | ~16 GB (1x GPU) | [📖 models/qwen-2.5-7b-instruct/README.md](./models/qwen-2.5-7b-instruct/README.md) |
-| **Llama 3.1 Instruct** | 8B | FP16 | ~16 GB | ~18 GB (1x GPU) | [📖 models/llama-3.1-8b-instruct/README.md](./models/llama-3.1-8b-instruct/README.md) |
-| **Qwen 2.5 Instruct** | 72B | FP8 | ~40 GB | ~160 GB (2x H100) | 📋 Coming soon |
-| **DeepSeek V3** | 671B (37B active) | FP8 | ~350 GB | ~480 GB (6x H100) | 📋 Coming soon |
+| Model | Parameters | Architecture | Disk Size | GPUs | VRAM Required | Context Window | Download & Deploy Guide |
+|-------|------------|--------------|-----------|------|---------------|----------------|-------------------------|
+| **Qwen 2.5 7B Instruct** | 7B | Dense | ~15 GB | 1x H200 | ~14 GB | 32K | [📖 models/qwen-2.5-7b-instruct/README.md](./models/qwen-2.5-7b-instruct/README.md) |
+| **Mixtral 8x7B Instruct** | 47B (13B active) | MoE | ~94 GB | 1x H200 | ~47 GB | 32K | [📖 models/mixtral-8x7b-instruct/README.md](./models/mixtral-8x7b-instruct/README.md) |
+| **Mixtral 8x22B Instruct** | 141B (39B active) | MoE | ~280 GB | 4x H200 | ~131 GB | 64K | [📖 models/mixtral-8x22b-instruct/README.md](./models/mixtral-8x22b-instruct/README.md) |
+
+**Model Selection Guide:**
+
+- **Qwen 2.5 7B** - Best for: Code generation, math, multilingual tasks. Fastest inference, minimal GPU requirements.
+- **Mixtral 8x7B** - Best for: OpenCode/agentic workflows, fast inference with strong quality. MoE architecture = 3-4x faster than dense models.
+- **Mixtral 8x22B** - Best for: Advanced reasoning, complex tasks, long-context analysis. Top-tier quality with MoE efficiency.
+
+**Key Features:**
+- ✅ **No Quantization** - All models use full precision (FP16/auto) for perfect context retention
+- ✅ **Tool Calling Support** - All models configured with `--enable-auto-tool-choice` and Hermes parser
+- ✅ **OpenCode Compatible** - Pre-configured `opencode.json` files for AI-assisted development
+- ✅ **Apache 2.0 License** - All models are fully open-source, no approval needed
 
 **After loading a model**, verify the structure inside the PVC:
 ```bash
@@ -237,9 +267,22 @@ oc exec -n llm-models model-loader -- ls -lh /mnt/models/
 **Expected structure** (example with multiple models):
 ```
 total 0
-drwxr-xr-x. qwen-2.5-7b/
-drwxr-xr-x. llama-3.1-405b/
+drwxr-xr-x. Qwen/
+  └── Qwen2.5-7B-Instruct/
+drwxr-xr-x. Mixtral/
+  ├── Mixtral-8x7B-Instruct-v0.1/
+  └── Mixtral-8x22B-Instruct-v0.1/
 ```
+
+**Storage Planning:**
+
+| Models Deployed | Total Disk Space Required |
+|-----------------|---------------------------|
+| Qwen 2.5 7B only | ~20 GB |
+| Qwen 2.5 7B + Mixtral 8x7B | ~120 GB |
+| All three models | ~400 GB |
+
+Recommended PVC size: **500 GB** (allows room for multiple models + future additions)
 
 ---
 
@@ -264,6 +307,7 @@ oc wait --for=condition=Ready pod/model-loader -n llm-models --timeout=300s
 
 ---
 
-**Version:** 2.1  
-**Status:** In development  
-**Last Updated:** 2026-04-17
+**Version:** 2.2  
+**Status:** Production-ready  
+**Last Updated:** 2026-04-23  
+**Validated Models:** Qwen 2.5 7B, Mixtral 8x7B, Mixtral 8x22B
