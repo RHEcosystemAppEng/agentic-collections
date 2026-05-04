@@ -1,0 +1,179 @@
+# Catalog: maintained via create-collection workflow (assistant + maintainer + PR review).
+# Golden sources: skills/*/SKILL.md, README.md, CLAUDE.md, marketplace/rh-agentic-collection.yml
+# Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
+
+id: rh-basic
+name: Basic Agentic Collection
+provider: Red Hat
+version: 0.1.0
+categories:
+- Security
+- Operations
+- Support
+personas:
+- IT Professional
+- Red Hat Customer
+marketplaces:
+- Claude Code
+- Cursor
+support_level: Unknown
+maturity: GREEN
+description: "Essential Red Hat skills for IT professionals: CVE explanation, diagnostics, product lifecycle, and support severity guidance."
+summary: Lightweight, self-contained skills for everyday Red Hat operations and support tasks. Skills fall back to public Red Hat documentation when MCP tools are unavailable.
+contents:
+  description: |
+    The pack provides 6 skills covering the most common Red Hat support and operations workflows.
+    All skills are self-contained and fall back to WebFetch when the Lightspeed MCP server is unavailable.
+  skills:
+  - name: red-hat-cve-explainer
+    description: CVE Explanation and Severity Rating
+    summary_markdown: |
+      Explain a CVE using Red Hat's severity rating system and recommend a course of action.
+      **Use when:**
+      - What is CVE-2024-1234?
+      - How severe is this CVE?
+      - Should I patch CVE-X immediately?
+      **What it does:**
+      - Looks up CVE metadata via Lightspeed MCP or Red Hat CVE pages
+      - Maps to Red Hat severity (Critical/Important/Moderate/Low)
+      - Links to applicable security advisories (RHSA/RHBA/RHEA)
+      - Gives a concrete action recommendation per severity
+  - name: red-hat-diagnostics
+    description: Diagnostic Data Gathering for Red Hat Support
+    summary_markdown: |
+      Provide the correct commands and upload instructions for gathering diagnostics across Red Hat products.
+      **Use when:**
+      - How do I collect a sos report?
+      - What must-gather do I run for OpenShift?
+      - How do I gather AAP logs for a support case?
+      **What it does:**
+      - Identifies product and deployment type (RHEL, OCP, AAP RPM/containerized/operator, Satellite)
+      - Provides exact commands for each product and deployment variant
+      - Explains how to upload archives to Red Hat Support
+  - name: red-hat-get-started
+    description: Bootstrap Installer (self-removes after use)
+    summary_markdown: |
+      Fetch and install all Red Hat Basic skills into the current project. Removes itself after running.
+      **Use when:**
+      - Setting up Red Hat skills for the first time in a project
+      **What it does:**
+      - Downloads each skill from the canonical source URL
+      - Creates skill directories under .claude/skills/
+      - Reports any download failures for manual recovery
+      - Deletes itself on completion
+  - name: red-hat-product-lifecycle
+    description: Product Lifecycle Status and Support Phase Lookup
+    summary_markdown: |
+      Report the current lifecycle phase and support dates for any Red Hat product or version.
+      **Use when:**
+      - Is RHEL 8.6 still supported?
+      - When does OpenShift 4.14 reach end of maintenance?
+      - What App Streams are available for RHEL 9?
+      **What it does:**
+      - Retrieves lifecycle dates via Lightspeed MCP or Red Hat lifecycle pages
+      - Explains what updates each phase receives (security, bug, features)
+      - Gives a concrete action recommendation (upgrade, EUS, patch normally)
+      - Explains Red Hat's backporting model when relevant
+  - name: red-hat-support-severity
+    description: Support Ticket Severity and SLA Guidance
+    summary_markdown: |
+      Determine the correct severity for a Red Hat support ticket and explain the SLA.
+      **Use when:**
+      - What severity should I file this case as?
+      - Is this a Sev 1 or Sev 2?
+      - What's the SLA for my support tier?
+      **What it does:**
+      - Maps situation (outage, impairment, workaround) to Sev 1-4
+      - Shows SLA response times for Premium and Standard support
+      - Lists what to include in the ticket for fastest resolution
+      - Adjusts recommendation when a CVE is involved
+  - name: red-hat-security-mcp-setup
+    description: Red Hat Security MCP Server Configuration
+    summary_markdown: |
+      Add the Red Hat Security MCP server to the current project's `.mcp.json` using HTTP transport and browser SSO authentication.
+      **Use when:**
+      - Set up the Red Hat Security MCP server in this project
+      - Configure the Red Hat CVE and advisory MCP endpoint
+      - Add red-hat-security to my project's MCP servers
+      **What it does:**
+      - Locates or creates `.mcp.json` in the project root
+      - Merges the `red-hat-security` HTTP transport entry without removing existing servers
+      - Explains the Red Hat Customer Portal SSO browser login flow
+      - Advises the user to restart Claude Code for the new server to take effect
+  orchestration_skills: []
+  skills_decision_guide:
+  - user_request: '"Explain this CVE" or "How severe is CVE-X?"'
+    skill_to_use: red-hat-cve-explainer
+    reason: Looks up CVE severity using Red Hat rating system and recommends action.
+  - user_request: '"How do I collect diagnostics?" or "What must-gather command do I use?"'
+    skill_to_use: red-hat-diagnostics
+    reason: Provides product-specific diagnostic collection commands for support cases.
+  - user_request: '"Is RHEL 8 still supported?" or "When does OpenShift 4.14 reach EOL?"'
+    skill_to_use: red-hat-product-lifecycle
+    reason: Retrieves lifecycle phase and dates for any Red Hat product version.
+  - user_request: '"What severity should I file this support case?" or "What SLA do I get?"'
+    skill_to_use: red-hat-support-severity
+    reason: Maps situation to Sev 1-4 and shows SLA for Premium and Standard support.
+  - user_request: '"Install Red Hat skills" or "Set up Red Hat agent skills"'
+    skill_to_use: red-hat-get-started
+    reason: Bootstrap installer that downloads and installs all skills in the pack.
+  - user_request: '"Set up the Red Hat Security MCP server" or "Add red-hat-security to my MCP config"'
+    skill_to_use: red-hat-security-mcp-setup
+    reason: Configures the HTTP-transport Red Hat Security MCP endpoint and explains browser SSO login.
+deploy_and_use: '#deploy_and_use.md'
+documentation_section: '#documentation_section.md'
+mcp_section: '#mcp_section.md'
+security_model: '#security_model.md'
+sample_workflows:
+- name: CVE triage
+  workflow: |
+    User: "What is CVE-2024-1234 and how urgent is it?"
+    - red-hat-cve-explainer looks up severity and advisory, recommends action
+- name: Opening a support case
+  workflow: |
+    User: "My production RHEL cluster is partially down. What severity should I file?"
+    - red-hat-support-severity maps situation to Sev 2, explains SLA and 24x7 coverage
+    User: "What diagnostic data should I attach to the case?"
+    - red-hat-diagnostics provides sos report commands and upload instructions
+- name: Lifecycle check before an upgrade decision
+  workflow: |
+    User: "Is RHEL 8.8 still receiving security patches?"
+    - red-hat-product-lifecycle reports current phase, dates, and what updates are provided
+    User: "When do I need to upgrade or move to EUS?"
+    - red-hat-product-lifecycle explains EUS options and recommends upgrade timeline
+resources:
+- title: Red Hat Customer Portal
+  url: https://access.redhat.com/
+  description: Security advisories, CVE database, product lifecycle, and support case management.
+- title: Red Hat CVE Database
+  url: https://access.redhat.com/security/security-updates/#/cve
+  description: Red Hat severity ratings and advisory mappings for CVEs.
+- title: Red Hat Product Life Cycles
+  url: https://access.redhat.com/product-life-cycles/
+  description: Lifecycle phase dates for RHEL, OpenShift, Ansible, and other Red Hat products.
+- title: Red Hat Lightspeed
+  url: https://console.redhat.com/insights
+  description: Red Hat Insights console for inventory, CVE data, and patch advisory information.
+- title: Red Hat Support Severity Definitions
+  url: https://access.redhat.com/support/policy/support_process
+  description: Official severity levels and SLA commitments for Red Hat support subscriptions.
+- title: Lola Package Manager
+  url: https://github.com/RedHatProductSecurity/lola
+  description: Package manager used to install agentic collections.
+legal_resources:
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
+  privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
+author:
+  name: Red Hat Ecosystem Engineering
+  email: eco-engineering@redhat.com
+homepage: https://github.com/RHEcosystemAppEng/agentic-collections
+repository: https://github.com/RHEcosystemAppEng/agentic-collections
+license: Apache-2.0
+keywords:
+- red-hat
+- cve
+- rhel
+- support
+- lifecycle
+- diagnostics
+- patching

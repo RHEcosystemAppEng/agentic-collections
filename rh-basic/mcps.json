@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "lightspeed-mcp": {
+      "command": "podman",
+      "args": [
+        "run",
+        "--env", "LIGHTSPEED_CLIENT_ID",
+        "--env", "LIGHTSPEED_CLIENT_SECRET",
+        "--interactive", "--rm",
+        "ghcr.io/redhatinsights/red-hat-lightspeed-mcp:latest"
+      ],
+      "env": {
+        "LIGHTSPEED_CLIENT_ID": "${LIGHTSPEED_CLIENT_ID}",
+        "LIGHTSPEED_CLIENT_SECRET": "${LIGHTSPEED_CLIENT_SECRET}"
+      },
+      "description": "Red Hat Lightspeed MCP server for CVE data, product lifecycle, and system inventory",
+      "security": {
+        "isolation": "container",
+        "network": "local",
+        "credentials": "env-only"
+      }
+    }
+  }
+}

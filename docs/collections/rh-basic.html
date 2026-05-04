@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Agentic Collection - Red Hat Agentic Catalog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Red+Hat+Text:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css?v=34">
+</head>
+<body>
+    <div class="site-brand-accent" aria-hidden="true"></div>
+    <main>
+        <section class="collection-page">
+            <div class="collection-page-inner collection-content">
+                <nav class="collection-nav" aria-label="Collection">
+                    <div class="collection-nav-start">
+                        <a href="../index.html" class="collection-back">← Back to Catalog</a>
+                    </div>
+                    <div class="collection-nav-center">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/.catalog/collection.yaml" target="_blank" rel="noopener noreferrer" class="collection-meta-link">catalog YAML →</a>
+                    </div>
+                    <div class="collection-nav-end">
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/README.md" target="_blank" rel="noopener noreferrer" class="collection-meta-link">README →</a>
+                        <a href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="collection-meta-link">Apache 2.0 License →</a>
+                    </div>
+                </nav>
+                <div class="collection-page-body collection-content-inner">
+                    <h1 class="collection-page-title">Basic Agentic Collection</h1>
+                    <p class="collection-page-sub">Essential Red Hat skills for IT professionals: CVE explanation, diagnostics, product lifecycle, RHEL patch planning, and...</p>
+                    <p class="collection-page-sub"><strong>Module:</strong> rh-basic · v0.1.0 · IT Professional, Red Hat Customer</p>
+                    <p class="collection-tags"><strong>Categories:</strong> Security, Operations, Support</p>
+
+                    <div class="collection-tabs" role="tablist">
+                        <button type="button" class="collection-tab active" data-tab="overview" role="tab" aria-selected="true" aria-controls="tab-overview">Overview</button>
+                        <button type="button" class="collection-tab" data-tab="skills" role="tab" aria-selected="false" aria-controls="tab-skills">Skills</button>
+                        <button type="button" class="collection-tab" data-tab="resources" role="tab" aria-selected="false" aria-controls="tab-resources">Resources</button>
+                        <button type="button" class="collection-tab" data-tab="agents" role="tab" aria-selected="false" aria-controls="tab-agents">Agents</button>
+                    </div>
+
+                    <div id="tab-overview" class="collection-tab-panel active" role="tabpanel"><h2>Overview</h2><div class="collection-prose"><p>Lightweight, self-contained skills for everyday Red Hat operations and support tasks. Skills fall back to public Red Hat documentation when MCP tools are unavailable.</p></div><h2>Documentation</h2><div class="collection-prose"><p>Skills source authoritative content from official Red Hat documentation at runtime using <code>WebFetch</code>. No offline doc corpus is bundled; the pack stays lean and always reflects current Red Hat guidance.</p>
+<p>Key reference sources used by skills:</p>
+<ul>
+<li><a href="https://access.redhat.com/product-life-cycles/">Red Hat Product Life Cycles</a> — lifecycle phases and dates</li>
+<li><a href="https://access.redhat.com/security/security-updates/#/cve">Red Hat CVE Database</a> — CVE metadata and severity ratings</li>
+<li><a href="https://access.redhat.com/errata/">Red Hat Security Advisories</a> — RHSA/RHBA/RHEA advisory detail</li>
+<li><a href="https://access.redhat.com/solutions/3592">sos tool documentation</a> — diagnostic collection</li>
+<li><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/support/gathering-cluster-data">OCP must-gather</a> — OpenShift diagnostic data</li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/troubleshooting_ansible_automation_platform/diagnosing-the-problem">AAP troubleshooting</a> — AAP log gathering</li>
+</ul></div><h2>MCP</h2><div class="collection-prose"><h3>lightspeed-mcp — Red Hat Lightspeed</h3>
+<p>Provides live data for CVE lookups, RHEL lifecycle, system inventory, and patch advisory information.</p>
+<ul>
+<li><strong>CVE metadata and severity</strong> — used by <code>red-hat-cve-explainer</code> and <code>red-hat-support-severity</code></li>
+<li><strong>RHEL and App Stream lifecycle dates</strong> — used by <code>red-hat-product-lifecycle</code></li>
+<li><strong>Requires:</strong> <code>LIGHTSPEED_CLIENT_ID</code>, <code>LIGHTSPEED_CLIENT_SECRET</code></li>
+<li><strong>Transport:</strong> Podman container (<code>ghcr.io/redhatinsights/red-hat-lightspeed-mcp:latest</code>)</li>
+</ul>
+<p><strong>All skills fall back to <code>WebFetch</code> on public Red Hat documentation when this MCP server is unavailable.</strong> A valid service account improves data currency and enables inventory queries.</p></div><h2>Quick Start</h2><div class="collection-prose"><h3>Prerequisites</h3>
+<ul>
+<li>Claude Code CLI or IDE extension (if using Claude Code)</li>
+<li>Podman installed (for the container-based Lightspeed MCP server)</li>
+<li>Red Hat service account (<a href="https://console.redhat.com/iam/service-accounts">console.redhat.com</a>)</li>
+</ul>
+<p>Skills fall back to WebFetch on public Red Hat documentation if the MCP server is not configured — Podman and a service account are optional.</p>
+<h3>Environment setup</h3>
+<p>Configure Red Hat Lightspeed credentials (names must match <strong><code>mcps.json</code></strong>):</p>
+<pre><code class="language-bash">export LIGHTSPEED_CLIENT_ID=&quot;your-service-account-client-id&quot;
+export LIGHTSPEED_CLIENT_SECRET=&quot;your-service-account-client-secret&quot;
+</code></pre>
+<p>Secrets must never be committed to the repository and must not be echoed in assistant output.</p></div><div class="install-accordion"><details class="install-accordion-item" open><summary class="install-accordion-header">Installation (Claude Code)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f rh-basic -a claude-code
+</code></pre></div></details><details class="install-accordion-item"><summary class="install-accordion-header">Installation (Cursor)</summary><div class="install-accordion-body collection-prose"><pre><code class="language-bash">lola install -f rh-basic -a cursor
+</code></pre></div></details></div><div class="collection-prose collection-mcp-after-install"><h3>MCP configuration</h3>
+<p>Server definitions live in <strong><code>mcps.json</code></strong> at the pack root. The Lightspeed MCP server runs as a Podman container using <code>${LIGHTSPEED_CLIENT_ID}</code> and <code>${LIGHTSPEED_CLIENT_SECRET}</code> placeholders only; never commit secret values.</p>
+<p>Configure the environment variables above, then run <code>lola install -f rh-basic</code> to install the pack.</p></div><h2>Security Model</h2><div class="collection-prose"><ul>
+<li><strong>Credentials:</strong> Environment variables only — never hardcoded in any project file or echoed in assistant output. Skills verify that variables are set without printing their values.</li>
+<li><strong>Container isolation:</strong> The Lightspeed MCP server runs in a Podman container; host credentials are injected at runtime via <code>--env</code> flags.</li>
+<li><strong>No write operations:</strong> All skills are read-only with respect to Red Hat platform data. No remediation playbooks are generated or executed by this pack.</li>
+<li><strong>Self-removing setup skill:</strong> <code>red-hat-get-started</code> deletes itself from the project after completing its one-time task.</li>
+</ul></div></div>
+                    <div id="tab-skills" class="collection-tab-panel" role="tabpanel"><h2>Skills</h2><div class="collection-prose"><p>The pack provides 7 skills covering the most common Red Hat support and operations workflows.<br />
+All skills are self-contained and fall back to WebFetch when the Lightspeed MCP server is unavailable.</p></div><h3>Skills</h3><ol class="collection-skill-list"><li>
+<div><code>/red-hat-cve-explainer</code> - CVE Explanation and Severity Rating</div>
+<div class="collection-prose collection-prose-tight"><p>Explain a CVE using Red Hat's severity rating system and recommend a course of action.<br />
+<strong>Use when:</strong><br />
+- What is CVE-2024-1234?<br />
+- How severe is this CVE?<br />
+- Should I patch CVE-X immediately?<br />
+<strong>What it does:</strong><br />
+- Looks up CVE metadata via Lightspeed MCP or Red Hat CVE pages<br />
+- Maps to Red Hat severity (Critical/Important/Moderate/Low)<br />
+- Links to applicable security advisories (RHSA/RHBA/RHEA)<br />
+- Gives a concrete action recommendation per severity</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/skills/red-hat-cve-explainer/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/red-hat-diagnostics</code> - Diagnostic Data Gathering for Red Hat Support</div>
+<div class="collection-prose collection-prose-tight"><p>Provide the correct commands and upload instructions for gathering diagnostics across Red Hat products.<br />
+<strong>Use when:</strong><br />
+- How do I collect a sos report?<br />
+- What must-gather do I run for OpenShift?<br />
+- How do I gather AAP logs for a support case?<br />
+<strong>What it does:</strong><br />
+- Identifies product and deployment type (RHEL, OCP, AAP RPM/containerized/operator, Satellite)<br />
+- Provides exact commands for each product and deployment variant<br />
+- Explains how to upload archives to Red Hat Support</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/skills/red-hat-diagnostics/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/red-hat-get-started</code> - Bootstrap Installer (self-removes after use)</div>
+<div class="collection-prose collection-prose-tight"><p>Fetch and install all Red Hat Basic skills into the current project. Removes itself after running.<br />
+<strong>Use when:</strong><br />
+- Setting up Red Hat skills for the first time in a project<br />
+<strong>What it does:</strong><br />
+- Downloads each skill from the canonical source URL<br />
+- Creates skill directories under .claude/skills/<br />
+- Reports any download failures for manual recovery<br />
+- Deletes itself on completion</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/skills/red-hat-get-started/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/red-hat-product-lifecycle</code> - Product Lifecycle Status and Support Phase Lookup</div>
+<div class="collection-prose collection-prose-tight"><p>Report the current lifecycle phase and support dates for any Red Hat product or version.<br />
+<strong>Use when:</strong><br />
+- Is RHEL 8.6 still supported?<br />
+- When does OpenShift 4.14 reach end of maintenance?<br />
+- What App Streams are available for RHEL 9?<br />
+<strong>What it does:</strong><br />
+- Retrieves lifecycle dates via Lightspeed MCP or Red Hat lifecycle pages<br />
+- Explains what updates each phase receives (security, bug, features)<br />
+- Gives a concrete action recommendation (upgrade, EUS, patch normally)<br />
+- Explains Red Hat's backporting model when relevant</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/skills/red-hat-product-lifecycle/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li><li>
+<div><code>/red-hat-support-severity</code> - Support Ticket Severity and SLA Guidance</div>
+<div class="collection-prose collection-prose-tight"><p>Determine the correct severity for a Red Hat support ticket and explain the SLA.<br />
+<strong>Use when:</strong><br />
+- What severity should I file this case as?<br />
+- Is this a Sev 1 or Sev 2?<br />
+- What's the SLA for my support tier?<br />
+<strong>What it does:</strong><br />
+- Maps situation (outage, impairment, workaround) to Sev 1-4<br />
+- Shows SLA response times for Premium and Standard support<br />
+- Lists what to include in the ticket for fastest resolution<br />
+- Adjusts recommendation when a CVE is involved</p></div>
+<a class="collection-inline-link" href="https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/rh-basic/skills/red-hat-support-severity/SKILL.md" target="_blank" rel="noopener noreferrer">View SKILL.md on GitHub -></a>
+</li></ol><h2>Skills Decision Guide</h2><table class="collection-decision-table"><thead><tr><th>User request</th><th>Skill to use</th><th>Reason</th></tr></thead><tbody><tr><td><p>"Explain this CVE" or "How severe is CVE-X?"</p></td><td>/red-hat-cve-explainer</td><td><p>Looks up CVE severity using Red Hat rating system and recommends action.</p></td></tr><tr><td><p>"How do I collect diagnostics?" or "What must-gather command do I use?"</p></td><td>/red-hat-diagnostics</td><td><p>Provides product-specific diagnostic collection commands for support cases.</p></td></tr><tr><td><p>"Is RHEL 8 still supported?" or "When does OpenShift 4.14 reach EOL?"</p></td><td>/red-hat-product-lifecycle</td><td><p>Retrieves lifecycle phase and dates for any Red Hat product version.</p></td></tr><tr><td><p>"What severity should I file this support case?" or "What SLA do I get?"</p></td><td>/red-hat-support-severity</td><td><p>Maps situation to Sev 1-4 and shows SLA for Premium and Standard support.</p></td></tr><tr><td><p>"Install Red Hat skills" or "Set up Red Hat agent skills"</p></td><td>/red-hat-get-started</td><td><p>Bootstrap installer that downloads and installs all skills in the pack.</p></td></tr></tbody></table></div>
+                    <div id="tab-resources" class="collection-tab-panel" role="tabpanel"><h2>References</h2><ul class="simple-list collection-resources"><li><a class="collection-resource-link" href="https://access.redhat.com/" target="_blank" rel="noopener noreferrer">Red Hat Customer Portal</a> - Security advisories, CVE database, product lifecycle, and support case management.</li><li><a class="collection-resource-link" href="https://access.redhat.com/security/security-updates/#/cve" target="_blank" rel="noopener noreferrer">Red Hat CVE Database</a> - Red Hat severity ratings and advisory mappings for CVEs.</li><li><a class="collection-resource-link" href="https://access.redhat.com/product-life-cycles/" target="_blank" rel="noopener noreferrer">Red Hat Product Life Cycles</a> - Lifecycle phase dates for RHEL, OpenShift, Ansible, and other Red Hat products.</li><li><a class="collection-resource-link" href="https://console.redhat.com/insights" target="_blank" rel="noopener noreferrer">Red Hat Lightspeed</a> - Red Hat Insights console for inventory, CVE data, and patch advisory information.</li><li><a class="collection-resource-link" href="https://access.redhat.com/support/policy/support_process" target="_blank" rel="noopener noreferrer">Red Hat Support Severity Definitions</a> - Official severity levels and SLA commitments for Red Hat support subscriptions.</li><li><a class="collection-resource-link" href="https://github.com/RedHatProductSecurity/lola" target="_blank" rel="noopener noreferrer">Lola Package Manager</a> - Package manager used to install agentic collections.</li></ul></div>
+                    <div id="tab-agents" class="collection-tab-panel" role="tabpanel"><h2>MCP Server Integrations</h2><div class="collection-mcp-grid"><div class="collection-mcp-card" role="button" tabindex="0" data-mcp-pack="rh-basic" data-mcp-name="lightspeed-mcp"><div class="collection-mcp-card-title"><span>💡</span><span>Red Hat Lightspeed MCP</span></div><div class="collection-mcp-card-meta">By Red Hat - Container</div></div></div><h2>Sample Workflows</h2><h3>CVE triage</h3><div class="collection-prose"><p>User: "What is CVE-2024-1234 and how urgent is it?"<br />
+- red-hat-cve-explainer looks up severity and advisory, recommends action</p></div><h3>Opening a support case</h3><div class="collection-prose"><p>User: "My production RHEL cluster is partially down. What severity should I file?"<br />
+- red-hat-support-severity maps situation to Sev 2, explains SLA and 24x7 coverage<br />
+User: "What diagnostic data should I attach to the case?"<br />
+- red-hat-diagnostics provides sos report commands and upload instructions</p></div><h3>Lifecycle check before an upgrade decision</h3><div class="collection-prose"><p>User: "Is RHEL 8.8 still receiving security patches?"<br />
+- red-hat-product-lifecycle reports current phase, dates, and what updates are provided<br />
+User: "When do I need to upgrade or move to EUS?"<br />
+- red-hat-product-lifecycle explains EUS options and recommends upgrade timeline</p></div></div>
+
+                    <p class="collection-footer-meta">https://github.com/RHEcosystemAppEng/agentic-collections</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="mcp-modal" class="modal">
+        <div class="modal-content" id="mcp-details"></div>
+    </div>
+
+    <script src="../app.js?v=34"></script>
+</body>
+</html>

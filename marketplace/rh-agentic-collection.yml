@@ -70,6 +70,20 @@ modules:
       - "virtualization"
       - "virt"
 
+  - name: "rh-basic"
+    description: "Essential Red Hat skills for IT professionals: CVE explanation, diagnostics, product lifecycle, RHEL patch planning, and support severity guidance."
+    version: "0.1.0"
+    repository: "https://github.com/RHEcosystemAppEng/agentic-collections"
+    path: "rh-basic"
+    tags:
+      - "red-hat"
+      - "cve"
+      - "rhel"
+      - "support"
+      - "lifecycle"
+      - "diagnostics"
+      - "patching"
+
   - name: "rh-automation"
     description: "Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation engineers."
     version: "0.1.0"
