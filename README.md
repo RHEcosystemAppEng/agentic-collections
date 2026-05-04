@@ -84,7 +84,7 @@ for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do 
 
 ## 📦 Available Plugins
 
-6 persona-focused plugins with **60+ production-ready skills**:
+6 persona-focused plugins with **62 production-ready skills**:
 
 | Plugin | Version | Skills | Description | Personas |
 |--------|---------|--------|-------------|----------|
@@ -92,10 +92,10 @@ for m in ocp-admin rh-ai-engineer rh-automation rh-developer rh-sre rh-virt; do 
 | **[rh-developer](rh-developer/README.md)** | 1.0.0 | 14 | Application deployment, S2I builds, Helm charts | Application Developers |
 | **[openshift-virtualization](rh-virt/README.md)** | 1.0.0 | 10 | VM lifecycle, snapshots, migrations, cloning | Virtualization Admins |
 | **[ocp-admin](ocp-admin/README.md)** | 1.0.0 | 3 | Multi-cluster management, health reports, monitoring | OpenShift Administrators |
-| **[rh-ai-engineer](rh-ai-engineer/README.md)** | 1.0.0 | 12 | Model serving, vLLM, KServe, NVIDIA NIM | AI/ML Engineers |
+| **[rh-ai-engineer](rh-ai-engineer/README.md)** | 1.0.0 | 11 | Model serving, vLLM, KServe, NVIDIA NIM | AI/ML Engineers |
 | **[rh-automation](rh-automation/README.md)** | 1.0.0 | 11 | Ansible Automation Platform governance, safety checks | Automation Leads |
 
-**Total:** 63 skills across 6 plugins | **Standalone Agents:** 0 | **Orchestration:** Delivered through orchestration skills where applicable | **License:** Apache 2.0 | **Status:** Production Ready
+**Total:** 62 skills across 6 plugins | **Standalone Agents:** 0 | **Orchestration:** Delivered through orchestration skills where applicable | **License:** Apache 2.0 | **Status:** Production Ready
 
 ---
 

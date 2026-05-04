@@ -37,3 +37,23 @@ It is intentionally scoped to pre-rebase planning and execution ordering.
 - `F001`-`F007` remain valid and completed on the rebased branch.
 - `F008`-`F012` were executed and completed after the rebase pass.
 - `F013` is now validated as complete (Make target + CI workflow integration confirmed).
+
+## Fresh Full Pass Delta Items (2026-05-04)
+
+Fresh validation executed:
+
+- `make validate`
+- `make validate-skill-design`
+- `make validate-consistency-audit`
+- `make validate-consistency-audit-ci`
+
+Delta findings from fresh consistency audit:
+
+- blocking: `0`
+- high: `1`
+- medium: `0`
+- informational: `0`
+
+New/remaining actionable delta items:
+
+- [X] **D001** Resolve `CLM-001-ROOT-SKILL-TOTAL` in `README.md` by reconciling in-scope skill counts with filesystem reality (current computed total: `62`; table currently sums to `63` due to `rh-ai-engineer` showing `12` instead of `11`), then rerun consistency audit and confirm zero findings.
