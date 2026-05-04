@@ -11,12 +11,52 @@ from ..sources import load_json
 def run(root: Path) -> tuple[list[Finding], dict[str, dict[str, str]]]:
     findings: list[Finding] = []
     statuses: dict[str, dict[str, str]] = {pack: {"style": "pass"} for pack in PACKS}
-    icons = load_json(root / "docs" / "icons.json")
-    plugins = load_json(root / "docs" / "plugins.json")
-    pack_icons = icons.get("packs", {})
+    icons_path = root / "docs" / "icons.json"
+    plugins_path = root / "docs" / "plugins.json"
+
+    icons_available = icons_path.exists()
+    plugins_available = plugins_path.exists()
+
+    if not icons_available:
+        severity = Severity.HIGH
+        findings.append(
+            Finding(
+                finding_id="VIS-002-MISSING-ICONS-FILE",
+                rule_id="VIS-002",
+                severity=severity,
+                artifact_path="docs/icons.json",
+                message="Icon mapping file is missing",
+                expected="docs/icons.json exists",
+                actual="file missing",
+                ci_enforcement=default_enforcement_for_severity(severity),
+            )
+        )
+        for pack in PACKS:
+            statuses[pack]["style"] = "warn"
+
+    if not plugins_available:
+        severity = Severity.HIGH
+        findings.append(
+            Finding(
+                finding_id="VIS-002-MISSING-PLUGINS-FILE",
+                rule_id="VIS-002",
+                severity=severity,
+                artifact_path="docs/plugins.json",
+                message="Plugin title mapping file is missing",
+                expected="docs/plugins.json exists",
+                actual="file missing",
+                ci_enforcement=default_enforcement_for_severity(severity),
+            )
+        )
+        for pack in PACKS:
+            statuses[pack]["style"] = "warn"
+
+    icons = load_json(icons_path) if icons_available else {}
+    plugins = load_json(plugins_path) if plugins_available else {}
+    pack_icons = icons.get("packs", {}) if icons_available else {}
 
     for pack in PACKS:
-        if pack not in pack_icons:
+        if icons_available and pack not in pack_icons:
             severity = Severity.HIGH
             findings.append(
                 Finding(
@@ -32,7 +72,7 @@ def run(root: Path) -> tuple[list[Finding], dict[str, dict[str, str]]]:
                 )
             )
             statuses[pack]["style"] = "warn"
-        if pack not in plugins:
+        if plugins_available and pack not in plugins:
             severity = Severity.HIGH
             findings.append(
                 Finding(

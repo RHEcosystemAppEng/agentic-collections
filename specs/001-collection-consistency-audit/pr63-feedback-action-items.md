@@ -22,16 +22,18 @@ It is intentionally scoped to pre-rebase planning and execution ordering.
 
 ## Phase 2 - Remaining Reviewer Feedback (Still Applicable)
 
-- [ ] **F008** Stop tracking generated report artifacts in git (`reports/`) and add ignore rule in `.gitignore`.
-- [ ] **F009** Add graceful missing-file handling (`Path.exists`) in:
+- [X] **F008** Stop tracking generated report artifacts in git (`reports/`) and add ignore rule in `.gitignore`.
+- [X] **F009** Add graceful missing-file handling (`Path.exists`) in:
   - `scripts/consistency_audit_lib/checks/style_checks.py`
   - `scripts/consistency_audit_lib/checks/icon_mapping_checks.py`
-- [ ] **F010** Revisit `docs/data.json` auditing in `scripts/consistency_audit_lib/checks/docs_data_checks.py` so generated/ignored docs data does not create noisy false-positive findings.
-- [ ] **F011** Improve report clarity in markdown output (`scripts/consistency_audit_lib/reporting.py`) so matrix `warn/fail` statuses are explicitly traceable to findings/rules.
-- [ ] **F012** Remove outdated `.claude-plugin/plugin.json` assumptions from `specs/001-collection-consistency-audit/data-model.md` and align with current Lola/.catalog compliance model.
-- [ ] **F013** Confirm consistency checks are integrated into existing validation flow (Make + CI) with low-friction defaults.
+- [X] **F010** Revisit `docs/data.json` auditing in `scripts/consistency_audit_lib/checks/docs_data_checks.py` so generated/ignored docs data does not create noisy false-positive findings.
+- [X] **F011** Improve report clarity in markdown output (`scripts/consistency_audit_lib/reporting.py`) so matrix `warn/fail` statuses are explicitly traceable to findings/rules.
+- [X] **F012** Remove outdated `.claude-plugin/plugin.json` assumptions from `specs/001-collection-consistency-audit/data-model.md` and align with current Lola/.catalog compliance model.
+- [X] **F013** Confirm consistency checks are integrated into existing validation flow (Make + CI) with low-friction defaults.
 
-## Notes for Upcoming Rebase Pass
+## Post-Rebase Validity Check (2026-05-04)
 
-- Rebase actions are intentionally excluded from this file's execution scope.
-- After rebasing `001-collection-consistency-audit` on latest `main`, re-validate each item and prune anything already resolved upstream.
+- Rebase onto `origin/main` completed successfully.
+- `F001`-`F007` remain valid and completed on the rebased branch.
+- `F008`-`F012` were executed and completed after the rebase pass.
+- `F013` is now validated as complete (Make target + CI workflow integration confirmed).

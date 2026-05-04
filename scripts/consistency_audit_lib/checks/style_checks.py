@@ -19,12 +19,50 @@ def run(root: Path) -> tuple[list[Finding], dict[str, dict[str, str]]]:
     css_path = root / "docs" / "styles.css"
     js_path = root / "docs" / "app.js"
 
-    css = read_text(css_path)
-    js = read_text(js_path)
+    css = ""
+    js = ""
+    if css_path.exists():
+        css = read_text(css_path)
+    else:
+        severity = Severity.HIGH
+        findings.append(
+            Finding(
+                finding_id="VIS-001-MISSING-STYLES-CSS",
+                rule_id="VIS-001",
+                severity=severity,
+                artifact_path="docs/styles.css",
+                message="Canonical docs stylesheet is missing",
+                expected="docs/styles.css exists",
+                actual="file missing",
+                ci_enforcement=default_enforcement_for_severity(severity),
+            )
+        )
+        for pack in PACKS:
+            statuses[pack]["style"] = "warn"
+
+    if js_path.exists():
+        js = read_text(js_path)
+    else:
+        severity = Severity.HIGH
+        findings.append(
+            Finding(
+                finding_id="VIS-001-MISSING-APP-JS",
+                rule_id="VIS-001",
+                severity=severity,
+                artifact_path="docs/app.js",
+                message="Docs site app script is missing",
+                expected="docs/app.js exists",
+                actual="file missing",
+                ci_enforcement=default_enforcement_for_severity(severity),
+            )
+        )
+        for pack in PACKS:
+            statuses[pack]["style"] = "warn"
+
     token_path = root / "docs" / "style-tokens.json"
     token_data = load_json(token_path) if token_path.exists() else {}
-    tokens = TOKEN_RE.findall(css)
-    if not tokens:
+    tokens = TOKEN_RE.findall(css) if css else []
+    if css and not tokens:
         severity = Severity.HIGH
         findings.append(
             Finding(
@@ -40,7 +78,7 @@ def run(root: Path) -> tuple[list[Finding], dict[str, dict[str, str]]]:
         )
 
     # Hardcoded hex in JS can indicate drift from centralized token usage.
-    js_hex_count = len(HEX_RE.findall(js))
+    js_hex_count = len(HEX_RE.findall(js)) if js else 0
     if js_hex_count > 0:
         severity = Severity.MEDIUM
         findings.append(

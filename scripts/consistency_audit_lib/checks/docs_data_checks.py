@@ -17,21 +17,7 @@ def run(root: Path) -> tuple[list[Finding], dict[str, dict[str, str]]]:
     data_path = root / "docs" / "data.json"
 
     if not data_path.exists():
-        severity = Severity.HIGH
-        findings.append(
-            Finding(
-                finding_id="VIS-003-MISSING-DATA-JSON",
-                rule_id="VIS-003",
-                severity=severity,
-                artifact_path="docs/data.json",
-                message="Documentation site data file is missing or has not yet been generated",
-                expected="docs/data.json exists (generate via `make generate`)",
-                actual="file missing",
-                ci_enforcement=default_enforcement_for_severity(severity),
-            )
-        )
-        for pack in PACKS:
-            statuses[pack]["style"] = "warn"
+        # docs/data.json is generated and gitignored; absence is normal in source trees.
         return findings, statuses
 
     try:

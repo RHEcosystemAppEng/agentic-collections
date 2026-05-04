@@ -48,14 +48,54 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
             f"{row.get('overall_severity')} |"
         )
 
+    lines.extend(["", "### Matrix Status Explanations", ""])
+    lines.extend(
+        [
+            "| Pack | Domain | Status | Triggering Findings |",
+            "|---|---|---|---|",
+        ]
+    )
+
+    matrix_domains = [
+        ("Version", "version_consistency_status", "VER"),
+        ("Model", "model_metadata_status", "MOD"),
+        ("Claims", "claim_reality_status", "CLM"),
+        ("Style", "style_icon_status", "VIS"),
+    ]
+    has_non_pass_matrix = False
+    for row in matrix:
+        pack_name = str(row.get("pack_name", ""))
+        for domain_name, status_key, rule_prefix in matrix_domains:
+            status = str(row.get(status_key, "pass"))
+            if status == "pass":
+                continue
+            has_non_pass_matrix = True
+            triggers: list[str] = []
+            for finding in findings:
+                rule_id = str(finding.get("rule_id", ""))
+                if not rule_id.startswith(rule_prefix):
+                    continue
+                finding_pack = finding.get("pack_name")
+                if finding_pack in (None, "", pack_name):
+                    finding_id = finding.get("finding_id", "unknown-finding")
+                    triggers.append(f"`{finding_id}` (`{rule_id}`)")
+
+            trigger_text = "; ".join(triggers) if triggers else "_no mapped finding ID_"
+            lines.append(f"| {pack_name} | {domain_name} | {status} | {trigger_text} |")
+
+    if not has_non_pass_matrix:
+        lines.append("| _none_ | _n/a_ | pass | _all matrix cells are pass_ |")
+
     lines.extend(["", "## Findings", ""])
     if not findings:
         lines.append("- No findings")
     else:
         for finding in findings:
+            finding_id = finding.get("finding_id", "unknown-finding")
+            pack_scope = finding.get("pack_name") or "all-packs/global"
             lines.append(
-                f"- [{finding.get('severity')}] `{finding.get('rule_id')}` {finding.get('message')} "
-                f"({finding.get('artifact_path')})"
+                f"- [{finding.get('severity')}] `{finding.get('rule_id')}` `{finding_id}` "
+                f"[scope: {pack_scope}] {finding.get('message')} ({finding.get('artifact_path')})"
             )
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -26,7 +26,7 @@ Represents one row in the per-pack consistency matrix.
 | `pack_name` | string | Pack identifier (example: `rh-sre`) |
 | `registration_status` | enum | `registered` \| `missing` |
 | `canonical_version` | string or null | Canonical version from source-of-truth (if applicable) |
-| `observed_versions` | object | Versions found in root README, pack README, plugin metadata |
+| `observed_versions` | object | Versions found in root README, pack README, and `.catalog` metadata files |
 | `model_metadata_summary` | object | Skill count, compliant count, missing model count, invalid values |
 | `claim_reality_summary` | object | Claimed counts vs discovered counts (skills, agents, docs/orchestration claims) |
 | `style_icon_summary` | object | Icon mapping existence and style token/hardcode findings |
@@ -80,7 +80,7 @@ Prioritized action derived from one or more findings.
 |---|---|---|---|---|---|
 | `VER-001` | marketplace | blocking | computed | false | `marketplace/rh-agentic-collection.yml` |
 | `VER-002` | pack | high | computed | true | `README.md`, `<pack>/README.md` |
-| `VER-003` | pack | medium | schema | true | `<pack>/.claude-plugin/plugin.json` (if present) |
+| `VER-003` | pack | medium | schema | true | `<pack>/.catalog/collection.yaml`, `<pack>/.catalog/collection.json` |
 | `MOD-001` | skill | blocking | script | false | `skills/*/SKILL.md`, `SKILL_DESIGN_PRINCIPLES.md` |
 | `MOD-002` | skill | high | script | false | `scripts/validate_skill_design.py`, `scripts/validate-skills.sh` |
 | `VIS-001` | docs-site | medium | regex | true | `docs/styles.css` |
