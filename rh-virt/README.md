@@ -40,11 +40,11 @@ kubectl get vms -A
 
 ### MCP Server Container Image
 
-This pack uses the official [kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server) container image from `quay.io/containers/kubernetes_mcp_server`, pinned to version **v0.0.61** by SHA256 digest for supply chain security. No local build is required — the image is pulled automatically on first use.
+This pack uses the [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server) container image from `quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server`, pinned by SHA256 digest for supply chain security. No local build is required — the image is pulled automatically on first use.
 
 To verify the image integrity:
 ```bash
-podman inspect --format='{{.Digest}}' quay.io/containers/kubernetes_mcp_server@sha256:ef1ede0fd73ce975de1850b7f19090d0850c4ce3e7d21d795f21de3ee8d1452c
+podman inspect --format='{{.Digest}}' quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server@sha256:2f52c860f91ab3c8a5129b727bdef0d620e733013f073b10355866c45eafd053
 ```
 
 ### Installation (Lola)
@@ -178,12 +178,12 @@ Clone existing virtual machines for testing, scaling, or creating VM templates.
 
 The pack integrates with the OpenShift MCP server (configured in `mcps.json`), which provides two toolsets for comprehensive cluster and virtualization management:
 
-### **openshift-virtualization** - Kubernetes MCP Server
+### **openshift-virtualization** - OpenShift MCP Server
 
 Provides access to both Kubernetes core operations and KubeVirt virtual machine management through the Model Context Protocol.
 
-**Repository**: https://github.com/containers/kubernetes-mcp-server
-**Image**: `quay.io/containers/kubernetes_mcp_server` (v0.0.61, pinned by SHA256 digest)
+**Repository**: https://github.com/openshift/openshift-mcp-server
+**Image**: `quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server` (pinned by SHA256 digest)
 
 **Enabled Toolsets**: `core` and `kubevirt` (via `--toolsets core,kubevirt`)
 
@@ -221,8 +221,8 @@ The server provides two toolsets enabled via `--toolsets core,kubevirt`:
         "--network=host",
         "--userns=keep-id:uid=65532,gid=65532",
         "-v", "${KUBECONFIG}:/kubeconfig:ro,Z",
-        "--entrypoint", "/app/kubernetes-mcp-server",
-        "quay.io/containers/kubernetes_mcp_server@sha256:ef1ede0fd73ce975de1850b7f19090d0850c4ce3e7d21d795f21de3ee8d1452c",
+        "--entrypoint", "/openshift-mcp-server",
+        "quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server@sha256:2f52c860f91ab3c8a5129b727bdef0d620e733013f073b10355866c45eafd053",
         "--kubeconfig", "/kubeconfig",
         "--toolsets", "core,kubevirt"
       ],
@@ -243,7 +243,7 @@ The server provides two toolsets enabled via `--toolsets core,kubevirt`:
 **Configuration Details**:
 - `--userns=keep-id:uid=65532,gid=65532` - Maps container user namespace for rootless Podman security
 - `,Z` flag on volume mount - Applies SELinux context label for container access to kubeconfig
-- `--entrypoint /app/kubernetes-mcp-server` - Specifies the MCP server binary to execute
+- `--entrypoint /openshift-mcp-server` - Specifies the MCP server binary to execute
 - `--kubeconfig /kubeconfig` - Path to kubeconfig inside the container
 - `--toolsets core,kubevirt` - Enables both core Kubernetes and KubeVirt-specific tool collections
 - `--network=host` - Required for accessing local/remote Kubernetes clusters
@@ -379,10 +379,10 @@ Agent: "✓ Workaround Applied Successfully
 MCP server is configured in `mcps.json` (see [MCP Server Integration](#mcp-server-integration) for full configuration and available tools).
 
 **Key Configuration Notes**:
-- Uses the official `quay.io/containers/kubernetes_mcp_server` image pinned to v0.0.61 by SHA256 digest
+- Uses the `quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server` image pinned by SHA256 digest
 - `--userns=keep-id:uid=65532,gid=65532` - Enables rootless container security with user namespace mapping
 - Mounts `KUBECONFIG` as read-only volume inside container with `,Z` for SELinux labeling
-- `--entrypoint /app/kubernetes-mcp-server` - Specifies the MCP server binary
+- `--entrypoint /openshift-mcp-server` - Specifies the MCP server binary
 - `--toolsets core,kubevirt` - Enables both core Kubernetes and KubeVirt-specific tools
 - Uses `--network=host` for cluster access (required for local/remote clusters)
 - Requires OpenShift Virtualization operator installed on the cluster
@@ -505,6 +505,6 @@ See main repository [README.md](../README.md) for:
 
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [KubeVirt User Guide](https://kubevirt.io/user-guide/)
-- [Kubernetes MCP Server](https://github.com/containers/kubernetes-mcp-server)
+- [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server)
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
 - [Main Repository](https://github.com/RHEcosystemAppEng/agentic-collections)
