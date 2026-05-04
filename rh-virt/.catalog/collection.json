@@ -115,7 +115,7 @@
   ],
   "maturity": "GREEN",
   "mcp_section": "#mcp_section.md",
-  "name": "Red Hat OpenShift Virtualization Agentic Collection",
+  "name": "Agentic skill pack for Red Hat OpenShift Virtualization",
   "personas": [
     "Red Hat platform engineer"
   ],

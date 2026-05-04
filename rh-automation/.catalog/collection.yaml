@@ -3,7 +3,7 @@
 # Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
 
 id: rh-automation
-name: Red Hat Automation Agentic Skills Collection
+name: Agentic skill pack for Automation Engineers
 provider: Red Hat
 version: 0.1.0
 categories:

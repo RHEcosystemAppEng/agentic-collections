@@ -1,20 +1,20 @@
 {
   "rh-sre": {
-    "title": "Red Hat SRE Agentic Skills Collection"
+    "title": "Agentic skill pack for Security Reliability Engineers"
   },
   "rh-virt": {
-    "title": "Red Hat OpenShift Virtualization Agentic Collection"
+    "title": "Agentic skill pack for Red Hat OpenShift Virtualization"
   },
   "rh-developer": {
-    "title": "Red Hat Developer Agentic Skills Collection"
+    "title": "Agentic skill pack for Software Developers"
   },
   "ocp-admin": {
-    "title": "Red Hat OpenShift Administration Agentic Skills Collection"
+    "title": "Agentic skill pack for Red Hat OpenShift"
   },
   "rh-ai-engineer": {
-    "title": "Red Hat OpenShift AI Engineering Agentic Collection"
+    "title": "Agentic skill pack for OpenShift AI Engineers"
   },
   "rh-automation": {
-    "title": "Red Hat Automation Agentic Skills Collection"
+    "title": "Agentic skill pack for Automation Engineers"
   }
 }

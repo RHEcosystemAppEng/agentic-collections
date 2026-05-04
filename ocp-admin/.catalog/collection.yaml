@@ -3,7 +3,7 @@
 # Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
 
 id: openshift-administration
-name: Red Hat OpenShift Administration Agentic Skills Collection
+name: Agentic skill pack for Red Hat OpenShift
 provider: Red Hat
 version: 0.1.0
 categories:

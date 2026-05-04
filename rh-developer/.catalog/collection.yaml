@@ -3,7 +3,7 @@
 # Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
 
 id: rh-developer
-name: Red Hat Developer Agentic Collection
+name: Agentic skill pack for Software Developers
 provider: Red Hat
 version: 0.1.0
 categories:

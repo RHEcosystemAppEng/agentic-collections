@@ -3,7 +3,7 @@
 # Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
 
 id: rh-ai-engineer
-name: Red Hat OpenShift AI Engineering Agentic Collection
+name: Agentic skill pack for OpenShift AI Engineers
 provider: Red Hat
 version: 0.1.0
 categories:
