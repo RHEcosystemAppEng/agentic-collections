@@ -13,6 +13,7 @@ description: |
   - "Show cluster events for diagnostics"
 
   Read-only operations. Does NOT modify clusters.
+license: Apache-2.0
 model: inherit
 color: cyan
 metadata:

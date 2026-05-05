@@ -17,6 +17,7 @@ description: |
   - Listing existing clusters → Use `/cluster-inventory` skill
   - Modifying running clusters → Out of scope (Day-2 operations require direct cluster access)
   - Cluster upgrades (not yet supported)
+license: Apache-2.0
 model: inherit
 color: green
 metadata:

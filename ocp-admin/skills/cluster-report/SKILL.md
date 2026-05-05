@@ -13,6 +13,7 @@ description: |
   - "How are my clusters doing?"
   - "Include all clusters including non-OpenShift" (override default filter)
   NOT for single-cluster deep-dives or troubleshooting specific pods.
+license: Apache-2.0
 model: inherit
 color: cyan
 metadata:
