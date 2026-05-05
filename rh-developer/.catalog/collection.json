@@ -10,12 +10,17 @@
     "Automation"
   ],
   "contents": {
-    "description": "The pack provides 14 skills for developer workflows on OpenShift and RHEL, including one orchestration skill\nfor end-to-end containerize-and-deploy.\n",
+    "description": "The pack provides 15 skills for developer workflows on OpenShift and RHEL, including two orchestration skills\nfor end-to-end containerize-and-deploy and structured incident investigation.\n",
     "orchestration_skills": [
       {
         "description": "End-to-end containerize and deploy",
         "name": "containerize-deploy",
         "summary_markdown": "Guided workflow from source to running application on OpenShift or RHEL with checkpoints.\n**Use when:**\n- \"Deploy my app end to end\"\n- \"Take me from repo to running service\"\n**What it does:**\n- Phase: detect project and target environment.\n- Phase: choose OpenShift (S2I / Helm / Podman) or RHEL path.\n- Invokes specialized skills with explicit user approvals between phases.\n"
+      },
+      {
+        "description": "Structured incident investigation and root cause analysis",
+        "name": "incident-triage",
+        "summary_markdown": "Investigate OpenShift incidents using Five Whys methodology, investigation guardrails, Prometheus metric analysis, and adversarial due diligence.\n**Use when:**\n- \"Investigate this incident\"\n- \"Root cause analysis for this alert\"\n- \"Why is this failing? (complex/multi-resource)\"\n- \"Triage this outage\"\n**What it does:**\n- Phase: gather incident context and route to specialized skill if single-resource.\n- Phase: hierarchical investigation across the Kubernetes ownership chain.\n- Phase: evidence collection with 5 investigation guardrails and Prometheus metrics.\n- Phase: Five Whys root cause analysis with remediation target identification.\n- Phase: 8-dimension adversarial due diligence with confidence scoring.\n- Chains to debug-pod, debug-scc, debug-rbac, debug-network for targeted fixes.\n"
       }
     ],
     "skills": [
@@ -115,6 +120,11 @@
         "reason": "Build logs and BuildConfig diagnosis.",
         "skill_to_use": "debug-build",
         "user_request": "\"Build failed\" or \"S2I error\""
+      },
+      {
+        "reason": "Multi-resource investigation with Five Whys, guardrails, and due diligence.",
+        "skill_to_use": "incident-triage",
+        "user_request": "\"Investigate this incident\" or \"root cause analysis\" or \"triage this alert\""
       },
       {
         "reason": "Pre-flight before deploy or heavy debug.",
