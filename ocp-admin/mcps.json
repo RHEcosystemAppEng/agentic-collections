@@ -12,7 +12,7 @@
         "-e", "INVENTORY_URL=https://api.openshift.com/api/assisted-install/v2",
         "-e", "PULL_SECRET_URL=https://api.openshift.com/api/accounts_mgmt/v1/access_token",
         "-e", "SSO_URL=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token",
-        "quay.io/ecosystem-appeng/assisted-service-mcp:ocm"
+        "quay.io/ecosystem-appeng/assisted-service-mcp@sha256:e3e84602c6ef2882dc0737e7ad0fafd16d39887dce9f4fb399c470b11158f486"
       ],
       "env": {
         "OFFLINE_TOKEN": "${OFFLINE_TOKEN}"
@@ -36,7 +36,7 @@
         "-e", "INVENTORY_URL=https://api.openshift.com/api/clusters_mgmt/v1",
         "-e", "PULL_SECRET_URL=https://api.openshift.com/api/accounts_mgmt/v1/access_token",
         "-e", "SSO_URL=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token",
-        "quay.io/ecosystem-appeng/assisted-service-mcp:ocm"
+        "quay.io/ecosystem-appeng/assisted-service-mcp@sha256:e3e84602c6ef2882dc0737e7ad0fafd16d39887dce9f4fb399c470b11158f486"
       ],
       "env": {
         "OFFLINE_TOKEN": "${OFFLINE_TOKEN}"
@@ -52,7 +52,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "U=(); [ \"$(uname -s)\" = Linux ] && U=(--userns=keep-id:uid=65532,gid=65532); exec podman run \"${U[@]}\" --rm -i --network=host -v \"${KUBECONFIG}:/kubeconfig:ro,Z\" --entrypoint /app/kubernetes-mcp-server quay.io/ecosystem-appeng/openshift-mcp-server:latest --kubeconfig /kubeconfig --read-only --toolsets core,config"
+        "U=(); [ \"$(uname -s)\" = Linux ] && U=(--userns=keep-id:uid=65532,gid=65532); exec podman run \"${U[@]}\" --rm -i --network=host -v \"${KUBECONFIG}:/kubeconfig:ro,Z\" --entrypoint /openshift-mcp-server quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server@sha256:2f52c860f91ab3c8a5129b727bdef0d620e733013f073b10355866c45eafd053 --kubeconfig /kubeconfig --read-only --toolsets core,config"
       ],
       "env": {
         "KUBECONFIG": "${KUBECONFIG}"

@@ -151,7 +151,7 @@ Copy the **entire configuration** from `ocp-admin/mcps.json` to your Claude Code
            -e INVENTORY_URL=\"${INVENTORY_URL:-https://api.openshift.com/api/assisted-install/v2}\" \
            -e PULL_SECRET_URL=\"${PULL_SECRET_URL:-https://api.openshift.com/api/accounts_mgmt/v1/access_token}\" \
            -e OCM_URL=\"${OCM_URL:-https://api.openshift.com/api/clusters_mgmt/v1}\" \
-           quay.io/ecosystem-appeng/assisted-service-mcp:latest"
+           quay.io/ecosystem-appeng/assisted-service-mcp@sha256:e3e84602c6ef2882dc0737e7ad0fafd16d39887dce9f4fb399c470b11158f486"
       ],
       "env": {
         "OFFLINE_TOKEN": "${OFFLINE_TOKEN}",
@@ -176,7 +176,7 @@ Copy the **entire configuration** from `ocp-admin/mcps.json` to your Claude Code
            -e INVENTORY_URL=\"${INVENTORY_URL:-https://api.openshift.com/api/assisted-install/v2}\" \
            -e PULL_SECRET_URL=\"${PULL_SECRET_URL:-https://api.openshift.com/api/accounts_mgmt/v1/access_token}\" \
            -e OCM_URL=\"${OCM_URL:-https://api.openshift.com/api/clusters_mgmt/v1}\" \
-           quay.io/ecosystem-appeng/assisted-service-mcp:latest"
+           quay.io/ecosystem-appeng/assisted-service-mcp@sha256:e3e84602c6ef2882dc0737e7ad0fafd16d39887dce9f4fb399c470b11158f486"
       ],
       "env": {
         "OFFLINE_TOKEN": "${OFFLINE_TOKEN}",
@@ -195,7 +195,7 @@ Copy the **entire configuration** from `ocp-admin/mcps.json` to your Claude Code
 podman --version
 
 # Test container pull
-podman pull quay.io/ecosystem-appeng/assisted-service-mcp:latest
+podman pull quay.io/ecosystem-appeng/assisted-service-mcp@sha256:e3e84602c6ef2882dc0737e7ad0fafd16d39887dce9f4fb399c470b11158f486
 ```
 
 **Test the MCP servers**:
@@ -208,20 +208,11 @@ podman pull quay.io/ecosystem-appeng/assisted-service-mcp:latest
 
 ### 2. OpenShift MCP Server (for cluster operations)
 
-The `cluster-report` skill uses the OpenShift MCP server for multi-cluster operations.
+The `cluster-report` skill uses the [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server) container image from `quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server`, pinned by SHA256 digest for supply chain security. No local build is required -- the image is pulled automatically on first use.
 
-**Build the container image** (if not already built):
-
+To verify the image integrity:
 ```bash
-# Clone the repository
-git clone https://github.com/openshift/openshift-mcp-server.git
-cd openshift-mcp-server
-
-# Build with Podman
-podman build -t quay.io/ecosystem-appeng/openshift-mcp-server:latest -f Dockerfile .
-
-# Verify the build
-podman images quay.io/ecosystem-appeng/openshift-mcp-server:latest
+podman inspect --format='{{.Digest}}' quay.io/redhat-user-workloads/crt-nshift-lightspeed-tenant/openshift-mcp-server@sha256:2f52c860f91ab3c8a5129b727bdef0d620e733013f073b10355866c45eafd053
 ```
 
 **Configure cluster access**:
