@@ -224,8 +224,14 @@ Ask: "Review configuration. Ready to create cluster definition?"
 ```bash
 iso_url="$(cat /tmp/{cluster_name}.{base_domain}/iso-download-url.txt)"
 case "$iso_url" in
-  https://*) : ;;
-  *) echo "ERROR: ISO URL must use HTTPS" >&2; exit 1 ;;
+  https://*.openshiftapps.com/* | \
+  https://api.openshift.com/* | \
+  https://mirror.openshift.com/* )
+    : ;;
+  *)
+    echo "ERROR: ISO URL domain not in allowlist: $iso_url" >&2
+    exit 1
+    ;;
 esac
 curl --fail --proto "=https" --tlsv1.2 -L -# \
   -o /tmp/{cluster_name}.{base_domain}/discovery.iso \
