@@ -23,7 +23,7 @@ summary: The rh-developer collection provides skills to detect projects, build i
   validate environments, and debug builds, pods, pipelines, networks, and hosts.
 contents:
   description: |
-    The pack provides 14 skills for developer workflows on OpenShift and RHEL, including one orchestration skill
+    The pack provides 16 skills for developer workflows on OpenShift and RHEL, including one orchestration skill
     for end-to-end containerize-and-deploy.
   skills:
   - name: detect-project
@@ -148,6 +148,30 @@ contents:
       **What it does:**
       - Inspects local container state and logs.
       - Complements OpenShift debug skills.
+  - name: debug-scc
+    description: OpenShift SCC violation diagnostics
+    summary_markdown: |
+      Diagnose Security Context Constraint violations blocking pod creation on OpenShift.
+      **Use when:**
+      - "SCC violation"
+      - "Pod blocked by security context constraint"
+      - "FailedCreate forbidden"
+      **What it does:**
+      - Parses SCC rejection messages from ReplicaSet events.
+      - Identifies non-compliant securityContext fields (runAsUser, capabilities, privilege escalation).
+      - Checks ServiceAccount SCC bindings and suggests targeted fixes.
+  - name: debug-rbac
+    description: OpenShift RBAC diagnostics
+    summary_markdown: |
+      Diagnose RBAC permission failures causing 403 Forbidden errors on OpenShift.
+      **Use when:**
+      - "RBAC denied"
+      - "403 forbidden in pod logs"
+      - "Missing RoleBinding"
+      **What it does:**
+      - Analyzes pod logs for FORBIDDEN errors and readiness probe failures.
+      - Identifies missing Role/RoleBinding for ServiceAccounts.
+      - Detects regression patterns where bindings are repeatedly removed.
   - name: debug-rhel
     description: RHEL host diagnostics
     summary_markdown: |
@@ -189,6 +213,12 @@ contents:
   - user_request: '"Build failed" or "S2I error"'
     skill_to_use: debug-build
     reason: Build logs and BuildConfig diagnosis.
+  - user_request: '"SCC violation" or "pod blocked by security context"'
+    skill_to_use: debug-scc
+    reason: Parses SCC rejection messages and identifies non-compliant security context fields.
+  - user_request: '"RBAC denied" or "403 forbidden in pod logs"'
+    skill_to_use: debug-rbac
+    reason: Traces missing RoleBindings and ServiceAccount permissions.
   - user_request: '"Check my tools" or "validate cluster access"'
     skill_to_use: validate-environment
     reason: Pre-flight before deploy or heavy debug.

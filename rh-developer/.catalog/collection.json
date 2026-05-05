@@ -10,7 +10,7 @@
     "Automation"
   ],
   "contents": {
-    "description": "The pack provides 14 skills for developer workflows on OpenShift and RHEL, including one orchestration skill\nfor end-to-end containerize-and-deploy.\n",
+    "description": "The pack provides 16 skills for developer workflows on OpenShift and RHEL, including one orchestration skill\nfor end-to-end containerize-and-deploy.\n",
     "orchestration_skills": [
       {
         "description": "End-to-end containerize and deploy",
@@ -80,6 +80,16 @@
         "summary_markdown": "Diagnose Podman/Docker local container failures.\n**Use when:**\n- \"Container exits immediately locally\"\n- \"Cannot pull image locally\"\n**What it does:**\n- Inspects local container state and logs.\n- Complements OpenShift debug skills.\n"
       },
       {
+        "description": "OpenShift SCC violation diagnostics",
+        "name": "debug-scc",
+        "summary_markdown": "Diagnose Security Context Constraint violations blocking pod creation on OpenShift.\n**Use when:**\n- \"SCC violation\"\n- \"Pod blocked by security context constraint\"\n- \"FailedCreate forbidden\"\n**What it does:**\n- Parses SCC rejection messages from ReplicaSet events.\n- Identifies non-compliant securityContext fields (runAsUser, capabilities, privilege escalation).\n- Checks ServiceAccount SCC bindings and suggests targeted fixes.\n"
+      },
+      {
+        "description": "OpenShift RBAC diagnostics",
+        "name": "debug-rbac",
+        "summary_markdown": "Diagnose RBAC permission failures causing 403 Forbidden errors on OpenShift.\n**Use when:**\n- \"RBAC denied\"\n- \"403 forbidden in pod logs\"\n- \"Missing RoleBinding\"\n**What it does:**\n- Analyzes pod logs for FORBIDDEN errors and readiness probe failures.\n- Identifies missing Role/RoleBinding for ServiceAccounts.\n- Detects regression patterns where bindings are repeatedly removed.\n"
+      },
+      {
         "description": "RHEL host diagnostics",
         "name": "debug-rhel",
         "summary_markdown": "Diagnose systemd, SELinux, firewall, and resource issues on RHEL hosts.\n**Use when:**\n- \"SELinux denial\"\n- \"systemd service failed on host\"\n**What it does:**\n- Uses journal and policy signals.\n- Optional Lightspeed insights when available.\n"
@@ -115,6 +125,16 @@
         "reason": "Build logs and BuildConfig diagnosis.",
         "skill_to_use": "debug-build",
         "user_request": "\"Build failed\" or \"S2I error\""
+      },
+      {
+        "reason": "Parses SCC rejection messages and identifies non-compliant security context fields.",
+        "skill_to_use": "debug-scc",
+        "user_request": "\"SCC violation\" or \"pod blocked by security context\""
+      },
+      {
+        "reason": "Traces missing RoleBindings and ServiceAccount permissions.",
+        "skill_to_use": "debug-rbac",
+        "user_request": "\"RBAC denied\" or \"403 forbidden in pod logs\""
       },
       {
         "reason": "Pre-flight before deploy or heavy debug.",
