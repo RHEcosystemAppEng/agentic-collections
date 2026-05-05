@@ -1,0 +1,316 @@
+name: Skill Security Scan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**/skills/**'
+      - '**/mcps.json'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
+      scan_all:
+        description: 'Scan all packs (true) or changed only (false)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+concurrency:
+  group: security-scan-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: read
+
+jobs:
+  security-scan:
+    if: github.event.pull_request.draft == false || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for prerequisite checks
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredChecks = ['compliance-check', 'skill-linter'];
+            const sha = context.payload.pull_request.head.sha;
+            const maxWait = 300000; // 5 minutes
+            const interval = 15000; // 15 seconds
+            let elapsed = 0;
+
+            core.info(`Waiting for checks on ${sha}: ${requiredChecks.join(', ')}`);
+
+            while (elapsed < maxWait) {
+              const { data: { check_runs } } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+              });
+
+              const results = requiredChecks.map(name => {
+                const run = check_runs.find(r => r.name === name);
+                return { name, status: run?.status, conclusion: run?.conclusion };
+              });
+
+              const allCompleted = results.every(r => r.status === 'completed');
+              if (allCompleted) {
+                const failed = results.filter(r => r.conclusion !== 'success');
+                if (failed.length > 0) {
+                  const summary = failed.map(r => `${r.name}: ${r.conclusion}`).join(', ');
+                  core.setFailed(`Prerequisite checks failed (${summary}) — skipping security scan to save tokens`);
+                  return;
+                }
+                core.info('All prerequisite checks passed — proceeding with security scan');
+                return;
+              }
+
+              const pending = results.filter(r => r.status !== 'completed').map(r => r.name);
+              core.info(`Waiting for: ${pending.join(', ')} (${elapsed / 1000}s elapsed)`);
+              await new Promise(r => setTimeout(r, interval));
+              elapsed += interval;
+            }
+
+            core.setFailed('Timed out waiting for prerequisite checks — skipping security scan');
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install skill-scanner
+        run: uv pip install --system 'cisco-ai-skill-scanner[google]'
+
+      - name: Detect changed packs
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.scan_all }}" = "true" ]; then
+            PACKS=$(find . -maxdepth 2 -name skills -type d | sed 's|^\./||;s|/skills$||' | sort)
+          else
+            PACKS=$(bash scripts/detect-changed-packs.sh || true)
+          fi
+
+          PACK_COUNT=$(echo "$PACKS" | grep -c . || true)
+
+          if [ -z "$PACKS" ] || [ "$PACK_COUNT" -eq 0 ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "packs=" >> $GITHUB_OUTPUT
+            echo "pack_count=0" >> $GITHUB_OUTPUT
+            echo "No packs with changes detected — skipping security scan"
+          elif [ "$PACK_COUNT" -gt 1 ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "packs<<EOF" >> $GITHUB_OUTPUT
+            echo "$PACKS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "pack_count=$PACK_COUNT" >> $GITHUB_OUTPUT
+            echo "::warning::Multiple packs detected ($PACK_COUNT): $PACKS"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "packs<<EOF" >> $GITHUB_OUTPUT
+            echo "$PACKS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "pack_count=1" >> $GITHUB_OUTPUT
+            echo "Changed pack detected: $PACKS"
+          fi
+
+      - name: Reject multi-pack PRs
+        if: steps.detect.outputs.changed == 'true' && steps.detect.outputs.pack_count != '1' && github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MARKER="<!-- skill-security-scan -->"
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          PACKS="${{ steps.detect.outputs.packs }}"
+
+          PACK_LIST=""
+          while IFS= read -r pack; do
+            [ -z "$pack" ] && continue
+            PACK_LIST="${PACK_LIST}\n- \`${pack}\`"
+          done <<< "$PACKS"
+
+          {
+            echo "$MARKER"
+            echo "## ⚠️ Skill Security Scan — Skipped"
+            echo ""
+            echo "This PR contains changes in **multiple packs**:"
+            echo -e "$PACK_LIST"
+            echo ""
+            echo "To keep security scans fast and cost-effective, please limit each PR to **one pack only**."
+            echo "Split your changes into separate PRs (one per pack) and the security scan will run automatically."
+          } > /tmp/comment.md
+
+          EXISTING_COMMENT_ID=$(gh api --paginate \
+            "/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
+            | head -1)
+
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT_ID" \
+              -f body="$(cat /tmp/comment.md)"
+          else
+            gh pr comment "$PR_NUMBER" \
+              --repo "${{ github.repository }}" \
+              --body-file /tmp/comment.md
+          fi
+
+          echo "❌ Multiple packs detected — aborting security scan"
+          exit 1
+
+      - name: Check scanner credentials
+        if: steps.detect.outputs.changed == 'true' && steps.detect.outputs.pack_count == '1'
+        id: creds
+        env:
+          SKILL_SCANNER_LLM_API_KEY: ${{ secrets.SKILL_SCANNER_LLM_API_KEY }}
+        run: |
+          if [ -z "$SKILL_SCANNER_LLM_API_KEY" ]; then
+            echo "::warning::SKILL_SCANNER_LLM_API_KEY not available (expected for fork PRs). Skipping security scan."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run security scan
+        if: steps.detect.outputs.pack_count == '1' && steps.creds.outputs.available == 'true'
+        id: scan
+        env:
+          SKILL_SCANNER_LLM_API_KEY: ${{ secrets.SKILL_SCANNER_LLM_API_KEY }}
+          SKILL_SCANNER_LLM_MODEL: ${{ secrets.SKILL_SCANNER_LLM_MODEL }}
+        run: |
+          mkdir -p security-reports
+          SCAN_FAILED=false
+
+          while IFS= read -r pack; do
+            [ -z "$pack" ] && continue
+            echo "=== Scanning: $pack ==="
+
+            skill-scanner scan-all "$pack/skills" \
+              --recursive \
+              --use-behavioral \
+              --use-llm \
+              --check-overlap \
+              --enable-meta \
+              --fail-on-severity medium \
+              --format markdown \
+              --detailed \
+              --output "security-reports/security-report-${pack}.md" || SCAN_FAILED=true
+
+            echo ""
+          done <<< "${{ steps.detect.outputs.packs }}"
+
+          if [ "$SCAN_FAILED" = "true" ]; then
+            echo "scan_result=failed" >> $GITHUB_OUTPUT
+          else
+            echo "scan_result=passed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload security reports
+        id: upload
+        if: steps.detect.outputs.pack_count == '1' && steps.creds.outputs.available == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: security-reports/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Post scan summary
+        if: steps.detect.outputs.pack_count == '1' && steps.creds.outputs.available == 'true' && always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MARKER="<!-- skill-security-scan -->"
+          SCAN_RESULT="${{ steps.scan.outputs.scan_result }}"
+          ARTIFACT_URL="${{ steps.upload.outputs.artifact-url }}"
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+
+          if [ "$SCAN_RESULT" = "passed" ]; then
+            ICON="✅"
+          else
+            ICON="❌"
+          fi
+
+          {
+            echo "$MARKER"
+            echo "## $ICON Skill Security Scan"
+            echo ""
+
+            if [ -d "security-reports" ]; then
+              for report in security-reports/security-report-*.md; do
+                [ -f "$report" ] || continue
+                pack=$(basename "$report" .md | sed 's/^security-report-//')
+                echo "<details>"
+                echo "<summary>📋 $pack</summary>"
+                echo ""
+                cat "$report"
+                echo ""
+                echo "</details>"
+                echo ""
+              done
+            else
+              echo "No reports generated."
+            fi
+
+            echo ""
+            if [ -n "$ARTIFACT_URL" ]; then
+              echo "> 📦 [Download security reports]($ARTIFACT_URL) | [Workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            else
+              echo "> [Workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            fi
+          } > /tmp/comment.md
+
+          EXISTING_COMMENT_ID=$(gh api --paginate \
+            "/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
+            | head -1)
+
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT_ID" \
+              -f body="$(cat /tmp/comment.md)"
+          else
+            gh pr comment "$PR_NUMBER" \
+              --repo "${{ github.repository }}" \
+              --body-file /tmp/comment.md
+          fi
+
+      - name: Check scan results
+        if: steps.detect.outputs.pack_count == '1' && steps.creds.outputs.available == 'true'
+        run: |
+          if [ "${{ steps.scan.outputs.scan_result }}" = "failed" ]; then
+            echo "❌ Security scan found MEDIUM or higher severity issues — blocking merge"
+            exit 1
+          else
+            echo "✅ Security scan passed — no MEDIUM or higher severity issues found"
+          fi
