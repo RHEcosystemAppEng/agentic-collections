@@ -12,6 +12,7 @@ description: |
 
   NOT for creating snapshots (use vm-snapshot-create instead).
 
+license: Apache-2.0
 model: inherit
 color: red
 ---

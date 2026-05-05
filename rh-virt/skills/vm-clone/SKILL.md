@@ -13,6 +13,7 @@ description: |
 
   NOT for snapshots (use vm-snapshot for point-in-time backups).
 
+license: Apache-2.0
 model: inherit
 color: blue
 ---
