@@ -162,6 +162,24 @@ See: `skills/cluster-creator/SKILL.md`
   - Monitoring and alerting
   - Capacity planning
 
+- **[etcd Maintenance](./etcd-maintenance.md)** - etcd defragmentation and monitoring
+  - Fragmentation ratio metrics and thresholds
+  - Rolling defragmentation procedure
+  - Prometheus alerting for quota exhaustion
+  - Common issues (timeout, OOM, rapid re-fragmentation)
+
+- **[PVC Capacity Planning](./pvc-capacity-planning.md)** - Proactive volume expansion
+  - predict_linear forecasting for PVC runway
+  - Online volume expansion workflow
+  - StorageClass expansion prerequisites
+  - Inode exhaustion detection
+
+- **[Database Connection Management](./database-connection-management.md)** - PostgreSQL connection health
+  - pg_stat_activity monitoring via postgres_exporter
+  - Connection saturation diagnosis and remediation
+  - Connection pooling with PgBouncer
+  - PrometheusRule examples for connection alerts
+
 - **[Backup and Restore](./backup-restore.md)** - Data protection
   - etcd backup procedures
   - Application backup strategies
@@ -264,6 +282,12 @@ See: `skills/cluster-creator/SKILL.md`
 2. [Identity Providers](./idp.md) - Configure user authentication
 3. [RBAC](./rbac.md) - Set up access control
 4. [Certificate Rotation](./certificate-rotation.md) - Manage certificates
+
+**I need proactive capacity and maintenance planning**:
+1. [PVC Capacity Planning](./pvc-capacity-planning.md) - Forecast volume usage with predict_linear
+2. [etcd Maintenance](./etcd-maintenance.md) - Monitor fragmentation and schedule defrag
+3. [Database Connection Management](./database-connection-management.md) - Prevent connection pool exhaustion
+4. [Day 2 Operations](./day-2-operations.md) - General operational guidance
 
 **Something went wrong**:
 1. [Troubleshooting](./troubleshooting.md) - Common errors
