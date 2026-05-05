@@ -285,6 +285,88 @@ The workflow will fail if:
 - Only one deployment runs at a time (group: "pages")
 - New deployments cancel in-progress ones
 
+### 4. `security-scan.yml` - Skill Security Scan
+
+**Purpose**: Scans skills for security vulnerabilities using [cisco-ai-skill-scanner](https://github.com/cisco-ai-defense/skill-scanner) with LLM-powered analysis. Detects prompt injection, data exfiltration, social engineering, and other AI agent security risks.
+
+**Triggers**:
+- **Pull requests** → Scans changed packs only (when `**/skills/**` or `**/mcps.json` change)
+- **Manual dispatch** → Scan specific PR or all packs
+- **Excludes**: Draft pull requests
+
+**Cost optimization**:
+- **Path filters**: Only triggers when skill files or MCP configs change
+- **Concurrency**: Cancels in-progress scans when new commits are pushed
+- **Prerequisite gate**: Waits for `compliance-check` and `skill-linter` to pass before running — if either fails, the scan is skipped to save LLM tokens
+
+**What it checks**:
+- YAML/manifest injection risks
+- Command injection via untrusted inputs
+- Supply chain risks (unpinned dependencies)
+- Data exfiltration patterns
+- Social engineering triggers
+- Cross-skill overlap and coordinated behavior
+- Missing metadata (license, provenance)
+
+**Behavior**:
+- **MEDIUM or higher findings** → ❌ Workflow fails, blocks PR merge
+- **LOW/INFO only** → ✅ Workflow passes
+- Posts scan summary as PR comment with collapsible report per pack
+- Uploads detailed reports as workflow artifacts (30-day retention)
+
+**How to run locally**:
+```bash
+# Install scanner
+uv pip install --system 'cisco-ai-skill-scanner[google]'
+
+# Set credentials
+export SKILL_SCANNER_LLM_API_KEY=<your-api-key>
+export SKILL_SCANNER_LLM_MODEL=gemini/gemini-2.5-pro  # or openai/gpt-5
+
+# Scan a single pack
+skill-scanner scan-all rh-virt/skills \
+  --recursive --use-behavioral --use-llm \
+  --check-overlap --enable-meta \
+  --fail-on-severity medium \
+  --format markdown --detailed \
+  --output security-report.md
+```
+
+**Manual workflow dispatch**:
+1. Go to Actions → Skill Security Scan
+2. Click "Run workflow"
+3. Provide:
+   - **PR number** (required) — PR to post results to
+   - **Scan all packs** — `true` for full scan, `false` for changed packs only
+
+**Secrets required**:
+- `SKILL_SCANNER_LLM_API_KEY` — API key for LLM provider
+- `SKILL_SCANNER_LLM_MODEL` — Model identifier (e.g., `gemini/gemini-2.5-pro`)
+
+**Performance**:
+- ~10-15 minutes per pack (depends on number of skills and LLM response time)
+- Uses `uv` instead of `pip` for faster dependency installation with caching
+
+**Related files**:
+- `scripts/detect-changed-packs.sh` - Detects packs with changed files in PRs
+- Security reports uploaded as workflow artifacts
+
+### 5. `gemini-code-review.yml` - Gemini Code Review
+
+**Purpose**: Automated code review using Google Gemini, validating PRs against project rules (CLAUDE.md, SKILL_DESIGN_PRINCIPLES.md).
+
+**Triggers**:
+- **Pull requests** (opened, synchronize, reopened)
+- **Manual dispatch** with PR number
+
+**What it does**:
+- Fetches PR diff and project rules
+- Sends to Gemini for review
+- Posts review as PR comment (updates existing comment on re-runs)
+
+**Secrets required**:
+- `GEMINI_API_KEY` — Google Gemini API key
+
 ## Adding New Workflows
 
 When adding new workflows:
@@ -358,7 +440,5 @@ This README should be updated when:
 - New validation levels are introduced
 - Troubleshooting patterns emerge
 
-**Last Updated**: 2026-02-27
-**Workflows Count**: 3 (skill-spec-report.yml, compliance-check.yml, deploy-pages.yml)
-
-**Note**: `validate-skills.yml` was removed 2026-02-27. Repository-specific design principle validation (Tier 2) will be handled by a separate workflow.
+**Last Updated**: 2026-05-05
+**Workflows Count**: 5 (skill-spec-report.yml, compliance-check.yml, deploy-pages.yml, security-scan.yml, gemini-code-review.yml)
