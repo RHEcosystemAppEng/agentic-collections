@@ -211,6 +211,7 @@ For each selected cluster, pass `context=<context-name>` to every tool call. Col
 #### Persist MCP Output to Files
 
 For each MCP tool call, **immediately save the output to a file** under `/tmp/cluster-report/`.
+Files are created with default permissions restricted by the `chmod 700` on the parent directory.
 This ensures data is available for the assembly pipeline regardless of output size.
 
 **Naming convention**: `/tmp/cluster-report/<context-short>-<field>.txt`
@@ -218,7 +219,7 @@ This ensures data is available for the assembly pipeline regardless of output si
 Use a sanitized short name for the context (e.g., `prod-us`, `dev-eu`). Create the directory first:
 
 ```bash
-mkdir -p /tmp/cluster-report
+mkdir -p /tmp/cluster-report && chmod 700 /tmp/cluster-report
 ```
 
 **How to save**: After each MCP tool call, use Bash to write the output to disk. `$file` references
@@ -324,7 +325,15 @@ Render the structured JSON output as markdown using this template:
 [Render each item from the `attention` array]
 ```
 
-### Step 5: Offer Next Steps
+### Step 5: Cleanup
+
+After rendering the report, remove temporary files:
+
+```bash
+rm -rf /tmp/cluster-report /tmp/cluster-report-manifest.json
+```
+
+### Step 6: Offer Next Steps
 
 ```markdown
 ## Next Steps
