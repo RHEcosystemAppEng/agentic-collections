@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rhecosystemappeng.github.io/agentic-collections/schemas/ci-violations.schema.json",
+  "title": "Consistency Audit CI Violations",
+  "type": "object",
+  "required": [
+    "status",
+    "failure_threshold",
+    "blocking_count",
+    "violations"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "failure_threshold": {
+      "type": "string",
+      "description": "Policy expression used by CI, for example: blocking>0"
+    },
+    "blocking_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "high_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "medium_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "informational_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "finding_id",
+          "rule_id",
+          "severity",
+          "pack_name",
+          "artifact_path",
+          "message",
+          "ci_enforcement"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string"
+          },
+          "rule_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "high",
+              "medium",
+              "informational"
+            ]
+          },
+          "pack_name": {
+            "type": "string"
+          },
+          "artifact_path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "ci_enforcement": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "warn",
+              "report"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

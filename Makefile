@@ -1,4 +1,4 @@
-.PHONY: help install validate validate-collection-schema validate-collection-compliance catalog-mirror-json validate-skill-design validate-skill-design-changed generate serve clean test test-full check-uv
+.PHONY: help install validate validate-collection-schema validate-collection-compliance catalog-mirror-json validate-skill-design validate-skill-design-changed validate-consistency-audit validate-consistency-audit-ci generate serve clean test test-full check-uv
 
 help:
 	@echo "agentic-collections Documentation Generator"
@@ -11,6 +11,8 @@ help:
 	@echo "  catalog-mirror-json           - Regenerate all .catalog/collection.json from YAML"
 	@echo "  validate-skill-design         - Validate all skills (use PACK=rh-sre for a specific pack)"
 	@echo "  validate-skill-design-changed - Validate only changed skills (staged + unstaged, for local dev)"
+	@echo "  validate-consistency-audit    - Run consistency audit and write reports"
+	@echo "  validate-consistency-audit-ci - Run consistency audit in CI gate mode"
 	@echo "  generate    - Generate docs/data.json"
 	@echo "  serve       - Start local server on http://localhost:8000"
 	@echo "  test        - Quick test (validate + generate + verify)"
@@ -58,6 +60,13 @@ validate-skill-design: check-uv
 
 validate-skill-design-changed: check-uv
 	@VALIDATE_INCLUDE_UNCOMMITTED=1 ./scripts/ci-validate-changed-skills.sh
+
+validate-consistency-audit: check-uv
+	@uv run python scripts/consistency_audit.py --format json --output reports/consistency-audit.json
+	@uv run python scripts/consistency_audit.py --format markdown --output reports/consistency-audit.md
+
+validate-consistency-audit-ci: check-uv
+	@uv run python scripts/consistency_audit.py --ci --format json --output reports/consistency-audit.json
 
 generate: check-uv
 	@echo "Generating documentation..."

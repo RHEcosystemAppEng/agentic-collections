@@ -125,7 +125,6 @@ Every skill MUST include complete Dependencies section.
 | green | Success, deployment |
 | yellow | Caution, validation |
 | red | Critical, security, remediation |
-| magenta | Creative, generation |
 
 ## 4. Skill-to-Skill Invocation Standard
 
@@ -241,7 +240,7 @@ name: skill-name                # MANDATORY - kebab-case, matches directory
 description: |                  # MANDATORY - <500 tokens, includes use cases
   [With "Use when" and "NOT for"]
 model: inherit                  # MANDATORY - inherit | sonnet | haiku
-color: green                    # MANDATORY - cyan|green|blue|yellow|red
+color: green                    # MANDATORY - cyan|green|blue|yellow|red|magenta
 ---
 ```
 
@@ -250,12 +249,17 @@ color: green                    # MANDATORY - cyan|green|blue|yellow|red
 - `sonnet` - Complex reasoning
 - `haiku` - Simple, fast operations
 
+**Validation Enforcement:**
+- `scripts/validate_skill_design.py` and `scripts/validate-skills.sh` MUST both enforce required `model` presence and valid model values.
+- Any drift between validators is treated as a policy inconsistency and must be corrected before merge.
+
 **Color Values (Risk-Based):**
 - `cyan` - Read-only (list, view, get)
 - `green` - Additive (create, clone)
 - `blue` - Reversible (start, stop, restart)
 - `yellow` - Destructive but recoverable (snapshot-delete)
 - `red` - Irreversible (delete, restore)
+- `magenta` - Creative/generative workflows (content generation, templating)
 
 **B. Prerequisites Section Must Include:**
 - Required MCP Servers with setup links

@@ -1,0 +1,63 @@
+rules:
+  - rule_id: VER-001
+    scope: marketplace
+    severity: blocking
+    check_method: computed
+    autofixable: false
+    source_of_truth_files:
+      - marketplace/rh-agentic-collection.yml
+  - rule_id: VER-002
+    scope: pack
+    severity: high
+    check_method: computed
+    autofixable: true
+    source_of_truth_files:
+      - README.md
+      - rh-sre/README.md
+      - rh-developer/README.md
+      - ocp-admin/README.md
+      - rh-virt/README.md
+      - rh-ai-engineer/README.md
+      - rh-automation/README.md
+  - rule_id: MOD-001
+    scope: skill
+    severity: blocking
+    check_method: script
+    autofixable: false
+    source_of_truth_files:
+      - SKILL_DESIGN_PRINCIPLES.md
+      - scripts/validate_skill_design.py
+      - scripts/validate-skills.sh
+  - rule_id: VIS-001
+    scope: docs-site
+    severity: medium
+    check_method: regex
+    autofixable: true
+    source_of_truth_files:
+      - docs/styles.css
+      - docs/app.js
+  - rule_id: VIS-002
+    scope: docs-site
+    severity: high
+    check_method: regex
+    autofixable: true
+    source_of_truth_files:
+      - docs/icons.json
+      - docs/plugins.json
+      - docs/mcp.json
+  - rule_id: VIS-003
+    scope: docs-site
+    severity: high
+    check_method: computed
+    autofixable: true
+    source_of_truth_files:
+      - docs/data.json
+      - scripts/build_website.py
+      - docs/app.js
+  - rule_id: CLM-001
+    scope: pack
+    severity: high
+    check_method: computed
+    autofixable: false
+    source_of_truth_files:
+      - README.md

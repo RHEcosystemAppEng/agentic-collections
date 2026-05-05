@@ -14,6 +14,8 @@ description: |
   This skill orchestrates MCP tools (get_cve, get_cve_systems, get_host_details) for remediation verification.
 
   **IMPORTANT**: ALWAYS use this skill instead of calling verification MCP tools directly.
+model: inherit
+color: blue
 ---
 
 # Remediation Verification Skill
