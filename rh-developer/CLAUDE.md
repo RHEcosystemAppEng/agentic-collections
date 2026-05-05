@@ -27,9 +27,10 @@ Match the user's request to the correct skill:
 | Network issue, DNS, Service connectivity, Route, NetworkPolicy, ingress | `/debug-network` |
 | Pipeline failure, Tekton, PipelineRun, TaskRun error, pipeline logs | `/debug-pipeline` |
 | RHEL issue, systemd, SELinux, firewall, journal logs, system service | `/debug-rhel` |
+| Incident investigation, root cause analysis, triage alert, five whys, outage diagnosis, multi-resource issue | `/incident-triage` |
 | Check tools, verify cluster access, validate environment, prerequisites | `/validate-environment` |
 
-If the request doesn't clearly match one skill, ask the user to clarify.
+If the request doesn't clearly match one skill, ask the user to clarify. For complex or multi-resource issues where the root cause is unclear, prefer `/incident-triage` over individual debug skills.
 
 ## Skill Chaining
 
@@ -43,14 +44,16 @@ Some workflows require multiple skills in sequence:
 - **Build failure recovery**: `/debug-build` -> fix -> `/s2i-build` retry
 - **Pod failure recovery**: `/debug-pod` or `/debug-network` -> fix -> `/deploy` retry
 - **RHEL failure recovery**: `/debug-rhel` or `/debug-container` -> fix -> `/rhel-deploy` retry
+- **Incident triage**: `/incident-triage` -> identifies root cause -> routes to `/debug-pod`, `/debug-network`, or `/deploy` for targeted fix
 
 After completing a skill, suggest relevant next-step skills to the user.
 
 ## MCP Servers
 
-Four MCP servers are available. Skills manage these automatically — do not call their tools directly.
+Five MCP servers are available. Skills manage these automatically — do not call their tools directly.
 
 - **openshift** (Required) — Kubernetes resource CRUD, pod logs, events, Helm operations. The reliable foundation.
+- **observability** (Required) — Prometheus metric discovery, metadata, series, and PromQL queries. Used by `/incident-triage` for trend analysis and saturation detection.
 - **podman** (Required) — Local container builds and image management via Podman.
 - **github** (Optional) — Remote repository browsing and code analysis. Used by `/detect-project` for GitHub URLs.
 - **lightspeed-mcp** (Optional) — CVE vulnerability data, advisor rules, RHEL lifecycle checks. Used by `/rhel-deploy` and `/debug-rhel`.

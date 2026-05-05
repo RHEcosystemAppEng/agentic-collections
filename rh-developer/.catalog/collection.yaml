@@ -23,8 +23,8 @@ summary: The rh-developer collection provides skills to detect projects, build i
   validate environments, and debug builds, pods, pipelines, networks, and hosts.
 contents:
   description: |
-    The pack provides 14 skills for developer workflows on OpenShift and RHEL, including one orchestration skill
-    for end-to-end containerize-and-deploy.
+    The pack provides 15 skills for developer workflows on OpenShift and RHEL, including two orchestration skills
+    for end-to-end containerize-and-deploy and structured incident investigation.
   skills:
   - name: detect-project
     description: Project and runtime detection
@@ -170,6 +170,22 @@ contents:
       - Phase: detect project and target environment.
       - Phase: choose OpenShift (S2I / Helm / Podman) or RHEL path.
       - Invokes specialized skills with explicit user approvals between phases.
+  - name: incident-triage
+    description: Structured incident investigation and root cause analysis
+    summary_markdown: |
+      Investigate OpenShift incidents using Five Whys methodology, investigation guardrails, Prometheus metric analysis, and adversarial due diligence.
+      **Use when:**
+      - "Investigate this incident"
+      - "Root cause analysis for this alert"
+      - "Why is this failing? (complex/multi-resource)"
+      - "Triage this outage"
+      **What it does:**
+      - Phase: gather incident context and route to specialized skill if single-resource.
+      - Phase: hierarchical investigation across the Kubernetes ownership chain.
+      - Phase: evidence collection with 5 investigation guardrails and Prometheus metrics.
+      - Phase: Five Whys root cause analysis with remediation target identification.
+      - Phase: 8-dimension adversarial due diligence with confidence scoring.
+      - Chains to debug-pod, debug-scc, debug-rbac, debug-network for targeted fixes.
   skills_decision_guide:
   - user_request: '"Deploy to OpenShift" or "expose my image"'
     skill_to_use: deploy
@@ -189,6 +205,9 @@ contents:
   - user_request: '"Build failed" or "S2I error"'
     skill_to_use: debug-build
     reason: Build logs and BuildConfig diagnosis.
+  - user_request: '"Investigate this incident" or "root cause analysis" or "triage this alert"'
+    skill_to_use: incident-triage
+    reason: Multi-resource investigation with Five Whys, guardrails, and due diligence.
   - user_request: '"Check my tools" or "validate cluster access"'
     skill_to_use: validate-environment
     reason: Pre-flight before deploy or heavy debug.
