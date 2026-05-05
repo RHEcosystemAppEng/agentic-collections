@@ -13,6 +13,7 @@ description: |
 
   NOT for creating VMs (use vm-create) or deleting VMs (use vm-delete).
 
+license: Apache-2.0
 model: inherit
 color: blue
 ---

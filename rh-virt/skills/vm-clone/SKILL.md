@@ -13,6 +13,7 @@ description: |
 
   NOT for snapshots (use vm-snapshot for point-in-time backups).
 
+license: Apache-2.0
 model: inherit
 color: blue
 ---
@@ -446,5 +447,3 @@ User: "cancel"
 
 Agent: "VM cloning cancelled. No resources created."
 ```
-
-**THIS IS A TEST CHANGE**

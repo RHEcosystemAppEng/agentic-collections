@@ -12,6 +12,7 @@ description: |
 
   NOT for restoring VMs (use vm-snapshot-restore instead).
 
+license: Apache-2.0
 model: inherit
 color: yellow
 ---
