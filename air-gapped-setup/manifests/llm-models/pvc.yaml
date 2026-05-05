@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: models-storage
+  namespace: llm-models
+  labels:
+    app: llm-models
+    component: storage
+  annotations:
+    description: "Shared storage for multiple LLM models"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi  # Adjust based on models you plan to deploy
+  # storageClassName is intentionally NOT specified
+  # This automatically uses the cluster's default StorageClass
+  #
+  # To check which StorageClass is default: oc get storageclass
+  # To override with a specific StorageClass, add:
+  #   storageClassName: <your-storage-class-name>
