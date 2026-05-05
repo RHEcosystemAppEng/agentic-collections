@@ -219,9 +219,16 @@ Ask: "Review configuration. Ready to create cluster definition?"
 
 **Save URL**: `/tmp/{cluster_name}.{base_domain}/iso-download-url.txt`
 
-**Download ISO**: Execute via Bash:
+**Download ISO**: Read the saved URL and download with safety flags:
 ```bash
-curl -L -# -o /tmp/{cluster_name}.{base_domain}/discovery.iso "{iso_url}"
+iso_url="$(cat /tmp/{cluster_name}.{base_domain}/iso-download-url.txt)"
+case "$iso_url" in
+  https://*) : ;;
+  *) echo "ERROR: ISO URL must use HTTPS" >&2; exit 1 ;;
+esac
+curl --fail --proto "=https" --tlsv1.2 -L -# \
+  -o /tmp/{cluster_name}.{base_domain}/discovery.iso \
+  -- "$iso_url"
 ```
 
 **Verify download**: Check file exists and size > 0
