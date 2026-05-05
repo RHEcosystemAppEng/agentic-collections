@@ -69,6 +69,31 @@ Create virtual machine snapshots in OpenShift Virtualization. Snapshots capture 
 
 If namespace not provided, ask for it explicitly.
 
+### Step 1b: Validate Input Names
+
+**CRITICAL: Validate ALL user-provided names before using them in any YAML or API call.**
+
+All names (VM name, namespace, snapshot name) **MUST** match the Kubernetes naming convention:
+- **Pattern**: `^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$`
+- **Max length**: 63 characters
+- **Allowed characters**: lowercase letters, digits, hyphens (`-`), dots (`.`)
+- **Must start and end** with a lowercase letter or digit
+
+**If any name fails validation**, reject the input immediately:
+
+```markdown
+❌ Invalid name: `<user-input>`
+
+Kubernetes resource names must:
+- Contain only lowercase letters, numbers, hyphens, and dots
+- Start and end with a letter or number
+- Be at most 63 characters long
+
+Please provide a valid name.
+```
+
+**STOP workflow** until the user provides a valid name. **NEVER** interpolate unvalidated input into YAML.
+
 ### Step 2: Verify VM Exists and Get Status
 
 **MCP Tool**: `resources_get` (from openshift-virtualization)
@@ -128,6 +153,24 @@ Use `vm_lifecycle` MCP tool or vm-lifecycle-manager skill to stop the VM.
 
 [Include the full confirmation template with storage backend analysis, guest agent status, volumes to snapshot, etc.]
 
+**Display the exact YAML that will be sent to the API** so the user can verify it before confirming:
+
+```markdown
+**YAML to be applied:**
+\`\`\`yaml
+apiVersion: snapshot.kubevirt.io/v1beta1
+kind: VirtualMachineSnapshot
+metadata:
+  name: <snapshot-name>
+  namespace: <namespace>
+spec:
+  source:
+    apiGroup: kubevirt.io
+    kind: VirtualMachine
+    name: <vm-name>
+\`\`\`
+```
+
 **Wait for user confirmation.**
 
 **Handle response:**
@@ -140,7 +183,11 @@ Use `vm_lifecycle` MCP tool or vm-lifecycle-manager skill to stop the VM.
 
 **MCP Tool**: `resources_create_or_update` (from openshift-virtualization)
 
-**Construct VirtualMachineSnapshot YAML:**
+**If snapshot name not provided by user**, generate one:
+- Format: `<vm-name>-snapshot-<timestamp>`
+- Example: `database-01-snapshot-20260218-143022`
+
+**Fixed YAML Template — use this EXACT structure. Do NOT add, remove, or modify any fields beyond the three placeholder values (`<snapshot-name>`, `<namespace>`, `<vm-name>`):**
 
 ```yaml
 apiVersion: snapshot.kubevirt.io/v1beta1
@@ -155,16 +202,23 @@ spec:
     name: <vm-name>
 ```
 
-**If snapshot name not provided by user**, generate one:
-- Format: `<vm-name>-snapshot-<timestamp>`
-- Example: `database-01-snapshot-20260218-143022`
-
 **Parameters**:
 ```json
 {
   "resource": "apiVersion: snapshot.kubevirt.io/v1beta1\nkind: VirtualMachineSnapshot\nmetadata:\n  name: <snapshot-name>\n  namespace: <namespace>\nspec:\n  source:\n    apiGroup: kubevirt.io\n    kind: VirtualMachine\n    name: <vm-name>"
 }
 ```
+
+### Step 8b: Post-Construction Verification
+
+**CRITICAL: Before calling `resources_create_or_update`, verify the constructed YAML:**
+
+1. `apiVersion` is exactly `snapshot.kubevirt.io/v1beta1`
+2. `kind` is exactly `VirtualMachineSnapshot`
+3. Only these fields exist: `metadata.name`, `metadata.namespace`, `spec.source.apiGroup`, `spec.source.kind`, `spec.source.name`
+4. No additional fields, labels, annotations, or nested objects are present
+
+**If the YAML contains ANY unexpected fields or values, STOP and report a validation error. Do NOT send it to the API.**
 
 **Report progress:**
 ```markdown
@@ -327,12 +381,18 @@ Check `status.phase`:
 
 ## Security Considerations
 
-- **RBAC Enforcement**: Requires permissions for VirtualMachineSnapshot resources
+- **Input Validation**: All user-provided names (VM, namespace, snapshot) are validated against Kubernetes naming rules (`^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$`, max 63 chars) before use
+- **Fixed YAML Template**: Resource YAML uses a fixed structure with only three replaceable values — no additional fields may be added
+- **Post-Construction Verification**: The constructed YAML is verified against expected structure before being sent to the API
+- **Human Review of YAML**: The exact YAML to be applied is shown to the user in the confirmation step
+- **RBAC Enforcement**: Requires permissions for VirtualMachineSnapshot resources — the ServiceAccount should be scoped to only VirtualMachineSnapshot create/get in target namespaces
 - **Storage Quotas**: Respects namespace storage quotas
 - **Hot-Plugged Volume Detection**: Prevents snapshots when hot-plugged volumes present
 - **KUBECONFIG Security**: Credentials never exposed in output
 - **Namespace Isolation**: Snapshots scoped to namespace boundaries
 - **Audit Trail**: All snapshot operations logged in Kubernetes API audit logs
+
+**Defense-in-depth note**: Input validation and YAML verification in this skill are instruction-level controls — they guide the LLM but are not hard security boundaries. The real enforcement layers are Kubernetes RBAC (restricts what resources the ServiceAccount can create) and admission webhooks (can enforce policies server-side). Ensure the KUBECONFIG ServiceAccount follows least-privilege principles.
 
 ## Example Usage
 
