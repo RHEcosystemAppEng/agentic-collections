@@ -117,9 +117,14 @@ class TestResolveFileRef(unittest.TestCase):
             os.unlink(path)
 
     def test_missing_file(self):
-        result, error = assemble.resolve_file_ref("/nonexistent/path/file.json")
+        result, error = assemble.resolve_file_ref("/tmp/nonexistent-file.json")
         self.assertIsNone(result)
         self.assertIn("not found", error.lower())
+
+    def test_path_outside_allowed_directory(self):
+        result, error = assemble.resolve_file_ref("/etc/passwd")
+        self.assertIsNone(result)
+        self.assertIn("outside allowed directory", error.lower())
 
     def test_empty_file(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -223,7 +228,7 @@ class TestResolveCluster(unittest.TestCase):
 
     def test_failed_file_ref_adds_error(self):
         cluster = {
-            "pods": {"$file": "/nonexistent/file.json"},
+            "pods": {"$file": "/tmp/nonexistent-file.json"},
             "nodes_top": None,
             "nodes_list": None,
             "projects": None,
@@ -237,7 +242,7 @@ class TestResolveCluster(unittest.TestCase):
 
     def test_preserves_existing_errors(self):
         cluster = {
-            "pods": {"$file": "/nonexistent/file.json"},
+            "pods": {"$file": "/tmp/nonexistent-file.json"},
             "nodes_top": None,
             "nodes_list": None,
             "projects": None,
@@ -400,7 +405,7 @@ class TestFullPipeline(unittest.TestCase):
                     "nodes_list": None,
                     "projects": None,
                     "namespaces": None,
-                    "pods": {"$file": "/nonexistent/file.json"},
+                    "pods": {"$file": "/tmp/nonexistent-file.json"},
                     "errors": [],
                 }
             },

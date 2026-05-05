@@ -28,6 +28,10 @@ def unwrap_persisted_output(raw_content):
 
 
 def resolve_file_ref(file_path):
+    abs_path = os.path.realpath(file_path)
+    if not abs_path.startswith("/tmp/"):
+        return None, f"Path outside allowed directory: {file_path}"
+
     if not os.path.exists(file_path):
         return None, f"File not found: {file_path}"
 
