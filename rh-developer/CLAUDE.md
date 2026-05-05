@@ -24,6 +24,8 @@ Match the user's request to the correct skill:
 | Build failure, BuildConfig error, S2I error, build logs, failed build | `/debug-build` |
 | Pod failure, CrashLoopBackOff, ImagePullBackOff, OOMKilled, Pending pod | `/debug-pod` |
 | Container issue, Podman/Docker failure, local container debug, container crash | `/debug-container` |
+| SCC violation, pod blocked by SCC, security context constraint, FailedCreate forbidden | `/debug-scc` |
+| RBAC denied, 403 forbidden, missing RoleBinding, ServiceAccount permission denied | `/debug-rbac` |
 | Network issue, DNS, Service connectivity, Route, NetworkPolicy, ingress | `/debug-network` |
 | Pipeline failure, Tekton, PipelineRun, TaskRun error, pipeline logs | `/debug-pipeline` |
 | RHEL issue, systemd, SELinux, firewall, journal logs, system service | `/debug-rhel` |
@@ -42,6 +44,8 @@ Some workflows require multiple skills in sequence:
 - **Pre-flight check**: Run `/validate-environment` before any deployment skill
 - **Build failure recovery**: `/debug-build` -> fix -> `/s2i-build` retry
 - **Pod failure recovery**: `/debug-pod` or `/debug-network` -> fix -> `/deploy` retry
+- **SCC violation recovery**: `/debug-scc` -> fix security context or grant SCC -> `/deploy` retry
+- **RBAC failure recovery**: `/debug-rbac` -> create Role/RoleBinding -> verify pod readiness
 - **RHEL failure recovery**: `/debug-rhel` or `/debug-container` -> fix -> `/rhel-deploy` retry
 
 After completing a skill, suggest relevant next-step skills to the user.
