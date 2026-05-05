@@ -13,7 +13,6 @@ description: |
 
   NOT for managing existing VMs (use vm-lifecycle-manager or vm-delete instead).
 
-license: Apache-2.0
 model: inherit
 color: green
 ---

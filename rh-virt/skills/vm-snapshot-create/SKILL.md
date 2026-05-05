@@ -12,7 +12,6 @@ description: |
 
   NOT for VM cloning (use vm-clone to create independent copies).
 
-license: Apache-2.0
 model: inherit
 color: green
 ---

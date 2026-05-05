@@ -13,7 +13,6 @@ description: |
 
   NOT for creating VMs (use vm-create) or lifecycle only (use vm-lifecycle-manager).
 
-license: Apache-2.0
 model: inherit
 color: yellow
 ---

@@ -13,7 +13,6 @@ description: |
 
   NOT for power management (use vm-lifecycle-manager to stop VMs).
 
-license: Apache-2.0
 model: inherit
 color: red
 ---

@@ -12,7 +12,6 @@ description: |
 
   NOT for creating/deleting snapshots (use vm-snapshot-create/delete instead).
 
-license: Apache-2.0
 model: inherit
 color: cyan
 ---

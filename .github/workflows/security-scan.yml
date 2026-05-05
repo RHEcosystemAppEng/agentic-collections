@@ -1,0 +1,192 @@
+name: Skill Security Scan
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
+      scan_all:
+        description: 'Scan all packs (true) or changed only (false)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  security-scan:
+    if: github.event.pull_request.draft == false || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install skill-scanner
+        run: uv pip install --system 'cisco-ai-skill-scanner[google]'
+
+      - name: Detect changed packs
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.scan_all }}" = "true" ]; then
+            PACKS=$(find . -maxdepth 2 -name skills -type d | sed 's|^\./||;s|/skills$||' | sort)
+          else
+            PACKS=$(bash scripts/detect-changed-packs.sh || true)
+          fi
+
+          if [ -z "$PACKS" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "packs=" >> $GITHUB_OUTPUT
+            echo "No packs with changes detected — skipping security scan"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "packs<<EOF" >> $GITHUB_OUTPUT
+            echo "$PACKS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Changed packs detected:"
+            echo "$PACKS"
+          fi
+
+      - name: Run security scan
+        if: steps.detect.outputs.changed == 'true'
+        id: scan
+        env:
+          SKILL_SCANNER_LLM_API_KEY: ${{ secrets.SKILL_SCANNER_LLM_API_KEY }}
+          SKILL_SCANNER_LLM_MODEL: ${{ secrets.SKILL_SCANNER_LLM_MODEL }}
+        run: |
+          mkdir -p security-reports
+          SCAN_FAILED=false
+
+          while IFS= read -r pack; do
+            [ -z "$pack" ] && continue
+            echo "=== Scanning: $pack ==="
+
+            skill-scanner scan-all "$pack/skills" \
+              --recursive \
+              --use-behavioral \
+              --use-llm \
+              --check-overlap \
+              --enable-meta \
+              --fail-on-severity medium \
+              --format markdown \
+              --detailed \
+              --output "security-reports/security-report-${pack}.md" || SCAN_FAILED=true
+
+            echo ""
+          done <<< "${{ steps.detect.outputs.packs }}"
+
+          if [ "$SCAN_FAILED" = "true" ]; then
+            echo "scan_result=failed" >> $GITHUB_OUTPUT
+          else
+            echo "scan_result=passed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload security reports
+        id: upload
+        if: steps.detect.outputs.changed == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: security-reports/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Post scan summary
+        if: steps.detect.outputs.changed == 'true' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = ${{ steps.pr.outputs.number }};
+            const scanResult = '${{ steps.scan.outputs.scan_result }}';
+            const icon = scanResult === 'passed' ? '✅' : '❌';
+
+            let body = `## ${icon} Skill Security Scan\n\n`;
+
+            if (fs.existsSync('security-reports')) {
+              const reports = fs.readdirSync('security-reports').filter(f => f.endsWith('.md'));
+              if (reports.length === 0) {
+                body += 'No reports generated.\n';
+              } else {
+                for (const report of reports) {
+                  const pack = report.replace('security-report-', '').replace('.md', '');
+                  const content = fs.readFileSync(`security-reports/${report}`, 'utf8');
+                  body += `<details>\n<summary>📋 ${pack}</summary>\n\n${content}\n\n</details>\n\n`;
+                }
+              }
+            } else {
+              body += 'No reports generated.\n';
+            }
+
+            const artifactUrl = '${{ steps.upload.outputs.artifact-url }}';
+            if (artifactUrl) {
+              body += `\n\n> 📦 [Download security reports](${artifactUrl}) | [Workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            } else {
+              body += `\n\n> [Workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Skill Security Scan')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+      - name: Check scan results
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          if [ "${{ steps.scan.outputs.scan_result }}" = "failed" ]; then
+            echo "❌ Security scan found MEDIUM or higher severity issues — blocking merge"
+            exit 1
+          else
+            echo "✅ Security scan passed — no MEDIUM or higher severity issues found"
+          fi
