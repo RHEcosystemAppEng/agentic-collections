@@ -149,7 +149,7 @@ Continue to view build logs? (yes/no)
 
 ### Step 4: Get Build Pod Logs
 
-Use kubernetes MCP `pod_logs` for the builder pod:
+Use kubernetes MCP `pods_log` for the builder pod:
 
 ```markdown
 ## Build Logs: [build-name]

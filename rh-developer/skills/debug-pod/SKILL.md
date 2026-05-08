@@ -51,7 +51,7 @@ Select an option or enter a pod name:
 **WAIT for user confirmation before proceeding.**
 
 If user selects "List failing pods":
-Use kubernetes MCP `pod_list` with namespace, then filter to show pods NOT in Running/Succeeded state:
+Use kubernetes MCP `pods_list` with namespace, then filter to show pods NOT in Running/Succeeded state:
 
 ```markdown
 ## Pods with Issues in [namespace]
@@ -124,7 +124,7 @@ Continue to view container logs? (yes/no)
 
 ### Step 4: Get Container Logs
 
-Use kubernetes MCP `pod_logs` for current and previous container:
+Use kubernetes MCP `pods_log` for current and previous container:
 
 ```markdown
 ## Container Logs: [container-name]

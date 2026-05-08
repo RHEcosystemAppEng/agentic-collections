@@ -14,7 +14,7 @@ description: |
 model: inherit
 color: cyan
 license: Apache-2.0
-allowed-tools: resources_get resources_list events_list pod_list pod_logs get_metric_names get_metric_metadata get_series query
+allowed-tools: resources_get resources_list events_list pods_list pods_list_in_namespace pods_log prometheus_query prometheus_query_range alertmanager_alerts
 metadata:
   user_invocable: "true"
 ---
@@ -41,22 +41,20 @@ Structured incident investigation for OpenShift — traces from symptoms to root
 
 **Required MCP Servers:**
 - `openshift` ([setup](../../docs/prerequisites.md)) — Kubernetes/OpenShift resource access
-- `observability` — Prometheus metric discovery and PromQL query execution
 
 **Required MCP Tools:**
 - `resources_get` (from openshift) — Retrieve Deployment, ReplicaSet, Pod, Service, and other resource details
 - `resources_list` (from openshift) — List resources by kind in a namespace
-- `pod_list` (from openshift) — List pods matching label selectors
-- `pod_logs` (from openshift) — Retrieve container logs (current and previous)
+- `pods_list` (from openshift) — List pods matching label selectors
+- `pods_log` (from openshift) — Retrieve container logs (current and previous)
 - `events_list` (from openshift) — Fetch events filtered by resource
-- `get_metric_names` (from observability) — Discover available Prometheus metrics
-- `get_metric_metadata` (from observability) — Confirm metric type (counter vs gauge)
-- `get_series` (from observability) — Discover available label sets for a metric
-- `query` (from observability) — Execute PromQL queries for trend and saturation analysis
+- `prometheus_query` (from openshift, observability toolset) — Execute instant PromQL queries for trend and saturation analysis
+- `prometheus_query_range` (from openshift, observability toolset) — Execute range PromQL queries over time windows
+- `alertmanager_alerts` (from openshift, observability toolset) — Retrieve active Alertmanager alerts
 
 **Verification Steps:**
 1. Check `openshift` server is configured in `mcps.json`
-2. Check `observability` server is configured in `mcps.json`
+2. Check `openshift` server is configured in `mcps.json` with `observability` in its `--toolsets`
 3. Verify user is logged into an OpenShift cluster (`oc whoami` succeeds)
 4. Verify user has access to the target namespace(s)
 5. If missing → Human Notification Protocol
@@ -67,7 +65,7 @@ When prerequisites fail:
 1. **Stop immediately** — No tool calls
 2. **Report error:**
    ```
-   ❌ Cannot execute skill: MCP server `openshift` / `observability` unavailable
+   ❌ Cannot execute skill: MCP server `openshift` unavailable
    📋 Setup: See docs/prerequisites.md for cluster access configuration
    ```
 3. **Request decision:** "How to proceed? (setup/skip/abort)"
@@ -171,16 +169,16 @@ Select an option:
 - `name`: "<resource-name>"
 - `namespace`: "<namespace>"
 
-**MCP Tool**: `pod_list` (from openshift)
+**MCP Tool**: `pods_list` (from openshift)
 
 **Parameters**:
 - `namespace`: "<namespace>"
 - `labelSelector`: "<app-label>=<value>" (from workload `.spec.selector.matchLabels`)
 
-**MCP Tool**: `pod_logs` (from openshift)
+**MCP Tool**: `pods_log` (from openshift)
 
 **Parameters**:
-- `name`: "<pod-name>" (from pod_list, check up to 3 representative pods)
+- `name`: "<pod-name>" (from pods_list, check up to 3 representative pods)
 - `namespace`: "<namespace>"
 - `tailLines`: 50 (integer, last N lines)
 
@@ -243,17 +241,17 @@ Apply these investigation guardrails before reaching any conclusion:
 4. **Evidence-Based Claims Only**: Every claim must trace to specific tool output. State unverified claims explicitly.
 5. **Investigation Error Separation**: Distinguish between "error X caused this problem" and "I encountered errors during investigation." Permission errors are obstacles to YOUR investigation, not necessarily the incident's root cause.
 
-**MCP Tool**: `get_metric_names` (from observability)
+**MCP Tool**: `prometheus_query` (from openshift, observability toolset)
 
 **Parameters**:
 - `match`: "{__name__=~\".*<keyword>.*\"}" (filter by relevant metric patterns, e.g., memory, disk, connections)
 
-**MCP Tool**: `get_metric_metadata` (from observability)
+**MCP Tool**: `prometheus_query` (from openshift, observability toolset)
 
 **Parameters**:
 - `metric`: "<metric-name>" (confirm type before querying)
 
-**MCP Tool**: `query` (from observability)
+**MCP Tool**: `prometheus_query` (from openshift, observability toolset)
 
 **Parameters**:
 - `query`: "<PromQL expression>" (use `topk(10, ...)` to limit cardinality, `rate()` for counters, scope with `{namespace="<target>"}`)
@@ -458,18 +456,16 @@ Select an option:
 
 ### Required MCP Servers
 - `openshift` — Kubernetes/OpenShift resource access for Deployments, Pods, Events, Services, and cluster resources ([setup](../../docs/prerequisites.md))
-- `observability` — Prometheus metric discovery, metadata, series, and PromQL query execution
 
 ### Required MCP Tools
 - `resources_get` (from openshift) — Retrieve individual resource details
 - `resources_list` (from openshift) — List resources by kind in a namespace
-- `pod_list` (from openshift) — List pods matching label selectors
-- `pod_logs` (from openshift) — Retrieve container logs (current and previous)
+- `pods_list` (from openshift) — List pods matching label selectors
+- `pods_log` (from openshift) — Retrieve container logs (current and previous)
 - `events_list` (from openshift) — Fetch events filtered by involved object
-- `get_metric_names` (from observability) — Discover available Prometheus metrics by pattern
-- `get_metric_metadata` (from observability) — Confirm metric type before querying
-- `get_series` (from observability) — Discover label sets for a metric
-- `query` (from observability) — Execute PromQL queries
+- `prometheus_query` (from openshift, observability toolset) — Execute instant PromQL queries
+- `prometheus_query_range` (from openshift, observability toolset) — Execute range PromQL queries over time windows
+- `alertmanager_alerts` (from openshift, observability toolset) — Retrieve active Alertmanager alerts
 
 ### Related Skills
 - `/debug-pod` — Single-pod failure diagnosis (CrashLoopBackOff, OOMKilled, ImagePullBackOff)

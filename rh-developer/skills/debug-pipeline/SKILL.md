@@ -151,13 +151,13 @@ Use kubernetes MCP `resources_get` for each failed TaskRun:
 Continue to view step logs? (yes/no)
 ```
 
-**Note:** Tekton names step containers as `step-<step-name>` in the TaskRun pod. Use this convention with `pod_logs`.
+**Note:** Tekton names step containers as `step-<step-name>` in the TaskRun pod. Use this convention with `pods_log`.
 
 **WAIT for user confirmation before proceeding.**
 
 ### Step 4: Get TaskRun Pod Logs
 
-Use kubernetes MCP `pod_logs` for the TaskRun pod, targeting the failed step container (`step-<step-name>`):
+Use kubernetes MCP `pods_log` for the TaskRun pod, targeting the failed step container (`step-<step-name>`):
 
 ```markdown
 ## Step Logs: [step-name] (Pod: [taskrun-name]-pod)

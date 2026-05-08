@@ -220,7 +220,7 @@ Select an option:
 
 - If user selects "Debug Pod" → Invoke `/debug-pod` skill with pod name
 - If user selects "Debug Network" → Invoke `/debug-network` skill with service name
-- If user selects "View logs" → Show pod logs using `pod_logs`
+- If user selects "View logs" → Show pod logs using `pods_log`
 - If user selects "Rollback" → Delete Deployment, Service, Route
 - If user selects "Continue" → Wait another polling cycle
 

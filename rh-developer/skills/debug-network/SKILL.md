@@ -105,7 +105,7 @@ Continue with pod analysis? (yes/no)
 
 ### Step 3: Verify Backend Pods
 
-Use kubernetes MCP `pod_list` with label selector matching service:
+Use kubernetes MCP `pods_list` with label selector matching service:
 
 ```markdown
 ## Backend Pods for Service: [service-name]

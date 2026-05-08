@@ -314,7 +314,7 @@ spec:
 
 ### Step 7: Monitor Build
 
-Stream build logs using kubernetes MCP `pod_logs`:
+Stream build logs using kubernetes MCP `pods_log`:
 
 ```markdown
 ## Build Progress
