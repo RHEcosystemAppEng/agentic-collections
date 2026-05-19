@@ -1,0 +1,76 @@
+{
+  "submission_name": "rh-automation-forensic-troubleshooter",
+  "provenance": {
+    "generated_at": "2026-05-17T13:16:07.741796Z",
+    "commit_sha": "0980debf930ec829f04a9a6db23d85e7928867c4",
+    "pipeline_run_id": "abevalflow-nlph9",
+    "treatment_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-automation-forensic-troubleshooter@sha256:dfae113b016578509152ff95442e5247923853c6f445a7e3c963094d04f77148",
+    "control_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-automation-forensic-troubleshooter@sha256:eb2b8818396d4325ea81e51ccbe2e618596d2932dc5268dd82a27c5f4852cc78",
+    "harbor_fork_revision": "main"
+  },
+  "summary": {
+    "treatment": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.8666666666666667,
+      "median_reward": 0.8,
+      "std_reward": 0.11547005383792512
+    },
+    "control": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.3333333333333333,
+      "median_reward": 0.4,
+      "std_reward": 0.11547005383792516
+    },
+    "uplift": 0.0,
+    "mean_reward_gap": 0.5333333333333334,
+    "ttest_p_value": 0.004812678330044218,
+    "fisher_p_value": 1.0,
+    "recommendation": "pass",
+    "related_pr": "https://github.com/RHEcosystemAppEng/skill-submissions/pull/64",
+    "llm": "Claude Sonnet 4.6 (vertex_ai)"
+  },
+  "trials": {
+    "treatment": [
+      {
+        "trial_name": "rh-automation-forensic-troublesh__bnqqor6",
+        "reward": 0.8,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-automation-forensic-troublesh__qyTtTjm",
+        "reward": 0.8,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-automation-forensic-troublesh__rMkjvBb",
+        "reward": 1.0,
+        "passed": true
+      }
+    ],
+    "control": [
+      {
+        "trial_name": "rh-automation-forensic-troublesh__Eeeynxr",
+        "reward": 0.4,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-automation-forensic-troublesh__Wqqs2iC",
+        "reward": 0.2,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-automation-forensic-troublesh__Zm6fMdv",
+        "reward": 0.4,
+        "passed": true
+      }
+    ]
+  }
+}

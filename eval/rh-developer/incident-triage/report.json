@@ -1,0 +1,75 @@
+{
+  "submission_name": "rh-developer-incident-triage",
+  "provenance": {
+    "generated_at": "2026-05-12T20:17:14.650537Z",
+    "commit_sha": "fa0b4ba60a089a7f50001993e2fbeb199db2ad8b",
+    "pipeline_run_id": "abevalflow-r9hxr",
+    "treatment_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-developer-incident-triage@sha256:ea9e7f972dfa3f03b927e88d8a0f816f15058ed5b6a22d80d32eec680f3cccff",
+    "control_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-developer-incident-triage@sha256:0e4f31dde9ad9e924cfd7bbc80c60e256a85626e795f384a0359125772b01bcd",
+    "harbor_fork_revision": "main"
+  },
+  "summary": {
+    "related_pr": "https://github.com/RHEcosystemAppEng/skill-submissions/pull/54",
+    "llm": "Claude Sonnet 4.6 (vertex_ai)",
+    "treatment": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 1.0,
+      "median_reward": 1.0,
+      "std_reward": 0.0
+    },
+    "control": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.9375,
+      "median_reward": 0.9375,
+      "std_reward": 0.0
+    },
+    "mean_reward_gap": 0.0625,
+    "ttest_p_value": 0.0,
+    "fisher_p_value": 1.0,
+    "recommendation": "pass"
+  },
+  "trials": {
+    "treatment": [
+      {
+        "trial_name": "rh-developer-incident-triage__SpBpgXG",
+        "reward": 1.0,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-incident-triage__VDPyd6j",
+        "reward": 1.0,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-incident-triage__etQfpHW",
+        "reward": 1.0,
+        "passed": true
+      }
+    ],
+    "control": [
+      {
+        "trial_name": "rh-developer-incident-triage__LeJEZSc",
+        "reward": 0.9375,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-incident-triage__QNoqSYb",
+        "reward": 0.9375,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-incident-triage__YRPotaM",
+        "reward": 0.9375,
+        "passed": true
+      }
+    ]
+  }
+}

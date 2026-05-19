@@ -1,0 +1,75 @@
+{
+  "submission_name": "rh-developer-containerize-deploy",
+  "provenance": {
+    "generated_at": "2026-05-17T09:00:02.231539Z",
+    "commit_sha": "ec6a594b78cf0c1549d0e8807ef49be18faa4f2e",
+    "pipeline_run_id": "abevalflow-2ns2h",
+    "treatment_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-developer-containerize-deploy@sha256:13b87afc832876f6d36f3a3ab3e79a20cb3843b7757c662330f55052dfc1c150",
+    "control_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-developer-containerize-deploy@sha256:bd5b892387d2462bd42ef979a450549dbbbcc6943269edbf075b88ddb2d09421",
+    "harbor_fork_revision": "main"
+  },
+  "summary": {
+    "related_pr": "https://github.com/RHEcosystemAppEng/skill-submissions/pull/42",
+    "llm": "Claude Sonnet 4.6 (vertex_ai)",
+    "treatment": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.8333333333333334,
+      "median_reward": 0.875,
+      "std_reward": 0.07216878364870322
+    },
+    "control": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.7083333333333334,
+      "median_reward": 0.75,
+      "std_reward": 0.07216878364870322
+    },
+    "mean_reward_gap": 0.125,
+    "ttest_p_value": 0.10119150721829535,
+    "fisher_p_value": 1.0,
+    "recommendation": "pass"
+  },
+  "trials": {
+    "treatment": [
+      {
+        "trial_name": "rh-developer-containerize-deploy__QThWs3h",
+        "reward": 0.875,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-containerize-deploy__cZ3EwGF",
+        "reward": 0.875,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-containerize-deploy__zzV3cXD",
+        "reward": 0.75,
+        "passed": true
+      }
+    ],
+    "control": [
+      {
+        "trial_name": "rh-developer-containerize-deploy__RXc4sbK",
+        "reward": 0.625,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-containerize-deploy__kV5AJhh",
+        "reward": 0.75,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-containerize-deploy__sharKSy",
+        "reward": 0.75,
+        "passed": true
+      }
+    ]
+  }
+}

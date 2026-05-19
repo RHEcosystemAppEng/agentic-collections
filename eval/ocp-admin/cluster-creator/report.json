@@ -1,0 +1,75 @@
+{
+  "submission_name": "ocp-admin-cluster-creator",
+  "provenance": {
+    "generated_at": "2026-05-18T16:06:15.130817Z",
+    "commit_sha": "b0bca9625b7e32d1faf3c12aa9c93aaad3b19758",
+    "pipeline_run_id": "abevalflow-xtjrr",
+    "treatment_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/ocp-admin-cluster-creator@sha256:4b09ecdb7a0bf710d96cc19ac8043765c83d59a8d409ead6d51cf0cfe23998ce",
+    "control_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/ocp-admin-cluster-creator@sha256:83523e19c6207b1093310d8352e12a2bb5fcb765e47e3ccd9a618a663950d1d7",
+    "harbor_fork_revision": "main"
+  },
+  "summary": {
+    "related_pr": "https://github.com/RHEcosystemAppEng/skill-submissions/pull/27",
+    "llm": "Claude Sonnet 4.6 (vertex_ai)",
+    "treatment": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 1.0,
+      "median_reward": 1.0,
+      "std_reward": 0.0
+    },
+    "control": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.1667,
+      "median_reward": 0.1667,
+      "std_reward": 0.0
+    },
+    "mean_reward_gap": 0.8333,
+    "ttest_p_value": 0.0,
+    "fisher_p_value": 1.0,
+    "recommendation": "pass"
+  },
+  "trials": {
+    "treatment": [
+      {
+        "trial_name": "ocp-admin-cluster-creator__LwzDeWY",
+        "reward": 1.0,
+        "passed": true
+      },
+      {
+        "trial_name": "ocp-admin-cluster-creator__pWmRWch",
+        "reward": 1.0,
+        "passed": true
+      },
+      {
+        "trial_name": "ocp-admin-cluster-creator__w2pwYod",
+        "reward": 1.0,
+        "passed": true
+      }
+    ],
+    "control": [
+      {
+        "trial_name": "ocp-admin-cluster-creator__FDZdSFV",
+        "reward": 0.1667,
+        "passed": true
+      },
+      {
+        "trial_name": "ocp-admin-cluster-creator__ZRRDuvm",
+        "reward": 0.1667,
+        "passed": true
+      },
+      {
+        "trial_name": "ocp-admin-cluster-creator__z49cZmG",
+        "reward": 0.1667,
+        "passed": true
+      }
+    ]
+  }
+}

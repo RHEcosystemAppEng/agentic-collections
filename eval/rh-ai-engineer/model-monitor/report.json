@@ -1,0 +1,76 @@
+{
+  "submission_name": "rh-ai-engineer-model-monitor",
+  "provenance": {
+    "generated_at": "2026-05-17T20:58:32.226928Z",
+    "commit_sha": "a51a1b1335aa29eb3eecec82371cc4497a62a7d5",
+    "pipeline_run_id": "abevalflow-rqj4r",
+    "treatment_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-ai-engineer-model-monitor@sha256:e52e090dc576f1f3aa30a9dd886dc0a2595d8ec71473932172c585e0b348cf10",
+    "control_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-ai-engineer-model-monitor@sha256:938778688c521f4794b993d0af46a55883cac3c9d6d6903cd54499cfa4077379",
+    "harbor_fork_revision": "main"
+  },
+  "summary": {
+    "treatment": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.8889,
+      "median_reward": 1.0,
+      "std_reward": 0.1924308447209023
+    },
+    "control": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.3333,
+      "median_reward": 0.3333,
+      "std_reward": 0.0
+    },
+    "uplift": 0.0,
+    "mean_reward_gap": 0.5556000000000001,
+    "ttest_p_value": 0.03773672326895731,
+    "fisher_p_value": 1.0,
+    "recommendation": "pass",
+    "related_pr": "https://github.com/RHEcosystemAppEng/skill-submissions/pull/56",
+    "llm": "Claude Sonnet 4.6 (vertex_ai)"
+  },
+  "trials": {
+    "treatment": [
+      {
+        "trial_name": "rh-ai-engineer-model-monitor__855C2oj",
+        "reward": 1.0,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-ai-engineer-model-monitor__P97sD5N",
+        "reward": 1.0,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-ai-engineer-model-monitor__puf5fpA",
+        "reward": 0.6667,
+        "passed": true
+      }
+    ],
+    "control": [
+      {
+        "trial_name": "rh-ai-engineer-model-monitor__fufJmWB",
+        "reward": 0.3333,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-ai-engineer-model-monitor__tgH7oQC",
+        "reward": 0.3333,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-ai-engineer-model-monitor__vSbcUws",
+        "reward": 0.3333,
+        "passed": true
+      }
+    ]
+  }
+}

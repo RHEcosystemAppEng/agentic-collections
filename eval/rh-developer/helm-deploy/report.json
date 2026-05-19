@@ -1,0 +1,75 @@
+{
+  "submission_name": "rh-developer-helm-deploy",
+  "provenance": {
+    "generated_at": "2026-05-18T21:25:44.123953Z",
+    "commit_sha": "4506aae0a20907312bee348721c9b7e9516773c2",
+    "pipeline_run_id": "abevalflow-j5drx",
+    "treatment_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-developer-helm-deploy@sha256:7bbd04fa7a8a9b93c45cbf8ee03a1e9f9cf3870feddd10a5b41b2e67b3184ebf",
+    "control_image_ref": "image-registry.openshift-image-registry.svc:5000/ab-eval-flow/rh-developer-helm-deploy@sha256:d21230eed7d3d55bb7832772e889396b6261940074ab3ce46082dce89b5945e3",
+    "harbor_fork_revision": "main"
+  },
+  "summary": {
+    "related_pr": "https://github.com/RHEcosystemAppEng/skill-submissions/pull/48",
+    "llm": "Claude Sonnet 4.6 (vertex_ai)",
+    "treatment": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.8571,
+      "median_reward": 0.8571,
+      "std_reward": 0.0
+    },
+    "control": {
+      "n_trials": 3,
+      "n_passed": 3,
+      "n_failed": 0,
+      "n_errors": 0,
+      "pass_rate": 1.0,
+      "mean_reward": 0.5238333333333333,
+      "median_reward": 0.4286,
+      "std_reward": 0.16494897190747612
+    },
+    "mean_reward_gap": 0.3332666666666667,
+    "ttest_p_value": 0.07284687423116672,
+    "fisher_p_value": 1.0,
+    "recommendation": "pass"
+  },
+  "trials": {
+    "treatment": [
+      {
+        "trial_name": "rh-developer-helm-deploy__WiSWNrk",
+        "reward": 0.8571,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-helm-deploy__Y3kL9xu",
+        "reward": 0.8571,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-helm-deploy__ZQ5SJ38",
+        "reward": 0.8571,
+        "passed": true
+      }
+    ],
+    "control": [
+      {
+        "trial_name": "rh-developer-helm-deploy__Aqj75JA",
+        "reward": 0.7143,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-helm-deploy__XoZnTAg",
+        "reward": 0.4286,
+        "passed": true
+      },
+      {
+        "trial_name": "rh-developer-helm-deploy__n5GYfPr",
+        "reward": 0.4286,
+        "passed": true
+      }
+    ]
+  }
+}
