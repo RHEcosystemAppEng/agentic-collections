@@ -114,6 +114,7 @@ federated_modules:
   - name: "<pack-name>"
     description: "<from issue>"
     version: "<from repo>"
+    license: "<from issue>"
     repository: "<repo-url>"
     ref: "<ref>"
     pack_path: "."

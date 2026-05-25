@@ -313,6 +313,7 @@ def load_federated_packs() -> List[Dict[str, Any]]:
             ref = mod.get("ref", "")
             description = mod.get("description", "")
             version = mod.get("version", "0.0.0")
+            license_id = mod.get("license", "Unknown")
             tags = mod.get("tags", [])
             pack_path = mod.get("pack_path", ".")
             skill_subset = mod.get("skills")
@@ -363,7 +364,7 @@ def load_federated_packs() -> List[Dict[str, Any]]:
                     "version": version,
                     "description": description,
                     "author": {"name": "External"},
-                    "license": "Apache-2.0",
+                    "license": license_id,
                     "keywords": tags,
                 },
                 "skills": sorted(skills, key=lambda s: s["name"]),

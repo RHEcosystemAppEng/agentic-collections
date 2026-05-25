@@ -114,6 +114,7 @@ federated_modules: []
   # - name: "partner-network-tools"
   #   description: "Network troubleshooting skills for SDN and OVN diagnostics"
   #   version: "1.2.0"
+  #   license: "Apache-2.0"       # must be compatible with Apache 2.0
   #   repository: "https://github.com/partner-org/network-skills"
   #   ref: "a1b2c3d4e5f6789012345678901234567890abcd"
   #   pack_path: "."              # path within the repo where the Lola pack lives (default: repo root)

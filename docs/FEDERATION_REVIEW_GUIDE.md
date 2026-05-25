@@ -133,7 +133,7 @@ Verify the declared AI agent compatibility from the issue:
 | Minor issues | Comment on issue with specific fixes, label `federation/changes-requested` |
 | Major issues | Reject with explanation, label `federation/rejected`, close issue |
 
-When approving, add the pack to `marketplace/rh-agentic-collection.yml` under `federated_modules` and link back to the issue.
+When approving, add the pack to `marketplace/rh-agentic-collection.yml` under `federated_modules` (include the `license` field from the issue) and link back to the issue.
 
 ---
 
