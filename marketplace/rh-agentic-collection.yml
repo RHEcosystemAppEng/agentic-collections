@@ -120,6 +120,16 @@ modules:
       - "execution"
       - "federation"
 
+  - name: "rh-basic-r2dedios"
+    description: "THis is just a test module"
+    version: "1.0.0"
+    license: "Apache-2.0"
+    repository: "https://github.com/r2dedios/agentic-collections@e2c42f2ff0d359260933824c323d22d0caadd6ee"
+    path: "rh-basic"
+    tags:
+      - "basic"
+      - "federation"
+
   # Federated modules — complete Lola packs hosted in external repositories.
   # Add them as regular module entries with a different repository URL.
   # The build identifies federated packs by comparing the repository field
