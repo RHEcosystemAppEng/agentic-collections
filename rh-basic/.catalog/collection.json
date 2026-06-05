@@ -25,7 +25,7 @@
       {
         "description": "Bootstrap Installer (self-removes after use)",
         "name": "red-hat-get-started",
-        "summary_markdown": "Fetch and install all skills from the agentic skill pack for Red Hat customers into the current project. Removes itself after running.\n**Use when:**\n- Setting up Red Hat skills for the first time in a project\n**What it does:**\n- Downloads each skill from the canonical source URL\n- Creates skill directories under .claude/skills/\n- Reports any download failures for manual recovery\n- Deletes itself on completion\n"
+        "summary_markdown": "Fetch and install all skills from Agentic skill pack for Red Hat customers into the current project. Removes itself after running.\n**Use when:**\n- Setting up Red Hat skills for the first time in a project\n**What it does:**\n- Downloads each skill from the canonical source URL\n- Creates skill directories under .claude/skills/\n- Reports any download failures for manual recovery\n- Deletes itself on completion\n"
       },
       {
         "description": "Product Lifecycle Status and Support Phase Lookup",
@@ -101,7 +101,7 @@
   ],
   "maturity": "GREEN",
   "mcp_section": "#mcp_section.md",
-  "name": "agentic skill pack for Red Hat customers",
+  "name": "Agentic skill pack for Red Hat customers",
   "personas": [
     "IT Professional",
     "Red Hat Customer"

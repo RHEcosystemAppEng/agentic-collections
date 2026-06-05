@@ -3,7 +3,7 @@
 # Do not edit ad hoc — follow COLLECTION_SPEC.md and the create-collection skill.
 
 id: rh-basic
-name: agentic skill pack for Red Hat customers
+name: Agentic skill pack for Red Hat customers
 provider: Red Hat
 version: 0.1.0
 categories:
@@ -53,7 +53,7 @@ contents:
   - name: red-hat-get-started
     description: Bootstrap Installer (self-removes after use)
     summary_markdown: |
-      Fetch and install all skills from the agentic skill pack for Red Hat customers into the current project. Removes itself after running.
+      Fetch and install all skills from Agentic skill pack for Red Hat customers into the current project. Removes itself after running.
       **Use when:**
       - Setting up Red Hat skills for the first time in a project
       **What it does:**

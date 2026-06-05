@@ -1,4 +1,4 @@
-# agentic skill pack for Red Hat customers
+# Agentic skill pack for Red Hat customers
 
 Essential Red Hat skills for IT professionals working with Red Hat products. This pack covers everyday tasks: understanding CVEs, gathering diagnostics, checking product lifecycle status, and filing support cases at the right severity.
 
@@ -7,7 +7,7 @@ Essential Red Hat skills for IT professionals working with Red Hat products. Thi
 
 ## Overview
 
-The agentic skill pack for Red Hat customers provides lightweight, self-contained skills that work with or without a configured MCP server. Each skill falls back to web sources when MCP tools are unavailable.
+Agentic skill pack for Red Hat customers provides lightweight, self-contained skills that work with or without a configured MCP server. Each skill falls back to web sources when MCP tools are unavailable.
 
 - **6 skills** covering the most common Red Hat support and operations workflows
 - **1 MCP server integration** (Red Hat Security MCP) for live CVE and advisory data
@@ -94,7 +94,7 @@ Determines the correct severity for a Red Hat support ticket and explains the SL
 
 ### 5. **red-hat-get-started** - Bootstrap Installer
 
-Fetches and installs all skills from the agentic skill pack for Red Hat customers into the current project. Removes itself after running.
+Fetches and installs all skills from Agentic skill pack for Red Hat customers into the current project. Removes itself after running.
 
 **Use when:**
 - Setting up Red Hat skills for the first time in a project
