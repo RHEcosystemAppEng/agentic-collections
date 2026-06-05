@@ -10,23 +10,28 @@ Platform: Linux and macOS only (uses select.select for non-blocking I/O).
 
 Usage:
     python scripts/validate_mcp_tools.py [pack1] [pack2] ...
+    python scripts/validate_mcp_tools.py --summary-only --log-file .validate/mcp-tools.log
     No args: validates all packs that have mcps.json
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import select
 import subprocess
 import sys
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TextIO
 
 JSONRPC_TIMEOUT = 30
 SERVER_START_TIMEOUT = 15
 PODMAN_PULL_TIMEOUT = 120
+DEFAULT_LOG_FILE = Path(".validate/mcp-tools.log")
 
 INIT_MSG = {
     "jsonrpc": "2.0",
@@ -77,6 +82,138 @@ class ValidationResult:
     @property
     def success(self) -> bool:
         return self.failed == 0
+
+
+class Reporter:
+    """Route verbose validation output to a log file; emit summaries to stdout."""
+
+    def __init__(self, log_path: Path | None = None, summary_only: bool = False) -> None:
+        self.log_path = log_path
+        self.summary_only = summary_only
+        self._log_handle: TextIO | None = None
+        if log_path is not None:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            self._log_handle = log_path.open("w", encoding="utf-8")
+
+    def close(self) -> None:
+        if self._log_handle is not None:
+            self._log_handle.close()
+            self._log_handle = None
+
+    def detail(self, message: str = "") -> None:
+        text = message if message.endswith("\n") else f"{message}\n"
+        if self._log_handle is not None:
+            self._log_handle.write(text)
+            self._log_handle.flush()
+        if not self.summary_only:
+            sys.stdout.write(text if message.endswith("\n") else message + "\n")
+
+    def summary(self, message: str = "") -> None:
+        text = message if message.endswith("\n") else f"{message}\n"
+        if self._log_handle is not None:
+            self._log_handle.write(text)
+            self._log_handle.flush()
+        sys.stdout.write(text if message.endswith("\n") else message + "\n")
+
+    def log_only(self, message: str = "") -> None:
+        """Write to the log file without printing to stdout."""
+        if self._log_handle is None:
+            return
+        text = message if message.endswith("\n") else f"{message}\n"
+        self._log_handle.write(text)
+        self._log_handle.flush()
+
+    def __enter__(self) -> Reporter:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
+
+def _write_full_findings_to_log(
+    reporter: Reporter, heading: str, items: list[Finding],
+) -> None:
+    if not items:
+        return
+    reporter.log_only()
+    reporter.log_only(heading)
+    for item in items:
+        reporter.log_only(f"  - {item}")
+
+
+def print_validation_summary(combined: ValidationResult, reporter: Reporter) -> None:
+    """Print a concise MCP validation summary for make validate."""
+    if combined.failed:
+        result_label = "FAILED"
+    elif combined.warned > 0 or combined.skipped > 0:
+        result_label = "PASSED WITH WARNINGS"
+    else:
+        result_label = "PASSED"
+
+    _write_full_findings_to_log(
+        reporter,
+        f"WARNINGS (full list, {len(combined.warnings)} unverifiable tools):",
+        combined.warnings,
+    )
+    _write_full_findings_to_log(
+        reporter,
+        f"FAILURES (full list, {len(combined.findings)} missing tools):",
+        combined.findings,
+    )
+
+    reporter.summary()
+    reporter.summary("=" * 66)
+    reporter.summary(" MCP Tool Validation Summary")
+    reporter.summary("=" * 66)
+    reporter.summary(f" Result:   {result_label}")
+    if reporter.log_path is not None:
+        reporter.summary(f" Full log: {reporter.log_path}")
+    reporter.summary()
+    reporter.summary(
+        f" Skills:   {combined.total_skills} total — "
+        f"{combined.passed} passed, {combined.warned} warned, "
+        f"{combined.skipped} skipped (no allowed-tools), {combined.failed} failed"
+    )
+    reporter.summary()
+
+    if combined.skipped_servers:
+        unique_servers = list(dict.fromkeys(combined.skipped_servers))
+        reporter.summary(f" Skipped MCP servers ({len(unique_servers)}):")
+        for server in unique_servers:
+            reporter.summary(f"   • {server}")
+        reporter.summary()
+
+    if combined.warnings:
+        skills_affected = len({(w.pack, w.skill) for w in combined.warnings})
+        by_pack = Counter(w.pack for w in combined.warnings)
+        pack_bits = ", ".join(f"{pack} ({count})" for pack, count in by_pack.most_common())
+        reporter.summary(
+            f" Unverifiable tools: {len(combined.warnings)} tool reference(s) "
+            f"in {skills_affected} skill(s)"
+        )
+        reporter.summary(f"   By pack: {pack_bits}")
+        if reporter.log_path is not None:
+            reporter.summary(f"   Details: see {reporter.log_path}")
+        reporter.summary()
+
+    if combined.findings:
+        reporter.summary(f" Missing tools: {len(combined.findings)} failure(s) — fix before merge")
+        for finding in combined.findings:
+            reporter.summary(f"   • {finding}")
+        reporter.summary()
+
+    if not combined.success:
+        reporter.summary(" MCP tool validation failed — fix tool names or mcps.json.")
+    elif combined.warned > 0:
+        reporter.summary(
+            " Some tools could not be verified because MCP servers did not start."
+        )
+    elif combined.skipped > 0:
+        reporter.summary(" Some skills have no allowed-tools declaration.")
+    else:
+        reporter.summary(" All declared MCP tools verified.")
+    reporter.summary("=" * 66)
+    reporter.summary()
 
 
 def levenshtein(s1: str, s2: str) -> int:
@@ -165,27 +302,27 @@ def send_jsonrpc(proc: subprocess.Popen, msg: dict) -> None:
     proc.stdin.flush()
 
 
-def pull_image(image: str) -> bool:
+def pull_image(image: str, reporter: Reporter) -> bool:
     """Pull a container image, returning True on success."""
-    print(f"    Pulling image: {image[:80]}...")
+    reporter.detail(f"    Pulling image: {image[:80]}...")
     try:
         result = subprocess.run(
             ["podman", "pull", image],
             capture_output=True, text=True, timeout=PODMAN_PULL_TIMEOUT,
         )
         if result.returncode != 0:
-            print(f"    WARNING: podman pull failed: {result.stderr.strip()[:200]}")
+            reporter.detail(f"    WARNING: podman pull failed: {result.stderr.strip()[:200]}")
             return False
         return True
     except subprocess.TimeoutExpired:
-        print(f"    WARNING: podman pull timed out after {PODMAN_PULL_TIMEOUT}s")
+        reporter.detail(f"    WARNING: podman pull timed out after {PODMAN_PULL_TIMEOUT}s")
         return False
 
 
 def extract_image_from_args(args: list[str]) -> str | None:
     """Find the container image reference in podman run args."""
     skip_next = False
-    for i, arg in enumerate(args):
+    for arg in args:
         if skip_next:
             skip_next = False
             continue
@@ -202,7 +339,9 @@ def extract_image_from_args(args: list[str]) -> str | None:
     return None
 
 
-def query_mcp_tools(command: str, args: list[str], kubeconfig: str) -> list[str] | None:
+def query_mcp_tools(
+    command: str, args: list[str], kubeconfig: str, reporter: Reporter,
+) -> list[str] | None:
     """Start an MCP server and query its tools via JSON-RPC."""
     expanded_args = [a.replace("${KUBECONFIG}", kubeconfig) for a in args]
 
@@ -219,22 +358,24 @@ def query_mcp_tools(command: str, args: list[str], kubeconfig: str) -> list[str]
         for _ in range(10):
             if proc.poll() is not None:
                 stderr = proc.stderr.read()[:300] if proc.stderr else ""
-                print(f"    Server exited immediately (code {proc.returncode}): {stderr.strip()}")
+                reporter.detail(
+                    f"    Server exited immediately (code {proc.returncode}): {stderr.strip()}"
+                )
                 return None
             time.sleep(0.1)
 
         send_jsonrpc(proc, INIT_MSG)
         resp = read_response(proc, expected_id=1, timeout=SERVER_START_TIMEOUT)
         if resp is None:
-            print("    WARNING: no response to initialize")
+            reporter.detail("    WARNING: no response to initialize")
             return None
 
         if "error" in resp:
-            print(f"    WARNING: initialize error: {resp['error']}")
+            reporter.detail(f"    WARNING: initialize error: {resp['error']}")
             return None
 
         server_info = resp.get("result", {}).get("serverInfo", {})
-        print(f"    Server: {server_info.get('name', 'unknown')}")
+        reporter.detail(f"    Server: {server_info.get('name', 'unknown')}")
 
         send_jsonrpc(proc, INITIALIZED_NOTIFICATION)
 
@@ -256,11 +397,11 @@ def query_mcp_tools(command: str, args: list[str], kubeconfig: str) -> list[str]
             send_jsonrpc(proc, tools_msg)
             resp = read_response(proc, expected_id=100 + page)
             if resp is None:
-                print(f"    WARNING: no response to tools/list (page {page})")
+                reporter.detail(f"    WARNING: no response to tools/list (page {page})")
                 return all_tools if all_tools else None
 
             if "error" in resp:
-                print(f"    WARNING: tools/list error: {resp['error']}")
+                reporter.detail(f"    WARNING: tools/list error: {resp['error']}")
                 return all_tools if all_tools else None
 
             result = resp.get("result", {})
@@ -295,8 +436,7 @@ def parse_frontmatter(skill_path: Path) -> tuple[str, int | None]:
                 if not in_fm:
                     in_fm = True
                     continue
-                else:
-                    break
+                break
             if in_fm and stripped.startswith("allowed-tools:"):
                 value = stripped[len("allowed-tools:"):].strip()
                 return value, line_num
@@ -313,21 +453,23 @@ def find_packs(repo_root: Path) -> list[str]:
     return packs
 
 
-def validate_pack(pack: str, repo_root: Path, kubeconfig: str) -> ValidationResult:
+def validate_pack(
+    pack: str, repo_root: Path, kubeconfig: str, reporter: Reporter,
+) -> ValidationResult:
     """Validate all skills in a single pack against its MCP servers."""
     result = ValidationResult()
     pack_dir = repo_root / pack
     mcps_file = pack_dir / "mcps.json"
 
     if not mcps_file.exists():
-        print(f"  WARNING: {pack}/mcps.json not found, skipping pack")
+        reporter.detail(f"  WARNING: {pack}/mcps.json not found, skipping pack")
         return result
 
     try:
         with open(mcps_file) as f:
             config = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
-        print(f"  ERROR: failed to parse {pack}/mcps.json: {e}")
+        reporter.detail(f"  ERROR: failed to parse {pack}/mcps.json: {e}")
         result.failed += 1
         return result
 
@@ -339,34 +481,34 @@ def validate_pack(pack: str, repo_root: Path, kubeconfig: str) -> ValidationResu
 
         if command not in ("podman", "docker"):
             reason = f"non-container command '{command}'"
-            print(f"  SKIP server '{server_name}': {reason}")
+            reporter.detail(f"  SKIP server '{server_name}': {reason}")
             result.skipped_servers.append(f"{server_name} ({reason})")
             continue
 
         args = server_config.get("args", [])
-        print(f"  Starting MCP server '{server_name}'...")
+        reporter.detail(f"  Starting MCP server '{server_name}'...")
 
         image = extract_image_from_args(args)
         if image:
-            if not pull_image(image):
-                print(f"    WARNING: could not pull image, attempting to start anyway")
+            if not pull_image(image, reporter):
+                reporter.detail("    WARNING: could not pull image, attempting to start anyway")
 
-        tools = query_mcp_tools(command, args, kubeconfig)
+        tools = query_mcp_tools(command, args, kubeconfig, reporter)
 
         if tools is None:
-            print(f"    WARNING: no tools returned (server may require credentials)")
+            reporter.detail("    WARNING: no tools returned (server may require credentials)")
             result.skipped_servers.append(f"{server_name} (no tools returned)")
             continue
 
-        print(f"    {len(tools)} tools available")
+        reporter.detail(f"    {len(tools)} tools available")
         for t in sorted(tools):
-            print(f"      - {t}")
+            reporter.detail(f"      - {t}")
         all_available_tools.update(tools)
 
     result.has_skipped_servers = len(result.skipped_servers) > 0
 
     if all_available_tools:
-        print(f"  Combined tool pool: {len(all_available_tools)} unique tools")
+        reporter.detail(f"  Combined tool pool: {len(all_available_tools)} unique tools")
 
     skills_dir = pack_dir / "skills"
     if not skills_dir.exists():
@@ -384,7 +526,7 @@ def validate_pack(pack: str, repo_root: Path, kubeconfig: str) -> ValidationResu
 
         if not allowed_tools_str:
             result.skipped += 1
-            print(f"  SKIP {pack}/{skill_name}: no allowed-tools declared")
+            reporter.detail(f"  SKIP {pack}/{skill_name}: no allowed-tools declared")
             continue
 
         declared_tools = allowed_tools_str.split()
@@ -392,7 +534,9 @@ def validate_pack(pack: str, repo_root: Path, kubeconfig: str) -> ValidationResu
 
         if not missing:
             result.passed += 1
-            print(f"  PASS {pack}/{skill_name}: all {len(declared_tools)} tools validated")
+            reporter.detail(
+                f"  PASS {pack}/{skill_name}: all {len(declared_tools)} tools validated"
+            )
         elif result.has_skipped_servers:
             verified = [t for t in declared_tools if t in all_available_tools]
             result.warned += 1
@@ -408,8 +552,10 @@ def validate_pack(pack: str, repo_root: Path, kubeconfig: str) -> ValidationResu
                     suggestion=suggestion,
                 )
                 result.warnings.append(finding)
-            print(f"  WARN {pack}/{skill_name}: {len(verified)}/{len(declared_tools)} tools verified, "
-                  f"{len(missing)} unverifiable (MCP server not started)")
+            reporter.detail(
+                f"  WARN {pack}/{skill_name}: {len(verified)}/{len(declared_tools)} tools verified, "
+                f"{len(missing)} unverifiable (MCP server not started)"
+            )
         else:
             result.failed += 1
             rel_path = str(skill_file.relative_to(repo_root))
@@ -424,7 +570,7 @@ def validate_pack(pack: str, repo_root: Path, kubeconfig: str) -> ValidationResu
                     suggestion=suggestion,
                 )
                 result.findings.append(finding)
-                print(f"  FAIL {pack}/{skill_name}: {finding}")
+                reporter.detail(f"  FAIL {pack}/{skill_name}: {finding}")
 
     return result
 
@@ -448,8 +594,33 @@ def check_prerequisites() -> str | None:
     return None
 
 
-def main(packs: list[str] | None = None) -> int:
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Validate allowed-tools in SKILL.md against live MCP servers",
+    )
+    parser.add_argument(
+        "packs",
+        nargs="*",
+        help="Pack names to validate (default: all packs with mcps.json)",
+    )
+    parser.add_argument(
+        "--log-file",
+        type=Path,
+        default=None,
+        help="Write full validation output to this file",
+    )
+    parser.add_argument(
+        "--summary-only",
+        action="store_true",
+        help="Print only the summary section on stdout (requires --log-file for details)",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv if argv is not None else sys.argv[1:])
     repo_root = Path(__file__).resolve().parent.parent
+    packs = args.packs or None
 
     skip_reason = check_prerequisites()
     if skip_reason:
@@ -469,73 +640,41 @@ def main(packs: list[str] | None = None) -> int:
         print("No packs with mcps.json found")
         return 0
 
-    print()
-    print("=" * 66)
-    print("           MCP Tool Validation Report")
-    print("    Verifying allowed-tools against live MCP servers")
-    print("=" * 66)
-    print()
-    print(f"Packs to validate: {', '.join(packs)}")
-    print(f"KUBECONFIG: {kubeconfig}")
-    print()
+    log_path = args.log_file
+    summary_only = args.summary_only
+    if summary_only and log_path is None:
+        log_path = repo_root / DEFAULT_LOG_FILE
 
-    combined = ValidationResult()
+    with Reporter(log_path=log_path, summary_only=summary_only) as reporter:
+        reporter.detail()
+        reporter.detail("=" * 66)
+        reporter.detail("           MCP Tool Validation Report")
+        reporter.detail("    Verifying allowed-tools against live MCP servers")
+        reporter.detail("=" * 66)
+        reporter.detail()
+        reporter.detail(f"Packs to validate: {', '.join(packs)}")
+        reporter.detail(f"KUBECONFIG: {kubeconfig}")
+        reporter.detail()
 
-    for pack in packs:
-        print(f"-- {pack} --")
-        result = validate_pack(pack, repo_root, kubeconfig)
-        combined.total_skills += result.total_skills
-        combined.passed += result.passed
-        combined.skipped += result.skipped
-        combined.warned += result.warned
-        combined.failed += result.failed
-        combined.findings.extend(result.findings)
-        combined.warnings.extend(result.warnings)
-        combined.skipped_servers.extend(result.skipped_servers)
-        print()
+        combined = ValidationResult()
 
-    print("=" * 66)
-    print()
-    print("VALIDATION SUMMARY")
-    print("-" * 66)
-    print(f"  Total skills:                {combined.total_skills}")
-    print(f"  Passed:                      {combined.passed}")
-    print(f"  Warned (unverifiable):       {combined.warned}")
-    print(f"  Skipped (no allowed-tools):  {combined.skipped}")
-    print(f"  Failed:                      {combined.failed}")
-    print()
+        for pack in packs:
+            reporter.detail(f"-- {pack} --")
+            result = validate_pack(pack, repo_root, kubeconfig, reporter)
+            combined.total_skills += result.total_skills
+            combined.passed += result.passed
+            combined.skipped += result.skipped
+            combined.warned += result.warned
+            combined.failed += result.failed
+            combined.findings.extend(result.findings)
+            combined.warnings.extend(result.warnings)
+            combined.skipped_servers.extend(result.skipped_servers)
+            reporter.detail()
 
-    if combined.skipped_servers:
-        print("Skipped MCP servers (non-container or unreachable):")
-        for s in combined.skipped_servers:
-            print(f"  - {s}")
-        print()
+        print_validation_summary(combined, reporter)
 
-    if combined.warnings:
-        print("WARNINGS (tools from skipped MCP servers, cannot verify):")
-        for w in combined.warnings:
-            print(f"  - {w}")
-        print()
-
-    if combined.findings:
-        print("FAILURES (tools missing from started MCP servers):")
-        for f in combined.findings:
-            print(f"  - {f}")
-        print()
-
-    if not combined.success:
-        print("VALIDATION FAILED - tool name mismatches detected in started servers")
-        print("Check mcps.json for the correct tool names.")
-        return 1
-    elif combined.warned > 0:
-        print("PASSED WITH WARNINGS - some tools could not be verified (MCP servers not started)")
-    elif combined.skipped > 0:
-        print("PASSED WITH WARNINGS - some skills have no allowed-tools")
-    else:
-        print("ALL SKILLS PASSED")
-
-    return 0
+    return 0 if combined.success else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main(packs=sys.argv[1:] if len(sys.argv) > 1 else None))
+    sys.exit(main())

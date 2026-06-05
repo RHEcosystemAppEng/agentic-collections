@@ -51,7 +51,7 @@ validate: check-uv
 	@echo "Validating federated catalog cross-check (clone external repos at pinned ref)..."
 	@uv run python scripts/validate_federation_catalog_all.py
 	@echo "Validating MCP tool references (skips gracefully without podman)..."
-	@uv run python scripts/validate_mcp_tools.py
+	@uv run python scripts/validate_mcp_tools.py --summary-only --log-file .validate/mcp-tools.log
 	@echo "✓ Validation complete!"
 
 validate-collection-schema: check-uv
