@@ -5,16 +5,16 @@ license: Apache-2.0
 user_invocable: true
 model: inherit
 color: cyan
-allowed-tools:
+allowed-tools: Bash
 ---
 
 # Red Hat Product Lifecycle Advisor
 
-Identify product and version from user message. If unclear, ask. Look up lifecycle data and respond using the output format below. If MCP tools unavailable, fall back to WebFetch -- never decline because a tool is missing.
+Identify product and version from user message. If unclear, ask. Look up lifecycle data using the script below and respond using the output format.
 
 ## Prerequisites
 
-None — all data is available via WebFetch against public Red Hat documentation.
+Python 3 — the script uses only the stdlib.
 
 ## When to Use This Skill
 
@@ -23,24 +23,32 @@ When the user asks about lifecycle status, support phases, or EOL dates for any 
 ## Workflow
 
 1. Identify product and version from the user message.
-2. Fetch lifecycle data via WebFetch.
-3. Return current phase, key dates, and action recommendation.
+2. Run the lifecycle script via Bash:
+   ```
+   python scripts/rh_lifecycle.py "Product Name Version"
+   ```
+   The script queries `https://access.redhat.com/product-life-cycles/api/v1/products` and returns JSON to stdout.
+   Errors are on stderr (JSON with `"error"` key); exit code 1 on failure.
+3. Parse the JSON output and respond using the output format below.
+
+### Output schema
+```json
+{
+  "product": "Red Hat Enterprise Linux",
+  "version": "9",
+  "current_phase": "Full Support",
+  "phases": {
+    "General availability": { "start": "2022-05-18", "end": "2022-05-18" },
+    "Full support":          { "start": "2022-05-18", "end": "2027-05-31" },
+    "Maintenance support":   { "start": "2027-06-01", "end": "2032-05-31" }
+  }
+}
+```
+Dates are `YYYY-MM-DD`; `"N/A"` means no date; `"Ongoing"` means open-ended.
 
 ## Dependencies
 
-None.
-
-## Data Sources (stop when you have dates)
-
-RHEL major/minor:
-1. `WebFetch` -> `https://access.redhat.com/product-life-cycles/?product=Red%20Hat%20Enterprise%20Linux`
-
-App Streams (Node.js, PostgreSQL, .NET, etc.):
-1. `WebFetch` -> `https://access.redhat.com/support/policy/updates/errata/`
-
-OpenShift, Ansible, JBoss, Satellite, all others:
-1. `WebFetch` -> `https://access.redhat.com/product-life-cycles/update_policies` -- find product link, fetch that page
-2. Common direct URLs: `/support/policy/updates/openshift` | `/support/policy/updates/ansible-tower` | `/support/policy/updates/jboss_notes` | `/support/policy/updates/satellite`
+Script: `scripts/rh_lifecycle.py`
 
 ## Lifecycle Phase Reference
 
