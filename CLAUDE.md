@@ -11,7 +11,7 @@ Contributors work here to create, improve, and validate skills. An internal proc
 ## Repository Structure
 
 ```
-agentic-collections-skills/
+agentic-collections/
 ├── rh-sre/              # Site Reliability Engineering pack (reference implementation)
 ├── rh-developer/        # Developer tools pack
 ├── ocp-admin/           # OpenShift administration pack
