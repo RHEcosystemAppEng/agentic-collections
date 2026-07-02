@@ -8,7 +8,7 @@ claude plugin marketplace list
 
 ### Cleanup plugin
 ```bash
-claude plugin marketplace remove redhat-agentic-collections
+claude plugin marketplace remove redhat-agentic-plugins
 ```
 
 ### Install plugin

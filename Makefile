@@ -1,7 +1,7 @@
 .PHONY: help install validate validate-structure validate-collection-schema validate-collection-compliance validate-skill-design validate-skill-design-changed validate-mcp-tools clean check-uv
 
 help:
-	@echo "agentic-collections-skills"
+	@echo "agentic-plugins"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  install                       - Install Python dependencies (requires uv)"
