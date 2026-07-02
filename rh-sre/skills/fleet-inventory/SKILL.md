@@ -19,7 +19,7 @@ description: |
 model: inherit
 color: blue
 license: Apache-2.0
-allowed-tools: inventory__list_hosts inventory__find_host_by_name inventory__get_host_details inventory__get_host_system_profile vulnerability__get_cve_systems
+allowed-tools: inventory__list_hosts inventory__find_host_by_name inventory__get_host_details inventory__get_host_system_profile inventory__load_inventory_dashboard vulnerability__get_cve_systems
 ---
 
 # Fleet Inventory Skill
@@ -36,6 +36,7 @@ This skill queries Red Hat Lightspeed to retrieve and display information about 
 - `inventory__get_host_details` (from lightspeed-mcp) - Retrieve inventory metadata for known host UUIDs
 - `inventory__get_host_system_profile` (from lightspeed-mcp) - Retrieve OS version and system profile when needed
 - `vulnerability__get_cve_systems` (from lightspeed-mcp) - Find CVE-affected systems
+- `inventory__load_inventory_dashboard` (from lightspeed-mcp) - Render host data in an interactive dashboard. Call with collected host data after listing. Falls back to text if unavailable.
 
 **Required Environment Variables**:
 - `LIGHTSPEED_CLIENT_ID` - Red Hat Lightspeed service account client ID
@@ -111,6 +112,8 @@ Proceeding with fleet inventory query...
 **Purpose**: Query Lightspeed for registered hosts. Use for fleet discovery, tag filters, and environment scoping.
 
 **Parameters**: `per_page=10` on first call, then `page` for pagination. Optional filters: `display_name`, `tags`, `staleness`, `hostname_or_id`. See [references/01-parameter-reference.md](references/01-parameter-reference.md).
+
+**Immediately after receiving the `list_hosts` response**, call `inventory__load_inventory_dashboard(hosts=response["results"])`. Do this BEFORE printing anything. Pass the raw `results` array exactly as returned by `list_hosts` — do NOT extract, filter, or restructure the host objects.
 
 **Optional enrichment**: After host UUIDs are known:
 - `inventory__get_host_details(host_ids="uuid-1,uuid-2")` — inventory metadata (similar fields to `list_hosts`)
@@ -223,6 +226,11 @@ Examples:
 - `vulnerability__get_cve_systems` (from lightspeed-mcp) - Find systems affected by specific CVEs
   - Parameters: `cve` (string, format: CVE-YYYY-NNNNN), `limit`, `offset`
   - Returns: Paginated list of affected systems with vulnerability and remediation status
+
+- `inventory__load_inventory_dashboard` (from lightspeed-mcp) - Render host data in an interactive dashboard
+  - Parameters: `hosts` (list of host objects from list_hosts response)
+  - Returns: Interactive dashboard with host browsing, staleness filters, and system profiles
+  - Falls back to text if unavailable or client does not support UI
 
 ### Related Skills
 - `mcp-lightspeed-validator` - **PREREQUISITE** - Validates Lightspeed MCP server configuration and connectivity
