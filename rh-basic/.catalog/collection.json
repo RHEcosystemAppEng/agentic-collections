@@ -79,7 +79,7 @@
   "deploy_and_use": "#deploy_and_use.md",
   "description": "Essential Red Hat skills for IT professionals: CVE explanation, diagnostics, product lifecycle, and support severity guidance.",
   "documentation_section": "#documentation_section.md",
-  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "id": "rh-basic",
   "keywords": [
     "red-hat",
@@ -91,7 +91,7 @@
     "patching"
   ],
   "legal_resources": {
-    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE",
+    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE",
     "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
   },
   "license": "Apache-2.0",
@@ -107,7 +107,7 @@
     "Red Hat Customer"
   ],
   "provider": "Red Hat",
-  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "resources": [
     {
       "description": "Security advisories, CVE database, product lifecycle, and support case management.",

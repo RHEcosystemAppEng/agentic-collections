@@ -156,7 +156,7 @@
   "deploy_and_use": "#deploy_and_use.md",
   "description": "Plugins for building and deploying applications on Red Hat platforms.",
   "documentation_section": "#documentation_section.md",
-  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "id": "rh-developer",
   "keywords": [
     "developer",
@@ -169,7 +169,7 @@
     "podman"
   ],
   "legal_resources": {
-    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE",
+    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE",
     "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
   },
   "license": "Apache-2.0",
@@ -184,7 +184,7 @@
     "Application developer"
   ],
   "provider": "Red Hat",
-  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "resources": [
     {
       "description": "OpenShift platform guides for developers and administrators.",
@@ -220,13 +220,13 @@
       "description": "Pack policy for confirmations and destructive actions.",
       "embedded_doc": "skills/validate-environment/docs/human-in-the-loop.md",
       "title": "Human-in-the-loop (pack)",
-      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+      "url": "https://github.com/RHEcosystemAppEng/agentic-plugins"
     },
     {
       "description": "SSH/systemd patterns for `/rhel-deploy`.",
       "embedded_doc": "skills/rhel-deploy/docs/rhel-deployment.md",
       "title": "RHEL deployment notes (pack)",
-      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+      "url": "https://github.com/RHEcosystemAppEng/agentic-plugins"
     }
   ],
   "sample_workflows": [

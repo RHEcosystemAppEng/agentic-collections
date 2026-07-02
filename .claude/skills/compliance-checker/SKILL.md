@@ -11,7 +11,7 @@ description: |
 
 # Skill Design Compliance Checker
 
-Run the programmatic compliance check for skills in this agentic-collections repository.
+Run the programmatic compliance check for skills in this agentic-plugins repository.
 
 ## When to Use This Skill
 

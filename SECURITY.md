@@ -1,6 +1,6 @@
 # Security Guidelines
 
-This document provides security guidelines for the agentic-collections repository, focusing on credential management and preventing sensitive data from being committed.
+This document provides security guidelines for the agentic-plugins repository, focusing on credential management and preventing sensitive data from being committed.
 
 ## Table of Contents
 

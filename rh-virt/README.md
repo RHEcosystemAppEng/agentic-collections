@@ -52,7 +52,7 @@ podman inspect --format='{{.Digest}}' quay.io/redhat-user-workloads/crt-nshift-l
 Install the pack with [Lola](https://github.com/LobsterTrap/lola):
 
 ```bash
-lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-plugins/main/marketplace/rh-agentic-collection.yml
 lola install -f rh-virt
 ```
 
@@ -503,7 +503,7 @@ See main repository [README.md](../README.md) for:
 
 ## References
 
-- [Agentic skill pack for Red Hat OpenShift administration repository](https://github.com/RHEcosystemAppEng/agentic-collections/tree/main/ocp-admin) - Documentation and details for this skill pack
+- [Agentic skill pack for Red Hat OpenShift administration repository](https://github.com/RHEcosystemAppEng/agentic-plugins/tree/main/ocp-admin) - Documentation and details for this skill pack
 - [OpenShift Virtualization Documentation](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [KubeVirt User Guide](https://docs.openshift.com/container-platform/latest/virt/about_virt/about-virt.html)
 - [OpenShift MCP Server](https://github.com/openshift/openshift-mcp-server) - Documentation and details for the OpenShift MCP Server

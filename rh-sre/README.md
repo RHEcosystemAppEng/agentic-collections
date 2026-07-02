@@ -141,7 +141,7 @@ export LIGHTSPEED_CLIENT_SECRET="your-service-account-client-secret"
 Install the pack with [Lola](https://github.com/LobsterTrap/lola):
 
 ```bash
-lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-plugins/main/marketplace/rh-agentic-collection.yml
 lola install -f rh-sre
 ```
 
@@ -634,12 +634,12 @@ See main repository [CLAUDE.md](../CLAUDE.md) for:
 
 ## References
 
-- [Agentic skill pack for Site Reliability Engineers repository](https://github.com/RHEcosystemAppEng/agentic-collections/tree/main/rh-sre) - Documentation and details for this skill pack
+- [Agentic skill pack for Site Reliability Engineers repository](https://github.com/RHEcosystemAppEng/agentic-plugins/tree/main/rh-sre) - Documentation and details for this skill pack
 - [Red Hat Lightspeed](https://www.redhat.com/en/lightspeed)
 - [Red Hat Hybrid Cloud Console](https://console.redhat.com)
 - [Red Hat Lightspeed MCP](https://github.com/RedHatInsights/insights-mcp)
 - [Ansible Automation Platform](https://www.redhat.com/en/technologies/management/ansible)
 - [AAP REST API Documentation](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/)
 - [Claude Code Documentation](https://docs.anthropic.com/claude-code)
-- [Main Repository](https://github.com/RHEcosystemAppEng/agentic-collections)
+- [Main Repository](https://github.com/RHEcosystemAppEng/agentic-plugins)
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)

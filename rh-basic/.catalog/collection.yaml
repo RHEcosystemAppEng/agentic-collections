@@ -161,13 +161,13 @@ resources:
   url: https://github.com/LobsterTrap/lola
   description: Package manager used to install agentic collections.
 legal_resources:
-  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE
   privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
 author:
   name: Red Hat Ecosystem Engineering
   email: eco-engineering@redhat.com
-homepage: https://github.com/RHEcosystemAppEng/agentic-collections
-repository: https://github.com/RHEcosystemAppEng/agentic-collections
+homepage: https://github.com/RHEcosystemAppEng/agentic-plugins
+repository: https://github.com/RHEcosystemAppEng/agentic-plugins
 license: Apache-2.0
 keywords:
 - red-hat

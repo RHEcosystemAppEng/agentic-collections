@@ -1,8 +1,8 @@
-# Gitleaks configuration agentic-collections
+# Gitleaks configuration agentic-plugins
 # Version: 8.18+
 # Documentation: https://github.com/gitleaks/gitleaks
 
-title = "agentic-collections Secret Detection"
+title = "agentic-plugins Secret Detection"
 
 [extend]
 # Use gitleaks default rules as base

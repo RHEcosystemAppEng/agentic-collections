@@ -109,7 +109,7 @@
   "deploy_and_use": "#deploy_and_use.md",
   "description": "Site reliability engineering tools and automation for managing Red Hat platforms and infrastructure.",
   "documentation_section": "#documentation_section.md",
-  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "id": "rh-sre",
   "keywords": [
     "sre",
@@ -119,7 +119,7 @@
     "automation"
   ],
   "legal_resources": {
-    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE",
+    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE",
     "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
   },
   "license": "Apache-2.0",
@@ -134,7 +134,7 @@
     "Site Reliability Engineer"
   ],
   "provider": "Red Hat",
-  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "resources": [
     {
       "description": "Red Hat Insights and Lightspeed console for fleet and vulnerability management.",

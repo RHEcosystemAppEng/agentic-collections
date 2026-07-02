@@ -92,7 +92,7 @@
   },
   "deploy_and_use": "#deploy_and_use.md",
   "description": "Automation capabilities for OpenShift Container Platform cluster management, workload orchestration, security validation, and operational tasks including CVE validation for container images and CoreOS.",
-  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "id": "openshift-administration",
   "keywords": [
     "openshift",
@@ -108,7 +108,7 @@
     "coreos"
   ],
   "legal_resources": {
-    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE",
+    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE",
     "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
   },
   "license": "Apache-2.0",
@@ -125,7 +125,7 @@
     "DevSecOps"
   ],
   "provider": "Red Hat",
-  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "resources": [
     {
       "description": "Platform guides for administrators installing and operating OpenShift.",
@@ -134,8 +134,8 @@
     },
     {
       "description": "Source repository for these packs, skills, and catalog metadata.",
-      "title": "agentic-collections repository",
-      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+      "title": "agentic-plugins repository",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-plugins"
     },
     {
       "description": "Official Red Hat VEX/CSAF data, security advisories, and CVE information.",

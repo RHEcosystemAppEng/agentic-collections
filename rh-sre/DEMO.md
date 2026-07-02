@@ -13,7 +13,7 @@ claude plugin marketplace remove redhat-agentic-collections
 
 ### Install plugin
 ```bash
-claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-collections
+claude plugin marketplace add https://github.com/RHEcosystemAppEng/agentic-plugins
 claude plugin install rh-sre
 ```
 

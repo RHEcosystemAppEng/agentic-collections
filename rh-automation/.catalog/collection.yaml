@@ -190,17 +190,17 @@ resources:
 - title: "Red Hat Ansible Automation Platform"
   url: https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/
   description: "Official AAP documentation for controllers and execution."
-- title: "agentic-collections repository"
-  url: https://github.com/RHEcosystemAppEng/agentic-collections
+- title: "agentic-plugins repository"
+  url: https://github.com/RHEcosystemAppEng/agentic-plugins
   description: "Source for this pack and catalog metadata."
 legal_resources:
-  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE
   privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
 author:
   name: Red Hat Ecosystem Engineering
   email: eco-engineering@redhat.com
-homepage: https://github.com/RHEcosystemAppEng/agentic-collections
-repository: https://github.com/RHEcosystemAppEng/agentic-collections
+homepage: https://github.com/RHEcosystemAppEng/agentic-plugins
+repository: https://github.com/RHEcosystemAppEng/agentic-plugins
 license: Apache-2.0
 keywords:
 - ansible

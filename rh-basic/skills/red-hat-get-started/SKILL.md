@@ -10,7 +10,7 @@ allowed-tools:
 
 # Red Hat Skills Installer
 
-SKILLS_REPO = https://github.com/RHEcosystemAppEng/agentic-collections/tree/main/rh-basic/skills
+SKILLS_REPO = https://github.com/RHEcosystemAppEng/agentic-plugins/tree/main/rh-basic/skills
 
 Install all Red Hat agent skills into the appropriate skills directory for the
 current agentic tool. Work through skills in order. Do not stop on a single

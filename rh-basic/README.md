@@ -23,7 +23,7 @@ Agentic skill pack for Red Hat customers provides lightweight, self-contained sk
 ### Installation (Lola)
 
 ```bash
-lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-collections/main/marketplace/rh-agentic-collection.yml
+lola market add rh-agentic-collections https://raw.githubusercontent.com/RHEcosystemAppEng/agentic-plugins/main/marketplace/rh-agentic-collection.yml
 lola install -f rh-basic
 ```
 
@@ -164,4 +164,4 @@ rh-basic/
 - [Red Hat Product Lifecycle](https://access.redhat.com/product-life-cycles/)
 - [Red Hat CVE Database](https://access.redhat.com/security/security-updates/#/cve)
 - [Lola Package Manager](https://github.com/LobsterTrap/lola)
-- [Main Repository](https://github.com/RHEcosystemAppEng/agentic-collections)
+- [Main Repository](https://github.com/RHEcosystemAppEng/agentic-plugins)

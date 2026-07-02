@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.11"
 
 [[package]]
-name = "agentic-collections"
+name = "agentic-plugins"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

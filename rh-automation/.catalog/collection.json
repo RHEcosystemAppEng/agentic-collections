@@ -103,7 +103,7 @@
   },
   "deploy_and_use": "#deploy_and_use.md",
   "description": "Ansible Automation Platform governance, execution safety, and forensic troubleshooting tools for Red Hat automation engineers.",
-  "homepage": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "homepage": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "id": "rh-automation",
   "keywords": [
     "ansible",
@@ -113,7 +113,7 @@
     "job-template"
   ],
   "legal_resources": {
-    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE",
+    "license_agreement_url": "https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE",
     "privacy_policy_url": "https://www.redhat.com/en/about/privacy-policy"
   },
   "license": "Apache-2.0",
@@ -128,7 +128,7 @@
     "Red Hat platform engineer"
   ],
   "provider": "Red Hat",
-  "repository": "https://github.com/RHEcosystemAppEng/agentic-collections",
+  "repository": "https://github.com/RHEcosystemAppEng/agentic-plugins",
   "resources": [
     {
       "description": "Official AAP documentation for controllers and execution.",
@@ -137,8 +137,8 @@
     },
     {
       "description": "Source for this pack and catalog metadata.",
-      "title": "agentic-collections repository",
-      "url": "https://github.com/RHEcosystemAppEng/agentic-collections"
+      "title": "agentic-plugins repository",
+      "url": "https://github.com/RHEcosystemAppEng/agentic-plugins"
     }
   ],
   "sample_workflows": [

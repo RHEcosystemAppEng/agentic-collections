@@ -294,21 +294,21 @@ resources:
   description: Local container workflows used by the pack.
   embedded_doc: skills/debug-build/docs/debugging-patterns.md
 - title: Human-in-the-loop (pack)
-  url: https://github.com/RHEcosystemAppEng/agentic-collections
+  url: https://github.com/RHEcosystemAppEng/agentic-plugins
   description: Pack policy for confirmations and destructive actions.
   embedded_doc: skills/validate-environment/docs/human-in-the-loop.md
 - title: RHEL deployment notes (pack)
-  url: https://github.com/RHEcosystemAppEng/agentic-collections
+  url: https://github.com/RHEcosystemAppEng/agentic-plugins
   description: SSH/systemd patterns for `/rhel-deploy`.
   embedded_doc: skills/rhel-deploy/docs/rhel-deployment.md
 legal_resources:
-  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-collections/blob/main/LICENSE
+  license_agreement_url: https://github.com/RHEcosystemAppEng/agentic-plugins/blob/main/LICENSE
   privacy_policy_url: https://www.redhat.com/en/about/privacy-policy
 author:
   name: Red Hat Ecosystem Engineering
   email: eco-engineering@redhat.com
-homepage: https://github.com/RHEcosystemAppEng/agentic-collections
-repository: https://github.com/RHEcosystemAppEng/agentic-collections
+homepage: https://github.com/RHEcosystemAppEng/agentic-plugins
+repository: https://github.com/RHEcosystemAppEng/agentic-plugins
 license: Apache-2.0
 keywords:
 - developer
